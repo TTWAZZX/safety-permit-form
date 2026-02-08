@@ -192,127 +192,121 @@
 </div>
 
 <script>
-    // ⚠️ แก้ไข KEY ตรงนี้ให้ถูกต้อง ⚠️
     const SUPABASE_URL = 'https://dqsfioiqwxuxpucwwhsv.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxc2Zpb2lxd3h1eHB1Y3d3aHN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1OTk1NjUsImV4cCI6MjA4NDE3NTU2NX0.L_u0Ff3uHofxiimEs6ySFB4TPNtOWiKeSu3KFoVcA1U'; 
-    const LIFF_ID = '2007053300-s20OjYXq'; 
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxc2Zpb2lxd3h1eHB1Y3d3aHN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1OTk1NjUsImV4cCI6MjA4NDE3NTU2NX0.L_u0Ff3uHofxiimEs6ySFB4TPNtOWiKeSu3KFoVcA1U';
+    const LIFF_ID = '2007053300-s20OjYXq';
 
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // 1. ฟังก์ชัน เปิด/ปิด ช่องกรอก "อื่นๆ"
-    function toggleInput(selectId, areaId) {
-        const selectElement = document.getElementById(selectId);
-        const areaElement = document.getElementById(areaId);
-        const inputElement = areaElement.querySelector('input, textarea');
+    // ✅ flag สำคัญ
+    let authReady = false;
 
-        if (selectElement.value === 'OTHER') {
-            areaElement.style.display = 'block';
-            inputElement.required = true;
-            inputElement.focus();
+    // ✅ บังคับ auth ให้เสร็จก่อน
+    async function ensureAuth() {
+        const { data, error } = await db.auth.getSession();
+        if (!data.session) {
+            const res = await db.auth.signInAnonymously();
+            if (res.error) {
+                console.error(res.error);
+                Swal.fire('Auth error', res.error.message, 'error');
+                return false;
+            }
+        }
+        authReady = true;
+        return true;
+    }
+
+    // เรียกทันทีเมื่อโหลด
+    ensureAuth();
+
+    function toggleInput(selectId, areaId) {
+        const select = document.getElementById(selectId);
+        const area = document.getElementById(areaId);
+        const input = area.querySelector('input, textarea');
+
+        if (select.value === 'OTHER') {
+            area.style.display = 'block';
+            input.required = true;
         } else {
-            areaElement.style.display = 'none';
-            inputElement.required = false;
-            inputElement.value = ''; // ล้างค่าถ้าเปลี่ยนใจไม่เลือก 'อื่นๆ'
+            area.style.display = 'none';
+            input.required = false;
+            input.value = '';
         }
     }
 
-    // 2. รันเมื่อโหลดหน้าเว็บ (LIFF Init)
     window.onload = async () => {
         document.getElementById('requestDate').valueAsDate = new Date();
-        try {
-            await liff.init({ liffId: LIFF_ID });
-            if (!liff.isLoggedIn()) {
-                liff.login();
-            } else {
-                const profile = await liff.getProfile();
-                document.getElementById('userId').value = profile.userId;
-                document.getElementById('lineName').value = profile.displayName;
-                document.getElementById('fullname').value = profile.displayName;
-            }
-        } catch (err) {
-            console.error('LIFF Error:', err);
+        await liff.init({ liffId: LIFF_ID });
+        if (!liff.isLoggedIn()) {
+            liff.login();
+            return;
         }
+        const profile = await liff.getProfile();
+        document.getElementById('userId').value = profile.userId;
+        document.getElementById('fullname').value = profile.displayName;
     };
 
-    // 3. Logic เมื่อกดปุ่ม "ยืนยันคำขอ" พร้อมระบบตรวจสอบข้อมูล (Confirmation)
     document.getElementById('slipperForm').addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        // ดึงค่า Section และ Reason (กรณีเลือก OTHER)
-        let finalSection = document.getElementById('section').value;
-        if (finalSection === 'OTHER') finalSection = document.getElementById('otherSection').value;
-        
-        let finalReason = document.getElementById('reasonSelect').value;
-        if (finalReason === 'OTHER') finalReason = document.getElementById('otherReason').value;
+        // 🔒 กัน submit ถ้า auth ยังไม่พร้อม
+        if (!authReady) {
+            const ok = await ensureAuth();
+            if (!ok) return;
+        }
 
-        const empId = document.getElementById('empId').value;
-        const cardNo = document.getElementById('cardNo').value;
+        let section = document.getElementById('section').value;
+        if (section === 'OTHER') section = document.getElementById('otherSection').value;
 
-        // --- เพิ่มระบบยืนยันข้อมูลก่อนส่ง ---
-        const result = await Swal.fire({
-            title: 'ยืนยันข้อมูลถูกต้อง?',
-            html: `<div class="text-start" style="font-size: 0.9rem;">
-                    <b>รหัสพนักงาน:</b> ${empId}<br>
-                    <b>หมายเลขบัตร:</b> ${cardNo}<br>
-                    <b>ส่วนงาน:</b> ${finalSection}
-                   </div>`,
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#1e3a8a', // Safety Blue
-            cancelButtonColor: '#d33',
-            confirmButtonText: 'ใช่, ข้อมูลถูกต้อง',
-            cancelButtonText: 'แก้ไขข้อมูล'
+        let reason = document.getElementById('reasonSelect').value;
+        if (reason === 'OTHER') reason = document.getElementById('otherReason').value;
+
+        const formData = {
+            line_user_id: document.getElementById('userId').value,
+            fullname: document.getElementById('fullname').value,
+            emp_id: document.getElementById('empId').value,
+            section,
+            card_no: document.getElementById('cardNo').value,
+            reason,
+            access_type: document.querySelector('input[name="accessType"]:checked').value,
+            request_date: document.getElementById('requestDate').value,
+            status: 'Pending'
+        };
+
+        const btn = document.getElementById('btnSubmit');
+        btn.disabled = true;
+        btn.innerHTML = '⏳ กำลังบันทึก...';
+
+        const { data, error } = await db
+            .from('slipper_requests')
+            .insert([formData])
+            .select()
+            .single();
+
+        if (error) {
+            Swal.fire(
+                'บันทึกไม่สำเร็จ',
+                `${error.code || ''} ${error.message}`,
+                'error'
+            );
+            btn.disabled = false;
+            btn.innerHTML = '🚀 ส่งคำขออนุมัติ';
+            return;
+        }
+
+        await Swal.fire({
+            icon: 'success',
+            title: 'สำเร็จ',
+            text: 'ส่งคำขอเรียบร้อยแล้ว',
+            timer: 1500,
+            showConfirmButton: false
         });
 
-        if (result.isConfirmed) {
-            const btn = document.getElementById('btnSubmit');
-            btn.innerHTML = '⏳ กำลังบันทึกข้อมูล...'; 
-            btn.disabled = true;
-
-            const formData = {
-                line_user_id: document.getElementById('userId').value, // LINE userId
-                fullname: document.getElementById('fullname').value,
-                emp_id: empId,
-                section: finalSection,
-                card_no: cardNo,
-                reason: finalReason,
-                access_type: document.querySelector('input[name="accessType"]:checked').value,
-                request_date: document.getElementById('requestDate').value,
-                status: 'Pending'
-            };
-
-            const { data, error } = await db
-                .from('slipper_requests')
-                .insert([formData])
-                .select();
-
-
-            if (error) { 
-                Swal.fire('เกิดข้อผิดพลาด', error.message, 'error'); 
-                btn.innerHTML = '🚀 ส่งคำขออนุมัติ';
-                btn.disabled = false; 
-            } else {
-                // แจ้งเตือนสำเร็จ
-                await Swal.fire({
-                    title: 'สำเร็จ!',
-                    text: 'บันทึกข้อมูลและส่งแจ้งเตือนเรียบร้อยแล้ว',
-                    icon: 'success',
-                    timer: 2000,
-                    showConfirmButton: false
-                });
-
-                // ส่งข้อความกระตุ้นบอท (Trigger)
-                if (liff.isInClient()) {
-                    liff.sendMessages([{ type: 'text', text: `REQ_SLIPPER_ID:${data[0].id}` }])
-                        .then(() => liff.closeWindow())
-                        .catch((err) => {
-                            console.error(err);
-                            liff.closeWindow(); // ถึงจะส่งข้อความไม่ได้ก็ให้ปิดหน้าต่างไปเลย
-                        });
-                } else {
-                    btn.innerHTML = '🚀 ส่งข้อมูลสำเร็จแล้ว';
-                }
-            }
+        if (liff.isInClient()) {
+            await liff.sendMessages([
+                { type: 'text', text: `REQ_SLIPPER_ID:${data.id}` }
+            ]);
+            liff.closeWindow();
         }
     });
 </script>
