@@ -192,107 +192,121 @@
 </div>
 
 <script>
-    const SUPABASE_URL = 'https://dqsfioiqwxuxpucwwhsv.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxc2Zpb2lxd3h1eHB1Y3d3aHN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1OTk1NjUsImV4cCI6MjA4NDE3NTU2NX0.L_u0Ff3uHofxiimEs6ySFB4TPNtOWiKeSu3KFoVcA1U';
-    const LIFF_ID = '2007053300-s20OjYXq';
+const SUPABASE_URL = 'https://dqsfioiqwxuxpucwwhsv.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxc2Zpb2lxd3h1eHB1Y3d3aHN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1OTk1NjUsImV4cCI6MjA4NDE3NTU2NX0.L_u0Ff3uHofxiimEs6ySFB4TPNtOWiKeSu3KFoVcA1U';
+const LIFF_ID = '2007053300-s20OjYXq';
 
-    const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // ✅ flag สำคัญ
-    let authReady = false;
+// ================= AUTH =================
+let authReady = false;
 
-    // ✅ บังคับ auth ให้เสร็จก่อน
-    async function ensureAuth() {
-        const { data, error } = await db.auth.getSession();
-        if (!data.session) {
-            const res = await db.auth.signInAnonymously();
-            if (res.error) {
-                console.error(res.error);
-                Swal.fire('Auth error', res.error.message, 'error');
-                return false;
-            }
-        }
-        authReady = true;
-        return true;
-    }
-
-    // เรียกทันทีเมื่อโหลด
-    ensureAuth();
-
-    function toggleInput(selectId, areaId) {
-        const select = document.getElementById(selectId);
-        const area = document.getElementById(areaId);
-        const input = area.querySelector('input, textarea');
-
-        if (select.value === 'OTHER') {
-            area.style.display = 'block';
-            input.required = true;
-        } else {
-            area.style.display = 'none';
-            input.required = false;
-            input.value = '';
+async function ensureAuth() {
+    const { data } = await db.auth.getSession();
+    if (!data.session) {
+        const res = await db.auth.signInAnonymously();
+        if (res.error) {
+            Swal.fire('Auth error', res.error.message, 'error');
+            return false;
         }
     }
+    authReady = true;
+    return true;
+}
 
-    window.onload = async () => {
-        document.getElementById('requestDate').valueAsDate = new Date();
-        await liff.init({ liffId: LIFF_ID });
-        if (!liff.isLoggedIn()) {
-            liff.login();
-            return;
-        }
-        const profile = await liff.getProfile();
-        document.getElementById('userId').value = profile.userId;
-        document.getElementById('fullname').value = profile.displayName;
+ensureAuth();
+
+// ================= UI =================
+function toggleInput(selectId, areaId) {
+    const select = document.getElementById(selectId);
+    const area = document.getElementById(areaId);
+    const input = area.querySelector('input, textarea');
+
+    if (select.value === 'OTHER') {
+        area.style.display = 'block';
+        input.required = true;
+    } else {
+        area.style.display = 'none';
+        input.required = false;
+        input.value = '';
+    }
+}
+
+// ================= LIFF =================
+window.onload = async () => {
+    document.getElementById('requestDate').valueAsDate = new Date();
+
+    await liff.init({ liffId: LIFF_ID });
+
+    if (!liff.isLoggedIn()) {
+        liff.login();
+        return;
+    }
+
+    const profile = await liff.getProfile();
+    document.getElementById('userId').value = profile.userId;
+    document.getElementById('fullname').value = profile.displayName;
+};
+
+// ================= SUBMIT =================
+document.getElementById('slipperForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    if (!authReady) {
+        const ok = await ensureAuth();
+        if (!ok) return;
+    }
+
+    let section = document.getElementById('section').value;
+    if (section === 'OTHER') section = document.getElementById('otherSection').value;
+
+    let reason = document.getElementById('reasonSelect').value;
+    if (reason === 'OTHER') reason = document.getElementById('otherReason').value;
+
+    const formData = {
+        line_user_id: document.getElementById('userId').value,
+        fullname: document.getElementById('fullname').value,
+        emp_id: document.getElementById('empId').value,
+        section,
+        card_no: document.getElementById('cardNo').value,
+        reason,
+        access_type: document.querySelector('input[name="accessType"]:checked').value,
+        request_date: document.getElementById('requestDate').value,
+        status: 'Pending'
     };
 
-    document.getElementById('slipperForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
+    // 🔍 CONFIRM BEFORE SAVE
+    const confirm = await Swal.fire({
+        title: 'ยืนยันข้อมูล',
+        html: `
+            <div style="text-align:left;font-size:0.9rem">
+                <b>ชื่อ:</b> ${formData.fullname}<br>
+                <b>รหัส:</b> ${formData.emp_id}<br>
+                <b>ส่วนงาน:</b> ${formData.section}<br>
+                <b>บัตร:</b> ${formData.card_no}<br>
+                <b>สาเหตุ:</b> ${formData.reason}
+            </div>
+        `,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'ยืนยันส่ง',
+        cancelButtonText: 'แก้ไข'
+    });
 
-        // 🔒 กัน submit ถ้า auth ยังไม่พร้อม
-        if (!authReady) {
-            const ok = await ensureAuth();
-            if (!ok) return;
-        }
+    if (!confirm.isConfirmed) return;
 
-        let section = document.getElementById('section').value;
-        if (section === 'OTHER') section = document.getElementById('otherSection').value;
+    const btn = document.getElementById('btnSubmit');
+    btn.disabled = true;
+    btn.innerHTML = '⏳ กำลังบันทึก...';
 
-        let reason = document.getElementById('reasonSelect').value;
-        if (reason === 'OTHER') reason = document.getElementById('otherReason').value;
-
-        const formData = {
-            line_user_id: document.getElementById('userId').value,
-            fullname: document.getElementById('fullname').value,
-            emp_id: document.getElementById('empId').value,
-            section,
-            card_no: document.getElementById('cardNo').value,
-            reason,
-            access_type: document.querySelector('input[name="accessType"]:checked').value,
-            request_date: document.getElementById('requestDate').value,
-            status: 'Pending'
-        };
-
-        const btn = document.getElementById('btnSubmit');
-        btn.disabled = true;
-        btn.innerHTML = '⏳ กำลังบันทึก...';
-
+    try {
         const { data, error } = await db
             .from('slipper_requests')
             .insert([formData])
             .select()
             .single();
 
-        if (error) {
-            Swal.fire(
-                'บันทึกไม่สำเร็จ',
-                `${error.code || ''} ${error.message}`,
-                'error'
-            );
-            btn.disabled = false;
-            btn.innerHTML = '🚀 ส่งคำขออนุมัติ';
-            return;
-        }
+        if (error) throw error;
 
         await Swal.fire({
             icon: 'success',
@@ -302,13 +316,30 @@
             showConfirmButton: false
         });
 
+        // 📩 TRIGGER LINE BOT
         if (liff.isInClient()) {
-            await liff.sendMessages([
-                { type: 'text', text: `REQ_SLIPPER_ID:${data.id}` }
-            ]);
+            try {
+                await liff.sendMessages([
+                    { type: 'text', text: `REQ_SLIPPER_ID:${data.id}` }
+                ]);
+            } catch (err) {
+                console.warn('LINE send failed', err);
+            }
             liff.closeWindow();
+        } else {
+            btn.innerHTML = '✅ ส่งคำขอสำเร็จ';
         }
-    });
+
+    } catch (err) {
+        Swal.fire(
+            'บันทึกไม่สำเร็จ',
+            `${err.code || ''} ${err.message}`,
+            'error'
+        );
+    } finally {
+        btn.disabled = false;
+    }
+});
 </script>
 </body>
 </html>
