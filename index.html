@@ -309,18 +309,18 @@ document.getElementById('slipperForm').addEventListener('submit', async (e) => {
         if (error) throw error;
 
         await fetch(
-        "https://dqsfioiqwxuxpucwwhsv.supabase.co/functions/v1/notify_slipper_request",
+        'https://dqsfioiqwxuxpucwwhsv.supabase.co/functions/v1/notify_slipper_request',
         {
-            method: "POST",
+            method: 'POST',
             headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
             },
             body: JSON.stringify({
             request_id: data.id,
             }),
         }
         );
+
 
         await Swal.fire({
             icon: 'success',
