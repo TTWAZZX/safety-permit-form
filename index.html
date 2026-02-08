@@ -308,6 +308,20 @@ document.getElementById('slipperForm').addEventListener('submit', async (e) => {
 
         if (error) throw error;
 
+        await fetch(
+        "https://dqsfioiqwxuxpucwwhsv.supabase.co/functions/v1/notify_slipper_request",
+        {
+            method: "POST",
+            headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+            },
+            body: JSON.stringify({
+            request_id: data.id,
+            }),
+        }
+        );
+
         await Swal.fire({
             icon: 'success',
             title: 'สำเร็จ',
