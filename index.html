@@ -15,197 +15,90 @@
 
     <style>
         :root {
-            --primary-color: #dc2626;
-            --secondary-color: #4b5563;
-            --bg-color: #f8fafc;
+            --safety-blue: #1e3a8a;
+            --safety-red: #dc2626;
+            --safety-bg: #f8fafc;
         }
 
         body { 
             font-family: 'Sarabun', sans-serif; 
-            background-color: var(--bg-color); 
-            color: #1e293b;
-            -webkit-font-smoothing: antialiased;
-        }
-
-        /* ปรับแต่ง Scrollbar สำหรับ Mobile */
-        ::-webkit-scrollbar { width: 0px; background: transparent; }
-
-        .form-container {
-            max-width: 480px;
-            margin: 0 auto;
-            padding: 15px;
+            background-color: var(--safety-bg); 
+            color: #334155;
+            padding-bottom: 30px;
         }
 
         .premium-card {
+            max-width: 500px;
+            margin: 20px auto;
             background: #ffffff;
-            border-radius: 24px;
-            padding: 30px 24px;
-            border: 1px solid rgba(226, 232, 240, 0.8);
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.04), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            border-top: 6px solid var(--safety-blue);
         }
 
-        .brand-section {
-            text-align: center;
-            margin-bottom: 25px;
-        }
+        .header-section { text-align: center; margin-bottom: 20px; }
+        .header-icon { font-size: 35px; color: var(--safety-red); margin-bottom: 5px; }
+        .header-title { font-weight: 700; color: var(--safety-blue); font-size: 1.25rem; }
 
-        .brand-logo {
-            width: 50px;
-            height: 50px;
-            background: var(--primary-color);
-            color: white;
-            border-radius: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            margin: 0 auto 12px;
-            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
-        }
-
-        .header-title { 
-            color: #0f172a; 
-            font-weight: 700; 
-            font-size: 1.25rem;
-            letter-spacing: -0.025em;
-        }
-
-        .info-banner {
-            background-color: #fffbeb;
-            border: 1px solid #fef3c7;
-            border-radius: 12px;
-            padding: 12px;
-            margin-bottom: 24px;
-            display: flex;
-            gap: 10px;
-            align-items: flex-start;
-        }
-
-        .info-banner i { color: #d97706; font-size: 1.1rem; }
-        .info-banner span { color: #92400e; font-size: 0.85rem; line-height: 1.4; }
-
-        .form-label { 
-            font-weight: 600; 
-            font-size: 0.88rem; 
-            color: var(--secondary-color);
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
+        .form-label { font-weight: 600; font-size: 0.85rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; color: #475569; }
+        .form-label i { color: var(--safety-blue); font-size: 1rem; }
 
         .form-control, .form-select {
-            border-radius: 12px;
-            padding: 12px 16px;
-            border: 1px solid #e2e8f0;
-            background-color: #fcfdfe;
-            transition: all 0.2s;
+            border-radius: 10px;
+            padding: 10px 12px;
+            border: 1px solid #cbd5e1;
             font-size: 0.95rem;
+            background-color: #fcfdfe;
         }
 
-        .form-control:focus, .form-select:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.08);
-            background-color: #fff;
-        }
-
-        /* Radio Buttons สไตล์โมเดิร์น */
-        .type-selector {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-
-        .btn-outline-custom {
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 12px;
-            font-weight: 600;
-            transition: all 0.2s;
-            background: white;
-            color: var(--secondary-color);
-        }
-
-        .btn-check:checked + .btn-outline-success {
-            background-color: #ecfdf5;
-            border-color: #10b981;
-            color: #047857;
-        }
-
-        .btn-check:checked + .btn-outline-danger {
-            background-color: #fef2f2;
-            border-color: #ef4444;
-            color: #b91c1c;
-        }
+        .other-input { display: none; margin-top: 10px; animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
         .btn-submit { 
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-            color: white; 
-            width: 100%; 
-            border-radius: 14px; 
-            padding: 16px; 
-            border: none; 
-            font-weight: 700; 
-            font-size: 1rem;
-            margin-top: 10px;
-            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
-            transition: transform 0.2s, box-shadow 0.2s;
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+            color: white; width: 100%; border-radius: 12px; padding: 14px; 
+            border: none; font-weight: 700; margin-top: 10px;
+            box-shadow: 0 4px 6px rgba(30, 58, 138, 0.2);
         }
-
-        .btn-submit:active {
-            transform: scale(0.98);
+        
+        .alert-premium {
+            background-color: #fffbeb; border-left: 4px solid #f59e0b;
+            color: #92400e; padding: 12px; border-radius: 8px; font-size: 0.8rem; margin-bottom: 20px;
         }
-
-        .required-mark { color: #ef4444; }
     </style>
 </head>
 <body>
 
-<div class="form-container">
+<div class="container">
     <div class="premium-card">
-        <div class="brand-section">
-            <div class="brand-logo">
-                <i class="bi bi-shield-check"></i>
-            </div>
-            <h4 class="header-title">ใบขออนุญาตสวมใส่รองเท้าแตะ</h4>
-            <p class="text-muted small">TSH Safety & Environment Management</p>
+        <div class="header-section">
+            <div class="header-icon"><i class="bi bi-shield-lock-fill"></i></div>
+            <h4 class="header-title">ใบขออนุญาตสวมรองเท้าแตะ</h4>
+            <p class="text-muted small">TSH Safety Management System</p>
         </div>
 
-        <div class="info-banner">
-            <i class="bi bi-exclamation-triangle-fill"></i>
-            <span>บัตรอนุญาตแลกวันต่อวันเท่านั้น กรณีติดต่อกันเกิน 5 วันทำงานต้องแนบใบรับรองแพทย์เสนอต่อเจ้าหน้าที่</span>
+        <div class="alert-premium">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i> 
+            <b>กฎระเบียบ:</b> บัตรอนุญาตคืนวันต่อวัน กรณีเกิน 5 วันต้องมีใบรับรองแพทย์
         </div>
 
         <form id="slipperForm">
-            <input type="hidden" id="userId">
-            <input type="hidden" id="lineName">
+            <input type="hidden" id="userId"><input type="hidden" id="lineName">
 
             <div class="mb-3">
-                <label class="form-label"><i class="bi bi-person"></i> ชื่อ-นามสกุล <span class="required-mark">*</span></label>
-                <input type="text" id="fullname" class="form-control" placeholder="ระบุชื่อพนักงาน" required>
-            </div>
-
-            <div class="row mb-3">
-                <div class="col-6">
-                    <label class="form-label"><i class="bi bi-card-heading"></i> รหัสพนักงาน <span class="required-mark">*</span></label>
-                    <input type="text" id="empId" class="form-control" placeholder="6 หลัก" required>
-                </div>
-                <div class="col-6">
-                    <label class="form-label"><i class="bi bi-hash"></i> หมายเลขบัตร <span class="required-mark">*</span></label>
-                    <select id="cardNo" class="form-select" required>
-                        <option value="" selected disabled>เลือก...</option>
-                        <script>
-                            for(let i=1; i<=30; i++) {
-                                document.write(`<option value="No.${i}">No.${i}</option>`);
-                            }
-                        </script>
-                    </select>
-                </div>
+                <label class="form-label"><i class="bi bi-person-fill"></i> ชื่อ-นามสกุล <span class="text-danger">*</span></label>
+                <input type="text" id="fullname" class="form-control" placeholder="ระบุชื่อ-นามสกุล" required>
             </div>
 
             <div class="mb-3">
-                <label class="form-label"><i class="bi bi-building"></i> ส่วนงาน (Section) <span class="required-mark">*</span></label>
-                <select id="section" class="form-select" required>
+                <label class="form-label"><i class="bi bi-card-text"></i> รหัสพนักงาน <span class="text-danger">*</span></label>
+                <input type="text" id="empId" class="form-control" placeholder="ระบุรหัส 6 หลัก" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label"><i class="bi bi-building-fill"></i> ส่วนงาน (Section) <span class="text-danger">*</span></label>
+                <select id="section" class="form-select" onchange="toggleInput('section', 'otherSectionArea')" required>
                     <option value="" selected disabled>-- เลือกส่วนงาน --</option>
                     <option value="ACCOUNTING SEC.">ACCOUNTING SEC.</option>
                     <option value="COSTING & FIX ASSET SEC.">COSTING & FIX ASSET SEC.</option>
@@ -228,37 +121,57 @@
                     <option value="QUALITY ASSURANCE SEC.">QUALITY ASSURANCE SEC.</option>
                     <option value="SAFETY HEALTH & ENVIRONMENT SEC.">SAFETY HEALTH & ENVIRONMENT SEC.</option>
                     <option value="WAREHOUSE SEC.">WAREHOUSE SEC.</option>
-                    <option value="Other">อื่นๆ</option>
+                    <option value="OTHER">อื่นๆ (โปรดระบุ)</option>
                 </select>
+                <div id="otherSectionArea" class="other-input">
+                    <input type="text" id="otherSection" class="form-control" placeholder="ระบุชื่อส่วนงานของท่าน">
+                </div>
             </div>
 
-            <div class="mb-3">
-                <label class="form-label"><i class="bi bi-arrow-left-right"></i> ประเภทการขออนุญาต <span class="required-mark">*</span></label>
-                <div class="type-selector">
-                    <input type="radio" class="btn-check" name="accessType" id="typeIn" value="เข้าบริษัทฯ" checked>
-                    <label class="btn btn-outline-success btn-outline-custom" for="typeIn">เข้าบริษัทฯ</label>
-                    
-                    <input type="radio" class="btn-check" name="accessType" id="typeOut" value="ออกจากบริษัทฯ">
-                    <label class="btn btn-outline-danger btn-outline-custom" for="typeOut">ออกจากบริษัทฯ</label>
+            <div class="row">
+                <div class="col-6 mb-3">
+                    <label class="form-label"><i class="bi bi-hash"></i> หมายเลขบัตร <span class="text-danger">*</span></label>
+                    <select id="cardNo" class="form-select" required>
+                        <option value="" selected disabled>เลือก...</option>
+                        <script>for(let i=1; i<=30; i++) document.write(`<option value="No.${i}">No.${i}</option>`);</script>
+                    </select>
+                </div>
+                <div class="col-6 mb-3">
+                    <label class="form-label"><i class="bi bi-calendar-event-fill"></i> วันที่ขอ <span class="text-danger">*</span></label>
+                    <input type="date" id="requestDate" class="form-control" required>
                 </div>
             </div>
 
             <div class="mb-3">
-                <label class="form-label"><i class="bi bi-calendar3"></i> วันที่ขออนุญาต <span class="required-mark">*</span></label>
-                <input type="date" id="requestDate" class="form-control" required>
+                <label class="form-label"><i class="bi bi-geo-alt-fill"></i> ประเภทการขออนุญาต</label>
+                <div class="d-flex gap-2">
+                    <input type="radio" class="btn-check" name="accessType" id="typeIn" value="เข้าบริษัทฯ" checked>
+                    <label class="btn btn-outline-primary w-50" for="typeIn">เข้าบริษัทฯ</label>
+                    <input type="radio" class="btn-check" name="accessType" id="typeOut" value="ออกจากบริษัทฯ">
+                    <label class="btn btn-outline-danger w-50" for="typeOut">ออกจากบริษัทฯ</label>
+                </div>
             </div>
 
             <div class="mb-4">
-                <label class="form-label"><i class="bi bi-chat-left-dots"></i> ระบุสาเหตุการใส่รองเท้าแตะ <span class="required-mark">*</span></label>
-                <textarea id="reason" class="form-control" rows="3" required placeholder="โปรดระบุรายละเอียด เช่น บาดเจ็บที่นิ้วเท้า..."></textarea>
+                <label class="form-label"><i class="bi bi-patch-exclamation-fill"></i> สาเหตุที่ขออนุญาต <span class="text-danger">*</span></label>
+                <select id="reasonSelect" class="form-select" onchange="toggleInput('reasonSelect', 'otherReasonArea')" required>
+                    <option value="" selected disabled>-- เลือกสาเหตุ --</option>
+                    <option value="รองเท้ากัด / เป็นแผลบริเวณเท้า">รองเท้ากัด / เป็นแผลบริเวณเท้า</option>
+                    <option value="นิ้วเท้าอักเสบ / เล็บขบ">นิ้วเท้าอักเสบ / เล็บขบ</option>
+                    <option value="ประสบอุบัติเหตุทางเท้า (มีบาดแผล)">ประสบอุบัติเหตุทางเท้า (มีบาดแผล)</option>
+                    <option value="หลังผ่าตัดเท้า (แพทย์สั่ง)">หลังผ่าตัดเท้า (แพทย์สั่ง)</option>
+                    <option value="OTHER">อื่นๆ (โปรดระบุสาเหตุ)</option>
+                </select>
+                <div id="otherReasonArea" class="other-input">
+                    <textarea id="otherReason" class="form-control" rows="2" placeholder="ระบุรายละเอียดสาเหตุ..."></textarea>
+                </div>
             </div>
 
             <button type="submit" id="btnSubmit" class="btn-submit">
-                ส่งคำขออนุมัติ <i class="bi bi-send-fill ms-2"></i>
+                <i class="bi bi-send-check-fill me-2"></i> ส่งคำขออนุมัติ
             </button>
         </form>
     </div>
-    <p class="text-center mt-4 mb-2 text-muted" style="font-size: 0.75rem;">© 2026 TSH Safety Digital Workflow</p>
 </div>
 
 <script>
