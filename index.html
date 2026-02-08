@@ -270,7 +270,7 @@
             btn.disabled = true;
 
             const formData = {
-                user_id: document.getElementById('userId').value,
+                line_user_id: document.getElementById('userId').value, // LINE userId
                 fullname: document.getElementById('fullname').value,
                 emp_id: empId,
                 section: finalSection,
@@ -281,8 +281,11 @@
                 status: 'Pending'
             };
 
-            // บันทึกลง Supabase
-            const { data, error } = await db.from('slipper_requests').insert([formData]).select();
+            const { data, error } = await db
+                .from('slipper_requests')
+                .insert([formData])
+                .select();
+
 
             if (error) { 
                 Swal.fire('เกิดข้อผิดพลาด', error.message, 'error'); 
