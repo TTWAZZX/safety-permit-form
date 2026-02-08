@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ขออนุญาตสวมรองเท้าแตะ 🩴</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body { font-family: 'Sarabun', sans-serif; background-color: #fef2f2; }
+        .form-card { max-width: 500px; margin: 20px auto; padding: 25px; background: white; border-radius: 16px; border-top: 5px solid #ef4444; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .btn-submit { background-color: #ef4444; color: white; width: 100%; border-radius: 50px; padding: 12px; border: none; font-weight: bold; }
+        .required { color: red; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="form-card">
+        <h4 class="text-center fw-bold text-danger mb-3">🩴 ใบขออนุญาตสวมรองเท้าแตะ</h4>
+        <form id="slipperForm">
+            <input type="hidden" id="userId"><input type="hidden" id="lineName">
+            
+            <div class="mb-3"><label class="form-label">ชื่อ-นามสกุล <span class="required">*</span></label><input type="text" id="fullname" class="form-control" required></div>
+            <div class="mb-3"><label class="form-label">รหัสพนักงาน <span class="required">*</span></label><input type="text" id="empId" class="form-control" required></div>
+            <div class="mb-3"><label class="form-label">แผนก <span class="required">*</span></label><input type="text" id="section" class="form-control" required></div>
+            
+            <div class="mb-3">
+                <label class="form-label">หมายเลขบัตรที่ต้องการเบิก <span class="required">*</span></label>
+                <select id="cardNo" class="form-select" required>
+                    <option value="" selected disabled>-- เลือกหมายเลขบัตร --</option>
+                    <script>for(let i=1; i<=20; i++) document.write(`<option value="No.${i}">Slipper Card No.${i}</option>`);</script>
+                </select>
+            </div>
+
+            <div class="mb-3"><label class="form-label">วันที่ขออนุญาต <span class="required">*</span></label><input type="date" id="requestDate" class="form-control" required></div>
+            <div class="mb-4"><label class="form-label">สาเหตุ <span class="required">*</span></label><textarea id="reason" class="form-control" rows="2" required></textarea></div>
+
+            <button type="submit" id="btnSubmit" class="btn-submit">🚀 ยืนยันคำขอ</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    // ⚠️ แก้ไข KEY ตรงนี้ ⚠️
+    const SUPABASE_URL = 'https://YOUR_PROJECT.supabase.co';
+    const SUPABASE_KEY = 'YOUR_ANON_KEY';
+    const LIFF_ID = 'YOUR_LIFF_ID'; // เดี๋ยวเอามาใส่ Step 3
+
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    window.onload = async () => {
+        document.getElementById('requestDate').valueAsDate = new Date();
+        await liff.init({ liffId: LIFF_ID });
+        if (!liff.isLoggedIn()) liff.login();
+        else {
+            const profile = await liff.getProfile();
+            document.getElementById('userId').value = profile.userId;
+            document.getElementById('lineName').value = profile.displayName;
+        }
+    };
+
+    document.getElementById('slipperForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('btnSubmit');
+        btn.innerHTML = '⏳ กำลังส่ง...'; btn.disabled = true;
+
+        const { data, error } = await supabase.from('slipper_requests').insert([{
+            user_id: document.getElementById('userId').value,
+            fullname: document.getElementById('fullname').value,
+            emp_id: document.getElementById('empId').value,
+            section: document.getElementById('section').value,
+            card_no: document.getElementById('cardNo').value,
+            reason: document.getElementById('reason').value,
+            request_date: document.getElementById('requestDate').value,
+            status: 'Pending'
+        }]).select();
+
+        if (error) { Swal.fire('Error', error.message, 'error'); btn.disabled = false; }
+        else {
+            // ส่งข้อความลับไปกระตุ้นบอท
+            liff.sendMessages([{ type: 'text', text: `REQ_SLIPPER_ID:${data[0].id}` }])
+                .then(() => liff.closeWindow())
+                .catch(() => Swal.fire('สำเร็จ', 'บันทึกแล้ว โปรดปิดหน้าต่าง', 'success'));
+        }
+    });
+</script>
+</body>
+</html>
