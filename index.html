@@ -33,10 +33,7 @@
             padding-bottom: calc(40px + env(safe-area-inset-bottom));
         }
 
-        .container {
-            max-width: 500px;
-            padding: 0 15px;
-        }
+        .container { max-width: 500px; padding: 0 15px; }
 
         .premium-card {
             margin-top: 20px;
@@ -51,23 +48,23 @@
         }
 
         .premium-card::before {
-            content: "";
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 6px;
+            content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 6px;
             background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
         }
 
         .header-section { text-align: center; margin-bottom: 25px; }
-        .header-icon { 
-            width: 70px; height: 70px; 
-            background: #eff6ff; 
-            color: var(--primary-color);
-            border-radius: 50%; 
-            display: flex; align-items: center; justify-content: center;
-            font-size: 32px; margin: 0 auto 15px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-        }
         .header-title { font-weight: 800; color: #1e293b; font-size: 1.4rem; letter-spacing: -0.5px; }
+
+        /* Profile Section Styles */
+        .profile-area {
+            text-align: center; margin-bottom: 20px;
+        }
+        .profile-img {
+            width: 80px; height: 80px; border-radius: 50%; object-fit: cover;
+            border: 4px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            margin-bottom: 10px;
+        }
+        .profile-name { font-weight: 700; color: #1e3a8a; font-size: 1.1rem; }
 
         .form-label { 
             font-weight: 600; font-size: 0.9rem; margin-bottom: 8px; 
@@ -76,37 +73,27 @@
         .form-label i { color: var(--accent-color); }
 
         .form-control, .form-select, .ts-control {
-            border-radius: 12px;
-            border: 1px solid #e2e8f0;
-            padding: 12px;
-            font-size: 1rem;
-            transition: all 0.2s;
+            border-radius: 12px; border: 1px solid #e2e8f0; padding: 12px; font-size: 1rem; transition: all 0.2s;
         }
-
         .form-control:focus, .form-select:focus, .ts-wrapper.focus .ts-control {
-            border-color: var(--accent-color);
-            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
-            outline: none;
+            border-color: var(--accent-color); box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); outline: none;
         }
 
+        /* Checkbox & Radio Styles */
         .btn-check:checked + .btn-outline-primary {
-            background-color: var(--primary-color);
-            border-color: var(--primary-color);
-            box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3);
+            background-color: var(--primary-color); border-color: var(--primary-color); box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3);
         }
-        .btn-outline-primary, .btn-outline-danger {
-            border-radius: 12px;
-            padding: 10px;
-            font-weight: 600;
-        }
+        .btn-outline-primary, .btn-outline-danger { border-radius: 12px; padding: 10px; font-weight: 600; }
+
+        /* Custom Switch for Name Selection */
+        .form-check-input:checked { background-color: var(--primary-color); border-color: var(--primary-color); }
 
         .btn-submit { 
             background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
             color: white; width: 100%; border-radius: 16px; padding: 16px; 
             border: none; font-weight: 700; font-size: 1.1rem; margin-top: 15px;
             box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
-            transition: transform 0.1s;
-            margin-bottom: env(safe-area-inset-bottom);
+            transition: transform 0.1s; margin-bottom: env(safe-area-inset-bottom);
         }
         .btn-submit:active { transform: scale(0.98); }
 
@@ -122,29 +109,42 @@
 <div class="container">
     <div class="premium-card">
         <div class="header-section">
-            <div class="header-icon"><i class="bi bi-shield-check"></i></div>
-            <h4 class="header-title">ขออนุญาตสวมรองเท้าแตะ</h4>
-            <p class="text-muted small">ระบบบันทึกข้อมูลความปลอดภัย TSH</p>
+            <div class="profile-area">
+                <img id="profileImage" src="https://cdn-icons-png.flaticon.com/512/847/847969.png" class="profile-img" alt="Profile">
+                <div class="mt-2">
+                    <h4 class="header-title">ขออนุญาตสวมรองเท้าแตะ</h4>
+                    <p class="text-muted small mb-0">TSH Safety Management System</p>
+                </div>
+            </div>
         </div>
 
         <div class="alert alert-warning border-0 shadow-sm rounded-3 mb-4 d-flex align-items-center" style="background-color: #fffbeb; color: #b45309;">
             <i class="bi bi-info-circle-fill me-2 fs-5"></i>
             <div class="small lh-sm">
-                <strong>ข้อควรระวัง:</strong> บัตรอนุญาตคืนวันต่อวัน <br>กรณีเกิน 5 วันต้องมีใบรับรองแพทย์
+                <strong>กฎระเบียบ:</strong> บัตรอนุญาตคืนวันต่อวัน <br>กรณีเกิน 5 วันต้องมีใบรับรองแพทย์
             </div>
         </div>
 
         <form id="slipperForm">
-            <input type="hidden" id="userId"><input type="hidden" id="lineName">
+            <input type="hidden" id="userId">
+            <input type="hidden" id="lineDisplayName"> 
 
             <div class="mb-3">
                 <label class="form-label"><i class="bi bi-person-badge"></i> ชื่อ-นามสกุล <span class="text-danger">*</span></label>
-                <input type="text" id="fullname" class="form-control bg-light" readonly placeholder="กำลังโหลดข้อมูล...">
+                
+                <div class="d-flex align-items-center mb-2">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="useLineName" checked onchange="toggleNameInput()">
+                        <label class="form-check-label small text-muted" for="useLineName">ใช้ชื่อจาก LINE</label>
+                    </div>
+                </div>
+
+                <input type="text" id="fullname" class="form-control bg-light" readonly placeholder="กำลังโหลด..." required>
             </div>
 
             <div class="mb-3">
                 <label class="form-label"><i class="bi bi-upc-scan"></i> รหัสพนักงาน <span class="text-danger">*</span></label>
-                <input type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="6" id="empId" class="form-control" placeholder="กรอกรหัส 6 หลัก (ตัวเลข)" required>
+                <input type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="6" id="empId" class="form-control" placeholder="รหัส 6 หลัก (ตัวเลข)" required>
             </div>
 
             <div class="mb-3">
@@ -255,42 +255,53 @@ function toggleInput(selectId, areaId) {
     const select = document.getElementById(selectId);
     const area = document.getElementById(areaId);
     const input = area.querySelector('input, textarea');
-    const val = select.value;
-
-    if (val === 'OTHER') {
-        area.style.display = 'block';
-        input.required = true;
-        setTimeout(() => input.focus(), 100);
+    if (select.value === 'OTHER') {
+        area.style.display = 'block'; input.required = true; setTimeout(() => input.focus(), 100);
     } else {
-        area.style.display = 'none';
-        input.required = false;
-        input.value = '';
+        area.style.display = 'none'; input.required = false; input.value = '';
+    }
+}
+
+// 🌟 FEATURE: Toggle Name Input (Switch ระหว่างชื่อไลน์/พิมพ์เอง)
+function toggleNameInput() {
+    const isChecked = document.getElementById('useLineName').checked;
+    const nameInput = document.getElementById('fullname');
+    const lineName = document.getElementById('lineDisplayName').value;
+
+    if (isChecked) {
+        nameInput.value = lineName;
+        nameInput.readOnly = true;
+        nameInput.classList.add('bg-light');
+    } else {
+        nameInput.value = ''; // ล้างค่าให้พิมพ์เอง
+        nameInput.readOnly = false;
+        nameInput.classList.remove('bg-light');
+        nameInput.focus();
     }
 }
 
 // ================= INITIALIZATION =================
 window.onload = async () => {
-    // 1. ตั้งค่าวันที่ (ห้ามเลือกย้อนหลัง)
+    // 1. Setup Date
     const today = new Date().toISOString().split('T')[0];
     const dateInput = document.getElementById('requestDate');
     dateInput.value = today;
     dateInput.min = today;
 
-    // 2. เริ่มต้น Tom Select (Dropdown ค้นหาได้)
+    // 2. Setup Tom Select
     sectionSelect = new TomSelect("#section", {
         create: false,
         sortField: { field: "text", direction: "asc" },
         onChange: function(value) { toggleInput('section', 'otherSectionArea'); }
     });
 
-    // 🌟 FEATURE: Auto-Fill (ดึงข้อมูลเก่าที่เคยกรอก)
+    // 3. Auto-Fill Data
     const savedEmpId = localStorage.getItem('saved_empId');
     const savedSection = localStorage.getItem('saved_section');
-    
     if (savedEmpId) document.getElementById('empId').value = savedEmpId;
     if (savedSection) sectionSelect.setValue(savedSection);
 
-    // 3. เริ่มต้น LIFF
+    // 4. Init LIFF & Profile
     try {
         await liff.init({ liffId: LIFF_ID });
         if (!liff.isLoggedIn()) {
@@ -298,37 +309,41 @@ window.onload = async () => {
             return;
         }
         const profile = await liff.getProfile();
+        
+        // Set Values
         document.getElementById('userId').value = profile.userId;
-        const nameInput = document.getElementById('fullname');
-        nameInput.value = profile.displayName;
-        nameInput.classList.remove('bg-light');
+        document.getElementById('lineDisplayName').value = profile.displayName; // เก็บค่าจริงไว้
+        document.getElementById('fullname').value = profile.displayName; // แสดงค่าเริ่มต้น
+        document.getElementById('fullname').classList.remove('bg-light'); // ปลดล็อก UI โหลดเสร็จ
+
+        // 🌟 FEATURE: แสดงรูปโปรไฟล์
+        if (profile.pictureUrl) {
+            document.getElementById('profileImage').src = profile.pictureUrl;
+        }
+
     } catch (err) {
-        console.error('LIFF Init Error:', err);
+        console.error('LIFF Error:', err);
     }
 };
 
 // ================= SUBMIT HANDLER =================
 document.getElementById('slipperForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-
-    // 🌟 FEATURE: สั่นตอบสนอง (Android)
     if (navigator.vibrate) navigator.vibrate(50);
-
     if (!authReady) {
         const ok = await ensureAuth();
         if (!ok) return;
     }
 
-    // เตรียมข้อมูล
+    // Data Preparation
     let section = document.getElementById('section').value;
     if (section === 'OTHER') section = document.getElementById('otherSection').value;
-
     let reason = document.getElementById('reasonSelect').value;
     if (reason === 'OTHER') reason = document.getElementById('otherReason').value;
 
     const formData = {
         line_user_id: document.getElementById('userId').value,
-        fullname: document.getElementById('fullname').value,
+        fullname: document.getElementById('fullname').value, // ค่านี้จะเป็นค่าที่ User เลือก (Line หรือ พิมพ์เอง)
         emp_id: document.getElementById('empId').value,
         section,
         card_no: document.getElementById('cardNo').value,
@@ -338,7 +353,6 @@ document.getElementById('slipperForm').addEventListener('submit', async (e) => {
         status: 'Pending'
     };
 
-    // Confirm Dialog (ใช้ SweetAlert แบบพรีเมียม)
     const confirm = await Swal.fire({
         title: 'ยืนยันข้อมูล',
         html: `
@@ -361,48 +375,34 @@ document.getElementById('slipperForm').addEventListener('submit', async (e) => {
 
     if (!confirm.isConfirmed) return;
 
-    // Loading State
     const btn = document.getElementById('btnSubmit');
     const originalText = btn.innerHTML;
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> กำลังบันทึก...';
 
     try {
-        // 1. บันทึก Supabase
         const { error } = await db.from('slipper_requests').insert([formData])
         if (error) throw error
 
-        // 🌟 FEATURE: จำข้อมูลไว้ใช้ครั้งหน้า
         localStorage.setItem('saved_empId', formData.emp_id);
         localStorage.setItem('saved_section', formData.section);
 
-        // 🌟 FEATURE: ส่งข้อความยืนยันเข้าแชท (ถ้าเปิดสิทธิ์)
         if (liff.isInClient()) {
             try {
                 await liff.sendMessages([{
                     type: 'text',
                     text: `📝 ส่งคำขออนุญาตเรียบร้อยครับ\n(รหัส: ${formData.emp_id} / ${formData.section})`
                 }]);
-            } catch (msgErr) {
-                console.log('Send msg failed (Permission disabled):', msgErr);
-            }
+            } catch (msgErr) { console.log('Send msg failed:', msgErr); }
         }
 
-        // Success Alert
         await Swal.fire({
-            icon: 'success',
-            title: 'เรียบร้อย!',
-            text: 'ส่งคำขอแล้ว กรุณารอผลอนุมัติ',
-            timer: 2000,
-            showConfirmButton: false
+            icon: 'success', title: 'เรียบร้อย!', text: 'ส่งคำขอแล้ว กรุณารอผลอนุมัติ',
+            timer: 2000, showConfirmButton: false
         });
 
-        // 🌟 FEATURE: ปิดหน้าจออัตโนมัติ
-        if (liff.isInClient()) {
-            liff.closeWindow();
-        } else {
-            window.location.reload();
-        }
+        if (liff.isInClient()) liff.closeWindow();
+        else window.location.reload();
 
     } catch (err) {
         Swal.fire('บันทึกไม่สำเร็จ', err.message, 'error');
