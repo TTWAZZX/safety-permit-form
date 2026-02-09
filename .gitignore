@@ -1,0 +1,11 @@
+# Supabase
+.supabase
+supabase/.temp
+
+# Env
+.env
+.env.*
+
+# OS
+.DS_Store
+Thumbs.db
