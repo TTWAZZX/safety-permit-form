@@ -2,87 +2,119 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Slipper Permit - TSH Safety</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
     
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
 
     <style>
         :root {
-            --safety-blue: #1e3a8a;
-            --safety-red: #dc2626;
-            --safety-bg: #f8fafc;
+            --primary-color: #1e3a8a;
+            --accent-color: #3b82f6;
+            --bg-color: #f1f5f9;
         }
 
         body { 
             font-family: 'Sarabun', sans-serif; 
-            background-color: var(--safety-bg); 
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-size: 20px 20px;
             color: #334155;
-            padding-bottom: 30px;
+            min-height: 100vh;
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: calc(40px + env(safe-area-inset-bottom));
+        }
+
+        .container {
+            max-width: 500px;
+            padding: 0 15px;
         }
 
         .premium-card {
-            max-width: 500px;
-            margin: 20px auto;
-            background: #ffffff;
-            border-radius: 20px;
-            padding: 25px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            border-top: 6px solid var(--safety-blue);
+            margin-top: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            padding: 30px 25px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.8);
         }
 
-        .header-section { text-align: center; margin-bottom: 20px; }
-        .header-icon { font-size: 35px; color: var(--safety-red); margin-bottom: 5px; }
-        .header-title { font-weight: 700; color: var(--safety-blue); font-size: 1.25rem; }
-
-        .form-label { font-weight: 600; font-size: 0.85rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; color: #475569; }
-        .form-label i { color: var(--safety-blue); font-size: 1rem; }
-
-        .form-control, .form-select {
-            border-radius: 10px;
-            padding: 10px 12px;
-            border: 1px solid #cbd5e1;
-            font-size: 0.95rem;
-            background-color: #fcfdfe;
+        .premium-card::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 6px;
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
         }
 
-        .other-input { display: none; margin-top: 10px; animation: fadeIn 0.3s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .header-section { text-align: center; margin-bottom: 25px; }
+        .header-icon { 
+            width: 70px; height: 70px; 
+            background: #eff6ff; 
+            color: var(--primary-color);
+            border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center;
+            font-size: 32px; margin: 0 auto 15px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+        .header-title { font-weight: 800; color: #1e293b; font-size: 1.4rem; letter-spacing: -0.5px; }
+
+        .form-label { 
+            font-weight: 600; font-size: 0.9rem; margin-bottom: 8px; 
+            color: #475569; display: flex; align-items: center; gap: 8px;
+        }
+        .form-label i { color: var(--accent-color); }
+
+        .form-control, .form-select, .ts-control {
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            padding: 12px;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        .form-control:focus, .form-select:focus, .ts-wrapper.focus .ts-control {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+            outline: none;
+        }
+
+        .btn-check:checked + .btn-outline-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3);
+        }
+        .btn-outline-primary, .btn-outline-danger {
+            border-radius: 12px;
+            padding: 10px;
+            font-weight: 600;
+        }
 
         .btn-submit { 
-            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
-            color: white; width: 100%; border-radius: 12px; padding: 14px; 
-            border: none; font-weight: 700; margin-top: 10px;
-            box-shadow: 0 4px 6px rgba(30, 58, 138, 0.2);
+            background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+            color: white; width: 100%; border-radius: 16px; padding: 16px; 
+            border: none; font-weight: 700; font-size: 1.1rem; margin-top: 15px;
+            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
+            transition: transform 0.1s;
+            margin-bottom: env(safe-area-inset-bottom);
         }
-        
-        .alert-premium {
-            background-color: #fffbeb; border-left: 4px solid #f59e0b;
-            color: #92400e; padding: 12px; border-radius: 8px; font-size: 0.8rem; margin-bottom: 20px;
-        }
+        .btn-submit:active { transform: scale(0.98); }
 
-        /* เพิ่มเอฟเฟกต์ตอนกดปุ่มให้ดูเด้งๆ เหมือนแอปมือถือจริง */
-        .btn-submit:active {
-            transform: scale(0.96);
-            filter: brightness(0.9);
-        }
+        .other-input { display: none; margin-top: 10px; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* ปรับให้ Dropdown ดูพรีเมียมขึ้น */
-        .form-select {
-            cursor: pointer;
-            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%231e3a8a' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
-        }
-
-        /* ปรับช่อง Input ให้ใหญ่ขึ้นนิดนึงสำหรับนิ้วพนักงานที่อาจจะใส่ถุงมือหรือนิ้วใหญ่ */
-        .form-control {
-            height: 48px;
-        }
+        .ts-wrapper .ts-control { border-radius: 12px; padding: 12px; }
+        .ts-dropdown { border-radius: 12px; margin-top: 5px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
     </style>
 </head>
 <body>
@@ -90,33 +122,35 @@
 <div class="container">
     <div class="premium-card">
         <div class="header-section">
-            <div class="header-icon"><i class="bi bi-shield-lock-fill"></i></div>
-            <h4 class="header-title">ใบขออนุญาตสวมรองเท้าแตะ</h4>
-            <p class="text-muted small">TSH Safety Management System</p>
+            <div class="header-icon"><i class="bi bi-shield-check"></i></div>
+            <h4 class="header-title">ขออนุญาตสวมรองเท้าแตะ</h4>
+            <p class="text-muted small">ระบบบันทึกข้อมูลความปลอดภัย TSH</p>
         </div>
 
-        <div class="alert-premium">
-            <i class="bi bi-exclamation-triangle-fill me-1"></i> 
-            <b>กฎระเบียบ:</b> บัตรอนุญาตคืนวันต่อวัน กรณีเกิน 5 วันต้องมีใบรับรองแพทย์
+        <div class="alert alert-warning border-0 shadow-sm rounded-3 mb-4 d-flex align-items-center" style="background-color: #fffbeb; color: #b45309;">
+            <i class="bi bi-info-circle-fill me-2 fs-5"></i>
+            <div class="small lh-sm">
+                <strong>ข้อควรระวัง:</strong> บัตรอนุญาตคืนวันต่อวัน <br>กรณีเกิน 5 วันต้องมีใบรับรองแพทย์
+            </div>
         </div>
 
         <form id="slipperForm">
             <input type="hidden" id="userId"><input type="hidden" id="lineName">
 
             <div class="mb-3">
-                <label class="form-label"><i class="bi bi-person-fill"></i> ชื่อ-นามสกุล <span class="text-danger">*</span></label>
-                <input type="text" id="fullname" class="form-control" placeholder="ระบุชื่อ-นามสกุล" required>
+                <label class="form-label"><i class="bi bi-person-badge"></i> ชื่อ-นามสกุล <span class="text-danger">*</span></label>
+                <input type="text" id="fullname" class="form-control bg-light" readonly placeholder="กำลังโหลดข้อมูล...">
             </div>
 
             <div class="mb-3">
-                <label class="form-label"><i class="bi bi-card-text"></i> รหัสพนักงาน <span class="text-danger">*</span></label>
-                <input type="text" id="empId" class="form-control" placeholder="ระบุรหัส 6 หลัก" required>
+                <label class="form-label"><i class="bi bi-upc-scan"></i> รหัสพนักงาน <span class="text-danger">*</span></label>
+                <input type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="6" id="empId" class="form-control" placeholder="กรอกรหัส 6 หลัก (ตัวเลข)" required>
             </div>
 
             <div class="mb-3">
-                <label class="form-label"><i class="bi bi-building-fill"></i> ส่วนงาน (Section) <span class="text-danger">*</span></label>
-                <select id="section" class="form-select" onchange="toggleInput('section', 'otherSectionArea')" required>
-                    <option value="" selected disabled>-- เลือกส่วนงาน --</option>
+                <label class="form-label"><i class="bi bi-buildings"></i> ส่วนงาน (ค้นหาได้) <span class="text-danger">*</span></label>
+                <select id="section" required placeholder="พิมพ์เพื่อค้นหาส่วนงาน...">
+                    <option value="">เลือกส่วนงาน...</option>
                     <option value="ACCOUNTING SEC.">ACCOUNTING SEC.</option>
                     <option value="COSTING & FIX ASSET SEC.">COSTING & FIX ASSET SEC.</option>
                     <option value="CUSTOMER SERVICE SEC.">CUSTOMER SERVICE SEC.</option>
@@ -141,7 +175,7 @@
                     <option value="OTHER">อื่นๆ (โปรดระบุ)</option>
                 </select>
                 <div id="otherSectionArea" class="other-input">
-                    <input type="text" id="otherSection" class="form-control" placeholder="ระบุชื่อส่วนงานของท่าน">
+                    <input type="text" id="otherSection" class="form-control mt-2" placeholder="ระบุชื่อส่วนงานของท่าน">
                 </div>
             </div>
 
@@ -154,23 +188,23 @@
                     </select>
                 </div>
                 <div class="col-6 mb-3">
-                    <label class="form-label"><i class="bi bi-calendar-event-fill"></i> วันที่ขอ <span class="text-danger">*</span></label>
+                    <label class="form-label"><i class="bi bi-calendar4-week"></i> วันที่ขอ <span class="text-danger">*</span></label>
                     <input type="date" id="requestDate" class="form-control" required>
                 </div>
             </div>
 
             <div class="mb-3">
-                <label class="form-label"><i class="bi bi-geo-alt-fill"></i> ประเภทการขออนุญาต</label>
+                <label class="form-label"><i class="bi bi-arrow-left-right"></i> ประเภทการขอ</label>
                 <div class="d-flex gap-2">
                     <input type="radio" class="btn-check" name="accessType" id="typeIn" value="เข้าบริษัทฯ" checked>
-                    <label class="btn btn-outline-primary w-50" for="typeIn">เข้าบริษัทฯ</label>
+                    <label class="btn btn-outline-primary w-50" for="typeIn"><i class="bi bi-box-arrow-in-right me-1"></i> เข้าบริษัทฯ</label>
                     <input type="radio" class="btn-check" name="accessType" id="typeOut" value="ออกจากบริษัทฯ">
-                    <label class="btn btn-outline-danger w-50" for="typeOut">ออกจากบริษัทฯ</label>
+                    <label class="btn btn-outline-danger w-50" for="typeOut"><i class="bi bi-box-arrow-left me-1"></i> ออกจากบริษัทฯ</label>
                 </div>
             </div>
 
             <div class="mb-4">
-                <label class="form-label"><i class="bi bi-patch-exclamation-fill"></i> สาเหตุที่ขออนุญาต <span class="text-danger">*</span></label>
+                <label class="form-label"><i class="bi bi-clipboard-pulse"></i> สาเหตุ <span class="text-danger">*</span></label>
                 <select id="reasonSelect" class="form-select" onchange="toggleInput('reasonSelect', 'otherReasonArea')" required>
                     <option value="" selected disabled>-- เลือกสาเหตุ --</option>
                     <option value="รองเท้ากัด / เป็นแผลบริเวณเท้า">รองเท้ากัด / เป็นแผลบริเวณเท้า</option>
@@ -180,27 +214,28 @@
                     <option value="OTHER">อื่นๆ (โปรดระบุสาเหตุ)</option>
                 </select>
                 <div id="otherReasonArea" class="other-input">
-                    <textarea id="otherReason" class="form-control" rows="2" placeholder="ระบุรายละเอียดสาเหตุ..."></textarea>
+                    <textarea id="otherReason" class="form-control mt-2" rows="2" placeholder="ระบุรายละเอียดสาเหตุ..."></textarea>
                 </div>
             </div>
 
             <button type="submit" id="btnSubmit" class="btn-submit">
-                <i class="bi bi-send-check-fill me-2"></i> ส่งคำขออนุมัติ
+                ส่งคำขออนุมัติ <i class="bi bi-send-fill ms-2"></i>
             </button>
         </form>
     </div>
 </div>
 
 <script>
+// CONFIG
 const SUPABASE_URL = 'https://dqsfioiqwxuxpucwwhsv.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxc2Zpb2lxd3h1eHB1Y3d3aHN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1OTk1NjUsImV4cCI6MjA4NDE3NTU2NX0.L_u0Ff3uHofxiimEs6ySFB4TPNtOWiKeSu3KFoVcA1U';
 const LIFF_ID = '2007053300-s20OjYXq';
 
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-// ================= AUTH =================
+let sectionSelect; 
 let authReady = false;
 
+// ================= AUTH =================
 async function ensureAuth() {
     const { data } = await db.auth.getSession();
     if (!data.session) {
@@ -213,18 +248,19 @@ async function ensureAuth() {
     authReady = true;
     return true;
 }
-
 ensureAuth();
 
-// ================= UI =================
+// ================= UI HELPER =================
 function toggleInput(selectId, areaId) {
     const select = document.getElementById(selectId);
     const area = document.getElementById(areaId);
     const input = area.querySelector('input, textarea');
+    const val = select.value;
 
-    if (select.value === 'OTHER') {
+    if (val === 'OTHER') {
         area.style.display = 'block';
         input.required = true;
+        setTimeout(() => input.focus(), 100);
     } else {
         area.style.display = 'none';
         input.required = false;
@@ -232,31 +268,58 @@ function toggleInput(selectId, areaId) {
     }
 }
 
-// ================= LIFF =================
+// ================= INITIALIZATION =================
 window.onload = async () => {
-    document.getElementById('requestDate').valueAsDate = new Date();
+    // 1. ตั้งค่าวันที่ (ห้ามเลือกย้อนหลัง)
+    const today = new Date().toISOString().split('T')[0];
+    const dateInput = document.getElementById('requestDate');
+    dateInput.value = today;
+    dateInput.min = today;
 
-    await liff.init({ liffId: LIFF_ID });
+    // 2. เริ่มต้น Tom Select (Dropdown ค้นหาได้)
+    sectionSelect = new TomSelect("#section", {
+        create: false,
+        sortField: { field: "text", direction: "asc" },
+        onChange: function(value) { toggleInput('section', 'otherSectionArea'); }
+    });
 
-    if (!liff.isLoggedIn()) {
-        liff.login();
-        return;
+    // 🌟 FEATURE: Auto-Fill (ดึงข้อมูลเก่าที่เคยกรอก)
+    const savedEmpId = localStorage.getItem('saved_empId');
+    const savedSection = localStorage.getItem('saved_section');
+    
+    if (savedEmpId) document.getElementById('empId').value = savedEmpId;
+    if (savedSection) sectionSelect.setValue(savedSection);
+
+    // 3. เริ่มต้น LIFF
+    try {
+        await liff.init({ liffId: LIFF_ID });
+        if (!liff.isLoggedIn()) {
+            liff.login();
+            return;
+        }
+        const profile = await liff.getProfile();
+        document.getElementById('userId').value = profile.userId;
+        const nameInput = document.getElementById('fullname');
+        nameInput.value = profile.displayName;
+        nameInput.classList.remove('bg-light');
+    } catch (err) {
+        console.error('LIFF Init Error:', err);
     }
-
-    const profile = await liff.getProfile();
-    document.getElementById('userId').value = profile.userId;
-    document.getElementById('fullname').value = profile.displayName;
 };
 
-// ================= SUBMIT =================
+// ================= SUBMIT HANDLER =================
 document.getElementById('slipperForm').addEventListener('submit', async (e) => {
     e.preventDefault();
+
+    // 🌟 FEATURE: สั่นตอบสนอง (Android)
+    if (navigator.vibrate) navigator.vibrate(50);
 
     if (!authReady) {
         const ok = await ensureAuth();
         if (!ok) return;
     }
 
+    // เตรียมข้อมูล
     let section = document.getElementById('section').value;
     if (section === 'OTHER') section = document.getElementById('otherSection').value;
 
@@ -275,48 +338,77 @@ document.getElementById('slipperForm').addEventListener('submit', async (e) => {
         status: 'Pending'
     };
 
-    // 🔍 CONFIRM BEFORE SAVE
+    // Confirm Dialog (ใช้ SweetAlert แบบพรีเมียม)
     const confirm = await Swal.fire({
         title: 'ยืนยันข้อมูล',
         html: `
-            <div style="text-align:left;font-size:0.9rem">
-                <b>ชื่อ:</b> ${formData.fullname}<br>
-                <b>รหัส:</b> ${formData.emp_id}<br>
-                <b>ส่วนงาน:</b> ${formData.section}<br>
-                <b>บัตร:</b> ${formData.card_no}<br>
-                <b>สาเหตุ:</b> ${formData.reason}
+            <div class="text-start fs-6 p-3 bg-light rounded border">
+                <div class="mb-1"><small class="text-muted">ชื่อ:</small> <strong>${formData.fullname}</strong></div>
+                <div class="mb-1"><small class="text-muted">รหัส:</small> <strong>${formData.emp_id}</strong></div>
+                <div class="mb-1"><small class="text-muted">แผนก:</small> <strong>${formData.section}</strong></div>
+                <div class="mb-1"><small class="text-muted">บัตร:</small> <span class="badge bg-primary rounded-pill">${formData.card_no}</span></div>
+                <div class="mb-0"><small class="text-muted">สาเหตุ:</small> ${formData.reason}</div>
             </div>
         `,
         icon: 'question',
         showCancelButton: true,
         confirmButtonText: 'ยืนยันส่ง',
-        cancelButtonText: 'แก้ไข'
+        cancelButtonText: 'แก้ไข',
+        confirmButtonColor: '#1e3a8a',
+        cancelButtonColor: '#64748b',
+        reverseButtons: true
     });
 
     if (!confirm.isConfirmed) return;
 
+    // Loading State
     const btn = document.getElementById('btnSubmit');
+    const originalText = btn.innerHTML;
     btn.disabled = true;
-    btn.innerHTML = '⏳ กำลังบันทึก...';
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> กำลังบันทึก...';
 
     try {
+        // 1. บันทึก Supabase
         const { error } = await db.from('slipper_requests').insert([formData])
         if (error) throw error
 
+        // 🌟 FEATURE: จำข้อมูลไว้ใช้ครั้งหน้า
+        localStorage.setItem('saved_empId', formData.emp_id);
+        localStorage.setItem('saved_section', formData.section);
+
+        // 🌟 FEATURE: ส่งข้อความยืนยันเข้าแชท (ถ้าเปิดสิทธิ์)
+        if (liff.isInClient()) {
+            try {
+                await liff.sendMessages([{
+                    type: 'text',
+                    text: `📝 ส่งคำขออนุญาตเรียบร้อยครับ\n(รหัส: ${formData.emp_id} / ${formData.section})`
+                }]);
+            } catch (msgErr) {
+                console.log('Send msg failed (Permission disabled):', msgErr);
+            }
+        }
+
+        // Success Alert
         await Swal.fire({
             icon: 'success',
-            title: 'สำเร็จ',
-            text: 'ส่งคำขอเรียบร้อยแล้ว',
-            timer: 1500,
+            title: 'เรียบร้อย!',
+            text: 'ส่งคำขอแล้ว กรุณารอผลอนุมัติ',
+            timer: 2000,
             showConfirmButton: false
-        })
+        });
 
-        } catch (err) {
-        Swal.fire('บันทึกไม่สำเร็จ', err.message, 'error')
-        } finally {
-        btn.disabled = false
-        btn.innerHTML = '<i class="bi bi-send-check-fill me-2"></i> ส่งคำขออนุมัติ'
+        // 🌟 FEATURE: ปิดหน้าจออัตโนมัติ
+        if (liff.isInClient()) {
+            liff.closeWindow();
+        } else {
+            window.location.reload();
         }
+
+    } catch (err) {
+        Swal.fire('บันทึกไม่สำเร็จ', err.message, 'error');
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    }
 });
 </script>
 </body>
