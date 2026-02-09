@@ -300,31 +300,23 @@ document.getElementById('slipperForm').addEventListener('submit', async (e) => {
     btn.innerHTML = '⏳ กำลังบันทึก...';
 
     try {
-        const { data, error } = await db
-            .from('slipper_requests')
-            .insert([formData])
-            .select()
-            .single();
+        const { error } = await db.from('slipper_requests').insert([formData])
+        if (error) throw error
 
-        if (error) throw error;
         await Swal.fire({
             icon: 'success',
             title: 'สำเร็จ',
             text: 'ส่งคำขอเรียบร้อยแล้ว',
             timer: 1500,
             showConfirmButton: false
-        });
+        })
 
-    } catch (err) {
-        Swal.fire(
-            'บันทึกไม่สำเร็จ',
-            `${err.code || ''} ${err.message}`,
-            'error'
-        );
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-send-check-fill me-2"></i> ส่งคำขออนุมัติ';
-    }
+        } catch (err) {
+        Swal.fire('บันทึกไม่สำเร็จ', err.message, 'error')
+        } finally {
+        btn.disabled = false
+        btn.innerHTML = '<i class="bi bi-send-check-fill me-2"></i> ส่งคำขออนุมัติ'
+        }
 });
 </script>
 </body>
