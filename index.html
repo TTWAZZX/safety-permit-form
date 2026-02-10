@@ -301,6 +301,55 @@
     </div>
 </div>
 
+<div class="modal fade" id="rulesModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="modal-header bg-primary text-white" style="border-top-left-radius: 20px; border-top-right-radius: 20px;">
+                <h5 class="modal-title fw-bold"><i class="bi bi-shield-exclamation me-2"></i>ระเบียบการขออนุญาต</h5>
+            </div>
+            <div class="modal-body p-4 bg-light">
+                <div class="alert alert-danger border-0 d-flex align-items-center mb-3">
+                    <i class="bi bi-exclamation-triangle-fill fs-1 me-3"></i>
+                    <div class="small lh-sm">
+                        <strong>คำเตือน:</strong> หากฝ่าฝืนหรือไม่ปฏิบัติตาม จะถือว่าผิดระเบียบการแต่งกาย และอาจมีบทลงโทษทางวินัย
+                    </div>
+                </div>
+
+                <h6 class="fw-bold text-dark mb-2">📌 ขั้นตอนการขออนุญาต</h6>
+                <ol class="small text-muted ps-3 mb-4">
+                    <li class="mb-1">อนุญาตให้สวมใส่เฉพาะกรณี <strong>"บาดเจ็บที่เท้า"</strong> เท่านั้น</li>
+                    <li class="mb-1">ต้องติดต่อ <strong>แลกบัตรที่ป้อม รปภ.</strong> ก่อนเข้าปฏิบัติงาน</li>
+                    <li class="mb-1">ใช้บัตรยืนยันตัวตนแลก (บัตรพนักงาน/ปชช./ใบขับขี่)</li>
+                    <li class="mb-1 text-danger fw-bold">บัตรอนุญาตต้องแลกรับ "วันต่อวัน" เท่านั้น</li>
+                    <li class="mb-1">หากขอต่อเนื่อง <strong>เกิน 5 วัน</strong> ต้องยื่นใบรับรองแพทย์</li>
+                    <li>ผู้ถือบัตร <strong>ห้ามปฏิบัติงานยกของหนัก/เข็น/ลาก</strong> หรือความเสี่ยงที่ทำให้อาการกำเริบ</li>
+                </ol>
+
+                <h6 class="fw-bold text-dark mb-2">🚫 รองเท้าที่ "ห้าม" สวมใส่</h6>
+                <div class="d-flex justify-content-center gap-3 mb-3">
+                    <div class="text-center p-2 bg-white rounded border">
+                        <i class="bi bi-x-circle-fill text-danger fs-3 d-block"></i>
+                        <span class="small text-muted">รองเท้าแตะหูคีบ</span>
+                    </div>
+                    <div class="text-center p-2 bg-white rounded border">
+                        <i class="bi bi-x-circle-fill text-danger fs-3 d-block"></i>
+                        <span class="small text-muted">รองเท้าเปิดส้น</span>
+                    </div>
+                    <div class="text-center p-2 bg-white rounded border">
+                        <i class="bi bi-x-circle-fill text-danger fs-3 d-block"></i>
+                        <span class="small text-muted">รองเท้าส้นสูง</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-center bg-white" style="border-bottom-left-radius: 20px; border-bottom-right-radius: 20px;">
+                <button type="button" class="btn btn-primary w-100 py-2 rounded-4 fw-bold shadow-sm" onclick="acceptRules()">
+                    <i class="bi bi-check-circle-fill me-2"></i>รับทราบและปฏิบัติตาม
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 // CONFIG
 const SUPABASE_URL = 'https://dqsfioiqwxuxpucwwhsv.supabase.co';
@@ -494,6 +543,10 @@ window.onload = async () => {
     if (savedEmpId) document.getElementById('empId').value = savedEmpId;
     if (savedSection) sectionSelect.setValue(savedSection);
 
+    // --- ✅ เพิ่มส่วนนี้: ตรวจสอบและแสดง Modal กฎระเบียบ ---
+    const rulesModal = new bootstrap.Modal(document.getElementById('rulesModal'));
+    rulesModal.show();
+
     try {
         await liff.init({ liffId: LIFF_ID });
         if (!liff.isLoggedIn()) {
@@ -641,6 +694,14 @@ document.getElementById('slipperForm').addEventListener('submit', async (e) => {
         btn.innerHTML = originalText;
     }
 });
+
+// ไว้ล่างสุดของ script
+function acceptRules() {
+    // ซ่อน Modal
+    const modalEl = document.getElementById('rulesModal');
+    const modal = bootstrap.Modal.getInstance(modalEl);
+    modal.hide();
+}
 </script>
 </body>
 </html>
