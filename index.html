@@ -385,8 +385,16 @@ async function loadHistory() {
             let statusClass = 'status-pending';
             let statusText = 'รออนุมัติ';
             
-            if (item.status === 'Approved') { statusClass = 'status-approved'; statusText = 'อนุมัติแล้ว'; }
-            else if (item.status === 'Rejected') { statusClass = 'status-rejected'; statusText = 'ไม่อนุมัติ'; }
+            // ของใหม่ (แก้แล้ว ✅)
+            // เช็คทั้ง Approved และ Completed ให้ถือว่าเป็น "อนุมัติแล้ว/เสร็จสิ้น" สีเขียวเหมือนกัน
+            if (item.status === 'Approved' || item.status === 'Completed') { 
+                statusClass = 'status-approved'; 
+                statusText = 'อนุมัติแล้ว'; 
+            } 
+            else if (item.status === 'Rejected') { 
+                statusClass = 'status-rejected'; 
+                statusText = 'ไม่อนุมัติ'; 
+            }
 
             const date = new Date(item.request_date).toLocaleDateString('th-TH', { 
                 year: 'numeric', month: 'short', day: 'numeric' 
