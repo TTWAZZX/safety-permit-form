@@ -306,9 +306,10 @@
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
             <div class="modal-header bg-primary text-white" style="border-top-left-radius: 20px; border-top-right-radius: 20px;">
-                <h5 class="modal-title fw-bold"><i class="bi bi-shield-exclamation me-2"></i>ระเบียบการขออนุญาต</h5>
+                <h5 class="modal-title fw-bold"><i class="bi bi-shield-exclamation me-2"></i>ระเบียบการสวมรองเท้า</h5>
             </div>
             <div class="modal-body p-4 bg-light">
+                
                 <div class="alert alert-danger border-0 d-flex align-items-center mb-3">
                     <i class="bi bi-exclamation-triangle-fill fs-1 me-3"></i>
                     <div class="small lh-sm">
@@ -326,21 +327,35 @@
                     <li>ผู้ถือบัตร <strong>ห้ามปฏิบัติงานยกของหนัก/เข็น/ลาก</strong> หรือความเสี่ยงที่ทำให้อาการกำเริบ</li>
                 </ol>
 
-                <h6 class="fw-bold text-dark mb-2">🚫 รองเท้าที่ "ห้าม" สวมใส่</h6>
-                <div class="d-flex justify-content-center gap-3 mb-3">
-                    <div class="text-center p-2 bg-white rounded border">
-                        <i class="bi bi-x-circle-fill text-danger fs-3 d-block"></i>
-                        <span class="small text-muted">รองเท้าแตะหูคีบ</span>
-                    </div>
-                    <div class="text-center p-2 bg-white rounded border">
-                        <i class="bi bi-x-circle-fill text-danger fs-3 d-block"></i>
-                        <span class="small text-muted">รองเท้าเปิดส้น</span>
-                    </div>
-                    <div class="text-center p-2 bg-white rounded border">
-                        <i class="bi bi-x-circle-fill text-danger fs-3 d-block"></i>
-                        <span class="small text-muted">รองเท้าส้นสูง</span>
+                <hr class="border-secondary opacity-25 my-4">
+
+                <div class="mb-3">
+                    <h6 class="fw-bold text-success mb-2">
+                        <i class="bi bi-check-circle-fill me-2"></i>รองเท้าที่ "อนุญาต" ให้ใส่ได้
+                    </h6>
+                    <div class="bg-white p-3 rounded border border-success border-opacity-25">
+                        <ul class="small text-muted mb-0 ps-3">
+                            <li>รองเท้าคัชชู</li>
+                            <li>รองเท้าเซฟตี้ (Safety Shoes)</li>
+                            <li>รองเท้าหุ้มส้น / รองเท้าบัดดี้</li>
+                            <li>รองเท้าที่ไม่เปิดส้นเท้าและปลายเท้า</li>
+                        </ul>
                     </div>
                 </div>
+
+                <div class="mb-2">
+                    <h6 class="fw-bold text-danger mb-2">
+                        <i class="bi bi-x-circle-fill me-2"></i>รองเท้าที่ "ต้องขออนุญาต"
+                    </h6>
+                    <div class="bg-white p-3 rounded border border-danger border-opacity-25">
+                        <ul class="small text-danger fw-bold mb-0 ps-3">
+                            <li>รองเท้าแตะ</li>
+                            <li>รองเท้าลำลอง</li>
+                            <li>รองเท้าเปิดปลายเท้า / ส้นเท้า</li>
+                        </ul>
+                    </div>
+                </div>
+
             </div>
             <div class="modal-footer justify-content-center bg-white" style="border-bottom-left-radius: 20px; border-bottom-right-radius: 20px;">
                 <button type="button" class="btn btn-primary w-100 py-2 rounded-4 fw-bold shadow-sm" onclick="acceptRules()">
