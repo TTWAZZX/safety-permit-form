@@ -6,11 +6,12 @@
     <title>Slipper Permit - TSH Safety</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -22,6 +23,9 @@
             --primary-color: #1e3a8a;
             --accent-color: #3b82f6;
             --bg-color: #f1f5f9;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
         }
 
         body { 
@@ -45,13 +49,14 @@
             padding: 30px 25px;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
             position: relative;
-            overflow: hidden;
+            overflow: visible; /* Allow smart button to overlap */
             border: 1px solid rgba(255,255,255,0.8);
         }
 
         .premium-card::before {
             content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 6px;
             background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+            border-radius: 24px 24px 0 0;
         }
 
         .header-section { text-align: center; margin-bottom: 25px; }
@@ -63,6 +68,17 @@
             border: 4px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
             margin-bottom: 10px;
         }
+
+        /* --- Smart Re-order Button --- */
+        .btn-smart-fill {
+            position: absolute; top: 20px; right: 20px;
+            background: #e0f2fe; color: var(--primary-color);
+            border: none; padding: 5px 12px; border-radius: 20px;
+            font-size: 0.75rem; font-weight: 600;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            transition: all 0.2s; z-index: 10;
+        }
+        .btn-smart-fill:active { transform: scale(0.95); }
 
         .form-label { 
             font-weight: 600; font-size: 0.9rem; margin-bottom: 8px; 
@@ -115,19 +131,53 @@
         .nav-item.active { color: var(--primary-color); font-weight: 600; }
         .nav-item.active i { transform: translateY(-3px); }
 
+        /* --- History Card Styling --- */
         .history-card {
             background: white; border-radius: 16px; padding: 15px; margin-bottom: 15px;
             border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
             transition: transform 0.2s;
+            position: relative; overflow: hidden;
+            border-left: 5px solid #ccc; /* Default Border */
         }
         .history-card:active { transform: scale(0.98); }
-        .status-badge {
-            padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;
-        }
+        
+        /* Status Color Coding */
+        .border-pending { border-left-color: var(--warning-color); }
+        .border-approved { border-left-color: var(--success-color); cursor: pointer; } /* Clickable */
+        .border-rejected { border-left-color: var(--danger-color); opacity: 0.8; }
+
+        .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
         .status-pending { background: #fffbeb; color: #d97706; }
         .status-approved { background: #dcfce7; color: #16a34a; }
         .status-rejected { background: #fee2e2; color: #dc2626; }
         
+        /* --- Skeleton Loading --- */
+        .skeleton-loader .card {
+            border: none; box-shadow: none; background: #fff; border-radius: 16px; margin-bottom: 15px; padding: 15px;
+        }
+        .placeholder-glow .placeholder { opacity: 0.2; border-radius: 4px; }
+
+        /* --- E-Ticket Modal --- */
+        #ticketModal .modal-content {
+            background: linear-gradient(145deg, #064e3b 0%, #10b981 100%);
+            color: white; border-radius: 20px; border: none;
+            text-align: center; position: relative; overflow: hidden;
+        }
+        /* Pattern Overlay */
+        #ticketModal .modal-content::before {
+            content: ""; position: absolute; top:0; left:0; width:100%; height:100%;
+            background-image: radial-gradient(rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 15px 15px; pointer-events: none;
+        }
+        .ticket-status {
+            animation: pulse 2s infinite; 
+            background: rgba(255,255,255,0.2); backdrop-filter: blur(5px);
+            border-radius: 50px; padding: 5px 15px; display: inline-block;
+            font-weight: 800; font-size: 0.9rem; letter-spacing: 1px;
+            margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.4);
+        }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+
         #view-history { display: none; }
     </style>
 </head>
@@ -136,6 +186,11 @@
 <div class="container">
     <div id="view-request">
         <div class="premium-card">
+            
+            <button type="button" class="btn-smart-fill" onclick="autoFillLastRequest()">
+                <i class="bi bi-magic me-1"></i>ใช้ข้อมูลเดิม
+            </button>
+
             <div class="header-section">
                 <div class="profile-area">
                     <img id="profileImage" src="https://cdn-icons-png.flaticon.com/512/847/847969.png" class="profile-img" alt="Profile">
@@ -281,9 +336,12 @@
             <p class="text-muted small">รายการที่เคยขอย้อนหลัง</p>
         </div>
         
-        <div id="historyLoading" class="text-center py-5">
-            <div class="spinner-border text-primary" role="status"></div>
-            <p class="mt-2 text-muted small">กำลังโหลดข้อมูล...</p>
+        <div id="historyLoading">
+            <div class="skeleton-loader">
+                <div class="card placeholder-glow"><span class="placeholder col-7 mb-2"></span><span class="placeholder col-4"></span></div>
+                <div class="card placeholder-glow"><span class="placeholder col-6 mb-2"></span><span class="placeholder col-5"></span></div>
+                <div class="card placeholder-glow"><span class="placeholder col-8 mb-2"></span><span class="placeholder col-3"></span></div>
+            </div>
         </div>
 
         <div id="historyList">
@@ -366,6 +424,48 @@
     </div>
 </div>
 
+<div class="modal fade" id="ticketModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
+        <div class="modal-content text-white shadow-lg">
+            <div class="modal-body p-4 d-flex flex-column align-items-center justify-content-center">
+                
+                <span class="ticket-status"><i class="bi bi-shield-check me-2"></i>APPROVED</span>
+                
+                <div class="bg-white p-1 rounded-circle mb-3 shadow">
+                    <img id="ticketProfile" src="https://cdn-icons-png.flaticon.com/512/847/847969.png" class="rounded-circle" width="100" height="100">
+                </div>
+                
+                <h3 id="ticketName" class="fw-bold mb-1">Name</h3>
+                <p id="ticketId" class="opacity-75 mb-4">ID: 123456</p>
+
+                <div class="bg-white bg-opacity-10 rounded-3 p-3 w-100 mb-3 text-start">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="opacity-75">วันที่:</span>
+                        <span id="ticketDate" class="fw-bold">10 Feb 2026</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="opacity-75">บัตร:</span>
+                        <span id="ticketCardNo" class="fw-bold text-warning">No.99</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="opacity-75">แผนก:</span>
+                        <span id="ticketSection" class="fw-bold text-truncate" style="max-width: 150px;">Section</span>
+                    </div>
+                </div>
+
+                <div class="mt-2 text-center opacity-50 small">
+                    TSH Safety E-Ticket System<br>
+                    (แสดงหน้านี้ต่อเจ้าหน้าที่ รปภ.)
+                </div>
+
+                <button class="btn btn-light rounded-pill px-4 fw-bold mt-4" data-bs-dismiss="modal">
+                    ปิดหน้าต่าง
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 // CONFIG
 const SUPABASE_URL = 'https://dqsfioiqwxuxpucwwhsv.supabase.co';
@@ -415,7 +515,6 @@ function toggleNameInput() {
     }
 }
 
-// 🌟 FEATURE: Tab Switching Logic
 function switchTab(tab) {
     document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
     document.getElementById(`nav-${tab}`).classList.add('active');
@@ -430,7 +529,66 @@ function switchTab(tab) {
     }
 }
 
-// 🌟 FEATURE: Fetch History
+// 🌟 FEATURE 4: Auto Fill Last Request (Smart Re-order)
+async function autoFillLastRequest() {
+    const userId = document.getElementById('userId').value;
+    if(!userId) return Swal.fire('ไม่พบข้อมูลผู้ใช้', 'กรุณาลองใหม่อีกครั้ง', 'error');
+
+    const btn = document.querySelector('.btn-smart-fill');
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+    
+    try {
+        const { data, error } = await db.from('slipper_requests')
+            .select('*')
+            .eq('line_user_id', userId)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+
+        if (error || !data) throw new Error('ไม่พบประวัติเดิม');
+
+        // Fill Data
+        document.getElementById('empId').value = data.emp_id;
+        document.getElementById('cardNo').value = data.card_no;
+        
+        // Handle Section (TomSelect)
+        if (sectionSelect) {
+            sectionSelect.setValue(data.section);
+            if (!sectionSelect.getItem(data.section)) {
+                // If section was custom ("OTHER")
+                sectionSelect.setValue("OTHER");
+                document.getElementById('otherSection').value = data.section;
+                toggleInput('section', 'otherSectionArea');
+            }
+        }
+
+        // Handle Reason
+        const reasonSelect = document.getElementById('reasonSelect');
+        // Check if reason is in options
+        let found = false;
+        for(let i=0; i<reasonSelect.options.length; i++){
+            if(reasonSelect.options[i].value === data.reason) found = true;
+        }
+        if(found) {
+            reasonSelect.value = data.reason;
+            toggleInput('reasonSelect', 'otherReasonArea');
+        } else {
+            reasonSelect.value = "OTHER";
+            toggleInput('reasonSelect', 'otherReasonArea');
+            document.getElementById('otherReason').value = data.reason;
+        }
+
+        const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
+        Toast.fire({ icon: 'success', title: 'ดึงข้อมูลล่าสุดแล้ว' });
+
+    } catch (err) {
+        Swal.fire('ไม่พบประวัติ', 'คุณยังไม่เคยส่งคำขอมาก่อน', 'info');
+    } finally {
+        btn.innerHTML = '<i class="bi bi-magic me-1"></i>ใช้ข้อมูลเดิม';
+    }
+}
+
+// 🌟 FEATURE 3 & 4: Load History with Skeleton & E-Ticket & Color Coding
 async function loadHistory() {
     const userId = document.getElementById('userId').value;
     if (!userId) return;
@@ -439,7 +597,7 @@ async function loadHistory() {
     const loadingDiv = document.getElementById('historyLoading');
     
     listDiv.innerHTML = '';
-    loadingDiv.style.display = 'block';
+    loadingDiv.style.display = 'block'; // Show Skeleton
 
     try {
         const { data, error } = await db
@@ -464,14 +622,19 @@ async function loadHistory() {
 
         data.forEach(item => {
             let statusClass = 'status-pending';
+            let borderClass = 'border-pending';
             let statusText = 'รออนุมัติ';
+            let isApproved = false;
             
             if (item.status === 'Approved' || item.status === 'Completed') { 
                 statusClass = 'status-approved'; 
-                statusText = 'อนุมัติแล้ว'; 
+                borderClass = 'border-approved';
+                statusText = 'อนุมัติแล้ว';
+                isApproved = true;
             } 
             else if (item.status === 'Rejected') { 
                 statusClass = 'status-rejected'; 
+                borderClass = 'border-rejected';
                 statusText = 'ไม่อนุมัติ'; 
             }
 
@@ -479,8 +642,13 @@ async function loadHistory() {
                 year: 'numeric', month: 'short', day: 'numeric' 
             });
 
+            // Convert object to string safely for onclick
+            const itemJson = JSON.stringify(item).replace(/"/g, '&quot;');
+            const clickAction = isApproved ? `onclick="openTicket(${itemJson})"` : '';
+            const clickHint = isApproved ? '<div class="small text-success mt-2"><i class="bi bi-ticket-perforated"></i> กดเพื่อแสดงบัตร</div>' : '';
+
             const html = `
-                <div class="history-card">
+                <div class="history-card ${borderClass}" ${clickAction}>
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <div class="fw-bold text-primary">${date}</div>
                         <span class="status-badge ${statusClass}">${statusText}</span>
@@ -493,6 +661,7 @@ async function loadHistory() {
                     <div class="small text-muted text-truncate">
                         <i class="bi bi-chat-text me-1"></i>${item.reason}
                     </div>
+                    ${clickHint}
                 </div>
             `;
             listDiv.innerHTML += html;
@@ -503,6 +672,25 @@ async function loadHistory() {
         loadingDiv.style.display = 'none';
         listDiv.innerHTML = `<div class="alert alert-danger">โหลดข้อมูลไม่สำเร็จ</div>`;
     }
+}
+
+// 🌟 FEATURE 1: Open E-Ticket Function
+function openTicket(data) {
+    document.getElementById('ticketName').innerText = data.fullname;
+    document.getElementById('ticketId').innerText = 'ID: ' + data.emp_id;
+    document.getElementById('ticketCardNo').innerText = data.card_no;
+    document.getElementById('ticketSection').innerText = data.section;
+    
+    // Format Date
+    const d = new Date(data.request_date);
+    document.getElementById('ticketDate').innerText = d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
+
+    // Profile Pic
+    const profileUrl = document.getElementById('profileImage').src;
+    document.getElementById('ticketProfile').src = profileUrl;
+
+    const ticketModal = new bootstrap.Modal(document.getElementById('ticketModal'));
+    ticketModal.show();
 }
 
 function toggleDurationMode() {
@@ -525,18 +713,12 @@ function toggleDurationMode() {
     }
 }
 
-// ✅ NEW: Helper Function for Image Compression
 function compressImage(file) {
     return new Promise((resolve, reject) => {
         new Compressor(file, {
-            quality: 0.6,    // 60% quality
-            maxWidth: 1024,  // Max width 1024px
-            success(result) {
-                resolve(result);
-            },
-            error(err) {
-                reject(err);
-            },
+            quality: 0.6, maxWidth: 1024,
+            success(result) { resolve(result); },
+            error(err) { reject(err); },
         });
     });
 }
@@ -559,7 +741,6 @@ window.onload = async () => {
     if (savedEmpId) document.getElementById('empId').value = savedEmpId;
     if (savedSection) sectionSelect.setValue(savedSection);
 
-    // --- ✅ เพิ่มส่วนนี้: ตรวจสอบและแสดง Modal กฎระเบียบ ---
     const rulesModal = new bootstrap.Modal(document.getElementById('rulesModal'));
     rulesModal.show();
 
@@ -647,29 +828,20 @@ document.getElementById('slipperForm').addEventListener('submit', async (e) => {
 
         if (isLongTerm && fileInput.files.length > 0) {
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> กำลังบีบอัดและอัปโหลด...';
-            
             let file = fileInput.files[0];
-            
-            // ✅ NEW: Compression Logic (เฉพาะไฟล์รูปภาพ ไม่รวม PDF)
             if (file.type.startsWith('image/')) {
                  try {
-                     // บีบอัดไฟล์ก่อนอัปโหลด
                      file = await compressImage(file);
-                     console.log('Compression successful. New size:', file.size);
                  } catch (compErr) {
-                     console.warn('Compression failed, using original file:', compErr);
+                     console.warn('Compression failed', compErr);
                  }
             }
-
             const fileExt = file.name.split('.').pop() || 'jpg';
             const fileName = `${document.getElementById('empId').value}_${Date.now()}.${fileExt}`;
-
             const { data: uploadData, error: uploadError } = await db.storage
                 .from('medical_certs')
-                .upload(fileName, file); // อัปโหลดไฟล์ที่บีบอัดแล้ว (ถ้าเป็นรูป)
-
+                .upload(fileName, file); 
             if (uploadError) throw new Error('Upload Failed: ' + uploadError.message);
-
             const { data: publicUrlData } = db.storage.from('medical_certs').getPublicUrl(fileName);
             certUrl = publicUrlData.publicUrl;
         }
@@ -711,9 +883,7 @@ document.getElementById('slipperForm').addEventListener('submit', async (e) => {
     }
 });
 
-// ไว้ล่างสุดของ script
 function acceptRules() {
-    // ซ่อน Modal
     const modalEl = document.getElementById('rulesModal');
     const modal = bootstrap.Modal.getInstance(modalEl);
     modal.hide();
