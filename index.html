@@ -14,6 +14,7 @@
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/compressorjs/1.2.1/compressor.min.js"></script>
 
     <style>
         :root {
@@ -30,7 +31,6 @@
             color: #334155;
             min-height: 100vh;
             padding-top: env(safe-area-inset-top);
-            /* เพิ่ม Padding ล่างเผื่อ Tab Bar */
             padding-bottom: calc(90px + env(safe-area-inset-bottom)); 
         }
 
@@ -56,7 +56,6 @@
         .header-section { text-align: center; margin-bottom: 25px; }
         .header-title { font-weight: 800; color: #1e293b; font-size: 1.4rem; letter-spacing: -0.5px; }
 
-        /* Profile Section Styles */
         .profile-area { text-align: center; margin-bottom: 20px; }
         .profile-img {
             width: 80px; height: 80px; border-radius: 50%; object-fit: cover;
@@ -98,7 +97,6 @@
         .ts-wrapper .ts-control { border-radius: 12px; padding: 12px; }
         .ts-dropdown { border-radius: 12px; margin-top: 5px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
 
-        /* --- NEW: Bottom Navigation --- */
         .bottom-nav {
             position: fixed; bottom: 0; left: 0; width: 100%;
             background: white;
@@ -116,7 +114,6 @@
         .nav-item.active { color: var(--primary-color); font-weight: 600; }
         .nav-item.active i { transform: translateY(-3px); }
 
-        /* --- NEW: History Card --- */
         .history-card {
             background: white; border-radius: 16px; padding: 15px; margin-bottom: 15px;
             border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
@@ -130,7 +127,6 @@
         .status-approved { background: #dcfce7; color: #16a34a; }
         .status-rejected { background: #fee2e2; color: #dc2626; }
         
-        /* Views */
         #view-history { display: none; }
     </style>
 </head>
@@ -219,6 +215,30 @@
                     <div class="col-6 mb-3">
                         <label class="form-label"><i class="bi bi-calendar4-week"></i> วันที่ขอ <span class="text-danger">*</span></label>
                         <input type="date" id="requestDate" class="form-control" required>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label"><i class="bi bi-clock-history"></i> ระยะเวลาการขอ <span class="text-danger">*</span></label>
+                    <div class="d-flex gap-2">
+                        <input type="radio" class="btn-check" name="durationMode" id="modeDaily" value="daily" checked onchange="toggleDurationMode()">
+                        <label class="btn btn-outline-secondary w-50" for="modeDaily">รายวัน (1 วัน)</label>
+                        
+                        <input type="radio" class="btn-check" name="durationMode" id="modeLong" value="longterm" onchange="toggleDurationMode()">
+                        <label class="btn btn-outline-warning w-50" for="modeLong">ระยะยาว (>1 วัน)</label>
+                    </div>
+                </div>
+
+                <div id="longTermSection" style="display: none;" class="p-3 bg-light rounded border mb-3">
+                    <div class="mb-3">
+                        <label class="form-label text-warning"><i class="bi bi-calendar-check"></i> ถึงวันที่</label>
+                        <input type="date" id="endDate" class="form-control">
+                    </div>
+                    
+                    <div class="mb-0">
+                        <label class="form-label text-warning"><i class="bi bi-file-earmark-medical"></i> ใบรับรองแพทย์ (บังคับ)</label>
+                        <input type="file" id="medicalCertFile" class="form-control" accept="image/*,.pdf">
+                        <div class="form-text small text-muted">รองรับไฟล์รูปภาพ หรือ PDF</div>
                     </div>
                 </div>
 
@@ -332,25 +352,23 @@ function toggleNameInput() {
 
 // 🌟 FEATURE: Tab Switching Logic
 function switchTab(tab) {
-    // 1. Update Buttons
     document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
     document.getElementById(`nav-${tab}`).classList.add('active');
 
-    // 2. Switch Views
     if (tab === 'request') {
         document.getElementById('view-request').style.display = 'block';
         document.getElementById('view-history').style.display = 'none';
     } else {
         document.getElementById('view-request').style.display = 'none';
         document.getElementById('view-history').style.display = 'block';
-        loadHistory(); // Fetch data when switching to history
+        loadHistory(); 
     }
 }
 
 // 🌟 FEATURE: Fetch History
 async function loadHistory() {
     const userId = document.getElementById('userId').value;
-    if (!userId) return; // ยังโหลด LIFF ไม่เสร็จ
+    if (!userId) return;
 
     const listDiv = document.getElementById('historyList');
     const loadingDiv = document.getElementById('historyLoading');
@@ -359,7 +377,6 @@ async function loadHistory() {
     loadingDiv.style.display = 'block';
 
     try {
-        // ดึงข้อมูล 20 รายการล่าสุดของ User คนนี้
         const { data, error } = await db
             .from('slipper_requests')
             .select('*')
@@ -380,13 +397,10 @@ async function loadHistory() {
             return;
         }
 
-        // Render Cards
         data.forEach(item => {
             let statusClass = 'status-pending';
             let statusText = 'รออนุมัติ';
             
-            // ของใหม่ (แก้แล้ว ✅)
-            // เช็คทั้ง Approved และ Completed ให้ถือว่าเป็น "อนุมัติแล้ว/เสร็จสิ้น" สีเขียวเหมือนกัน
             if (item.status === 'Approved' || item.status === 'Completed') { 
                 statusClass = 'status-approved'; 
                 statusText = 'อนุมัติแล้ว'; 
@@ -426,28 +440,60 @@ async function loadHistory() {
     }
 }
 
+function toggleDurationMode() {
+    const isLongTerm = document.getElementById('modeLong').checked;
+    const section = document.getElementById('longTermSection');
+    const endDate = document.getElementById('endDate');
+    const fileInput = document.getElementById('medicalCertFile');
+
+    if (isLongTerm) {
+        section.style.display = 'block';
+        section.classList.add('animate__animated', 'animate__fadeIn');
+        endDate.required = true;
+        fileInput.required = true;
+    } else {
+        section.style.display = 'none';
+        endDate.required = false;
+        fileInput.required = false;
+        endDate.value = '';     
+        fileInput.value = '';   
+    }
+}
+
+// ✅ NEW: Helper Function for Image Compression
+function compressImage(file) {
+    return new Promise((resolve, reject) => {
+        new Compressor(file, {
+            quality: 0.6,    // 60% quality
+            maxWidth: 1024,  // Max width 1024px
+            success(result) {
+                resolve(result);
+            },
+            error(err) {
+                reject(err);
+            },
+        });
+    });
+}
+
 // ================= INITIALIZATION =================
 window.onload = async () => {
-    // 1. Setup Date
     const today = new Date().toISOString().split('T')[0];
     const dateInput = document.getElementById('requestDate');
     dateInput.value = today;
     dateInput.min = today;
 
-    // 2. Setup Tom Select
     sectionSelect = new TomSelect("#section", {
         create: false,
         sortField: { field: "text", direction: "asc" },
         onChange: function(value) { toggleInput('section', 'otherSectionArea'); }
     });
 
-    // 3. Auto-Fill Data
     const savedEmpId = localStorage.getItem('saved_empId');
     const savedSection = localStorage.getItem('saved_section');
     if (savedEmpId) document.getElementById('empId').value = savedEmpId;
     if (savedSection) sectionSelect.setValue(savedSection);
 
-    // 4. Init LIFF & Profile
     try {
         await liff.init({ liffId: LIFF_ID });
         if (!liff.isLoggedIn()) {
@@ -456,13 +502,11 @@ window.onload = async () => {
         }
         const profile = await liff.getProfile();
         
-        // Set Values
         document.getElementById('userId').value = profile.userId;
         document.getElementById('lineDisplayName').value = profile.displayName; 
         document.getElementById('fullname').value = profile.displayName; 
         document.getElementById('fullname').classList.remove('bg-light'); 
 
-        // Show Profile Pic
         if (profile.pictureUrl) {
             document.getElementById('profileImage').src = profile.pictureUrl;
         }
@@ -481,33 +525,36 @@ document.getElementById('slipperForm').addEventListener('submit', async (e) => {
         if (!ok) return;
     }
 
-    // Data Preparation
     let section = document.getElementById('section').value;
     if (section === 'OTHER') section = document.getElementById('otherSection').value;
     let reason = document.getElementById('reasonSelect').value;
     if (reason === 'OTHER') reason = document.getElementById('otherReason').value;
 
-    const formData = {
-        line_user_id: document.getElementById('userId').value,
-        fullname: document.getElementById('fullname').value, 
+    const isLongTerm = document.getElementById('modeLong').checked;
+    const endDateVal = isLongTerm ? document.getElementById('endDate').value : null;
+    const fileInput = document.getElementById('medicalCertFile');
+    
+    const displayData = {
+        fullname: document.getElementById('fullname').value,
         emp_id: document.getElementById('empId').value,
-        section,
+        section: section,
         card_no: document.getElementById('cardNo').value,
-        reason,
-        access_type: document.querySelector('input[name="accessType"]:checked').value,
-        request_date: document.getElementById('requestDate').value,
-        status: 'Pending'
+        reason: reason,
+        duration: isLongTerm ? `ระยะยาว (ถึง ${endDateVal})` : 'รายวัน (1 วัน)',
+        hasFile: (isLongTerm && fileInput.files.length > 0) ? '<span class="text-success"><i class="bi bi-check-circle-fill"></i> แนบใบรับรองแล้ว</span>' : '-'
     };
 
     const confirm = await Swal.fire({
         title: 'ยืนยันข้อมูล',
         html: `
             <div class="text-start fs-6 p-3 bg-light rounded border">
-                <div class="mb-1"><small class="text-muted">ชื่อ:</small> <strong>${formData.fullname}</strong></div>
-                <div class="mb-1"><small class="text-muted">รหัส:</small> <strong>${formData.emp_id}</strong></div>
-                <div class="mb-1"><small class="text-muted">แผนก:</small> <strong>${formData.section}</strong></div>
-                <div class="mb-1"><small class="text-muted">บัตร:</small> <span class="badge bg-primary rounded-pill">${formData.card_no}</span></div>
-                <div class="mb-0"><small class="text-muted">สาเหตุ:</small> ${formData.reason}</div>
+                <div class="mb-1"><small class="text-muted">ชื่อ:</small> <strong>${displayData.fullname}</strong></div>
+                <div class="mb-1"><small class="text-muted">รหัส:</small> <strong>${displayData.emp_id}</strong></div>
+                <div class="mb-1"><small class="text-muted">แผนก:</small> <strong>${displayData.section}</strong></div>
+                <div class="mb-1"><small class="text-muted">บัตร:</small> <span class="badge bg-primary rounded-pill">${displayData.card_no}</span></div>
+                <div class="mb-1"><small class="text-muted">ระยะเวลา:</small> ${displayData.duration}</div>
+                <div class="mb-1"><small class="text-muted">สาเหตุ:</small> ${displayData.reason}</div>
+                ${isLongTerm ? `<div class="mb-0"><small class="text-muted">เอกสาร:</small> ${displayData.hasFile}</div>` : ''}
             </div>
         `,
         icon: 'question',
@@ -527,6 +574,51 @@ document.getElementById('slipperForm').addEventListener('submit', async (e) => {
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> กำลังบันทึก...';
 
     try {
+        let certUrl = null;
+
+        if (isLongTerm && fileInput.files.length > 0) {
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> กำลังบีบอัดและอัปโหลด...';
+            
+            let file = fileInput.files[0];
+            
+            // ✅ NEW: Compression Logic (เฉพาะไฟล์รูปภาพ ไม่รวม PDF)
+            if (file.type.startsWith('image/')) {
+                 try {
+                     // บีบอัดไฟล์ก่อนอัปโหลด
+                     file = await compressImage(file);
+                     console.log('Compression successful. New size:', file.size);
+                 } catch (compErr) {
+                     console.warn('Compression failed, using original file:', compErr);
+                 }
+            }
+
+            const fileExt = file.name.split('.').pop() || 'jpg';
+            const fileName = `${document.getElementById('empId').value}_${Date.now()}.${fileExt}`;
+
+            const { data: uploadData, error: uploadError } = await db.storage
+                .from('medical_certs')
+                .upload(fileName, file); // อัปโหลดไฟล์ที่บีบอัดแล้ว (ถ้าเป็นรูป)
+
+            if (uploadError) throw new Error('Upload Failed: ' + uploadError.message);
+
+            const { data: publicUrlData } = db.storage.from('medical_certs').getPublicUrl(fileName);
+            certUrl = publicUrlData.publicUrl;
+        }
+
+        const formData = {
+            line_user_id: document.getElementById('userId').value,
+            fullname: document.getElementById('fullname').value, 
+            emp_id: document.getElementById('empId').value,
+            section,
+            card_no: document.getElementById('cardNo').value,
+            reason,
+            access_type: document.querySelector('input[name="accessType"]:checked').value,
+            request_date: document.getElementById('requestDate').value,
+            end_date: endDateVal,
+            medical_cert_url: certUrl,
+            status: 'Pending'
+        };
+
         const { error } = await db.from('slipper_requests').insert([formData])
         if (error) throw error
 
@@ -538,15 +630,12 @@ document.getElementById('slipperForm').addEventListener('submit', async (e) => {
             timer: 2000, showConfirmButton: false
         });
 
-        // 🌟 หลังส่งเสร็จ สลับไปดูหน้า History เพื่อดูรายการล่าสุดทันที
         switchTab('history'); 
-        
-        // รีเซ็ตปุ่มกลับ
         btn.disabled = false;
         btn.innerHTML = originalText;
-        // ไม่ปิดหน้าต่างแล้ว เพื่อให้ User ดูประวัติได้ต่อ
 
     } catch (err) {
+        console.error(err);
         Swal.fire('บันทึกไม่สำเร็จ', err.message, 'error');
         btn.disabled = false;
         btn.innerHTML = originalText;
