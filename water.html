@@ -437,7 +437,7 @@ async function fetchYearlyStats() {
 
         let totalWaterM3 = 0;
         data.forEach(row => { totalWaterM3 += parseFloat(row.units_used || 0); });
-        const totalCarbon = totalWaterM3 * EMISSION_FACTOR;
+        const totalCarbon = (totalWaterM3 * EMISSION_FACTOR) / 1000;
 
         updateValueWithAnimation('yearTotal', totalWaterM3.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
         updateValueWithAnimation('carbonTotal', totalCarbon.toLocaleString('en-US', {minimumFractionDigits: 4, maximumFractionDigits: 4}));
