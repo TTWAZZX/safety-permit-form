@@ -806,9 +806,19 @@ document.getElementById('slipperForm').addEventListener('submit', async (e) => {
 });
 
 function acceptRules() {
-    new bootstrap.Modal(document.getElementById('rulesModal')).hide();
-    // เพิ่มบรรทัดนี้เพื่อให้ Backdrop หายไปชัวร์ๆ (เผื่อบั๊ก Bootstrap)
-    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+    // ดึงตัว Modal เดิมที่เปิดอยู่มาใช้งาน
+    var modalEl = document.getElementById('rulesModal');
+    var modal = bootstrap.Modal.getInstance(modalEl); 
+    
+    if (modal) {
+        modal.hide();
+    } else {
+        // กันเหนียว: ถ้าหาตัวเดิมไม่เจอจริงๆ ให้บังคับลบ Class และ Backdrop
+        modalEl.classList.remove('show');
+        modalEl.style.display = 'none';
+        document.body.classList.remove('modal-open');
+        document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+    }
 }
 </script>
 </body>
