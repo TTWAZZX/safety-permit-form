@@ -39,20 +39,38 @@
             padding-bottom: calc(90px + env(safe-area-inset-bottom)); 
         }
 
+        /* ✅ 1. เพิ่ม CSS สำหรับ Loading Screen */
+        #mainApp { display: none; } /* ซ่อนเนื้อหาหลักก่อน */
+
+        #loadingScreen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: white; z-index: 9999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+        }
+
+        .spinner-custom {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--primary-color);
+            border-radius: 50%; width: 50px; height: 50px;
+            animation: spin 1s linear infinite; margin-bottom: 20px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .loading-text-main { font-weight: bold; font-size: 1.2rem; color: #1e293b; margin-bottom: 5px; }
+        .loading-text-sub { font-size: 0.9rem; color: #64748b; }
+        /* ------------------------------------- */
+
         .container { max-width: 500px; padding: 0 15px; }
 
         .premium-card {
             margin-top: 20px;
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
-            border-radius: 24px;
-            padding: 30px 25px;
+            border-radius: 24px; padding: 30px 25px;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
-            position: relative;
-            overflow: visible; /* Allow smart button to overlap */
+            position: relative; overflow: visible;
             border: 1px solid rgba(255,255,255,0.8);
         }
-
         .premium-card::before {
             content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 6px;
             background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
@@ -65,46 +83,32 @@
         .profile-area { text-align: center; margin-bottom: 20px; }
         .profile-img {
             width: 80px; height: 80px; border-radius: 50%; object-fit: cover;
-            border: 4px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            margin-bottom: 10px;
+            border: 4px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 10px;
         }
 
-        /* --- Smart Re-order Button --- */
         .btn-smart-fill {
             position: absolute; top: 20px; right: 20px;
             background: #e0f2fe; color: var(--primary-color);
             border: none; padding: 5px 12px; border-radius: 20px;
             font-size: 0.75rem; font-weight: 600;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            transition: all 0.2s; z-index: 10;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: all 0.2s; z-index: 10;
         }
         .btn-smart-fill:active { transform: scale(0.95); }
 
-        .form-label { 
-            font-weight: 600; font-size: 0.9rem; margin-bottom: 8px; 
-            color: #475569; display: flex; align-items: center; gap: 8px;
-        }
+        .form-label { font-weight: 600; font-size: 0.9rem; margin-bottom: 8px; color: #475569; display: flex; align-items: center; gap: 8px; }
         .form-label i { color: var(--accent-color); }
 
-        .form-control, .form-select, .ts-control {
-            border-radius: 12px; border: 1px solid #e2e8f0; padding: 12px; font-size: 1rem; transition: all 0.2s;
-        }
-        .form-control:focus, .form-select:focus, .ts-wrapper.focus .ts-control {
-            border-color: var(--accent-color); box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); outline: none;
-        }
+        .form-control, .form-select, .ts-control { border-radius: 12px; border: 1px solid #e2e8f0; padding: 12px; font-size: 1rem; transition: all 0.2s; }
+        .form-control:focus, .form-select:focus, .ts-wrapper.focus .ts-control { border-color: var(--accent-color); box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); outline: none; }
 
-        .btn-check:checked + .btn-outline-primary {
-            background-color: var(--primary-color); border-color: var(--primary-color); box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3);
-        }
+        .btn-check:checked + .btn-outline-primary { background-color: var(--primary-color); border-color: var(--primary-color); box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3); }
         .btn-outline-primary, .btn-outline-danger { border-radius: 12px; padding: 10px; font-weight: 600; }
         .form-check-input:checked { background-color: var(--primary-color); border-color: var(--primary-color); }
 
         .btn-submit { 
-            background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
-            color: white; width: 100%; border-radius: 16px; padding: 16px; 
-            border: none; font-weight: 700; font-size: 1.1rem; margin-top: 15px;
-            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
-            transition: transform 0.1s; margin-bottom: env(safe-area-inset-bottom);
+            background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%); color: white; width: 100%; 
+            border-radius: 16px; padding: 16px; border: none; font-weight: 700; font-size: 1.1rem; margin-top: 15px;
+            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3); transition: transform 0.1s; margin-bottom: env(safe-area-inset-bottom);
         }
         .btn-submit:active { transform: scale(0.98); }
 
@@ -115,35 +119,27 @@
         .ts-dropdown { border-radius: 12px; margin-top: 5px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
 
         .bottom-nav {
-            position: fixed; bottom: 0; left: 0; width: 100%;
-            background: white;
+            position: fixed; bottom: 0; left: 0; width: 100%; background: white;
             display: flex; justify-content: space-around; align-items: center;
             padding: 10px 0 calc(10px + env(safe-area-inset-bottom));
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.05);
-            z-index: 1000;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.05); z-index: 1000;
             border-top-left-radius: 20px; border-top-right-radius: 20px;
         }
-        .nav-item {
-            text-align: center; color: #94a3b8; font-size: 0.8rem; cursor: pointer; transition: all 0.2s;
-            flex: 1;
-        }
+        .nav-item { text-align: center; color: #94a3b8; font-size: 0.8rem; cursor: pointer; transition: all 0.2s; flex: 1; }
         .nav-item i { font-size: 1.5rem; display: block; margin-bottom: 2px; }
         .nav-item.active { color: var(--primary-color); font-weight: 600; }
         .nav-item.active i { transform: translateY(-3px); }
 
-        /* --- History Card Styling --- */
         .history-card {
             background: white; border-radius: 16px; padding: 15px; margin-bottom: 15px;
             border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
-            transition: transform 0.2s;
-            position: relative; overflow: hidden;
-            border-left: 5px solid #ccc; /* Default Border */
+            transition: transform 0.2s; position: relative; overflow: hidden;
+            border-left: 5px solid #ccc;
         }
         .history-card:active { transform: scale(0.98); }
         
-        /* Status Color Coding */
         .border-pending { border-left-color: var(--warning-color); }
-        .border-approved { border-left-color: var(--success-color); cursor: pointer; } /* Clickable */
+        .border-approved { border-left-color: var(--success-color); cursor: pointer; }
         .border-rejected { border-left-color: var(--danger-color); opacity: 0.8; }
 
         .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
@@ -151,30 +147,22 @@
         .status-approved { background: #dcfce7; color: #16a34a; }
         .status-rejected { background: #fee2e2; color: #dc2626; }
         
-        /* --- Skeleton Loading --- */
-        .skeleton-loader .card {
-            border: none; box-shadow: none; background: #fff; border-radius: 16px; margin-bottom: 15px; padding: 15px;
-        }
+        .skeleton-loader .card { border: none; box-shadow: none; background: #fff; border-radius: 16px; margin-bottom: 15px; padding: 15px; }
         .placeholder-glow .placeholder { opacity: 0.2; border-radius: 4px; }
 
-        /* --- E-Ticket Modal --- */
         #ticketModal .modal-content {
             background: linear-gradient(145deg, #064e3b 0%, #10b981 100%);
-            color: white; border-radius: 20px; border: none;
-            text-align: center; position: relative; overflow: hidden;
+            color: white; border-radius: 20px; border: none; text-align: center; position: relative; overflow: hidden;
         }
-        /* Pattern Overlay */
         #ticketModal .modal-content::before {
             content: ""; position: absolute; top:0; left:0; width:100%; height:100%;
             background-image: radial-gradient(rgba(255,255,255,0.1) 1px, transparent 1px);
             background-size: 15px 15px; pointer-events: none;
         }
         .ticket-status {
-            animation: pulse 2s infinite; 
-            background: rgba(255,255,255,0.2); backdrop-filter: blur(5px);
+            animation: pulse 2s infinite; background: rgba(255,255,255,0.2); backdrop-filter: blur(5px);
             border-radius: 50px; padding: 5px 15px; display: inline-block;
-            font-weight: 800; font-size: 0.9rem; letter-spacing: 1px;
-            margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.4);
+            font-weight: 800; font-size: 0.9rem; letter-spacing: 1px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.4);
         }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
 
@@ -183,7 +171,13 @@
 </head>
 <body>
 
-<div class="container">
+<div id="loadingScreen">
+    <div class="spinner-custom"></div>
+    <div class="loading-text-main" id="loadStatusMain">กำลังเชื่อมต่อ...</div>
+    <div class="loading-text-sub">กรุณารอสักครู่</div>
+</div>
+
+<div class="container" id="mainApp">
     <div id="view-request">
         <div class="premium-card">
             
@@ -344,8 +338,7 @@
             </div>
         </div>
 
-        <div id="historyList">
-            </div>
+        <div id="historyList"></div>
     </div>
 </div>
 
@@ -367,14 +360,12 @@
                 <h5 class="modal-title fw-bold"><i class="bi bi-shield-exclamation me-2"></i>ระเบียบการสวมรองเท้า</h5>
             </div>
             <div class="modal-body p-4 bg-light">
-                
                 <div class="alert alert-danger border-0 d-flex align-items-center mb-3">
                     <i class="bi bi-exclamation-triangle-fill fs-1 me-3"></i>
                     <div class="small lh-sm">
                         <strong>คำเตือน:</strong> หากฝ่าฝืนหรือไม่ปฏิบัติตาม จะถือว่าผิดระเบียบการแต่งกาย และอาจมีบทลงโทษทางวินัย
                     </div>
                 </div>
-
                 <h6 class="fw-bold text-dark mb-2">📌 ขั้นตอนการขออนุญาต</h6>
                 <ol class="small text-muted ps-3 mb-4">
                     <li class="mb-1">อนุญาตให้สวมใส่เฉพาะกรณี <strong>"บาดเจ็บที่เท้า"</strong> เท่านั้น</li>
@@ -384,13 +375,9 @@
                     <li class="mb-1">หากขอต่อเนื่อง <strong>เกิน 5 วัน</strong> ต้องยื่นใบรับรองแพทย์</li>
                     <li>ผู้ถือบัตร <strong>ห้ามปฏิบัติงานยกของหนัก/เข็น/ลาก</strong> หรือความเสี่ยงที่ทำให้อาการกำเริบ</li>
                 </ol>
-
                 <hr class="border-secondary opacity-25 my-4">
-
                 <div class="mb-3">
-                    <h6 class="fw-bold text-success mb-2">
-                        <i class="bi bi-check-circle-fill me-2"></i>รองเท้าที่ "อนุญาต" ให้ใส่ได้
-                    </h6>
+                    <h6 class="fw-bold text-success mb-2"><i class="bi bi-check-circle-fill me-2"></i>รองเท้าที่ "อนุญาต" ให้ใส่ได้</h6>
                     <div class="bg-white p-3 rounded border border-success border-opacity-25">
                         <ul class="small text-muted mb-0 ps-3">
                             <li>รองเท้าคัชชู</li>
@@ -400,11 +387,8 @@
                         </ul>
                     </div>
                 </div>
-
                 <div class="mb-2">
-                    <h6 class="fw-bold text-danger mb-2">
-                        <i class="bi bi-x-circle-fill me-2"></i>รองเท้าที่ "ต้องขออนุญาต"
-                    </h6>
+                    <h6 class="fw-bold text-danger mb-2"><i class="bi bi-x-circle-fill me-2"></i>รองเท้าที่ "ต้องขออนุญาต"</h6>
                     <div class="bg-white p-3 rounded border border-danger border-opacity-25">
                         <ul class="small text-danger fw-bold mb-0 ps-3">
                             <li>รองเท้าแตะ</li>
@@ -413,7 +397,6 @@
                         </ul>
                     </div>
                 </div>
-
             </div>
             <div class="modal-footer justify-content-center bg-white" style="border-bottom-left-radius: 20px; border-bottom-right-radius: 20px;">
                 <button type="button" class="btn btn-primary w-100 py-2 rounded-4 fw-bold shadow-sm" onclick="acceptRules()">
@@ -428,16 +411,12 @@
     <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
         <div class="modal-content text-white shadow-lg">
             <div class="modal-body p-4 d-flex flex-column align-items-center justify-content-center">
-                
                 <span class="ticket-status"><i class="bi bi-shield-check me-2"></i>APPROVED</span>
-                
                 <div class="bg-white p-1 rounded-circle mb-3 shadow">
                     <img id="ticketProfile" src="https://cdn-icons-png.flaticon.com/512/847/847969.png" class="rounded-circle" width="100" height="100">
                 </div>
-                
                 <h3 id="ticketName" class="fw-bold mb-1">Name</h3>
                 <p id="ticketId" class="opacity-75 mb-4">ID: 123456</p>
-
                 <div class="bg-white bg-opacity-10 rounded-3 p-3 w-100 mb-3 text-start">
                     <div class="d-flex justify-content-between mb-2">
                         <span class="opacity-75">วันที่:</span>
@@ -452,12 +431,10 @@
                         <span id="ticketSection" class="fw-bold text-truncate" style="max-width: 150px;">Section</span>
                     </div>
                 </div>
-
                 <div class="mt-2 text-center opacity-50 small">
                     TSH Safety E-Ticket System<br>
                     (แสดงหน้านี้ต่อเจ้าหน้าที่ รปภ.)
                 </div>
-
                 <button class="btn btn-light rounded-pill px-4 fw-bold mt-4" data-bs-dismiss="modal">
                     ปิดหน้าต่าง
                 </button>
@@ -529,7 +506,7 @@ function switchTab(tab) {
     }
 }
 
-// 🌟 FEATURE 4: Auto Fill Last Request (Smart Re-order)
+// 🌟 FEATURE 4: Auto Fill Last Request
 async function autoFillLastRequest() {
     const userId = document.getElementById('userId').value;
     if(!userId) return Swal.fire('ไม่พบข้อมูลผู้ใช้', 'กรุณาลองใหม่อีกครั้ง', 'error');
@@ -539,32 +516,23 @@ async function autoFillLastRequest() {
     
     try {
         const { data, error } = await db.from('slipper_requests')
-            .select('*')
-            .eq('line_user_id', userId)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .single();
+            .select('*').eq('line_user_id', userId).order('created_at', { ascending: false }).limit(1).single();
 
         if (error || !data) throw new Error('ไม่พบประวัติเดิม');
 
-        // Fill Data
         document.getElementById('empId').value = data.emp_id;
         document.getElementById('cardNo').value = data.card_no;
         
-        // Handle Section (TomSelect)
         if (sectionSelect) {
             sectionSelect.setValue(data.section);
             if (!sectionSelect.getItem(data.section)) {
-                // If section was custom ("OTHER")
                 sectionSelect.setValue("OTHER");
                 document.getElementById('otherSection').value = data.section;
                 toggleInput('section', 'otherSectionArea');
             }
         }
 
-        // Handle Reason
         const reasonSelect = document.getElementById('reasonSelect');
-        // Check if reason is in options
         let found = false;
         for(let i=0; i<reasonSelect.options.length; i++){
             if(reasonSelect.options[i].value === data.reason) found = true;
@@ -588,7 +556,7 @@ async function autoFillLastRequest() {
     }
 }
 
-// 🌟 FEATURE 3 & 4: Load History with Skeleton & E-Ticket & Color Coding
+// 🌟 FEATURE 3 & 4: Load History
 async function loadHistory() {
     const userId = document.getElementById('userId').value;
     if (!userId) return;
@@ -597,26 +565,17 @@ async function loadHistory() {
     const loadingDiv = document.getElementById('historyLoading');
     
     listDiv.innerHTML = '';
-    loadingDiv.style.display = 'block'; // Show Skeleton
+    loadingDiv.style.display = 'block';
 
     try {
-        const { data, error } = await db
-            .from('slipper_requests')
-            .select('*')
-            .eq('line_user_id', userId)
-            .order('created_at', { ascending: false })
-            .limit(20);
+        const { data, error } = await db.from('slipper_requests')
+            .select('*').eq('line_user_id', userId).order('created_at', { ascending: false }).limit(20);
 
         if (error) throw error;
-
         loadingDiv.style.display = 'none';
 
         if (!data || data.length === 0) {
-            listDiv.innerHTML = `
-                <div class="text-center py-5 text-muted">
-                    <i class="bi bi-inbox fs-1 d-block mb-2 opacity-50"></i>
-                    ยังไม่มีประวัติการขอ
-                </div>`;
+            listDiv.innerHTML = `<div class="text-center py-5 text-muted"><i class="bi bi-inbox fs-1 d-block mb-2 opacity-50"></i>ยังไม่มีประวัติการขอ</div>`;
             return;
         }
 
@@ -627,22 +586,12 @@ async function loadHistory() {
             let isApproved = false;
             
             if (item.status === 'Approved' || item.status === 'Completed') { 
-                statusClass = 'status-approved'; 
-                borderClass = 'border-approved';
-                statusText = 'อนุมัติแล้ว';
-                isApproved = true;
-            } 
-            else if (item.status === 'Rejected') { 
-                statusClass = 'status-rejected'; 
-                borderClass = 'border-rejected';
-                statusText = 'ไม่อนุมัติ'; 
+                statusClass = 'status-approved'; borderClass = 'border-approved'; statusText = 'อนุมัติแล้ว'; isApproved = true;
+            } else if (item.status === 'Rejected') { 
+                statusClass = 'status-rejected'; borderClass = 'border-rejected'; statusText = 'ไม่อนุมัติ'; 
             }
 
-            const date = new Date(item.request_date).toLocaleDateString('th-TH', { 
-                year: 'numeric', month: 'short', day: 'numeric' 
-            });
-
-            // Convert object to string safely for onclick
+            const date = new Date(item.request_date).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
             const itemJson = JSON.stringify(item).replace(/"/g, '&quot;');
             const clickAction = isApproved ? `onclick="openTicket(${itemJson})"` : '';
             const clickHint = isApproved ? '<div class="small text-success mt-2"><i class="bi bi-ticket-perforated"></i> กดเพื่อแสดงบัตร</div>' : '';
@@ -658,12 +607,9 @@ async function loadHistory() {
                         <span class="mx-2">|</span>
                         <i class="bi bi-arrow-left-right me-1"></i>${item.access_type}
                     </div>
-                    <div class="small text-muted text-truncate">
-                        <i class="bi bi-chat-text me-1"></i>${item.reason}
-                    </div>
+                    <div class="small text-muted text-truncate"><i class="bi bi-chat-text me-1"></i>${item.reason}</div>
                     ${clickHint}
-                </div>
-            `;
+                </div>`;
             listDiv.innerHTML += html;
         });
 
@@ -674,23 +620,16 @@ async function loadHistory() {
     }
 }
 
-// 🌟 FEATURE 1: Open E-Ticket Function
 function openTicket(data) {
     document.getElementById('ticketName').innerText = data.fullname;
     document.getElementById('ticketId').innerText = 'ID: ' + data.emp_id;
     document.getElementById('ticketCardNo').innerText = data.card_no;
     document.getElementById('ticketSection').innerText = data.section;
-    
-    // Format Date
     const d = new Date(data.request_date);
     document.getElementById('ticketDate').innerText = d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
-
-    // Profile Pic
     const profileUrl = document.getElementById('profileImage').src;
     document.getElementById('ticketProfile').src = profileUrl;
-
-    const ticketModal = new bootstrap.Modal(document.getElementById('ticketModal'));
-    ticketModal.show();
+    new bootstrap.Modal(document.getElementById('ticketModal')).show();
 }
 
 function toggleDurationMode() {
@@ -702,14 +641,10 @@ function toggleDurationMode() {
     if (isLongTerm) {
         section.style.display = 'block';
         section.classList.add('animate__animated', 'animate__fadeIn');
-        endDate.required = true;
-        fileInput.required = true;
+        endDate.required = true; fileInput.required = true;
     } else {
         section.style.display = 'none';
-        endDate.required = false;
-        fileInput.required = false;
-        endDate.value = '';     
-        fileInput.value = '';   
+        endDate.required = false; fileInput.required = false; endDate.value = ''; fileInput.value = '';
     }
 }
 
@@ -723,16 +658,23 @@ function compressImage(file) {
     });
 }
 
-// ================= INITIALIZATION =================
+// ================= INITIALIZATION & LOADER =================
+function updateLoader(text, delay) {
+    return new Promise(resolve => {
+        const el = document.getElementById('loadStatusMain');
+        if(el) el.innerText = text;
+        setTimeout(resolve, delay);
+    });
+}
+
 window.onload = async () => {
+    // 1. Setup UI
     const today = new Date().toISOString().split('T')[0];
     const dateInput = document.getElementById('requestDate');
-    dateInput.value = today;
-    dateInput.min = today;
+    if(dateInput) { dateInput.value = today; dateInput.min = today; }
 
     sectionSelect = new TomSelect("#section", {
-        create: false,
-        sortField: { field: "text", direction: "asc" },
+        create: false, sortField: { field: "text", direction: "asc" },
         onChange: function(value) { toggleInput('section', 'otherSectionArea'); }
     });
 
@@ -741,32 +683,35 @@ window.onload = async () => {
     if (savedEmpId) document.getElementById('empId').value = savedEmpId;
     if (savedSection) sectionSelect.setValue(savedSection);
 
-    const rulesModal = new bootstrap.Modal(document.getElementById('rulesModal'));
-    rulesModal.show();
+    // 2. Loading Process
+    await updateLoader("กำลังเชื่อมต่อกับ LINE...", 800);
 
     try {
         await liff.init({ liffId: LIFF_ID });
-        if (!liff.isLoggedIn()) {
-            liff.login();
-            return;
-        }
-        const profile = await liff.getProfile();
+        await updateLoader("ตรวจสอบข้อมูล...", 800);
+
+        if (!liff.isLoggedIn()) { liff.login(); return; }
         
+        await updateLoader("ดึงข้อมูลโปรไฟล์...", 800);
+        
+        const profile = await liff.getProfile();
         document.getElementById('userId').value = profile.userId;
         document.getElementById('lineDisplayName').value = profile.displayName; 
         document.getElementById('fullname').value = profile.displayName; 
         document.getElementById('fullname').classList.remove('bg-light'); 
 
-        if (profile.pictureUrl) {
-            document.getElementById('profileImage').src = profile.pictureUrl;
-        }
+        if (profile.pictureUrl) document.getElementById('profileImage').src = profile.pictureUrl;
 
-    } catch (err) {
-        console.error('LIFF Error:', err);
-    }
+    } catch (err) { console.error('LIFF Error:', err); }
+
+    // 3. Finish Loading
+    document.getElementById('loadingScreen').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'block';
+    
+    // Show Rules Modal after loading
+    new bootstrap.Modal(document.getElementById('rulesModal')).show();
 };
 
-// ================= SUBMIT HANDLER =================
 document.getElementById('slipperForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     if (navigator.vibrate) navigator.vibrate(50);
@@ -807,40 +752,27 @@ document.getElementById('slipperForm').addEventListener('submit', async (e) => {
                 ${isLongTerm ? `<div class="mb-0"><small class="text-muted">เอกสาร:</small> ${displayData.hasFile}</div>` : ''}
             </div>
         `,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonText: 'ยืนยันส่ง',
-        cancelButtonText: 'แก้ไข',
-        confirmButtonColor: '#1e3a8a',
-        cancelButtonColor: '#64748b',
-        reverseButtons: true
+        icon: 'question', showCancelButton: true, confirmButtonText: 'ยืนยันส่ง', cancelButtonText: 'แก้ไข',
+        confirmButtonColor: '#1e3a8a', cancelButtonColor: '#64748b', reverseButtons: true
     });
 
     if (!confirm.isConfirmed) return;
 
     const btn = document.getElementById('btnSubmit');
     const originalText = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> กำลังบันทึก...';
+    btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> กำลังบันทึก...';
 
     try {
         let certUrl = null;
-
         if (isLongTerm && fileInput.files.length > 0) {
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> กำลังบีบอัดและอัปโหลด...';
             let file = fileInput.files[0];
             if (file.type.startsWith('image/')) {
-                 try {
-                     file = await compressImage(file);
-                 } catch (compErr) {
-                     console.warn('Compression failed', compErr);
-                 }
+                 try { file = await compressImage(file); } catch (compErr) { console.warn('Compression failed', compErr); }
             }
             const fileExt = file.name.split('.').pop() || 'jpg';
             const fileName = `${document.getElementById('empId').value}_${Date.now()}.${fileExt}`;
-            const { data: uploadData, error: uploadError } = await db.storage
-                .from('medical_certs')
-                .upload(fileName, file); 
+            const { data: uploadData, error: uploadError } = await db.storage.from('medical_certs').upload(fileName, file); 
             if (uploadError) throw new Error('Upload Failed: ' + uploadError.message);
             const { data: publicUrlData } = db.storage.from('medical_certs').getPublicUrl(fileName);
             certUrl = publicUrlData.publicUrl;
@@ -850,14 +782,10 @@ document.getElementById('slipperForm').addEventListener('submit', async (e) => {
             line_user_id: document.getElementById('userId').value,
             fullname: document.getElementById('fullname').value, 
             emp_id: document.getElementById('empId').value,
-            section,
-            card_no: document.getElementById('cardNo').value,
-            reason,
-            access_type: document.querySelector('input[name="accessType"]:checked').value,
+            section, card_no: document.getElementById('cardNo').value,
+            reason, access_type: document.querySelector('input[name="accessType"]:checked').value,
             request_date: document.getElementById('requestDate').value,
-            end_date: endDateVal,
-            medical_cert_url: certUrl,
-            status: 'Pending'
+            end_date: endDateVal, medical_cert_url: certUrl, status: 'Pending'
         };
 
         const { error } = await db.from('slipper_requests').insert([formData])
@@ -866,27 +794,21 @@ document.getElementById('slipperForm').addEventListener('submit', async (e) => {
         localStorage.setItem('saved_empId', formData.emp_id);
         localStorage.setItem('saved_section', formData.section);
 
-        await Swal.fire({
-            icon: 'success', title: 'เรียบร้อย!', text: 'ส่งคำขอแล้ว กรุณารอผลอนุมัติ',
-            timer: 2000, showConfirmButton: false
-        });
-
+        await Swal.fire({ icon: 'success', title: 'เรียบร้อย!', text: 'ส่งคำขอแล้ว กรุณารอผลอนุมัติ', timer: 2000, showConfirmButton: false });
         switchTab('history'); 
-        btn.disabled = false;
-        btn.innerHTML = originalText;
+        btn.disabled = false; btn.innerHTML = originalText;
 
     } catch (err) {
         console.error(err);
         Swal.fire('บันทึกไม่สำเร็จ', err.message, 'error');
-        btn.disabled = false;
-        btn.innerHTML = originalText;
+        btn.disabled = false; btn.innerHTML = originalText;
     }
 });
 
 function acceptRules() {
-    const modalEl = document.getElementById('rulesModal');
-    const modal = bootstrap.Modal.getInstance(modalEl);
-    modal.hide();
+    new bootstrap.Modal(document.getElementById('rulesModal')).hide();
+    // เพิ่มบรรทัดนี้เพื่อให้ Backdrop หายไปชัวร์ๆ (เผื่อบั๊ก Bootstrap)
+    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
 }
 </script>
 </body>
