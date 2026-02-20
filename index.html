@@ -205,6 +205,7 @@
             <form id="slipperForm">
                 <input type="hidden" id="userId">
                 <input type="hidden" id="lineDisplayName"> 
+                <input type="hidden" id="userPictureUrl">
 
                 <div class="mb-3">
                     <label class="form-label"><i class="bi bi-person-badge"></i> ชื่อ-นามสกุล <span class="text-danger">*</span></label>
@@ -700,7 +701,11 @@ window.onload = async () => {
         document.getElementById('fullname').value = profile.displayName; 
         document.getElementById('fullname').classList.remove('bg-light'); 
 
-        if (profile.pictureUrl) document.getElementById('profileImage').src = profile.pictureUrl;
+        // ✅ เก็บ URL รูปลงตัวแปรซ่อน (เพื่อเอาไปเซฟลง DB)
+        if (profile.pictureUrl) {
+            document.getElementById('profileImage').src = profile.pictureUrl;
+            document.getElementById('userPictureUrl').value = profile.pictureUrl;
+        }
 
     } catch (err) { console.error('LIFF Error:', err); }
 
@@ -785,7 +790,9 @@ document.getElementById('slipperForm').addEventListener('submit', async (e) => {
             section, card_no: document.getElementById('cardNo').value,
             reason, access_type: document.querySelector('input[name="accessType"]:checked').value,
             request_date: document.getElementById('requestDate').value,
-            end_date: endDateVal, medical_cert_url: certUrl, status: 'Pending'
+            end_date: endDateVal, medical_cert_url: certUrl, status: 'Pending',
+            // ✅ ส่ง URL รูปภาพไปบันทึกด้วย
+            user_picture_url: document.getElementById('userPictureUrl').value || null 
         };
 
         const { error } = await db.from('slipper_requests').insert([formData])
