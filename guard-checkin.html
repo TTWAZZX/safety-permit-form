@@ -21,9 +21,9 @@
     <style>
         /* ================= CORPORATE SECURITY THEME ================= */
         :root {
-            --primary-color: #0f2027; /* Deep Navy */
+            --primary-color: #0f2027; 
             --secondary-color: #203a43;
-            --accent-color: #d4af37; /* Corporate Gold */
+            --accent-color: #d4af37; 
             --bg-color: #f8f9fa;
             --card-bg: #ffffff;
             --text-main: #212529;
@@ -37,7 +37,8 @@
             --border-color: #343a40;
         }
 
-        body { font-family: 'Sarabun', sans-serif; background-color: var(--bg-color); color: var(--text-main); padding-bottom: 40px; transition: 0.3s; }
+        /* 📱 ปรับ padding-bottom ให้พอดีกับเมนูด้านล่าง */
+        body { font-family: 'Sarabun', sans-serif; background-color: var(--bg-color); color: var(--text-main); padding-bottom: 90px; transition: 0.3s; }
         .container { max-width: 500px; padding: 0 15px; display: none; }
 
         /* ================= LOADING SCREEN ================= */
@@ -68,14 +69,31 @@
         .btn-submit { background: var(--primary-color); color: white; width: 100%; border-radius: 12px; padding: 15px; font-weight: 700; font-size: 1.1rem; border: none; box-shadow: 0 6px 15px rgba(15, 32, 39, 0.3); transition: 0.2s; }
         .btn-submit:active { transform: scale(0.98); }
 
-        /* ================= TABS & HISTORY ================= */
-        .nav-pills .nav-link { color: var(--text-main); font-weight: 600; border-radius: 10px; padding: 10px; transition: 0.3s; }
-        .nav-pills .nav-link.active { background-color: var(--primary-color); color: white; }
-        
+        /* ================= HISTORY ================= */
         .history-item { background: var(--card-bg); border-radius: 12px; padding: 15px; margin-bottom: 12px; border-left: 4px solid var(--accent-color); border-right: 1px solid var(--border-color); border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
         .action-btn { background: none; border: none; color: #6c757d; font-size: 1.1rem; padding: 5px; transition: 0.2s; }
         .action-btn:hover { color: var(--primary-color); transform: scale(1.1); }
         .action-btn.delete:hover { color: #dc3545; }
+
+        /* ================= 📱 BOTTOM NAVIGATION (App Style) ================= */
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 0; width: 100%;
+            background: var(--card-bg); border-top: 1px solid var(--border-color);
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.05); z-index: 1000;
+            display: flex; justify-content: space-around; padding: 10px 0 15px;
+            padding-bottom: env(safe-area-inset-bottom); /* รองรับขอบจอมือถือ */
+        }
+        .bottom-nav .nav-item {
+            text-align: center; color: #6c757d; text-decoration: none;
+            font-size: 0.85rem; font-weight: 700; display: flex; flex-direction: column; align-items: center; transition: 0.2s; width: 50%;
+        }
+        .bottom-nav .nav-item i { font-size: 1.6rem; margin-bottom: 2px; }
+        .bottom-nav .nav-item.active { color: var(--accent-color); }
+        
+        /* ซ่อน/โชว์ หน้าต่าง */
+        .page-section { display: none; }
+        .page-section.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -93,7 +111,7 @@
     <span class="badge bg-light text-dark bg-opacity-75"><i class="bi bi-person-badge-fill me-1"></i> เจ้าหน้าที่รักษาความปลอดภัย</span>
 </div>
 
-<div class="container animate__animated animate__fadeInUp" id="mainApp">
+<div class="container" id="mainApp">
     
     <div class="info-card mx-3">
         <div class="small fw-bold text-muted text-uppercase"><i class="bi bi-geo-alt-fill text-danger me-1"></i> สถานที่ปฏิบัติงาน</div>
@@ -103,72 +121,83 @@
         <div class="clock-display" id="liveClock">00:00:00</div>
     </div>
 
-    <div class="main-card">
-        <form id="attendanceForm">
-            <input type="hidden" id="picUrl">
+    <div id="formPage" class="page-section active">
+        <div class="main-card">
+            <form id="attendanceForm">
+                <input type="hidden" id="picUrl">
 
-            <div class="row g-3 mb-3">
-                <div class="col-6">
-                    <label class="form-label"><i class="bi bi-calendar-event me-1"></i> วันที่ทำงาน</label>
-                    <input type="date" id="work_date" class="form-control" required>
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <label class="form-label"><i class="bi bi-calendar-event me-1"></i> วันที่ทำงาน</label>
+                        <input type="date" id="work_date" class="form-control" required>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label"><i class="bi bi-arrow-repeat me-1"></i> กะการทำงาน</label>
+                        <select id="shift" class="form-select" required>
+                            <option value="" disabled selected>เลือกกะ...</option>
+                            <option value="กะเช้า (06:00-18:00)">กะเช้า (06:00-18:00)</option>
+                            <option value="กะดึก (18:00-06:00)">กะดึก (18:00-06:00)</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="col-6">
-                    <label class="form-label"><i class="bi bi-arrow-repeat me-1"></i> กะการทำงาน</label>
-                    <select id="shift" class="form-select" required>
-                        <option value="" disabled selected>เลือกกะ...</option>
-                        <option value="กะเช้า (06:00-18:00)">กะเช้า (06:00-18:00)</option>
-                        <option value="กะดึก (18:00-06:00)">กะดึก (18:00-06:00)</option>
+
+                <div class="mb-3">
+                    <label class="form-label"><i class="bi bi-upc-scan me-1"></i> รหัสบัตรประจำตัว</label>
+                    <select id="id_card" required placeholder="ค้นหารหัสบัตร..."></select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label"><i class="bi bi-person-vcard me-1"></i> ชื่อ-นามสกุลผู้ปฏิบัติงาน</label>
+                    <select id="fullname" required placeholder="ค้นหาชื่อ-นามสกุล..."></select>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <label class="form-label text-success"><i class="bi bi-box-arrow-in-right me-1"></i> เวลาเข้า</label>
+                        <input type="text" id="time_in" class="form-control fw-bold text-success fs-5 text-center" placeholder="08:00" inputmode="numeric" pattern="[0-9]*" maxlength="5" oninput="formatTime(this)">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label text-danger"><i class="bi bi-box-arrow-right me-1"></i> เวลาออก</label>
+                        <input type="text" id="time_out" class="form-control fw-bold text-danger fs-5 text-center" placeholder="17:00" inputmode="numeric" pattern="[0-9]*" maxlength="5" oninput="formatTime(this)">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label"><i class="bi bi-journal-text me-1"></i> หมายเหตุการปฏิบัติงาน</label>
+                    <select id="remark_type" class="form-select" onchange="handleRemarkChange()">
+                        <option value="ปกติ" selected>ปฏิบัติงานปกติ</option>
+                        <option value="ควงเปลี่ยนกะ 24 ชั่วโมง">ควงเปลี่ยนกะ 24 ชั่วโมง</option>
+                        <option value="แทน (หัวหน้าชุด รปภ.)">แทน (หัวหน้าชุด รปภ.)</option>
+                        <option value="แทน (รปภ.)">แทน (รปภ.)</option>
+                        <option value="อื่นๆ">อื่นๆ (ระบุด้วยตนเอง)</option>
                     </select>
                 </div>
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label"><i class="bi bi-upc-scan me-1"></i> รหัสบัตรประจำตัว</label>
-                <select id="id_card" required placeholder="ค้นหารหัสบัตร..."></select>
-            </div>
-            <div class="mb-3">
-                <label class="form-label"><i class="bi bi-person-vcard me-1"></i> ชื่อ-นามสกุลผู้ปฏิบัติงาน</label>
-                <select id="fullname" required placeholder="ค้นหาชื่อ-นามสกุล..."></select>
-            </div>
-
-            <div class="row g-3 mb-3">
-                <div class="col-6">
-                    <label class="form-label text-success"><i class="bi bi-box-arrow-in-right me-1"></i> เวลาเข้า</label>
-                    <input type="time" id="time_in" class="form-control fw-bold text-success fs-5">
+                
+                <div class="mb-4 d-none" id="remark_substitute_div">
+                    <label class="form-label text-warning"><i class="bi bi-people-fill me-1"></i> ปฏิบัติงานแทนผู้ใด?</label>
+                    <select id="remark_substitute" placeholder="ค้นหาชื่อผู้ที่ถูกแทน..."></select>
                 </div>
-                <div class="col-6">
-                    <label class="form-label text-danger"><i class="bi bi-box-arrow-right me-1"></i> เวลาออก</label>
-                    <input type="time" id="time_out" class="form-control fw-bold text-danger fs-5">
+
+                <div class="mb-4 d-none" id="remark_other_div">
+                    <label class="form-label text-warning"><i class="bi bi-pencil-square me-1"></i> ระบุรายละเอียด</label>
+                    <input type="text" id="remark_detail" class="form-control" placeholder="ระบุเหตุผลเพิ่มเติม...">
                 </div>
-            </div>
 
-            <div class="mb-3">
-                <label class="form-label"><i class="bi bi-journal-text me-1"></i> หมายเหตุการปฏิบัติงาน</label>
-                <select id="remark_type" class="form-select" onchange="handleRemarkChange()">
-                    <option value="ปกติ" selected>ปฏิบัติงานปกติ</option>
-                    <option value="ควงเปลี่ยนกะ 24 ชั่วโมง">ควงเปลี่ยนกะ 24 ชั่วโมง</option>
-                    <option value="แทน (หัวหน้าชุด รปภ.)">แทน (หัวหน้าชุด รปภ.)</option>
-                    <option value="แทน (รปภ.)">แทน (รปภ.)</option>
-                    <option value="อื่นๆ">อื่นๆ (ระบุด้วยตนเอง)</option>
-                </select>
-            </div>
-            <div class="mb-4 d-none" id="remark_other_div">
-                <input type="text" id="remark_detail" class="form-control" placeholder="ระบุเหตุผลเพิ่มเติม...">
-            </div>
-
-            <button type="submit" id="btnSubmit" class="btn-submit">
-                <i class="bi bi-cloud-arrow-up-fill me-2"></i> บันทึกเวลาเข้าสู่ระบบ
-            </button>
-        </form>
+                <button type="submit" id="btnSubmit" class="btn-submit mt-2">
+                    <i class="bi bi-cloud-arrow-up-fill me-2"></i> บันทึกเวลาเข้าสู่ระบบ
+                </button>
+            </form>
+        </div>
     </div>
 
-    <div class="mt-4">
+    <div id="historyPage" class="page-section pt-3">
+        <h5 class="fw-bold mb-3" style="color: var(--primary-color);"><i class="bi bi-clock-history me-2"></i>ประวัติการปฏิบัติงาน</h5>
+        
         <ul class="nav nav-pills nav-fill mb-3" id="historyTabs" role="tablist">
             <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="tab-today-btn" data-bs-toggle="pill" data-bs-target="#tab-today" type="button"><i class="bi bi-clock-history me-1"></i> ประวัติวันนี้</button>
+                <button class="nav-link active" id="tab-today-btn" data-bs-toggle="pill" data-bs-target="#tab-today" type="button">วันนี้</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="tab-past-btn" data-bs-toggle="pill" data-bs-target="#tab-past" type="button"><i class="bi bi-calendar-check me-1"></i> ย้อนหลัง</button>
+                <button class="nav-link" id="tab-past-btn" data-bs-toggle="pill" data-bs-target="#tab-past" type="button">ย้อนหลัง</button>
             </li>
         </ul>
         <div class="tab-content" id="historyTabsContent">
@@ -180,18 +209,28 @@
             </div>
         </div>
     </div>
+
 </div>
+
+<nav class="bottom-nav no-print">
+    <a href="#" class="nav-item active" id="nav-form" onclick="switchPage('form')">
+        <i class="bi bi-shield-check"></i>
+        <span>ลงเวลา</span>
+    </a>
+    <a href="#" class="nav-item" id="nav-history" onclick="switchPage('history')">
+        <i class="bi bi-card-list"></i>
+        <span>ประวัติ</span>
+    </a>
+</nav>
 
 <script>
 // ================= CONFIG =================
-// 🛑 เปลี่ยน KEY และ LIFF ID
 const SUPABASE_URL = 'https://dqsfioiqwxuxpucwwhsv.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxc2Zpb2lxd3h1eHB1Y3d3aHN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1OTk1NjUsImV4cCI6MjA4NDE3NTU2NX0.L_u0Ff3uHofxiimEs6ySFB4TPNtOWiKeSu3KFoVcA1U';
-
 const LIFF_ID = '2007053300-gJitj7Vr';
 
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-let selectCardInstance, selectPersonInstance;
+let selectCardInstance, selectPersonInstance, selectSubstituteInstance;
 
 // ================= INIT =================
 window.onload = async () => {
@@ -205,12 +244,11 @@ window.onload = async () => {
         
         if (!liff.isLoggedIn()) { liff.login(); return; }
 
-        // 🔄 ดึงรูปโปรไฟล์ LINE ใหม่ล่าสุดเสมอ
         const profile = await liff.getProfile();
         document.getElementById('displayName').innerText = profile.displayName;
         if(profile.pictureUrl) {
             document.getElementById('profileImage').src = profile.pictureUrl;
-            document.getElementById('picUrl').value = profile.pictureUrl; // เก็บไว้ส่ง Database
+            document.getElementById('picUrl').value = profile.pictureUrl;
         }
 
         await updateLoader("เตรียมพร้อมระบบ...", 200);
@@ -229,11 +267,27 @@ window.onload = async () => {
 
 function updateLoader(text, delay) { return new Promise(r => { document.getElementById('loadStatusMain').innerText = text; setTimeout(r, delay); }); }
 
-// ================= CLOCK & THEME =================
-function startLiveClock() {
-    setInterval(() => { document.getElementById('liveClock').innerText = new Date().toLocaleTimeString('th-TH', { hour12: false }); }, 1000);
+// ================= 📱 APP NAVIGATION =================
+function switchPage(page) {
+    // ซ่อนทุกหน้า และถอด Active ออก
+    document.getElementById('formPage').classList.remove('active');
+    document.getElementById('historyPage').classList.remove('active');
+    document.getElementById('nav-form').classList.remove('active');
+    document.getElementById('nav-history').classList.remove('active');
+
+    // โชว์หน้าที่เลือก
+    if(page === 'form') {
+        document.getElementById('formPage').classList.add('active');
+        document.getElementById('nav-form').classList.add('active');
+    } else {
+        document.getElementById('historyPage').classList.add('active');
+        document.getElementById('nav-history').classList.add('active');
+        fetchHistory(); // อัปเดตประวัติทุกครั้งที่กดเข้ามาดู
+    }
 }
 
+// ================= CLOCK & THEME =================
+function startLiveClock() { setInterval(() => { document.getElementById('liveClock').innerText = new Date().toLocaleTimeString('th-TH', { hour12: false }); }, 1000); }
 function initTheme() {
     const savedTheme = localStorage.getItem('sec_theme') || 'light';
     document.documentElement.setAttribute('data-theme', savedTheme);
@@ -257,9 +311,18 @@ async function loadMasterData() {
 
         const { data: persons } = await db.from('security_personnel_master').select('fullname').order('fullname');
         const selectPerson = document.getElementById('fullname');
+        const selectSub = document.getElementById('remark_substitute'); // ช่องใส่ชื่อคนแทน
         selectPerson.innerHTML = '<option value="">ค้นหาชื่อ-นามสกุล...</option>';
-        if (persons) persons.forEach(p => selectPerson.innerHTML += `<option value="${p.fullname}">${p.fullname}</option>`);
+        selectSub.innerHTML = '<option value="">ค้นหาชื่อผู้ที่ถูกแทน...</option>';
+        
+        if (persons) {
+            persons.forEach(p => {
+                selectPerson.innerHTML += `<option value="${p.fullname}">${p.fullname}</option>`;
+                selectSub.innerHTML += `<option value="${p.fullname}">${p.fullname}</option>`;
+            });
+        }
         selectPersonInstance = new TomSelect("#fullname", { create: false, sortField: { field: "text", direction: "asc" }});
+        selectSubstituteInstance = new TomSelect("#remark_substitute", { create: false, sortField: { field: "text", direction: "asc" }});
 
         // Memory
         if(localStorage.getItem('sec_last_card')) selectCardInstance.setValue(localStorage.getItem('sec_last_card'));
@@ -268,18 +331,46 @@ async function loadMasterData() {
     } catch (err) { console.error("Load Master Error:", err); }
 }
 
-function handleRemarkChange() {
-    const val = document.getElementById('remark_type').value;
-    const otherDiv = document.getElementById('remark_other_div');
-    if (val === 'อื่นๆ') { otherDiv.classList.remove('d-none'); document.getElementById('remark_detail').focus(); } 
-    else { otherDiv.classList.add('d-none'); document.getElementById('remark_detail').value = ''; }
+// ================= ⏰ CUSTOM TIME FORMATTER (Numpad) =================
+function formatTime(input) {
+    let val = input.value.replace(/\D/g, ''); // ลบตัวอักษรที่ไม่ใช่ตัวเลขออกให้หมด
+    if (val.length > 2) {
+        val = val.substring(0, 2) + ':' + val.substring(2, 4); // เติม : อัตโนมัติ
+    }
+    input.value = val;
+}
+function validateTimeStr(timeStr) {
+    if (!timeStr) return true;
+    if (timeStr.length !== 5) return false;
+    const [h, m] = timeStr.split(':');
+    if (parseInt(h) > 23 || parseInt(m) > 59) return false;
+    return true;
 }
 
-// ================= HISTORY (2 TABS) =================
+// ================= 📝 REMARK LOGIC =================
+function handleRemarkChange() {
+    const val = document.getElementById('remark_type').value;
+    const subDiv = document.getElementById('remark_substitute_div');
+    const otherDiv = document.getElementById('remark_other_div');
+
+    subDiv.classList.add('d-none');
+    otherDiv.classList.add('d-none');
+    document.getElementById('remark_detail').value = '';
+    selectSubstituteInstance.clear();
+
+    if (val.includes('แทน')) {
+        subDiv.classList.remove('d-none'); // โชว์ Dropdown ชื่อคนถูกแทน
+    } else if (val === 'อื่นๆ') {
+        otherDiv.classList.remove('d-none'); // โชว์ช่องพิมพ์เอง
+        document.getElementById('remark_detail').focus();
+    }
+}
+
+// ================= HISTORY =================
 async function fetchHistory() {
     try {
         const todayStr = new Date().toISOString().split('T')[0];
-        const nameFilter = localStorage.getItem('sec_last_name'); // ดึงประวัติของตัวเองเป็นหลัก
+        const nameFilter = localStorage.getItem('sec_last_name'); 
         
         let query = db.from('guard_attendance').select('*').order('created_at', { ascending: false }).limit(20);
         if(nameFilter) query = query.eq('fullname', nameFilter);
@@ -308,7 +399,7 @@ async function fetchHistory() {
                         <div class="fw-bold" style="color: var(--primary-color);">${item.work_date}</div>
                         <div class="badge bg-secondary bg-opacity-10 text-dark border">${shiftText}</div>
                     </div>
-                    <div class="small text-muted mb-2"><i class="bi bi-person-vcard"></i> ${item.id_card} | ${item.remark_type}</div>
+                    <div class="small text-muted mb-2"><i class="bi bi-person-vcard"></i> ${item.id_card} | ${item.remark_type} ${item.remark_detail ? `(${item.remark_detail})` : ''}</div>
                     <div class="bg-light p-2 rounded text-center border" style="font-size: 0.9rem;">
                         ${timeIn} ${timeOut}
                     </div>
@@ -324,13 +415,11 @@ async function fetchHistory() {
     } catch (err) { console.error(err); }
 }
 
-// ================= USER EDIT/DELETE (WITH PIN/ID CARD) =================
+// ================= USER EDIT/DELETE =================
 async function verifyUser(id_card) {
     const { value: confirmId } = await Swal.fire({
-        title: 'ยืนยันตัวตน',
-        text: 'เพื่อความปลอดภัย กรุณากรอก "รหัสบัตรประจำตัว" ของคุณ',
-        input: 'text',
-        inputPlaceholder: 'เช่น G-001',
+        title: 'ยืนยันตัวตน', text: 'กรุณากรอก "รหัสบัตรประจำตัว" เพื่อยืนยัน',
+        input: 'text', inputPlaceholder: 'เช่น G-001',
         showCancelButton: true, confirmButtonText: 'ยืนยัน', cancelButtonText: 'ยกเลิก',
         inputValidator: (value) => { if (!value) return 'กรุณากรอกรหัสบัตร!' }
     });
@@ -344,17 +433,23 @@ async function userEdit(id, id_card, currentIn, currentOut) {
         title: 'แก้ไขเวลา',
         html: `
             <div class="text-start mt-3">
-                <label class="form-label">เวลาเข้า</label><input type="time" id="swal-in" value="${currentIn}" class="form-control mb-3">
-                <label class="form-label">เวลาออก</label><input type="time" id="swal-out" value="${currentOut}" class="form-control">
+                <label class="form-label text-success">เวลาเข้า</label>
+                <input type="text" id="swal-in" value="${currentIn}" class="form-control mb-3 text-center" inputmode="numeric" placeholder="08:00" maxlength="5" oninput="formatTime(this)">
+                <label class="form-label text-danger">เวลาออก</label>
+                <input type="text" id="swal-out" value="${currentOut}" class="form-control text-center" inputmode="numeric" placeholder="17:00" maxlength="5" oninput="formatTime(this)">
             </div>
         `,
         focusConfirm: false, showCancelButton: true, confirmButtonText: 'บันทึก',
-        preConfirm: () => { return { in: document.getElementById('swal-in').value, out: document.getElementById('swal-out').value } }
+        preConfirm: () => { 
+            const tin = document.getElementById('swal-in').value;
+            const tout = document.getElementById('swal-out').value;
+            if((tin && !validateTimeStr(tin)) || (tout && !validateTimeStr(tout))) { Swal.showValidationMessage('รูปแบบเวลาไม่ถูกต้อง (00:00 - 23:59)'); return false; }
+            return { in: tin, out: tout };
+        }
     });
 
     if (formValues) {
         Swal.fire({ title: 'กำลังบันทึก...', didOpen: () => Swal.showLoading() });
-        // 🕵️ บันทึกว่า รปภ. เป็นคนแก้เอง (ให้ Admin เห็นในฐานข้อมูล)
         const { error } = await db.from('guard_attendance').update({
             time_in: formValues.in || null, time_out: formValues.out || null,
             updated_at: new Date(), updated_by: 'User (รปภ.)'
@@ -367,7 +462,6 @@ async function userEdit(id, id_card, currentIn, currentOut) {
 
 async function userDelete(id, id_card) {
     if(!(await verifyUser(id_card))) return Swal.fire('ผิดพลาด', 'รหัสบัตรไม่ตรงกับรายการนี้', 'error');
-    
     const res = await Swal.fire({ title: 'ยืนยันการลบ?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545', confirmButtonText: 'ลบทิ้ง' });
     if(res.isConfirmed) {
         await db.from('guard_attendance').delete().eq('id', id);
@@ -382,6 +476,20 @@ document.getElementById('attendanceForm').addEventListener('submit', async funct
     const time_out = document.getElementById('time_out').value || null;
 
     if(!time_in && !time_out) return Swal.fire({ icon: 'warning', title: 'ข้อมูลไม่ครบ', text: 'กรุณาระบุเวลาอย่างน้อย 1 ช่อง' });
+    if((time_in && !validateTimeStr(time_in)) || (time_out && !validateTimeStr(time_out))) {
+        return Swal.fire({ icon: 'error', title: 'เวลาผิดพลาด', text: 'กรุณากรอกเวลาให้ถูกต้อง (00:00 - 23:59)' });
+    }
+
+    const remark_type = document.getElementById('remark_type').value;
+    let final_remark_detail = null;
+
+    // จัดการค่าหมายเหตุตามประเภทที่เลือก
+    if (remark_type.includes('แทน')) {
+        final_remark_detail = document.getElementById('remark_substitute').value;
+        if(!final_remark_detail) return Swal.fire({ icon: 'warning', title: 'ข้อมูลไม่ครบ', text: 'กรุณาเลือกชื่อผู้ที่ปฏิบัติงานแทน' });
+    } else if (remark_type === 'อื่นๆ') {
+        final_remark_detail = document.getElementById('remark_detail').value;
+    }
 
     const btn = document.getElementById('btnSubmit');
     const originalText = btn.innerHTML; btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" style="width:1.2rem;height:1.2rem;color:white;"></span> กำลังบันทึก...';
@@ -393,9 +501,9 @@ document.getElementById('attendanceForm').addEventListener('submit', async funct
         fullname: document.getElementById('fullname').value,
         time_in: time_in,
         time_out: time_out,
-        remark_type: document.getElementById('remark_type').value,
-        remark_detail: document.getElementById('remark_detail').value || null,
-        profile_pic: document.getElementById('picUrl').value || null // ส่ง URL รูปลง DB
+        remark_type: remark_type,
+        remark_detail: final_remark_detail,
+        profile_pic: document.getElementById('picUrl').value || null
     };
 
     try {
@@ -411,7 +519,9 @@ document.getElementById('attendanceForm').addEventListener('submit', async funct
         
         document.getElementById('time_in').value = ''; document.getElementById('time_out').value = '';
         document.getElementById('remark_type').value = 'ปกติ'; handleRemarkChange();
-        await fetchHistory();
+        
+        // บันทึกเสร็จ เด้งไปหน้าประวัติให้ดูอัตโนมัติ
+        switchPage('history');
 
     } catch (err) { Swal.fire('เกิดข้อผิดพลาด', err.message, 'error'); } 
     finally { btn.disabled = false; btn.innerHTML = originalText; }
