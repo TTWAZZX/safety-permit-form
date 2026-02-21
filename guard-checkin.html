@@ -2,209 +2,413 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบลงเวลา รปภ. (Smart Attendance)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>ลงเวลาทำงาน รปภ.</title>
     
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
     
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    
-    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.bootstrap5.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
 
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <style>
-        body { font-family: 'Sarabun', sans-serif; background-color: #f3f4f6; }
-        .ts-control { padding: 12px; border-radius: 0.5rem; border-color: #d1d5db; font-size: 1rem; }
+        /* ================= THEME VARIABLES ================= */
+        :root {
+            --primary-color: #0ea5e9;
+            --line-green: #06c755;
+            --bg-color: #f8fafc;
+            --card-bg: rgba(255, 255, 255, 0.9);
+            --text-color: #334155;
+            --input-bg: #fff;
+            --border-color: #e2e8f0;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.8);
+            --text-color: #f1f5f9;
+            --input-bg: #1e293b;
+            --border-color: #334155;
+        }
+
+        body { 
+            font-family: 'Sarabun', sans-serif; 
+            background-color: var(--bg-color); 
+            color: var(--text-color); 
+            min-height: 100vh; 
+            padding-bottom: 20px; 
+            transition: background-color 0.3s ease;
+        }
+        
+        .container { max-width: 500px; padding: 0 15px; display: none; }
+
+        /* ================= LOADING SCREEN ================= */
+        #loadingScreen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-color); z-index: 9999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+        }
+        .line-spinner {
+            border: 5px solid var(--border-color);
+            border-top: 5px solid var(--line-green);
+            border-radius: 50%; width: 50px; height: 50px;
+            animation: spin 1s linear infinite; margin-bottom: 20px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .loading-text-main { font-weight: bold; font-size: 1.2rem; color: var(--text-color); margin-bottom: 5px; }
+        .loading-text-sub { font-size: 0.9rem; color: #888; }
+
+        /* ================= CARD & INPUTS ================= */
+        .main-card {
+            margin-top: 20px;
+            background: var(--card-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border-radius: 24px; padding: 25px 20px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            position: relative; overflow: hidden;
+        }
+        .main-card::before { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: linear-gradient(90deg, #1e3a8a, #0ea5e9); }
+
+        .form-floating > .form-control, .form-floating > .form-select { 
+            border-radius: 12px; border: 1px solid var(--border-color); 
+            background-color: var(--input-bg); color: var(--text-color); height: 60px; 
+        }
+        .form-floating > .form-control:focus, .form-floating > .form-select:focus { 
+            border-color: var(--primary-color); box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1); 
+        }
+        .form-floating > label { color: #94a3b8; }
+        
+        /* TomSelect Theme Fix for Dark Mode */
+        .ts-control { border-radius: 12px; border: 1px solid var(--border-color); background-color: var(--input-bg); color: var(--text-color); padding: 16px 12px; }
+        .ts-dropdown { background-color: var(--input-bg); color: var(--text-color); border: 1px solid var(--border-color); border-radius: 12px; }
+        .ts-dropdown .active { background-color: rgba(14, 165, 233, 0.1); color: var(--text-color); }
+
+        .btn-submit { 
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); color: white; width: 100%; 
+            border-radius: 16px; padding: 14px; border: none; font-weight: 700; font-size: 1.1rem; margin-top: 10px;
+            box-shadow: 0 10px 20px -5px rgba(59, 130, 246, 0.4);
+        }
+
+        .theme-toggle {
+            position: absolute; top: 20px; right: 20px;
+            background: rgba(14, 165, 233, 0.1); color: var(--primary-color);
+            border: none; width: 36px; height: 36px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+        }
+
+        /* ================= HISTORY LIST ================= */
+        .history-item { 
+            background: var(--card-bg); border-radius: 16px; padding: 15px; margin-bottom: 10px; 
+            border-left: 4px solid var(--primary-color); box-shadow: 0 2px 8px rgba(0,0,0,0.04); 
+            display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border-color); 
+        }
+        
+        .skeleton {
+            background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+            background-size: 200% 100%; animation: shimmer 1.5s infinite;
+            border-radius: 8px; color: transparent !important; min-height: 1em;
+        }
+        [data-theme="dark"] .skeleton { background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%); }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
     </style>
 </head>
-<body class="text-gray-800 pb-10">
+<body>
 
-    <div class="bg-blue-800 text-white p-6 shadow-md rounded-b-3xl text-center">
-        <h1 class="text-2xl font-bold">🛡️ ระบบลงเวลา รปภ.</h1>
-        <p class="text-blue-200 text-sm mt-1">Smart Attendance System</p>
+<div id="loadingScreen">
+    <div class="line-spinner"></div>
+    <div class="loading-text-main" id="loadStatusMain">กำลังเชื่อมต่อกับ LINE</div>
+    <div class="loading-text-sub" id="loadStatusSub">กรุณารอสักครู่</div>
+</div>
+
+<div class="container animate__animated animate__fadeIn" id="mainApp">
+    <div class="main-card">
+        <button class="theme-toggle" onclick="toggleTheme()"><i class="bi bi-moon-stars-fill" id="themeIcon"></i></button>
+
+        <div class="text-center mb-4">
+            <div class="bg-primary bg-opacity-10 p-2 rounded-circle d-inline-block mb-2 shadow-sm">
+                <img id="profileImage" src="https://cdn-icons-png.flaticon.com/512/847/847969.png" class="rounded-circle" width="45">
+            </div>
+            <h5 class="fw-bold m-0 text-gradient text-primary">ระบบลงเวลา รปภ.</h5>
+            <small class="opacity-75">Smart Security Attendance</small>
+        </div>
+
+        <form id="attendanceForm">
+            <input type="hidden" id="userId">
+
+            <div class="row g-2 mb-3">
+                <div class="col-6">
+                    <div class="form-floating">
+                        <input type="date" id="work_date" class="form-control" required>
+                        <label for="work_date"><i class="bi bi-calendar3 me-1"></i>วันที่ทำงาน</label>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="form-floating">
+                        <select id="shift" class="form-select" required>
+                            <option value="" disabled selected>เลือกกะ...</option>
+                            <option value="กะเช้า (07:00-19:00)">☀️ กะเช้า</option>
+                            <option value="กะดึก (19:00-07:00)">🌙 กะดึก</option>
+                        </select>
+                        <label for="shift"><i class="bi bi-arrow-repeat me-1"></i>กะการทำงาน</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="small text-muted fw-bold mb-1"><i class="bi bi-person-badge me-1"></i>รหัสประจำตัว (ID Card)</label>
+                <select id="id_card" required placeholder="พิมพ์ค้นหารหัส หรือ ชื่อ..."></select>
+            </div>
+
+            <div class="form-floating mb-3">
+                <input type="text" id="fullname" class="form-control fw-bold text-primary" readonly placeholder="Name">
+                <label for="fullname"><i class="bi bi-person-check me-1"></i>ชื่อ-สกุล (อัตโนมัติ)</label>
+            </div>
+
+            <div class="row g-2 mb-3">
+                <div class="col-6">
+                    <div class="form-floating">
+                        <input type="time" id="time_in" class="form-control fw-bold text-success">
+                        <label for="time_in"><i class="bi bi-box-arrow-in-right me-1"></i>เวลาเข้า (IN)</label>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="form-floating">
+                        <input type="time" id="time_out" class="form-control fw-bold text-danger">
+                        <label for="time_out"><i class="bi bi-box-arrow-right me-1"></i>เวลาออก (OUT)</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-floating mb-3">
+                <select id="remark_type" class="form-select" onchange="handleRemarkChange()">
+                    <option value="ปกติ" selected>✅ ปฏิบัติงานปกติ</option>
+                    <option value="ควงเปลี่ยนกะ 24 ชั่วโมง">⚠️ ควงเปลี่ยนกะ 24 ชั่วโมง</option>
+                    <option value="แทน (หัวหน้าชุด รปภ.)">⭐ แทน (หัวหน้าชุด รปภ.)</option>
+                    <option value="แทน (รปภ.)">🔄 แทน (รปภ.)</option>
+                    <option value="อื่นๆ">✏️ อื่นๆ (ระบุเอง)</option>
+                </select>
+                <label for="remark_type"><i class="bi bi-card-text me-1"></i>หมายเหตุ</label>
+            </div>
+
+            <div class="form-floating mb-3 d-none" id="remark_other_div">
+                <input type="text" id="remark_detail" class="form-control" placeholder="ระบุรายละเอียดเพิ่มเติม">
+                <label for="remark_detail">รายละเอียดเพิ่มเติม...</label>
+            </div>
+
+            <button type="submit" id="btnSubmit" class="btn-submit">บันทึกข้อมูล <i class="bi bi-send-fill ms-2"></i></button>
+        </form>
     </div>
 
-    <div class="max-w-md mx-auto mt-6 px-4">
-        <div class="bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
-            <form id="attendanceForm" class="space-y-5">
-                
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1">📅 วันที่ทำงาน (Workaday)</label>
-                    <input type="date" id="work_date" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
-                </div>
-
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1">🔄 กะการทำงาน (Shift)</label>
-                    <select id="shift" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
-                        <option value="" disabled selected>-- เลือกกะการทำงาน --</option>
-                        <option value="กะเช้า (07:00-19:00)">☀️ กะเช้า (07:00-19:00)</option>
-                        <option value="กะดึก (19:00-07:00)">🌙 กะดึก (19:00-07:00)</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1">🆔 รหัสประจำตัว (ID Card)</label>
-                    <select id="id_card" required placeholder="พิมพ์ค้นหารหัส หรือ ชื่อ..."></select>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1">👤 ชื่อ-สกุล (อัตโนมัติ)</label>
-                    <input type="text" id="fullname" readonly class="w-full p-3 border border-gray-200 bg-gray-100 rounded-lg text-gray-500 font-medium cursor-not-allowed">
-                </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">🟢 เวลาเข้า (IN)</label>
-                        <input type="time" id="time_in" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">🔴 เวลาออก (OUT)</label>
-                        <input type="time" id="time_out" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 outline-none">
-                    </div>
-                </div>
-                <p class="text-xs text-gray-400 mt-1">* หากเพิ่งเข้างาน ให้เว้นช่อง "เวลาออก" ไว้ก่อนได้ครับ</p>
-
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1">📝 หมายเหตุ (Remark)</label>
-                    <select id="remark_type" onchange="handleRemarkChange()" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
-                        <option value="ปกติ" selected>✅ ปฏิบัติงานปกติ</option>
-                        <option value="ควงเปลี่ยนกะ 24 ชั่วโมง">⚠️ ควงเปลี่ยนกะ 24 ชั่วโมง</option>
-                        <option value="แทน (หัวหน้าชุด รปภ.)">⭐ แทน (หัวหน้าชุด รปภ.)</option>
-                        <option value="แทน (รปภ.)">🔄 แทน (รปภ.)</option>
-                        <option value="อื่นๆ">✏️ อื่นๆ (ระบุเอง)</option>
-                    </select>
-                </div>
-
-                <div id="remark_other_div" class="hidden">
-                    <label class="block text-sm font-semibold text-gray-700 mb-1">รายละเอียดเพิ่มเติม</label>
-                    <input type="text" id="remark_detail" placeholder="พิมพ์รายละเอียด..." class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
-                </div>
-
-                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg transition duration-200 mt-4 text-lg">
-                    💾 บันทึกข้อมูล
-                </button>
-            </form>
+    <div class="mt-4 pb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3 px-2">
+            <h6 class="fw-bold opacity-75 m-0 small text-uppercase"><i class="bi bi-clock-history me-1"></i>ประวัติการลงเวลาล่าสุด</h6>
+        </div>
+        <div id="historyList">
+            <div class="history-item"><div class="skeleton" style="width: 100%;">Loading...</div></div>
         </div>
     </div>
+</div>
 
-    <script>
-        // 🛑 1. ใส่ KEY ของ SUPABASE ตรงนี้ครับ!
-        const SUPABASE_URL = 'https://dqsfioiqwxuxpucwwhsv.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxc2Zpb2lxd3h1eHB1Y3d3aHN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1OTk1NjUsImV4cCI6MjA4NDE3NTU2NX0.L_u0Ff3uHofxiimEs6ySFB4TPNtOWiKeSu3KFoVcA1U';
+<script>
+// ================= CONFIG =================
+const SUPABASE_URL = 'https://dqsfioiqwxuxpucwwhsv.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxc2Zpb2lxd3h1eHB1Y3d3aHN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1OTk1NjUsImV4cCI6MjA4NDE3NTU2NX0.L_u0Ff3uHofxiimEs6ySFB4TPNtOWiKeSu3KFoVcA1U';
+const LIFF_ID = '2007053300-gJitj7Vr'; 
+
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let guardMap = {}; 
+
+// ================= INIT =================
+window.onload = async () => {
+    initTheme();
+    document.getElementById('work_date').valueAsDate = new Date(); // ตั้งวันที่ปัจจุบัน
+
+    await updateLoader("กำลังเชื่อมต่อกับ LINE...", 800);
+    
+    try {
+        await liff.init({ liffId: LIFF_ID });
+        await updateLoader("กำลังตรวจสอบโปรไฟล์...", 800);
         
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        let guardMap = {}; // เก็บข้อมูลรหัสคู่กับชื่อ
-
-        // 📅 ตั้งค่า วันที่ เป็นวันปัจจุบันทันทีที่เปิดแอป
-        document.getElementById('work_date').valueAsDate = new Date();
-
-        // 📥 2. ฟังก์ชันดึง Master Data จาก Supabase มาใส่ Dropdown
-        async function loadMasterData() {
-            try {
-                const { data, error } = await supabase.from('guard_master').select('*').order('id_card');
-                if (error) throw error;
-
-                const selectEl = document.getElementById('id_card');
-                selectEl.innerHTML = '<option value="">พิมพ์ค้นหารหัส หรือ ชื่อ...</option>';
-
-                data.forEach(g => {
-                    guardMap[g.id_card] = g.fullname; // จำคู่รหัสกับชื่อไว้
-                    const opt = document.createElement('option');
-                    opt.value = g.id_card;
-                    opt.textContent = `${g.id_card} - ${g.fullname}`;
-                    selectEl.appendChild(opt);
-                });
-
-                // เปิดใช้งาน TomSelect (ทำให้พิมพ์ค้นหาได้)
-                new TomSelect("#id_card", {
-                    create: false,
-                    sortField: { field: "text", direction: "asc" },
-                    onChange: function(selectedId) {
-                        // 🟢 ดึงชื่อมาใส่ช่องอัตโนมัติ
-                        document.getElementById('fullname').value = guardMap[selectedId] || '';
-                    }
-                });
-            } catch (err) {
-                console.error("Load Master Error:", err);
-                Swal.fire('ข้อผิดพลาด', 'ดึงฐานข้อมูลรายชื่อไม่ได้ กรุณารีเฟรชหน้าจอ', 'error');
-            }
+        if (!liff.isLoggedIn()) { 
+            liff.login(); 
+            return; 
         }
 
-        // 🔄 3. ฟังก์ชันซ่อน/โชว์ช่อง "อื่นๆ"
-        function handleRemarkChange() {
-            const val = document.getElementById('remark_type').value;
-            const otherDiv = document.getElementById('remark_other_div');
-            if (val === 'อื่นๆ') {
-                otherDiv.classList.remove('hidden');
-                document.getElementById('remark_detail').focus();
-            } else {
-                otherDiv.classList.add('hidden');
-                document.getElementById('remark_detail').value = '';
-            }
-        }
+        const profile = await liff.getProfile();
+        document.getElementById('userId').value = profile.userId;
+        if(profile.pictureUrl) document.getElementById('profileImage').src = profile.pictureUrl;
 
-        // 💾 4. ฟังก์ชันกดบันทึกข้อมูล
-        document.getElementById('attendanceForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
+        // ดึงข้อมูลรายชื่อ รปภ. และ ประวัติ (ทำงานพร้อมกัน)
+        await Promise.all([loadMasterData(), fetchRecentHistory()]);
 
-            // รวบรวมข้อมูลจากฟอร์ม
-            const payload = {
-                work_date: document.getElementById('work_date').value,
-                shift: document.getElementById('shift').value,
-                id_card: document.getElementById('id_card').value,
-                fullname: document.getElementById('fullname').value,
-                time_in: document.getElementById('time_in').value || null,
-                time_out: document.getElementById('time_out').value || null,
-                remark_type: document.getElementById('remark_type').value,
-                remark_detail: document.getElementById('remark_detail').value || null
-            };
+        // ซ่อน Loading Screen
+        document.getElementById('loadingScreen').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'block';
 
-            // เช็คว่าไม่ได้กรอกเวลาเลยทั้งคู่
-            if(!payload.time_in && !payload.time_out) {
-                Swal.fire('แจ้งเตือน', 'กรุณาระบุเวลาเข้า หรือ เวลาออก อย่างน้อย 1 ช่องครับ', 'warning');
-                return;
-            }
+    } catch (err) { 
+        console.error('LIFF Error:', err);
+        // Fallback
+        await loadMasterData();
+        await fetchRecentHistory();
+        document.getElementById('loadingScreen').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'block';
+    }
+};
 
-            // แสดงโหลดดิ้ง
-            Swal.fire({
-                title: 'กำลังบันทึกข้อมูล...',
-                allowOutsideClick: false,
-                didOpen: () => { Swal.showLoading(); }
-            });
+function updateLoader(text, delay) {
+    return new Promise(resolve => {
+        document.getElementById('loadStatusMain').innerText = text;
+        setTimeout(resolve, delay);
+    });
+}
 
-            try {
-                // บันทึกลงตาราง guard_attendance
-                const { error } = await supabase.from('guard_attendance').insert([payload]);
-                
-                if (error) throw error;
+// ================= THEME TOGGLE =================
+function initTheme() {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    document.getElementById('themeIcon').className = savedTheme === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-stars-fill';
+}
+function toggleTheme() {
+    const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+    document.getElementById('themeIcon').className = next === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-stars-fill';
+}
 
-                // สำเร็จ!
-                Swal.fire({
-                    icon: 'success',
-                    title: 'บันทึกสำเร็จ!',
-                    text: `ลงเวลาให้คุณ ${payload.fullname} เรียบร้อยแล้ว`,
-                    confirmButtonText: 'ตกลง',
-                    confirmButtonColor: '#2563eb'
-                }).then(() => {
-                    // ล้างฟอร์ม (ยกเว้นวันที่)
-                    document.getElementById('time_in').value = '';
-                    document.getElementById('time_out').value = '';
-                    document.getElementById('remark_type').value = 'ปกติ';
-                    handleRemarkChange();
-                });
+// ================= APP LOGIC =================
+async function loadMasterData() {
+    try {
+        const { data, error } = await db.from('guard_master').select('*').order('id_card');
+        if (error) throw error;
 
-            } catch (err) {
-                console.error("Insert Error:", err);
-                Swal.fire('ข้อผิดพลาด', 'บันทึกข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง', 'error');
-            }
+        const selectEl = document.getElementById('id_card');
+        selectEl.innerHTML = '<option value="">พิมพ์ค้นหารหัส หรือ ชื่อ...</option>';
+
+        data.forEach(g => {
+            guardMap[g.id_card] = g.fullname; 
+            const opt = document.createElement('option');
+            opt.value = g.id_card;
+            opt.textContent = `${g.id_card} - ${g.fullname}`;
+            selectEl.appendChild(opt);
         });
 
-        // 🚀 โหลดข้อมูลทันทีเมื่อเปิดหน้า
-        window.onload = loadMasterData;
-    </script>
+        // เปิดใช้งาน TomSelect (โหมด Bootstrap 5)
+        new TomSelect("#id_card", {
+            create: false,
+            sortField: { field: "text", direction: "asc" },
+            onChange: function(selectedId) {
+                document.getElementById('fullname').value = guardMap[selectedId] || '';
+            }
+        });
+    } catch (err) {
+        console.error("Load Master Error:", err);
+    }
+}
+
+function handleRemarkChange() {
+    const val = document.getElementById('remark_type').value;
+    const otherDiv = document.getElementById('remark_other_div');
+    if (val === 'อื่นๆ') {
+        otherDiv.classList.remove('d-none');
+        document.getElementById('remark_detail').focus();
+    } else {
+        otherDiv.classList.add('d-none');
+        document.getElementById('remark_detail').value = '';
+    }
+}
+
+// ================= FETCH HISTORY =================
+async function fetchRecentHistory() {
+    const listDiv = document.getElementById('historyList');
+    try {
+        // ดึง 5 รายการล่าสุด
+        const { data, error } = await db.from('guard_attendance')
+            .select('*').order('created_at', { ascending: false }).limit(5);
+        if (error) throw error;
+
+        listDiv.innerHTML = '';
+        if (data.length === 0) {
+            listDiv.innerHTML = `<div class="text-center text-muted small py-3">ยังไม่มีประวัติการลงเวลา</div>`;
+            return;
+        }
+
+        data.forEach(item => {
+            const shiftIcon = item.shift.includes("เช้า") ? "☀️" : "🌙";
+            const timeIn = item.time_in ? `<span class="text-success fw-bold">IN: ${item.time_in}</span>` : '';
+            const timeOut = item.time_out ? `<span class="text-danger fw-bold ms-2">OUT: ${item.time_out}</span>` : '';
+            
+            listDiv.innerHTML += `
+                <div class="history-item animate__animated animate__fadeIn">
+                    <div class="flex-grow-1">
+                        <div class="fw-bold text-primary">${item.fullname} <small class="text-muted">(${item.id_card})</small></div>
+                        <small class="text-muted">${shiftIcon} ${item.work_date} | ${item.remark_type}</small>
+                    </div>
+                    <div class="text-end ms-2" style="font-size: 0.85rem;">
+                        ${timeIn}<br>${timeOut}
+                    </div>
+                </div>
+            `;
+        });
+    } catch (err) { console.error("History Error:", err); }
+}
+
+// ================= SUBMIT FORM =================
+document.getElementById('attendanceForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const time_in = document.getElementById('time_in').value || null;
+    const time_out = document.getElementById('time_out').value || null;
+
+    if(!time_in && !time_out) {
+        Swal.fire('แจ้งเตือน', 'กรุณาระบุเวลาเข้า หรือ เวลาออก อย่างน้อย 1 ช่องครับ', 'warning');
+        return;
+    }
+
+    const btn = document.getElementById('btnSubmit');
+    const originalText = btn.innerHTML;
+    btn.disabled = true; 
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> บันทึก...';
+
+    const payload = {
+        work_date: document.getElementById('work_date').value,
+        shift: document.getElementById('shift').value,
+        id_card: document.getElementById('id_card').value,
+        fullname: document.getElementById('fullname').value,
+        time_in: time_in,
+        time_out: time_out,
+        remark_type: document.getElementById('remark_type').value,
+        remark_detail: document.getElementById('remark_detail').value || null
+    };
+
+    try {
+        const { error } = await db.from('guard_attendance').insert([payload]);
+        if (error) throw error;
+
+        await Swal.fire({ icon: 'success', title: 'บันทึกสำเร็จ!', text: `ลงเวลาให้คุณ ${payload.fullname} เรียบร้อยแล้ว`, timer: 2000, showConfirmButton: false });
+        
+        // ล้างฟอร์ม
+        document.getElementById('time_in').value = '';
+        document.getElementById('time_out').value = '';
+        document.getElementById('remark_type').value = 'ปกติ';
+        handleRemarkChange();
+        
+        // อัปเดตประวัติล่าสุด
+        await fetchRecentHistory();
+
+    } catch (err) { 
+        Swal.fire('Error', err.message, 'error'); 
+    } finally { 
+        btn.disabled = false; 
+        btn.innerHTML = originalText; 
+    }
+});
+</script>
+
 </body>
 </html>
