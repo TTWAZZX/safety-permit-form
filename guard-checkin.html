@@ -3,14 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>ลงเวลาทำงาน รปภ.</title>
+    <title>ระบบลงเวลา รปภ. (Security Attendance)</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.bootstrap5.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/th.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -18,21 +23,23 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
-        /* ================= THEME VARIABLES ================= */
+        /* ================= ENTERPRISE SECURITY THEME ================= */
         :root {
-            --primary-color: #0ea5e9;
-            --line-green: #06c755;
-            --bg-color: #f8fafc;
-            --card-bg: rgba(255, 255, 255, 0.9);
-            --text-color: #334155;
-            --input-bg: #fff;
-            --border-color: #e2e8f0;
+            --primary-color: #1e3a8a; /* Navy Blue */
+            --secondary-color: #fbbf24; /* Security Gold */
+            --bg-color: #f1f5f9;
+            --card-bg: rgba(255, 255, 255, 0.98);
+            --text-color: #1e293b;
+            --input-bg: #ffffff;
+            --border-color: #cbd5e1;
+            --success-color: #059669;
+            --danger-color: #dc2626;
         }
 
         [data-theme="dark"] {
-            --bg-color: #0f172a;
-            --card-bg: rgba(30, 41, 59, 0.8);
-            --text-color: #f1f5f9;
+            --bg-color: #020617;
+            --card-bg: rgba(15, 23, 42, 0.95);
+            --text-color: #f8fafc;
             --input-bg: #1e293b;
             --border-color: #334155;
         }
@@ -42,11 +49,11 @@
             background-color: var(--bg-color); 
             color: var(--text-color); 
             min-height: 100vh; 
-            padding-bottom: 20px; 
+            padding-bottom: 30px; 
             transition: background-color 0.3s ease;
         }
         
-        .container { max-width: 500px; padding: 0 15px; display: none; }
+        .container { max-width: 550px; padding: 0 15px; display: none; }
 
         /* ================= LOADING SCREEN ================= */
         #loadingScreen {
@@ -54,170 +61,160 @@
             background: var(--bg-color); z-index: 9999;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
         }
-        .line-spinner {
-            border: 5px solid var(--border-color);
-            border-top: 5px solid var(--line-green);
-            border-radius: 50%; width: 50px; height: 50px;
-            animation: spin 1s linear infinite; margin-bottom: 20px;
+        .security-spinner {
+            font-size: 3rem; color: var(--primary-color);
+            animation: pulse 1.5s infinite; margin-bottom: 15px;
         }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .loading-text-main { font-weight: bold; font-size: 1.2rem; color: var(--text-color); margin-bottom: 5px; }
-        .loading-text-sub { font-size: 0.9rem; color: #888; }
+        @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.7; } 100% { transform: scale(1); opacity: 1; } }
 
-        /* ================= CARD & INPUTS ================= */
-        .main-card {
-            margin-top: 20px;
-            background: var(--card-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-            border-radius: 24px; padding: 25px 20px;
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.4);
-            position: relative; overflow: hidden;
+        /* ================= MAIN APP UI ================= */
+        .header-box {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #0f172a 100%);
+            color: white; padding: 30px 20px; border-radius: 0 0 30px 30px;
+            box-shadow: 0 10px 25px rgba(30, 58, 138, 0.2); text-align: center;
+            position: relative; margin-bottom: -40px; z-index: 1;
         }
-        .main-card::before { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: linear-gradient(90deg, #1e3a8a, #0ea5e9); }
-
-        .form-floating > .form-control, .form-floating > .form-select { 
-            border-radius: 12px; border: 1px solid var(--border-color); 
-            background-color: var(--input-bg); color: var(--text-color); height: 60px; 
-        }
-        .form-floating > .form-control:focus, .form-floating > .form-select:focus { 
-            border-color: var(--primary-color); box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1); 
-        }
-        .form-floating > label { color: #94a3b8; }
         
-        /* TomSelect Theme Fix for Dark Mode */
-        .ts-control { border-radius: 12px; border: 1px solid var(--border-color); background-color: var(--input-bg); color: var(--text-color); padding: 16px 12px; }
-        .ts-dropdown { background-color: var(--input-bg); color: var(--text-color); border: 1px solid var(--border-color); border-radius: 12px; }
-        .ts-dropdown .active { background-color: rgba(14, 165, 233, 0.1); color: var(--text-color); }
+        .clock-display {
+            font-size: 2.2rem; font-weight: 700; font-family: monospace; letter-spacing: 2px;
+            color: var(--secondary-color); text-shadow: 0 2px 10px rgba(251, 191, 36, 0.3);
+            margin-top: 5px;
+        }
+
+        .main-card {
+            background: var(--card-bg); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            border-radius: 20px; padding: 30px 20px 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08); border: 1px solid rgba(255,255,255,0.1);
+            position: relative; z-index: 2; margin-top: 20px;
+        }
+
+        .form-label { font-size: 0.85rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.4rem; }
+        [data-theme="dark"] .form-label { color: #94a3b8; }
+
+        .form-control, .form-select { 
+            background-color: var(--input-bg); color: var(--text-color); 
+            border: 1px solid var(--border-color); border-radius: 12px; padding: 12px 15px; font-weight: 500;
+        }
+        .form-control:focus, .form-select:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1); }
+        .form-control[readonly] { background-color: rgba(0,0,0,0.02); }
+
+        /* TomSelect Theme Fix */
+        .ts-control { border-radius: 12px; border: 1px solid var(--border-color); background-color: var(--input-bg); color: var(--text-color); padding: 12px 15px; }
+        .ts-dropdown { background-color: var(--input-bg); color: var(--text-color); border: 1px solid var(--border-color); border-radius: 12px; font-size: 0.95rem; }
+        .ts-dropdown .active { background-color: rgba(30, 58, 138, 0.1); color: var(--text-color); }
+
+        /* Flatpickr Custom */
+        .flatpickr-calendar { font-family: 'Sarabun', sans-serif; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); border: none; }
 
         .btn-submit { 
-            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); color: white; width: 100%; 
-            border-radius: 16px; padding: 14px; border: none; font-weight: 700; font-size: 1.1rem; margin-top: 10px;
-            box-shadow: 0 10px 20px -5px rgba(59, 130, 246, 0.4);
+            background: var(--primary-color); color: white; width: 100%; 
+            border-radius: 12px; padding: 15px; border: none; font-weight: 700; font-size: 1.1rem;
+            transition: 0.3s; box-shadow: 0 8px 20px rgba(30, 58, 138, 0.25); margin-top: 15px;
         }
-
-        .theme-toggle {
-            position: absolute; top: 20px; right: 20px;
-            background: rgba(14, 165, 233, 0.1); color: var(--primary-color);
-            border: none; width: 36px; height: 36px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center; cursor: pointer;
-        }
+        .btn-submit:active { transform: scale(0.98); }
 
         /* ================= HISTORY LIST ================= */
+        .history-title { font-size: 0.9rem; font-weight: 700; color: #64748b; text-transform: uppercase; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; margin-top: 35px; margin-bottom: 15px; }
         .history-item { 
-            background: var(--card-bg); border-radius: 16px; padding: 15px; margin-bottom: 10px; 
-            border-left: 4px solid var(--primary-color); box-shadow: 0 2px 8px rgba(0,0,0,0.04); 
-            display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border-color); 
+            background: var(--card-bg); border-radius: 16px; padding: 15px; margin-bottom: 12px; 
+            border-left: 4px solid var(--primary-color); box-shadow: 0 2px 8px rgba(0,0,0,0.03); 
+            display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border-color);
         }
-        
-        .skeleton {
-            background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
-            background-size: 200% 100%; animation: shimmer 1.5s infinite;
-            border-radius: 8px; color: transparent !important; min-height: 1em;
-        }
-        [data-theme="dark"] .skeleton { background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%); }
-        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        .time-badge { background: #f1f5f9; padding: 4px 10px; border-radius: 8px; font-size: 0.8rem; font-weight: 600; border: 1px solid #e2e8f0; }
+        [data-theme="dark"] .time-badge { background: #1e293b; border-color: #334155; }
     </style>
 </head>
 <body>
 
 <div id="loadingScreen">
-    <div class="line-spinner"></div>
-    <div class="loading-text-main" id="loadStatusMain">กำลังเชื่อมต่อกับ LINE</div>
-    <div class="loading-text-sub" id="loadStatusSub">กรุณารอสักครู่</div>
+    <i class="bi bi-shield-check security-spinner"></i>
+    <div class="fw-bold fs-5 text-uppercase tracking-wider" style="color: var(--primary-color);">Security System</div>
+    <div class="text-muted small mt-1" id="loadStatusMain">กำลังประมวลผลระบบ...</div>
 </div>
 
-<div class="container animate__animated animate__fadeIn" id="mainApp">
-    <div class="main-card">
-        <button class="theme-toggle" onclick="toggleTheme()"><i class="bi bi-moon-stars-fill" id="themeIcon"></i></button>
-
-        <div class="text-center mb-4">
-            <div class="bg-primary bg-opacity-10 p-2 rounded-circle d-inline-block mb-2 shadow-sm">
-                <img id="profileImage" src="https://cdn-icons-png.flaticon.com/512/847/847969.png" class="rounded-circle" width="45">
-            </div>
-            <h5 class="fw-bold m-0 text-gradient text-primary">ระบบลงเวลา รปภ.</h5>
-            <small class="opacity-75">Smart Security Attendance</small>
+<div class="header-box animate__animated animate__fadeInDown">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <div>
+            <span class="badge bg-light text-dark bg-opacity-25 rounded-pill px-3 py-2 border border-light border-opacity-25">
+                <i class="bi bi-person-circle me-1"></i> <span id="displayName">รปภ. ปฏิบัติการ</span>
+            </span>
         </div>
+        <button class="btn btn-link text-white p-0" onclick="toggleTheme()"><i class="bi bi-moon-stars-fill fs-5" id="themeIcon"></i></button>
+    </div>
+    <div class="small opacity-75 text-uppercase tracking-wider mt-3">เวลามาตรฐาน (ประเทศไทย)</div>
+    <div class="clock-display" id="liveClock">00:00:00</div>
+</div>
 
+<div class="container animate__animated animate__fadeInUp" id="mainApp">
+    <div class="main-card">
         <form id="attendanceForm">
             <input type="hidden" id="userId">
 
-            <div class="row g-2 mb-3">
+            <div class="row g-3 mb-3">
                 <div class="col-6">
-                    <div class="form-floating">
-                        <input type="date" id="work_date" class="form-control" required>
-                        <label for="work_date"><i class="bi bi-calendar3 me-1"></i>วันที่ทำงาน</label>
-                    </div>
+                    <label class="form-label"><i class="bi bi-calendar-date me-1"></i> วันที่ปฏิบัติงาน</label>
+                    <input type="text" id="work_date" class="form-control bg-light" readonly>
                 </div>
                 <div class="col-6">
-                    <div class="form-floating">
-                        <select id="shift" class="form-select" required>
-                            <option value="" disabled selected>เลือกกะ...</option>
-                            <option value="กะเช้า (07:00-19:00)">☀️ กะเช้า</option>
-                            <option value="กะดึก (19:00-07:00)">🌙 กะดึก</option>
-                        </select>
-                        <label for="shift"><i class="bi bi-arrow-repeat me-1"></i>กะการทำงาน</label>
-                    </div>
+                    <label class="form-label"><i class="bi bi-clock-history me-1"></i> กะการทำงาน</label>
+                    <select id="shift" class="form-select" required>
+                        <option value="" disabled selected>เลือกกะ...</option>
+                        <option value="กะเช้า (06:00-18:00)">กะเช้า (06:00-18:00)</option>
+                        <option value="กะดึก (18:00-06:00)">กะดึก (18:00-06:00)</option>
+                    </select>
                 </div>
             </div>
 
             <div class="mb-3">
-                <label class="small text-muted fw-bold mb-1"><i class="bi bi-credit-card-2-front me-1"></i>รหัสบัตรที่ใช้สแกน (ID Card)</label>
-                <select id="id_card" required placeholder="พิมพ์ค้นหารหัสบัตร..."></select>
+                <label class="form-label"><i class="bi bi-credit-card-2-front me-1"></i> รหัสบัตร (ID Card)</label>
+                <select id="id_card" required placeholder="ค้นหารหัสบัตร..."></select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label"><i class="bi bi-person-badge me-1"></i> ชื่อ-นามสกุลพนักงาน</label>
+                <select id="fullname" required placeholder="ค้นหาชื่อพนักงาน..."></select>
+            </div>
+
+            <div class="row g-3 mb-3 mt-1">
+                <div class="col-6">
+                    <label class="form-label text-success"><i class="bi bi-box-arrow-in-right me-1"></i> เวลาเข้างาน</label>
+                    <input type="text" id="time_in" class="form-control fw-bold text-success time-picker" placeholder="--:-- น.">
+                </div>
+                <div class="col-6">
+                    <label class="form-label text-danger"><i class="bi bi-box-arrow-right me-1"></i> เวลาออกงาน</label>
+                    <input type="text" id="time_out" class="form-control fw-bold text-danger time-picker" placeholder="--:-- น.">
+                </div>
             </div>
 
             <div class="mb-3">
-                <label class="small text-muted fw-bold mb-1"><i class="bi bi-person-badge me-1"></i>ชื่อพนักงาน (ผู้ปฏิบัติงานจริง)</label>
-                <select id="fullname" required placeholder="พิมพ์ค้นหาชื่อ-นามสกุล..."></select>
-            </div>
-
-            <div class="row g-2 mb-3 mt-2">
-                <div class="col-6">
-                    <div class="form-floating">
-                        <input type="time" id="time_in" class="form-control fw-bold text-success">
-                        <label for="time_in"><i class="bi bi-box-arrow-in-right me-1"></i>เวลาเข้า (IN)</label>
-                    </div>
-                </div>
-                <div class="col-6">
-                    <div class="form-floating">
-                        <input type="time" id="time_out" class="form-control fw-bold text-danger">
-                        <label for="time_out"><i class="bi bi-box-arrow-right me-1"></i>เวลาออก (OUT)</label>
-                    </div>
-                </div>
-            </div>
-
-            <div class="form-floating mb-3">
+                <label class="form-label"><i class="bi bi-card-checklist me-1"></i> ประเภทการปฏิบัติงาน</label>
                 <select id="remark_type" class="form-select" onchange="handleRemarkChange()">
-                    <option value="ปกติ" selected>✅ ปฏิบัติงานปกติ</option>
-                    <option value="ควงเปลี่ยนกะ 24 ชั่วโมง">⚠️ ควงเปลี่ยนกะ 24 ชั่วโมง</option>
-                    <option value="แทน (หัวหน้าชุด รปภ.)">⭐ แทน (หัวหน้าชุด รปภ.)</option>
-                    <option value="แทน (รปภ.)">🔄 แทน (รปภ.)</option>
-                    <option value="อื่นๆ">✏️ อื่นๆ (ระบุเอง)</option>
+                    <option value="ปกติ" selected>ปฏิบัติงานปกติ</option>
+                    <option value="ควงเปลี่ยนกะ 24 ชั่วโมง">ควงเปลี่ยนกะ 24 ชั่วโมง</option>
+                    <option value="แทน (หัวหน้าชุด รปภ.)">แทน (หัวหน้าชุด รปภ.)</option>
+                    <option value="แทน (รปภ.)">แทน (รปภ.)</option>
+                    <option value="อื่นๆ">อื่นๆ (ระบุหมายเหตุ)</option>
                 </select>
-                <label for="remark_type"><i class="bi bi-card-text me-1"></i>หมายเหตุ</label>
+            </div>
+            <div class="mb-4 d-none" id="remark_other_div">
+                <label class="form-label">รายละเอียดเพิ่มเติม</label>
+                <input type="text" id="remark_detail" class="form-control" placeholder="ระบุเหตุผล หรือ รายละเอียด...">
             </div>
 
-            <div class="form-floating mb-3 d-none" id="remark_other_div">
-                <input type="text" id="remark_detail" class="form-control" placeholder="ระบุรายละเอียดเพิ่มเติม">
-                <label for="remark_detail">รายละเอียดเพิ่มเติม...</label>
-            </div>
-
-            <button type="submit" id="btnSubmit" class="btn-submit">บันทึกข้อมูล <i class="bi bi-send-fill ms-2"></i></button>
+            <button type="submit" id="btnSubmit" class="btn-submit">
+                <i class="bi bi-shield-lock me-1"></i> บันทึกข้อมูลลงระบบ
+            </button>
         </form>
     </div>
 
-    <div class="mt-4 pb-4">
-        <div class="d-flex justify-content-between align-items-center mb-3 px-2">
-            <h6 class="fw-bold opacity-75 m-0 small text-uppercase"><i class="bi bi-clock-history me-1"></i>ประวัติการลงเวลาล่าสุด</h6>
-        </div>
-        <div id="historyList">
-            <div class="history-item"><div class="skeleton" style="width: 100%;">Loading...</div></div>
-        </div>
+    <div class="history-title"><i class="bi bi-list-columns-reverse me-1"></i> ประวัติการบันทึกล่าสุด</div>
+    <div id="historyList">
+        <div class="text-center text-muted small py-3"><i class="bi bi-arrow-clockwise animate-spin me-1"></i> กำลังโหลดประวัติ...</div>
     </div>
 </div>
 
 <script>
 // ================= CONFIG =================
-// 🛑 อย่าลืมใส่ KEY และ LIFF ID!
+// 🛑 ใส่ KEY ของ Supabase และ LIFF ID!
 const SUPABASE_URL = 'https://dqsfioiqwxuxpucwwhsv.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxc2Zpb2lxd3h1eHB1Y3d3aHN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1OTk1NjUsImV4cCI6MjA4NDE3NTU2NX0.L_u0Ff3uHofxiimEs6ySFB4TPNtOWiKeSu3KFoVcA1U';
 
@@ -225,43 +222,47 @@ const LIFF_ID = '2007053300-gJitj7Vr';
 
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// ตัวแปรเก็บ TomSelect Instance เพื่อใช้ set ค่าจาก Memory
+let selectCardInstance, selectPersonInstance;
+
 // ================= INIT =================
 window.onload = async () => {
     initTheme();
-    document.getElementById('work_date').valueAsDate = new Date(); // ตั้งวันที่ปัจจุบัน
-
-    await updateLoader("กำลังเชื่อมต่อกับ LINE...", 800);
+    startLiveClock();
     
+    // ตั้งค่า Date Picker วันนี้
+    flatpickr("#work_date", { defaultDate: new Date(), dateFormat: "Y-m-d", locale: "th" });
+    
+    // ตั้งค่า Time Picker (บังคับ 24 ชั่วโมง ไทยแท้)
+    flatpickr(".time-picker", { enableTime: true, noCalendar: true, dateFormat: "H:i", time_24hr: true, locale: "th" });
+
     try {
-        await liff.init({ liffId: LIFF_ID });
-        await updateLoader("กำลังตรวจสอบโปรไฟล์...", 800);
+        // ⚡ ปรับเวลาหน่วงของ Splash Screen ให้เร็วขึ้นเหลือ 300ms 
+        await updateLoader("กำลังเชื่อมต่อกับระบบ...", 300);
         
-        if (!liff.isLoggedIn()) { 
-            liff.login(); 
-            return; 
-        }
+        await liff.init({ liffId: LIFF_ID });
+        if (!liff.isLoggedIn()) { liff.login(); return; }
 
         const profile = await liff.getProfile();
-        document.getElementById('userId').value = profile.userId;
-        if(profile.pictureUrl) document.getElementById('profileImage').src = profile.pictureUrl;
+        document.getElementById('displayName').innerText = profile.displayName;
+        
+        await updateLoader("กำลังโหลดฐานข้อมูล...", 300);
 
-        // ดึงข้อมูลรายชื่อ รปภ. และ ประวัติ (ทำงานพร้อมกัน)
         await Promise.all([loadMasterData(), fetchRecentHistory()]);
 
-        // ซ่อน Loading Screen
+        // ซ่อน Loading ปล่อยให้หน้าแอปเด้งขึ้นมาแบบรวดเร็ว
         document.getElementById('loadingScreen').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
 
     } catch (err) { 
         console.error('LIFF Error:', err);
-        // Fallback
-        await loadMasterData();
-        await fetchRecentHistory();
+        await Promise.all([loadMasterData(), fetchRecentHistory()]);
         document.getElementById('loadingScreen').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
     }
 };
 
+// ⚡ ฟังก์ชันสำหรับตัวโหลดแบบสั่งได้
 function updateLoader(text, delay) {
     return new Promise(resolve => {
         document.getElementById('loadStatusMain').innerText = text;
@@ -269,47 +270,54 @@ function updateLoader(text, delay) {
     });
 }
 
+// ================= LIVE CLOCK =================
+function startLiveClock() {
+    setInterval(() => {
+        const now = new Date();
+        document.getElementById('liveClock').innerText = now.toLocaleTimeString('th-TH', { hour12: false });
+    }, 1000);
+}
+
 // ================= THEME TOGGLE =================
 function initTheme() {
-    const savedTheme = localStorage.getItem('theme') || 'light';
+    const savedTheme = localStorage.getItem('sec_theme') || 'light';
     document.documentElement.setAttribute('data-theme', savedTheme);
     document.getElementById('themeIcon').className = savedTheme === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-stars-fill';
 }
 function toggleTheme() {
     const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('theme', next);
+    localStorage.setItem('sec_theme', next);
     document.getElementById('themeIcon').className = next === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-stars-fill';
 }
 
-// ================= APP LOGIC =================
+// ================= SMART MEMORY & DATA LOAD =================
 async function loadMasterData() {
     try {
-        // 1. โหลดรหัสบัตร
+        // โหลดรหัสบัตร
         const { data: cards } = await db.from('security_card_master').select('card_number').order('card_number');
         const selectCard = document.getElementById('id_card');
-        selectCard.innerHTML = '<option value="">พิมพ์ค้นหารหัสบัตร...</option>';
-        if (cards) {
-            cards.forEach(c => {
-                selectCard.innerHTML += `<option value="${c.card_number}">${c.card_number}</option>`;
-            });
-        }
-        new TomSelect("#id_card", { create: false, sortField: { field: "text", direction: "asc" }});
+        selectCard.innerHTML = '<option value="">ค้นหารหัสบัตร...</option>';
+        if (cards) cards.forEach(c => selectCard.innerHTML += `<option value="${c.card_number}">${c.card_number}</option>`);
+        selectCardInstance = new TomSelect("#id_card", { create: false, sortField: { field: "text", direction: "asc" }});
 
-        // 2. โหลดรายชื่อพนักงาน
+        // โหลดชื่อพนักงาน
         const { data: persons } = await db.from('security_personnel_master').select('fullname').order('fullname');
         const selectPerson = document.getElementById('fullname');
-        selectPerson.innerHTML = '<option value="">พิมพ์ค้นหาชื่อ-นามสกุล...</option>';
-        if (persons) {
-            persons.forEach(p => {
-                selectPerson.innerHTML += `<option value="${p.fullname}">${p.fullname}</option>`;
-            });
-        }
-        new TomSelect("#fullname", { create: false, sortField: { field: "text", direction: "asc" }});
+        selectPerson.innerHTML = '<option value="">ค้นหาชื่อ-นามสกุล...</option>';
+        if (persons) persons.forEach(p => selectPerson.innerHTML += `<option value="${p.fullname}">${p.fullname}</option>`);
+        selectPersonInstance = new TomSelect("#fullname", { create: false, sortField: { field: "text", direction: "asc" }});
 
-    } catch (err) {
-        console.error("Load Master Error:", err);
-    }
+        // 🧠 ระบบจำข้อมูล (Smart Memory)
+        const savedCard = localStorage.getItem('sec_last_card');
+        const savedName = localStorage.getItem('sec_last_name');
+        const savedShift = localStorage.getItem('sec_last_shift');
+
+        if(savedCard) selectCardInstance.setValue(savedCard);
+        if(savedName) selectPersonInstance.setValue(savedName);
+        if(savedShift) document.getElementById('shift').value = savedShift;
+
+    } catch (err) { console.error("Load Master Error:", err); }
 }
 
 function handleRemarkChange() {
@@ -328,30 +336,29 @@ function handleRemarkChange() {
 async function fetchRecentHistory() {
     const listDiv = document.getElementById('historyList');
     try {
-        // ดึง 5 รายการล่าสุด
-        const { data, error } = await db.from('guard_attendance')
-            .select('*').order('created_at', { ascending: false }).limit(5);
+        const { data, error } = await db.from('guard_attendance').select('*').order('created_at', { ascending: false }).limit(5);
         if (error) throw error;
 
         listDiv.innerHTML = '';
         if (data.length === 0) {
-            listDiv.innerHTML = `<div class="text-center text-muted small py-3">ยังไม่มีประวัติการลงเวลา</div>`;
+            listDiv.innerHTML = `<div class="text-center text-muted small py-3">ไม่มีประวัติการปฏิบัติงาน</div>`;
             return;
         }
 
         data.forEach(item => {
-            const shiftIcon = item.shift.includes("เช้า") ? "☀️" : "🌙";
-            const timeIn = item.time_in ? `<span class="text-success fw-bold">IN: ${item.time_in}</span>` : '';
-            const timeOut = item.time_out ? `<span class="text-danger fw-bold ms-2">OUT: ${item.time_out}</span>` : '';
+            const shiftText = item.shift.split(' ')[0];
+            const timeIn = item.time_in ? `<span class="text-success"><i class="bi bi-box-arrow-in-right"></i> ${item.time_in}</span>` : '';
+            const timeOut = item.time_out ? `<span class="text-danger ms-2"><i class="bi bi-box-arrow-right"></i> ${item.time_out}</span>` : '';
             
             listDiv.innerHTML += `
                 <div class="history-item animate__animated animate__fadeIn">
                     <div class="flex-grow-1">
-                        <div class="fw-bold text-primary">${item.fullname} <small class="text-muted">(${item.id_card})</small></div>
-                        <small class="text-muted">${shiftIcon} ${item.work_date} | ${item.remark_type}</small>
+                        <div class="fw-bold" style="color: var(--primary-color);">${item.fullname} <span class="text-muted small">(${item.id_card})</span></div>
+                        <div class="text-muted small mt-1"><i class="bi bi-clock"></i> ${shiftText} | ${item.remark_type}</div>
                     </div>
-                    <div class="text-end ms-2" style="font-size: 0.85rem;">
-                        ${timeIn}<br>${timeOut}
+                    <div class="text-end">
+                        <div class="time-badge">${timeIn} ${timeOut}</div>
+                        <div class="text-muted" style="font-size: 0.7rem; margin-top: 3px;">${item.work_date}</div>
                     </div>
                 </div>
             `;
@@ -367,20 +374,20 @@ document.getElementById('attendanceForm').addEventListener('submit', async funct
     const time_out = document.getElementById('time_out').value || null;
 
     if(!time_in && !time_out) {
-        Swal.fire('แจ้งเตือน', 'กรุณาระบุเวลาเข้า หรือ เวลาออก อย่างน้อย 1 ช่องครับ', 'warning');
+        Swal.fire({ icon: 'warning', title: 'ข้อมูลไม่ครบถ้วน', text: 'กรุณาระบุเวลาเข้า หรือ เวลาออก อย่างน้อย 1 ช่อง', confirmButtonColor: '#1e3a8a' });
         return;
     }
 
     const btn = document.getElementById('btnSubmit');
     const originalText = btn.innerHTML;
     btn.disabled = true; 
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> บันทึก...';
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> กำลังบันทึก...';
 
     const payload = {
         work_date: document.getElementById('work_date').value,
         shift: document.getElementById('shift').value,
-        id_card: document.getElementById('id_card').value,  // ดึงจาก Dropdown บัตร
-        fullname: document.getElementById('fullname').value, // ดึงจาก Dropdown ชื่อ
+        id_card: document.getElementById('id_card').value,
+        fullname: document.getElementById('fullname').value,
         time_in: time_in,
         time_out: time_out,
         remark_type: document.getElementById('remark_type').value,
@@ -391,22 +398,28 @@ document.getElementById('attendanceForm').addEventListener('submit', async funct
         const { error } = await db.from('guard_attendance').insert([payload]);
         if (error) throw error;
 
-        await Swal.fire({ icon: 'success', title: 'บันทึกสำเร็จ!', text: `ลงเวลาให้คุณ ${payload.fullname} เรียบร้อยแล้ว`, timer: 2000, showConfirmButton: false });
+        // 🧠 อัปเดต Memory ลงเครื่อง
+        localStorage.setItem('sec_last_card', payload.id_card);
+        localStorage.setItem('sec_last_name', payload.fullname);
+        localStorage.setItem('sec_last_shift', payload.shift);
+
+        // Haptic Feedback (สั่นมือถือเบาๆ ถ้าเครื่องรองรับ)
+        if (navigator.vibrate) navigator.vibrate(50);
+
+        await Swal.fire({ icon: 'success', title: 'บันทึกข้อมูลสำเร็จ', text: `ลงเวลาให้คุณ ${payload.fullname} เรียบร้อย`, timer: 2000, showConfirmButton: false });
         
-        // ล้างฟอร์ม
+        // ล้างฟอร์มเฉพาะเวลา
         document.getElementById('time_in').value = '';
         document.getElementById('time_out').value = '';
         document.getElementById('remark_type').value = 'ปกติ';
         handleRemarkChange();
         
-        // อัปเดตประวัติล่าสุด
         await fetchRecentHistory();
 
     } catch (err) { 
-        Swal.fire('Error', err.message, 'error'); 
+        Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: err.message, confirmButtonColor: '#1e3a8a' }); 
     } finally { 
-        btn.disabled = false; 
-        btn.innerHTML = originalText; 
+        btn.disabled = false; btn.innerHTML = originalText; 
     }
 });
 </script>
