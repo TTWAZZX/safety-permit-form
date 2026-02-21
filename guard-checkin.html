@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>ระบบลงเวลา รปภ. (Security Attendance)</title>
+    <title>ระบบลงเวลา รปภ. - Thai Summit Harness</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
@@ -13,150 +13,107 @@
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.bootstrap5.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
 
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="https://npmcdn.com/flatpickr/dist/l10n/th.js"></script>
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
-        /* ================= ENTERPRISE SECURITY THEME ================= */
+        /* ================= CORPORATE SECURITY THEME ================= */
         :root {
-            --primary-color: #1e3a8a; /* Navy Blue */
-            --secondary-color: #fbbf24; /* Security Gold */
-            --bg-color: #f1f5f9;
-            --card-bg: rgba(255, 255, 255, 0.98);
-            --text-color: #1e293b;
-            --input-bg: #ffffff;
-            --border-color: #cbd5e1;
-            --success-color: #059669;
-            --danger-color: #dc2626;
+            --primary-color: #0f2027; /* Deep Navy */
+            --secondary-color: #203a43;
+            --accent-color: #d4af37; /* Corporate Gold */
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-main: #212529;
+            --border-color: #dee2e6;
         }
 
         [data-theme="dark"] {
-            --bg-color: #020617;
-            --card-bg: rgba(15, 23, 42, 0.95);
-            --text-color: #f8fafc;
-            --input-bg: #1e293b;
-            --border-color: #334155;
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-main: #f8f9fa;
+            --border-color: #343a40;
         }
 
-        body { 
-            font-family: 'Sarabun', sans-serif; 
-            background-color: var(--bg-color); 
-            color: var(--text-color); 
-            min-height: 100vh; 
-            padding-bottom: 30px; 
-            transition: background-color 0.3s ease;
-        }
-        
-        .container { max-width: 550px; padding: 0 15px; display: none; }
+        body { font-family: 'Sarabun', sans-serif; background-color: var(--bg-color); color: var(--text-main); padding-bottom: 40px; transition: 0.3s; }
+        .container { max-width: 500px; padding: 0 15px; display: none; }
 
         /* ================= LOADING SCREEN ================= */
-        #loadingScreen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--bg-color); z-index: 9999;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-        }
-        .security-spinner {
-            font-size: 3rem; color: var(--primary-color);
-            animation: pulse 1.5s infinite; margin-bottom: 15px;
-        }
-        @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.7; } 100% { transform: scale(1); opacity: 1; } }
+        #loadingScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .spinner-border { color: var(--accent-color); width: 3rem; height: 3rem; margin-bottom: 15px; }
 
-        /* ================= MAIN APP UI ================= */
-        .header-box {
-            background: linear-gradient(135deg, var(--primary-color) 0%, #0f172a 100%);
-            color: white; padding: 30px 20px; border-radius: 0 0 30px 30px;
-            box-shadow: 0 10px 25px rgba(30, 58, 138, 0.2); text-align: center;
-            position: relative; margin-bottom: -40px; z-index: 1;
-        }
-        
-        .clock-display {
-            font-size: 2.2rem; font-weight: 700; font-family: monospace; letter-spacing: 2px;
-            color: var(--secondary-color); text-shadow: 0 2px 10px rgba(251, 191, 36, 0.3);
-            margin-top: 5px;
-        }
+        /* ================= HEADER & PROFILE ================= */
+        .profile-header { background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; padding: 30px 20px; border-radius: 0 0 30px 30px; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.1); position: relative; }
+        .profile-img { width: 90px; height: 90px; border-radius: 50%; border: 3px solid var(--accent-color); object-fit: cover; background: white; padding: 2px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .theme-toggle { position: absolute; top: 15px; right: 15px; background: rgba(255,255,255,0.1); border: none; color: white; border-radius: 50%; width: 35px; height: 35px; }
 
-        .main-card {
-            background: var(--card-bg); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
-            border-radius: 20px; padding: 30px 20px 25px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08); border: 1px solid rgba(255,255,255,0.1);
-            position: relative; z-index: 2; margin-top: 20px;
-        }
+        /* ================= INFO CARDS ================= */
+        .info-card { background: var(--card-bg); border-radius: 16px; padding: 15px; text-align: center; border: 1px solid var(--border-color); box-shadow: 0 4px 10px rgba(0,0,0,0.03); margin-top: -20px; position: relative; z-index: 2; }
+        .clock-display { font-size: 2.5rem; font-weight: 700; font-family: monospace; color: var(--accent-color); letter-spacing: 2px; line-height: 1; margin-top: 5px; }
 
-        .form-label { font-size: 0.85rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.4rem; }
-        [data-theme="dark"] .form-label { color: #94a3b8; }
+        .main-card { background: var(--card-bg); border-radius: 20px; padding: 25px 20px; box-shadow: 0 8px 25px rgba(0,0,0,0.05); border: 1px solid var(--border-color); margin-top: 15px; }
 
-        .form-control, .form-select { 
-            background-color: var(--input-bg); color: var(--text-color); 
-            border: 1px solid var(--border-color); border-radius: 12px; padding: 12px 15px; font-weight: 500;
-        }
-        .form-control:focus, .form-select:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1); }
-        .form-control[readonly] { background-color: rgba(0,0,0,0.02); }
+        .form-label { font-size: 0.85rem; font-weight: 700; color: #6c757d; text-transform: uppercase; }
+        .form-control, .form-select { border-radius: 10px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main); padding: 12px; font-weight: 500; }
+        .form-control:focus, .form-select:focus { border-color: var(--accent-color); box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2); }
+        .form-control[readonly] { background-color: rgba(0,0,0,0.03); }
 
-        /* TomSelect Theme Fix */
-        .ts-control { border-radius: 12px; border: 1px solid var(--border-color); background-color: var(--input-bg); color: var(--text-color); padding: 12px 15px; }
-        .ts-dropdown { background-color: var(--input-bg); color: var(--text-color); border: 1px solid var(--border-color); border-radius: 12px; font-size: 0.95rem; }
-        .ts-dropdown .active { background-color: rgba(30, 58, 138, 0.1); color: var(--text-color); }
+        /* TomSelect Theme */
+        .ts-control { border-radius: 10px; padding: 12px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main); }
+        .ts-dropdown { border-radius: 10px; background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border-color); }
+        .ts-dropdown .active { background-color: rgba(212, 175, 55, 0.1); color: var(--text-main); }
 
-        /* Flatpickr Custom */
-        .flatpickr-calendar { font-family: 'Sarabun', sans-serif; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); border: none; }
-
-        .btn-submit { 
-            background: var(--primary-color); color: white; width: 100%; 
-            border-radius: 12px; padding: 15px; border: none; font-weight: 700; font-size: 1.1rem;
-            transition: 0.3s; box-shadow: 0 8px 20px rgba(30, 58, 138, 0.25); margin-top: 15px;
-        }
+        .btn-submit { background: var(--primary-color); color: white; width: 100%; border-radius: 12px; padding: 15px; font-weight: 700; font-size: 1.1rem; border: none; box-shadow: 0 6px 15px rgba(15, 32, 39, 0.3); transition: 0.2s; }
         .btn-submit:active { transform: scale(0.98); }
 
-        /* ================= HISTORY LIST ================= */
-        .history-title { font-size: 0.9rem; font-weight: 700; color: #64748b; text-transform: uppercase; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; margin-top: 35px; margin-bottom: 15px; }
-        .history-item { 
-            background: var(--card-bg); border-radius: 16px; padding: 15px; margin-bottom: 12px; 
-            border-left: 4px solid var(--primary-color); box-shadow: 0 2px 8px rgba(0,0,0,0.03); 
-            display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border-color);
-        }
-        .time-badge { background: #f1f5f9; padding: 4px 10px; border-radius: 8px; font-size: 0.8rem; font-weight: 600; border: 1px solid #e2e8f0; }
-        [data-theme="dark"] .time-badge { background: #1e293b; border-color: #334155; }
+        /* ================= TABS & HISTORY ================= */
+        .nav-pills .nav-link { color: var(--text-main); font-weight: 600; border-radius: 10px; padding: 10px; transition: 0.3s; }
+        .nav-pills .nav-link.active { background-color: var(--primary-color); color: white; }
+        
+        .history-item { background: var(--card-bg); border-radius: 12px; padding: 15px; margin-bottom: 12px; border-left: 4px solid var(--accent-color); border-right: 1px solid var(--border-color); border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
+        .action-btn { background: none; border: none; color: #6c757d; font-size: 1.1rem; padding: 5px; transition: 0.2s; }
+        .action-btn:hover { color: var(--primary-color); transform: scale(1.1); }
+        .action-btn.delete:hover { color: #dc3545; }
     </style>
 </head>
 <body>
 
 <div id="loadingScreen">
-    <i class="bi bi-shield-check security-spinner"></i>
-    <div class="fw-bold fs-5 text-uppercase tracking-wider" style="color: var(--primary-color);">Security System</div>
-    <div class="text-muted small mt-1" id="loadStatusMain">กำลังประมวลผลระบบ...</div>
+    <div class="spinner-border" role="status"></div>
+    <div class="fw-bold fs-5" style="color: var(--primary-color);"><i class="bi bi-shield-lock-fill me-2"></i>Security System</div>
+    <div class="text-muted small mt-2" id="loadStatusMain">เชื่อมต่อฐานข้อมูล...</div>
 </div>
 
-<div class="header-box animate__animated animate__fadeInDown">
-    <div class="d-flex justify-content-between align-items-center mb-2">
-        <div>
-            <span class="badge bg-light text-dark bg-opacity-25 rounded-pill px-3 py-2 border border-light border-opacity-25">
-                <i class="bi bi-person-circle me-1"></i> <span id="displayName">รปภ. ปฏิบัติการ</span>
-            </span>
-        </div>
-        <button class="btn btn-link text-white p-0" onclick="toggleTheme()"><i class="bi bi-moon-stars-fill fs-5" id="themeIcon"></i></button>
-    </div>
-    <div class="small opacity-75 text-uppercase tracking-wider mt-3">เวลามาตรฐาน (ประเทศไทย)</div>
-    <div class="clock-display" id="liveClock">00:00:00</div>
+<div class="profile-header animate__animated animate__fadeInDown">
+    <button class="theme-toggle" onclick="toggleTheme()"><i class="bi bi-moon-stars-fill" id="themeIcon"></i></button>
+    <img id="profileImage" src="https://cdn-icons-png.flaticon.com/512/847/847969.png" class="profile-img mb-3">
+    <h5 id="displayName" class="fw-bold mb-1">รปภ. ปฏิบัติการ</h5>
+    <span class="badge bg-light text-dark bg-opacity-75"><i class="bi bi-person-badge-fill me-1"></i> เจ้าหน้าที่รักษาความปลอดภัย</span>
 </div>
 
 <div class="container animate__animated animate__fadeInUp" id="mainApp">
+    
+    <div class="info-card mx-3">
+        <div class="small fw-bold text-muted text-uppercase"><i class="bi bi-geo-alt-fill text-danger me-1"></i> สถานที่ปฏิบัติงาน</div>
+        <div class="fw-bold" style="color: var(--primary-color); font-size: 1.1rem;">บริษัท ไทยซัมมิท ฮาร์เนส จำกัด (มหาชน)</div>
+        <hr class="my-2 opacity-25">
+        <div class="small fw-bold text-muted text-uppercase"><i class="bi bi-clock-fill text-primary me-1"></i> เวลามาตรฐาน (ไทย)</div>
+        <div class="clock-display" id="liveClock">00:00:00</div>
+    </div>
+
     <div class="main-card">
         <form id="attendanceForm">
-            <input type="hidden" id="userId">
+            <input type="hidden" id="picUrl">
 
             <div class="row g-3 mb-3">
                 <div class="col-6">
-                    <label class="form-label"><i class="bi bi-calendar-date me-1"></i> วันที่ปฏิบัติงาน</label>
-                    <input type="text" id="work_date" class="form-control bg-light" readonly>
+                    <label class="form-label"><i class="bi bi-calendar-event me-1"></i> วันที่ทำงาน</label>
+                    <input type="date" id="work_date" class="form-control" required>
                 </div>
                 <div class="col-6">
-                    <label class="form-label"><i class="bi bi-clock-history me-1"></i> กะการทำงาน</label>
+                    <label class="form-label"><i class="bi bi-arrow-repeat me-1"></i> กะการทำงาน</label>
                     <select id="shift" class="form-select" required>
                         <option value="" disabled selected>เลือกกะ...</option>
                         <option value="กะเช้า (06:00-18:00)">กะเช้า (06:00-18:00)</option>
@@ -166,119 +123,117 @@
             </div>
 
             <div class="mb-3">
-                <label class="form-label"><i class="bi bi-credit-card-2-front me-1"></i> รหัสบัตร (ID Card)</label>
+                <label class="form-label"><i class="bi bi-upc-scan me-1"></i> รหัสบัตรประจำตัว</label>
                 <select id="id_card" required placeholder="ค้นหารหัสบัตร..."></select>
             </div>
             <div class="mb-3">
-                <label class="form-label"><i class="bi bi-person-badge me-1"></i> ชื่อ-นามสกุลพนักงาน</label>
-                <select id="fullname" required placeholder="ค้นหาชื่อพนักงาน..."></select>
+                <label class="form-label"><i class="bi bi-person-vcard me-1"></i> ชื่อ-นามสกุลผู้ปฏิบัติงาน</label>
+                <select id="fullname" required placeholder="ค้นหาชื่อ-นามสกุล..."></select>
             </div>
 
-            <div class="row g-3 mb-3 mt-1">
+            <div class="row g-3 mb-3">
                 <div class="col-6">
-                    <label class="form-label text-success"><i class="bi bi-box-arrow-in-right me-1"></i> เวลาเข้างาน</label>
-                    <input type="text" id="time_in" class="form-control fw-bold text-success time-picker" placeholder="--:-- น.">
+                    <label class="form-label text-success"><i class="bi bi-box-arrow-in-right me-1"></i> เวลาเข้า</label>
+                    <input type="time" id="time_in" class="form-control fw-bold text-success fs-5">
                 </div>
                 <div class="col-6">
-                    <label class="form-label text-danger"><i class="bi bi-box-arrow-right me-1"></i> เวลาออกงาน</label>
-                    <input type="text" id="time_out" class="form-control fw-bold text-danger time-picker" placeholder="--:-- น.">
+                    <label class="form-label text-danger"><i class="bi bi-box-arrow-right me-1"></i> เวลาออก</label>
+                    <input type="time" id="time_out" class="form-control fw-bold text-danger fs-5">
                 </div>
             </div>
 
             <div class="mb-3">
-                <label class="form-label"><i class="bi bi-card-checklist me-1"></i> ประเภทการปฏิบัติงาน</label>
+                <label class="form-label"><i class="bi bi-journal-text me-1"></i> หมายเหตุการปฏิบัติงาน</label>
                 <select id="remark_type" class="form-select" onchange="handleRemarkChange()">
                     <option value="ปกติ" selected>ปฏิบัติงานปกติ</option>
                     <option value="ควงเปลี่ยนกะ 24 ชั่วโมง">ควงเปลี่ยนกะ 24 ชั่วโมง</option>
                     <option value="แทน (หัวหน้าชุด รปภ.)">แทน (หัวหน้าชุด รปภ.)</option>
                     <option value="แทน (รปภ.)">แทน (รปภ.)</option>
-                    <option value="อื่นๆ">อื่นๆ (ระบุหมายเหตุ)</option>
+                    <option value="อื่นๆ">อื่นๆ (ระบุด้วยตนเอง)</option>
                 </select>
             </div>
             <div class="mb-4 d-none" id="remark_other_div">
-                <label class="form-label">รายละเอียดเพิ่มเติม</label>
-                <input type="text" id="remark_detail" class="form-control" placeholder="ระบุเหตุผล หรือ รายละเอียด...">
+                <input type="text" id="remark_detail" class="form-control" placeholder="ระบุเหตุผลเพิ่มเติม...">
             </div>
 
             <button type="submit" id="btnSubmit" class="btn-submit">
-                <i class="bi bi-shield-lock me-1"></i> บันทึกข้อมูลลงระบบ
+                <i class="bi bi-cloud-arrow-up-fill me-2"></i> บันทึกเวลาเข้าสู่ระบบ
             </button>
         </form>
     </div>
 
-    <div class="history-title"><i class="bi bi-list-columns-reverse me-1"></i> ประวัติการบันทึกล่าสุด</div>
-    <div id="historyList">
-        <div class="text-center text-muted small py-3"><i class="bi bi-arrow-clockwise animate-spin me-1"></i> กำลังโหลดประวัติ...</div>
+    <div class="mt-4">
+        <ul class="nav nav-pills nav-fill mb-3" id="historyTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="tab-today-btn" data-bs-toggle="pill" data-bs-target="#tab-today" type="button"><i class="bi bi-clock-history me-1"></i> ประวัติวันนี้</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-past-btn" data-bs-toggle="pill" data-bs-target="#tab-past" type="button"><i class="bi bi-calendar-check me-1"></i> ย้อนหลัง</button>
+            </li>
+        </ul>
+        <div class="tab-content" id="historyTabsContent">
+            <div class="tab-pane fade show active" id="tab-today">
+                <div id="listToday"><div class="text-center text-muted small py-3">กำลังโหลด...</div></div>
+            </div>
+            <div class="tab-pane fade" id="tab-past">
+                <div id="listPast"><div class="text-center text-muted small py-3">กำลังโหลด...</div></div>
+            </div>
+        </div>
     </div>
 </div>
 
 <script>
 // ================= CONFIG =================
-// 🛑 ใส่ KEY ของ Supabase และ LIFF ID!
+// 🛑 เปลี่ยน KEY และ LIFF ID
 const SUPABASE_URL = 'https://dqsfioiqwxuxpucwwhsv.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxc2Zpb2lxd3h1eHB1Y3d3aHN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1OTk1NjUsImV4cCI6MjA4NDE3NTU2NX0.L_u0Ff3uHofxiimEs6ySFB4TPNtOWiKeSu3KFoVcA1U';
 
-const LIFF_ID = '2007053300-gJitj7Vr'; 
+const LIFF_ID = '2007053300-gJitj7Vr';
 
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-// ตัวแปรเก็บ TomSelect Instance เพื่อใช้ set ค่าจาก Memory
 let selectCardInstance, selectPersonInstance;
 
 // ================= INIT =================
 window.onload = async () => {
     initTheme();
     startLiveClock();
-    
-    // ตั้งค่า Date Picker วันนี้
-    flatpickr("#work_date", { defaultDate: new Date(), dateFormat: "Y-m-d", locale: "th" });
-    
-    // ตั้งค่า Time Picker (บังคับ 24 ชั่วโมง ไทยแท้)
-    flatpickr(".time-picker", { enableTime: true, noCalendar: true, dateFormat: "H:i", time_24hr: true, locale: "th" });
+    document.getElementById('work_date').valueAsDate = new Date();
 
     try {
-        // ⚡ ปรับเวลาหน่วงของ Splash Screen ให้เร็วขึ้นเหลือ 300ms 
-        await updateLoader("กำลังเชื่อมต่อกับระบบ...", 300);
-        
+        await updateLoader("กำลังอัปเดตข้อมูลผู้ใช้...", 300);
         await liff.init({ liffId: LIFF_ID });
+        
         if (!liff.isLoggedIn()) { liff.login(); return; }
 
+        // 🔄 ดึงรูปโปรไฟล์ LINE ใหม่ล่าสุดเสมอ
         const profile = await liff.getProfile();
         document.getElementById('displayName').innerText = profile.displayName;
-        
-        await updateLoader("กำลังโหลดฐานข้อมูล...", 300);
+        if(profile.pictureUrl) {
+            document.getElementById('profileImage').src = profile.pictureUrl;
+            document.getElementById('picUrl').value = profile.pictureUrl; // เก็บไว้ส่ง Database
+        }
 
-        await Promise.all([loadMasterData(), fetchRecentHistory()]);
+        await updateLoader("เตรียมพร้อมระบบ...", 200);
+        await Promise.all([loadMasterData(), fetchHistory()]);
 
-        // ซ่อน Loading ปล่อยให้หน้าแอปเด้งขึ้นมาแบบรวดเร็ว
         document.getElementById('loadingScreen').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
 
     } catch (err) { 
         console.error('LIFF Error:', err);
-        await Promise.all([loadMasterData(), fetchRecentHistory()]);
+        await Promise.all([loadMasterData(), fetchHistory()]);
         document.getElementById('loadingScreen').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
     }
 };
 
-// ⚡ ฟังก์ชันสำหรับตัวโหลดแบบสั่งได้
-function updateLoader(text, delay) {
-    return new Promise(resolve => {
-        document.getElementById('loadStatusMain').innerText = text;
-        setTimeout(resolve, delay);
-    });
-}
+function updateLoader(text, delay) { return new Promise(r => { document.getElementById('loadStatusMain').innerText = text; setTimeout(r, delay); }); }
 
-// ================= LIVE CLOCK =================
+// ================= CLOCK & THEME =================
 function startLiveClock() {
-    setInterval(() => {
-        const now = new Date();
-        document.getElementById('liveClock').innerText = now.toLocaleTimeString('th-TH', { hour12: false });
-    }, 1000);
+    setInterval(() => { document.getElementById('liveClock').innerText = new Date().toLocaleTimeString('th-TH', { hour12: false }); }, 1000);
 }
 
-// ================= THEME TOGGLE =================
 function initTheme() {
     const savedTheme = localStorage.getItem('sec_theme') || 'light';
     document.documentElement.setAttribute('data-theme', savedTheme);
@@ -291,97 +246,145 @@ function toggleTheme() {
     document.getElementById('themeIcon').className = next === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-stars-fill';
 }
 
-// ================= SMART MEMORY & DATA LOAD =================
+// ================= LOAD DATA & MEMORY =================
 async function loadMasterData() {
     try {
-        // โหลดรหัสบัตร
         const { data: cards } = await db.from('security_card_master').select('card_number').order('card_number');
         const selectCard = document.getElementById('id_card');
         selectCard.innerHTML = '<option value="">ค้นหารหัสบัตร...</option>';
         if (cards) cards.forEach(c => selectCard.innerHTML += `<option value="${c.card_number}">${c.card_number}</option>`);
         selectCardInstance = new TomSelect("#id_card", { create: false, sortField: { field: "text", direction: "asc" }});
 
-        // โหลดชื่อพนักงาน
         const { data: persons } = await db.from('security_personnel_master').select('fullname').order('fullname');
         const selectPerson = document.getElementById('fullname');
         selectPerson.innerHTML = '<option value="">ค้นหาชื่อ-นามสกุล...</option>';
         if (persons) persons.forEach(p => selectPerson.innerHTML += `<option value="${p.fullname}">${p.fullname}</option>`);
         selectPersonInstance = new TomSelect("#fullname", { create: false, sortField: { field: "text", direction: "asc" }});
 
-        // 🧠 ระบบจำข้อมูล (Smart Memory)
-        const savedCard = localStorage.getItem('sec_last_card');
-        const savedName = localStorage.getItem('sec_last_name');
-        const savedShift = localStorage.getItem('sec_last_shift');
-
-        if(savedCard) selectCardInstance.setValue(savedCard);
-        if(savedName) selectPersonInstance.setValue(savedName);
-        if(savedShift) document.getElementById('shift').value = savedShift;
-
+        // Memory
+        if(localStorage.getItem('sec_last_card')) selectCardInstance.setValue(localStorage.getItem('sec_last_card'));
+        if(localStorage.getItem('sec_last_name')) selectPersonInstance.setValue(localStorage.getItem('sec_last_name'));
+        if(localStorage.getItem('sec_last_shift')) document.getElementById('shift').value = localStorage.getItem('sec_last_shift');
     } catch (err) { console.error("Load Master Error:", err); }
 }
 
 function handleRemarkChange() {
     const val = document.getElementById('remark_type').value;
     const otherDiv = document.getElementById('remark_other_div');
-    if (val === 'อื่นๆ') {
-        otherDiv.classList.remove('d-none');
-        document.getElementById('remark_detail').focus();
-    } else {
-        otherDiv.classList.add('d-none');
-        document.getElementById('remark_detail').value = '';
+    if (val === 'อื่นๆ') { otherDiv.classList.remove('d-none'); document.getElementById('remark_detail').focus(); } 
+    else { otherDiv.classList.add('d-none'); document.getElementById('remark_detail').value = ''; }
+}
+
+// ================= HISTORY (2 TABS) =================
+async function fetchHistory() {
+    try {
+        const todayStr = new Date().toISOString().split('T')[0];
+        const nameFilter = localStorage.getItem('sec_last_name'); // ดึงประวัติของตัวเองเป็นหลัก
+        
+        let query = db.from('guard_attendance').select('*').order('created_at', { ascending: false }).limit(20);
+        if(nameFilter) query = query.eq('fullname', nameFilter);
+
+        const { data, error } = await query;
+        if (error) throw error;
+
+        let htmlToday = '', htmlPast = '';
+        
+        data.forEach(item => {
+            const isToday = item.work_date === todayStr;
+            const shiftText = item.shift.split(' ')[0];
+            const timeIn = item.time_in ? `<span class="text-success fw-bold">IN: ${item.time_in}</span>` : '-';
+            const timeOut = item.time_out ? `<span class="text-danger fw-bold ms-2">OUT: ${item.time_out}</span>` : '';
+            
+            const actionBtns = `
+                <div class="mt-2 text-end border-top pt-2">
+                    <button type="button" class="action-btn" onclick="userEdit('${item.id}', '${item.id_card}', '${item.time_in||''}', '${item.time_out||''}')"><i class="bi bi-pencil-square"></i> แก้ไข</button>
+                    <button type="button" class="action-btn delete ms-2" onclick="userDelete('${item.id}', '${item.id_card}')"><i class="bi bi-trash"></i> ลบ</button>
+                </div>
+            `;
+
+            const card = `
+                <div class="history-item animate__animated animate__fadeIn">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <div class="fw-bold" style="color: var(--primary-color);">${item.work_date}</div>
+                        <div class="badge bg-secondary bg-opacity-10 text-dark border">${shiftText}</div>
+                    </div>
+                    <div class="small text-muted mb-2"><i class="bi bi-person-vcard"></i> ${item.id_card} | ${item.remark_type}</div>
+                    <div class="bg-light p-2 rounded text-center border" style="font-size: 0.9rem;">
+                        ${timeIn} ${timeOut}
+                    </div>
+                    ${actionBtns}
+                </div>
+            `;
+            if(isToday) htmlToday += card; else htmlPast += card;
+        });
+
+        document.getElementById('listToday').innerHTML = htmlToday || '<div class="text-center text-muted small py-3">ไม่มีประวัติวันนี้</div>';
+        document.getElementById('listPast').innerHTML = htmlPast || '<div class="text-center text-muted small py-3">ไม่มีประวัติย้อนหลัง</div>';
+
+    } catch (err) { console.error(err); }
+}
+
+// ================= USER EDIT/DELETE (WITH PIN/ID CARD) =================
+async function verifyUser(id_card) {
+    const { value: confirmId } = await Swal.fire({
+        title: 'ยืนยันตัวตน',
+        text: 'เพื่อความปลอดภัย กรุณากรอก "รหัสบัตรประจำตัว" ของคุณ',
+        input: 'text',
+        inputPlaceholder: 'เช่น G-001',
+        showCancelButton: true, confirmButtonText: 'ยืนยัน', cancelButtonText: 'ยกเลิก',
+        inputValidator: (value) => { if (!value) return 'กรุณากรอกรหัสบัตร!' }
+    });
+    return confirmId === id_card;
+}
+
+async function userEdit(id, id_card, currentIn, currentOut) {
+    if(!(await verifyUser(id_card))) return Swal.fire('ผิดพลาด', 'รหัสบัตรไม่ตรงกับรายการนี้', 'error');
+
+    const { value: formValues } = await Swal.fire({
+        title: 'แก้ไขเวลา',
+        html: `
+            <div class="text-start mt-3">
+                <label class="form-label">เวลาเข้า</label><input type="time" id="swal-in" value="${currentIn}" class="form-control mb-3">
+                <label class="form-label">เวลาออก</label><input type="time" id="swal-out" value="${currentOut}" class="form-control">
+            </div>
+        `,
+        focusConfirm: false, showCancelButton: true, confirmButtonText: 'บันทึก',
+        preConfirm: () => { return { in: document.getElementById('swal-in').value, out: document.getElementById('swal-out').value } }
+    });
+
+    if (formValues) {
+        Swal.fire({ title: 'กำลังบันทึก...', didOpen: () => Swal.showLoading() });
+        // 🕵️ บันทึกว่า รปภ. เป็นคนแก้เอง (ให้ Admin เห็นในฐานข้อมูล)
+        const { error } = await db.from('guard_attendance').update({
+            time_in: formValues.in || null, time_out: formValues.out || null,
+            updated_at: new Date(), updated_by: 'User (รปภ.)'
+        }).eq('id', id);
+
+        if (error) Swal.fire('Error', 'แก้ไขไม่ได้', 'error');
+        else { Swal.fire({ icon: 'success', title: 'อัปเดตเรียบร้อย', timer: 1500, showConfirmButton: false }); fetchHistory(); }
     }
 }
 
-// ================= FETCH HISTORY =================
-async function fetchRecentHistory() {
-    const listDiv = document.getElementById('historyList');
-    try {
-        const { data, error } = await db.from('guard_attendance').select('*').order('created_at', { ascending: false }).limit(5);
-        if (error) throw error;
-
-        listDiv.innerHTML = '';
-        if (data.length === 0) {
-            listDiv.innerHTML = `<div class="text-center text-muted small py-3">ไม่มีประวัติการปฏิบัติงาน</div>`;
-            return;
-        }
-
-        data.forEach(item => {
-            const shiftText = item.shift.split(' ')[0];
-            const timeIn = item.time_in ? `<span class="text-success"><i class="bi bi-box-arrow-in-right"></i> ${item.time_in}</span>` : '';
-            const timeOut = item.time_out ? `<span class="text-danger ms-2"><i class="bi bi-box-arrow-right"></i> ${item.time_out}</span>` : '';
-            
-            listDiv.innerHTML += `
-                <div class="history-item animate__animated animate__fadeIn">
-                    <div class="flex-grow-1">
-                        <div class="fw-bold" style="color: var(--primary-color);">${item.fullname} <span class="text-muted small">(${item.id_card})</span></div>
-                        <div class="text-muted small mt-1"><i class="bi bi-clock"></i> ${shiftText} | ${item.remark_type}</div>
-                    </div>
-                    <div class="text-end">
-                        <div class="time-badge">${timeIn} ${timeOut}</div>
-                        <div class="text-muted" style="font-size: 0.7rem; margin-top: 3px;">${item.work_date}</div>
-                    </div>
-                </div>
-            `;
-        });
-    } catch (err) { console.error("History Error:", err); }
+async function userDelete(id, id_card) {
+    if(!(await verifyUser(id_card))) return Swal.fire('ผิดพลาด', 'รหัสบัตรไม่ตรงกับรายการนี้', 'error');
+    
+    const res = await Swal.fire({ title: 'ยืนยันการลบ?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545', confirmButtonText: 'ลบทิ้ง' });
+    if(res.isConfirmed) {
+        await db.from('guard_attendance').delete().eq('id', id);
+        Swal.fire({ icon: 'success', title: 'ลบสำเร็จ', timer: 1500, showConfirmButton: false }); fetchHistory();
+    }
 }
 
 // ================= SUBMIT FORM =================
 document.getElementById('attendanceForm').addEventListener('submit', async function(e) {
     e.preventDefault();
-    
     const time_in = document.getElementById('time_in').value || null;
     const time_out = document.getElementById('time_out').value || null;
 
-    if(!time_in && !time_out) {
-        Swal.fire({ icon: 'warning', title: 'ข้อมูลไม่ครบถ้วน', text: 'กรุณาระบุเวลาเข้า หรือ เวลาออก อย่างน้อย 1 ช่อง', confirmButtonColor: '#1e3a8a' });
-        return;
-    }
+    if(!time_in && !time_out) return Swal.fire({ icon: 'warning', title: 'ข้อมูลไม่ครบ', text: 'กรุณาระบุเวลาอย่างน้อย 1 ช่อง' });
 
     const btn = document.getElementById('btnSubmit');
-    const originalText = btn.innerHTML;
-    btn.disabled = true; 
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> กำลังบันทึก...';
+    const originalText = btn.innerHTML; btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" style="width:1.2rem;height:1.2rem;color:white;"></span> กำลังบันทึก...';
 
     const payload = {
         work_date: document.getElementById('work_date').value,
@@ -391,38 +394,28 @@ document.getElementById('attendanceForm').addEventListener('submit', async funct
         time_in: time_in,
         time_out: time_out,
         remark_type: document.getElementById('remark_type').value,
-        remark_detail: document.getElementById('remark_detail').value || null
+        remark_detail: document.getElementById('remark_detail').value || null,
+        profile_pic: document.getElementById('picUrl').value || null // ส่ง URL รูปลง DB
     };
 
     try {
         const { error } = await db.from('guard_attendance').insert([payload]);
         if (error) throw error;
 
-        // 🧠 อัปเดต Memory ลงเครื่อง
         localStorage.setItem('sec_last_card', payload.id_card);
         localStorage.setItem('sec_last_name', payload.fullname);
         localStorage.setItem('sec_last_shift', payload.shift);
-
-        // Haptic Feedback (สั่นมือถือเบาๆ ถ้าเครื่องรองรับ)
         if (navigator.vibrate) navigator.vibrate(50);
 
-        await Swal.fire({ icon: 'success', title: 'บันทึกข้อมูลสำเร็จ', text: `ลงเวลาให้คุณ ${payload.fullname} เรียบร้อย`, timer: 2000, showConfirmButton: false });
+        await Swal.fire({ icon: 'success', title: 'บันทึกสำเร็จ', timer: 1500, showConfirmButton: false });
         
-        // ล้างฟอร์มเฉพาะเวลา
-        document.getElementById('time_in').value = '';
-        document.getElementById('time_out').value = '';
-        document.getElementById('remark_type').value = 'ปกติ';
-        handleRemarkChange();
-        
-        await fetchRecentHistory();
+        document.getElementById('time_in').value = ''; document.getElementById('time_out').value = '';
+        document.getElementById('remark_type').value = 'ปกติ'; handleRemarkChange();
+        await fetchHistory();
 
-    } catch (err) { 
-        Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: err.message, confirmButtonColor: '#1e3a8a' }); 
-    } finally { 
-        btn.disabled = false; btn.innerHTML = originalText; 
-    }
+    } catch (err) { Swal.fire('เกิดข้อผิดพลาด', err.message, 'error'); } 
+    finally { btn.disabled = false; btn.innerHTML = originalText; }
 });
 </script>
-
 </body>
 </html>
