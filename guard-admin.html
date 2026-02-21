@@ -374,70 +374,85 @@ async function refreshAdminData() {
 }
 
 // ================= ระบบรายงาน & KPIs & Audit Trail =================
+// ================= อัปเกรดระบบรายงานให้โชว์คนขาดงาน =================
 async function loadAttendance() {
     const filterMonth = document.getElementById('filterMonth').value; 
     const filterName = document.getElementById('filterName').value;
 
-    let query = db.from('guard_attendance').select('*').order('work_date', { ascending: false }).order('created_at', { ascending: false });
+    if (!filterMonth) return Swal.fire('แจ้งเตือน', 'กรุณาเลือกเดือนที่ต้องการดูรายงาน', 'warning');
+
+    // 1. ดึงรายชื่อพนักงานทั้งหมดจาก Master มาเป็นตัวตั้งต้น
+    const { data: allPersonnel } = await db.from('security_personnel_master').select('fullname');
     
-    if (filterMonth) query = query.gte('work_date', `${filterMonth}-01`).lte('work_date', `${filterMonth}-31`);
+    // 2. ดึงข้อมูลการลงเวลาตามเงื่อนไข
+    let query = db.from('guard_attendance').select('*').order('work_date', { ascending: false });
+    query = query.gte('work_date', `${filterMonth}-01`).lte('work_date', `${filterMonth}-31`);
     if (filterName !== 'ALL') query = query.eq('fullname', filterName);
 
-    const { data, error } = await query;
+    const { data: attendanceData, error } = await query;
     if (error) return console.error(error);
 
     const tbody = document.getElementById('attendanceTbody');
     tbody.innerHTML = '';
 
-    let countMorning = 0, countNight = 0, countIssue = 0;
+    // 3. ประมวลผลข้อมูล (Logic เปรียบเทียบ)
+    // เราจะสร้าง Map เพื่อเช็คว่าในแต่ละวัน ใครลงเวลาไปแล้วบ้าง
+    const attendanceMap = new Set(attendanceData.map(item => `${item.work_date}_${item.fullname}`));
 
-    if(data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" class="text-center py-5 text-muted">ไม่พบข้อมูล</td></tr>`;
-        updateKPIs(0, 0, 0, 0);
-        return;
-    }
-
-    data.forEach(row => {
-        if(row.shift.includes('เช้า')) countMorning++;
-        else countNight++;
-        if(row.remark_type !== 'ปกติ') countIssue++;
-
-        // 🟢 🕵️ ระบบ Audit Trail อัจฉริยะ: แยกสีตามคนแก้ (แอดมินแก้ = ส้ม, รปภ.แก้ = ฟ้า)
-        let editBadge = '';
-        if(row.updated_by) {
-            const editDate = new Date(row.updated_at).toLocaleString('th-TH');
-            const badgeColor = row.updated_by === 'Admin' ? 'text-warning' : 'text-info'; // แอดมินส้ม / ผู้ใช้ฟ้า
-            editBadge = `<i class="bi bi-pencil-fill ${badgeColor} ms-2" title="แก้ไขโดย ${row.updated_by} เมื่อ: ${editDate}" style="cursor:help; font-size: 0.8rem;"></i>`;
-        }
-
-        // 🟢 🖼️ รูปโปรไฟล์พนักงาน
-        let profileImg = row.profile_pic 
-            ? `<img src="${row.profile_pic}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid #e2e8f0;" class="me-2 no-print">` 
-            : `<div style="width: 32px; height: 32px; border-radius: 50%; background: #e2e8f0; display: flex; align-items: center; justify-content: center;" class="me-2 no-print"><i class="bi bi-person text-secondary"></i></div>`;
-
-        let remark = row.remark_type !== 'ปกติ' ? `<span class="text-danger fw-bold">${row.remark_type}</span> ${row.remark_detail||''}` : 'ปกติ';
-        
-        tbody.innerHTML += `
-            <tr>
-                <td class="fw-bold text-primary">${row.work_date}</td>
-                <td>${row.shift.includes('เช้า') ? '☀️' : '🌙'} <span class="opacity-75">${row.shift.split(' ')[0]}</span></td>
-                <td class="fw-bold">${row.id_card}</td>
-                <td>
-                    <div class="d-flex align-items-center">
-                        ${profileImg}
-                        <span>${row.fullname}</span>
-                    </div>
-                </td>
-                <td class="text-center text-success fw-bold">${row.time_in || '-'}${row.time_in && row.updated_by ? editBadge : ''}</td>
-                <td class="text-center text-danger fw-bold">${row.time_out || '-'}${row.time_out && row.updated_by ? editBadge : ''}</td>
-                <td>${remark}</td>
-                <td class="text-center no-print">
-                    <button onclick="editTime('${row.id}', '${row.time_in || ''}', '${row.time_out || ''}')" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold"><i class="bi bi-pencil-square me-1"></i>แก้</button>
-                </td>
-            </tr>`;
+    // --- ส่วนการแสดงผลในตาราง ---
+    // โชว์รายการที่มีการลงเวลาจริงก่อน (ตามที่พี่ทำไว้เดิม)
+    attendanceData.forEach(row => {
+        renderRow(row, tbody, false); // false คือ มาทำงานปกติ
     });
 
-    updateKPIs(data.length, countMorning, countNight, countIssue);
+    // 4. [ไอเดียเด็ด] ถ้าเลือกกรอง "รายบุคคล" และ "เดือน" 
+    // ระบบจะเช็คให้ว่าวันไหนในเดือนนั้นที่เขา "ไม่มา" (ยังไม่มีในระบบ)
+    if (filterName !== 'ALL') {
+        const daysInMonth = new Date(filterMonth.split('-')[0], filterMonth.split('-')[1], 0).getDate();
+        for (let d = 1; d <= daysInMonth; d++) {
+            const dateStr = `${filterMonth}-${String(d).padStart(2, '0')}`;
+            // ถ้าวันที่ d ยังไม่มีการลงเวลาของคนนี้
+            if (!attendanceMap.has(`${dateStr}_${filterName}`)) {
+                const absentRow = {
+                    work_date: dateStr,
+                    shift: '-',
+                    id_card: '-',
+                    fullname: filterName,
+                    time_in: null,
+                    time_out: null,
+                    remark_type: '<span class="badge bg-danger">ไม่มาทำงาน / ขาดงาน</span>',
+                    remark_detail: 'ไม่มีบันทึกข้อมูล'
+                };
+                renderRow(absentRow, tbody, true); // true คือ ขาดงาน
+            }
+        }
+    }
+
+    // อัปเดต KPIs (นับเฉพาะคนที่มาจริง)
+    updateKPIs(attendanceData.length, 
+               attendanceData.filter(r => r.shift.includes('เช้า')).length, 
+               attendanceData.filter(r => r.shift.includes('ดึก')).length, 
+               attendanceData.filter(r => r.remark_type !== 'ปกติ').length);
+}
+
+// ฟังก์ชันช่วยวาดแถว (แยกออกมาเพื่อให้โค้ดสะอาด)
+function renderRow(row, tbody, isAbsent) {
+    const editBadge = (row.updated_by) ? `<i class="bi bi-pencil-fill ${(row.updated_by === 'Admin' ? 'text-warning' : 'text-info')} ms-2"></i>` : '';
+    const profileImg = row.profile_pic ? `<img src="${row.profile_pic}" style="width: 25px; height: 25px; border-radius: 50%;" class="me-2 no-print">` : '';
+
+    tbody.innerHTML += `
+        <tr class="${isAbsent ? 'table-light opacity-75' : ''}">
+            <td class="fw-bold">${row.work_date}</td>
+            <td>${row.shift}</td>
+            <td>${row.id_card}</td>
+            <td>${profileImg}${row.fullname}</td>
+            <td class="text-center fw-bold text-success">${row.time_in || (isAbsent ? '-' : '-')}</td>
+            <td class="text-center fw-bold text-danger">${row.time_out || (isAbsent ? '-' : '-')}</td>
+            <td>${row.remark_type} ${row.remark_detail || ''}</td>
+            <td class="text-center no-print">
+                ${isAbsent ? '-' : `<button onclick="editTime('${row.id}', '${row.time_in}', '${row.time_out}')" class="btn btn-sm btn-outline-primary rounded-pill">แก้</button>`}
+            </td>
+        </tr>`;
 }
 
 function updateKPIs(total, morning, night, issue) {
