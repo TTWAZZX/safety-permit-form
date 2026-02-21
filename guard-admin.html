@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - ระบบลงเวลา รปภ.</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Sarabun', sans-serif; background-color: #f8fafc; }
+        /* ซ่อนเมนูและปุ่มต่างๆ เวลาสั่งปริ้นท์เป็น PDF */
+        @media print {
+            .no-print { display: none !important; }
+            body { background-color: white; }
+            .print-table { width: 100%; border-collapse: collapse; }
+            .print-table th, .print-table td { border: 1px solid #000; padding: 4px; font-size: 12px; }
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <nav class="bg-blue-900 text-white p-4 shadow-md no-print">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold">🛡️ Security Admin Dashboard</h1>
+            <div class="space-x-4">
+                <button onclick="switchTab('attendance')" class="hover:text-blue-300 font-semibold">🕒 ข้อมูลลงเวลา</button>
+                <button onclick="switchTab('master')" class="hover:text-blue-300 font-semibold">👥 จัดการรายชื่อ รปภ.</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto mt-8 px-4">
+        
+        <div id="tab-attendance" class="block">
+            <div class="bg-white p-6 rounded-xl shadow-md">
+                <div class="flex flex-wrap justify-between items-end mb-6 no-print gap-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-800 mb-2">📋 ประวัติการลงเวลา</h2>
+                        <div class="flex space-x-2">
+                            <input type="month" id="filterMonth" class="p-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                            <button onclick="loadAttendance()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 shadow">🔍 ค้นหา</button>
+                        </div>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button onclick="exportExcel()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 shadow font-semibold">📊 โหลด Excel</button>
+                        <button onclick="exportPDF()" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 shadow font-semibold">📄 โหลด PDF</button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table id="attendanceTable" class="w-full text-left border-collapse print-table">
+                        <thead>
+                            <tr class="bg-gray-100 text-gray-700 uppercase text-sm leading-normal border-b">
+                                <th class="py-3 px-4">วันที่</th>
+                                <th class="py-3 px-4">กะทำงาน</th>
+                                <th class="py-3 px-4">รหัส-ชื่อ</th>
+                                <th class="py-3 px-4 text-center">เข้า (IN)</th>
+                                <th class="py-3 px-4 text-center">ออก (OUT)</th>
+                                <th class="py-3 px-4">หมายเหตุ</th>
+                                <th class="py-3 px-4 text-center no-print">จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendanceTbody" class="text-sm font-light">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-master" class="hidden">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-xl shadow-md h-fit">
+                    <h2 class="text-lg font-bold text-gray-800 mb-4">➕ เพิ่มรายชื่อ รปภ. ใหม่</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-semibold mb-1">รหัสประจำตัว (ID)</label>
+                            <input type="text" id="new_id_card" placeholder="เช่น G-004" class="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold mb-1">ชื่อ-สกุล</label>
+                            <input type="text" id="new_fullname" placeholder="นาย..." class="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <button onclick="addGuard()" class="w-full bg-blue-600 text-white font-bold py-2 rounded-lg hover:bg-blue-700">💾 บันทึก</button>
+                    </div>
+                </div>
+
+                <div class="md:col-span-2 bg-white p-6 rounded-xl shadow-md">
+                    <h2 class="text-lg font-bold text-gray-800 mb-4">📋 ฐานข้อมูล รปภ. (ปัจจุบัน)</h2>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-100 text-gray-700 text-sm border-b">
+                                    <th class="py-2 px-4">รหัสประจำตัว</th>
+                                    <th class="py-2 px-4">ชื่อ-สกุล</th>
+                                    <th class="py-2 px-4 text-center">ลบ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="masterTbody" class="text-sm">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // 🛑 ใส่ KEY ของ SUPABASE ตรงนี้!
+        const SUPABASE_URL = 'https://dqsfioiqwxuxpucwwhsv.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxc2Zpb2lxd3h1eHB1Y3d3aHN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1OTk1NjUsImV4cCI6MjA4NDE3NTU2NX0.L_u0Ff3uHofxiimEs6ySFB4TPNtOWiKeSu3KFoVcA1U';
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // เซ็ตค่าเดือนปัจจุบันให้ช่องค้นหา
+        const today = new Date();
+        document.getElementById('filterMonth').value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+
+        window.onload = () => {
+            loadAttendance();
+            loadMasterData();
+        };
+
+        // 🔄 ระบบสลับหน้าแท็บ
+        function switchTab(tabName) {
+            document.getElementById('tab-attendance').classList.add('hidden');
+            document.getElementById('tab-master').classList.add('hidden');
+            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+        }
+
+        // ==========================================
+        // 🕒 ส่วนจัดการระบบลงเวลา (Attendance)
+        // ==========================================
+        async function loadAttendance() {
+            const filterMonth = document.getElementById('filterMonth').value; // YYYY-MM
+            let query = supabase.from('guard_attendance').select('*').order('work_date', { ascending: false }).order('created_at', { ascending: false });
+            
+            if (filterMonth) {
+                const startDate = `${filterMonth}-01`;
+                const endDate = `${filterMonth}-31`; // Supabase จะจัดการวันที่เกินให้เอง
+                query = query.gte('work_date', startDate).lte('work_date', endDate);
+            }
+
+            const { data, error } = await query;
+            if (error) return console.error(error);
+
+            const tbody = document.getElementById('attendanceTbody');
+            tbody.innerHTML = '';
+
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.className = 'border-b hover:bg-gray-50';
+                
+                // ตกแต่งสีหมายเหตุ
+                let remarkHtml = row.remark_type;
+                if(row.remark_type !== 'ปกติ') {
+                    remarkHtml = `<span class="text-red-600 font-semibold">${row.remark_type}</span>`;
+                    if(row.remark_detail) remarkHtml += `<br><span class="text-xs text-gray-500">${row.remark_detail}</span>`;
+                }
+
+                tr.innerHTML = `
+                    <td class="py-3 px-4 font-medium">${row.work_date}</td>
+                    <td class="py-3 px-4 text-gray-600">${row.shift}</td>
+                    <td class="py-3 px-4"><span class="font-bold text-gray-800">${row.id_card}</span><br><span class="text-xs text-gray-500">${row.fullname}</span></td>
+                    <td class="py-3 px-4 text-center font-bold text-green-600">${row.time_in || '-'}</td>
+                    <td class="py-3 px-4 text-center font-bold text-red-500">${row.time_out || '-'}</td>
+                    <td class="py-3 px-4">${remarkHtml}</td>
+                    <td class="py-3 px-4 text-center no-print">
+                        <button onclick="editTime('${row.id}', '${row.time_in || ''}', '${row.time_out || ''}')" class="text-blue-500 hover:text-blue-700 bg-blue-100 p-2 rounded-lg text-xs font-bold">✏️ แก้เวลา</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // ✏️ ฟังก์ชันแอดมินแก้ไขเวลา
+        async function editTime(id, currentIn, currentOut) {
+            const { value: formValues } = await Swal.fire({
+                title: 'แก้ไขเวลาเข้า-ออก',
+                html: `
+                    <div class="text-left mt-4">
+                        <label class="block text-sm font-semibold mb-1">เวลาเข้า (IN)</label>
+                        <input id="swal-in" type="time" value="${currentIn}" class="w-full p-2 border rounded mb-3">
+                        <label class="block text-sm font-semibold mb-1">เวลาออก (OUT)</label>
+                        <input id="swal-out" type="time" value="${currentOut}" class="w-full p-2 border rounded">
+                    </div>
+                `,
+                focusConfirm: false,
+                showCancelButton: true,
+                confirmButtonText: 'บันทึกการแก้ไข',
+                cancelButtonText: 'ยกเลิก',
+                preConfirm: () => {
+                    return {
+                        in: document.getElementById('swal-in').value,
+                        out: document.getElementById('swal-out').value
+                    }
+                }
+            });
+
+            if (formValues) {
+                const { error } = await supabase.from('guard_attendance').update({
+                    time_in: formValues.in || null,
+                    time_out: formValues.out || null,
+                    updated_at: new Date()
+                }).eq('id', id);
+
+                if (error) {
+                    Swal.fire('Error', 'แก้ไขไม่ได้', 'error');
+                } else {
+                    Swal.fire('สำเร็จ', 'อัปเดตเวลาเรียบร้อย', 'success');
+                    loadAttendance(); // โหลดตารางใหม่
+                }
+            }
+        }
+
+        // ==========================================
+        // 👥 ส่วนจัดการรายชื่อ (Master Data)
+        // ==========================================
+        async function loadMasterData() {
+            const { data, error } = await supabase.from('guard_master').select('*').order('id_card');
+            if (error) return console.error(error);
+
+            const tbody = document.getElementById('masterTbody');
+            tbody.innerHTML = '';
+
+            data.forEach(guard => {
+                const tr = document.createElement('tr');
+                tr.className = 'border-b hover:bg-gray-50';
+                tr.innerHTML = `
+                    <td class="py-2 px-4 font-bold text-gray-800">${guard.id_card}</td>
+                    <td class="py-2 px-4">${guard.fullname}</td>
+                    <td class="py-2 px-4 text-center">
+                        <button onclick="deleteGuard('${guard.id}', '${guard.fullname}')" class="text-red-500 hover:text-red-700 font-bold">🗑️ ลบ</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function addGuard() {
+            const id_card = document.getElementById('new_id_card').value.trim();
+            const fullname = document.getElementById('new_fullname').value.trim();
+
+            if(!id_card || !fullname) return Swal.fire('แจ้งเตือน', 'กรุณากรอกรหัสและชื่อให้ครบ', 'warning');
+
+            const { error } = await supabase.from('guard_master').insert([{ id_card, fullname }]);
+            
+            if (error) {
+                if (error.code === '23505') Swal.fire('แจ้งเตือน', 'รหัสประจำตัวนี้มีอยู่ในระบบแล้ว!', 'error');
+                else Swal.fire('Error', error.message, 'error');
+            } else {
+                Swal.fire('สำเร็จ', 'เพิ่มรายชื่อเรียบร้อย', 'success');
+                document.getElementById('new_id_card').value = '';
+                document.getElementById('new_fullname').value = '';
+                loadMasterData();
+            }
+        }
+
+        async function deleteGuard(id, name) {
+            Swal.fire({
+                title: `ลบรายชื่อ ${name}?`,
+                text: "ลบแล้วจะไม่แสดงในหน้าลงเวลาของ รปภ. อีก",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                confirmButtonText: 'ยืนยันการลบ',
+                cancelButtonText: 'ยกเลิก'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    await supabase.from('guard_master').delete().eq('id', id);
+                    Swal.fire('ลบสำเร็จ!', '', 'success');
+                    loadMasterData();
+                }
+            });
+        }
+
+        // ==========================================
+        // 📊 ระบบ Export Data (Excel & PDF)
+        // ==========================================
+        function exportExcel() {
+            const month = document.getElementById('filterMonth').value;
+            // ดึงตาราง HTML มาแปลงเป็น Excel (ใช้ SheetJS)
+            let table = document.getElementById("attendanceTable");
+            let wb = XLSX.utils.table_to_book(table, { sheet: "Attendance" });
+            XLSX.writeFile(wb, `รายงานลงเวลา_รปภ_${month || 'All'}.xlsx`);
+        }
+
+        function exportPDF() {
+            // ใช้ฟังก์ชัน Print ของ Browser (วิธีนี้รองรับภาษาไทย 100% สระไม่ลอย ไม่ต้องลงฟอนต์เพิ่ม)
+            window.print();
+        }
+    </script>
+</body>
+</html>

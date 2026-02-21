@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบลงเวลา รปภ. (Smart Attendance)</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Sarabun', sans-serif; background-color: #f3f4f6; }
+        .ts-control { padding: 12px; border-radius: 0.5rem; border-color: #d1d5db; font-size: 1rem; }
+    </style>
+</head>
+<body class="text-gray-800 pb-10">
+
+    <div class="bg-blue-800 text-white p-6 shadow-md rounded-b-3xl text-center">
+        <h1 class="text-2xl font-bold">🛡️ ระบบลงเวลา รปภ.</h1>
+        <p class="text-blue-200 text-sm mt-1">Smart Attendance System</p>
+    </div>
+
+    <div class="max-w-md mx-auto mt-6 px-4">
+        <div class="bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
+            <form id="attendanceForm" class="space-y-5">
+                
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">📅 วันที่ทำงาน (Workaday)</label>
+                    <input type="date" id="work_date" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">🔄 กะการทำงาน (Shift)</label>
+                    <select id="shift" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                        <option value="" disabled selected>-- เลือกกะการทำงาน --</option>
+                        <option value="กะเช้า (07:00-19:00)">☀️ กะเช้า (07:00-19:00)</option>
+                        <option value="กะดึก (19:00-07:00)">🌙 กะดึก (19:00-07:00)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">🆔 รหัสประจำตัว (ID Card)</label>
+                    <select id="id_card" required placeholder="พิมพ์ค้นหารหัส หรือ ชื่อ..."></select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">👤 ชื่อ-สกุล (อัตโนมัติ)</label>
+                    <input type="text" id="fullname" readonly class="w-full p-3 border border-gray-200 bg-gray-100 rounded-lg text-gray-500 font-medium cursor-not-allowed">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">🟢 เวลาเข้า (IN)</label>
+                        <input type="time" id="time_in" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">🔴 เวลาออก (OUT)</label>
+                        <input type="time" id="time_out" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 outline-none">
+                    </div>
+                </div>
+                <p class="text-xs text-gray-400 mt-1">* หากเพิ่งเข้างาน ให้เว้นช่อง "เวลาออก" ไว้ก่อนได้ครับ</p>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">📝 หมายเหตุ (Remark)</label>
+                    <select id="remark_type" onchange="handleRemarkChange()" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                        <option value="ปกติ" selected>✅ ปฏิบัติงานปกติ</option>
+                        <option value="ควงเปลี่ยนกะ 24 ชั่วโมง">⚠️ ควงเปลี่ยนกะ 24 ชั่วโมง</option>
+                        <option value="แทน (หัวหน้าชุด รปภ.)">⭐ แทน (หัวหน้าชุด รปภ.)</option>
+                        <option value="แทน (รปภ.)">🔄 แทน (รปภ.)</option>
+                        <option value="อื่นๆ">✏️ อื่นๆ (ระบุเอง)</option>
+                    </select>
+                </div>
+
+                <div id="remark_other_div" class="hidden">
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">รายละเอียดเพิ่มเติม</label>
+                    <input type="text" id="remark_detail" placeholder="พิมพ์รายละเอียด..." class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg transition duration-200 mt-4 text-lg">
+                    💾 บันทึกข้อมูล
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // 🛑 1. ใส่ KEY ของ SUPABASE ตรงนี้ครับ!
+        const SUPABASE_URL = 'https://dqsfioiqwxuxpucwwhsv.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxc2Zpb2lxd3h1eHB1Y3d3aHN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1OTk1NjUsImV4cCI6MjA4NDE3NTU2NX0.L_u0Ff3uHofxiimEs6ySFB4TPNtOWiKeSu3KFoVcA1U';
+        
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        let guardMap = {}; // เก็บข้อมูลรหัสคู่กับชื่อ
+
+        // 📅 ตั้งค่า วันที่ เป็นวันปัจจุบันทันทีที่เปิดแอป
+        document.getElementById('work_date').valueAsDate = new Date();
+
+        // 📥 2. ฟังก์ชันดึง Master Data จาก Supabase มาใส่ Dropdown
+        async function loadMasterData() {
+            try {
+                const { data, error } = await supabase.from('guard_master').select('*').order('id_card');
+                if (error) throw error;
+
+                const selectEl = document.getElementById('id_card');
+                selectEl.innerHTML = '<option value="">พิมพ์ค้นหารหัส หรือ ชื่อ...</option>';
+
+                data.forEach(g => {
+                    guardMap[g.id_card] = g.fullname; // จำคู่รหัสกับชื่อไว้
+                    const opt = document.createElement('option');
+                    opt.value = g.id_card;
+                    opt.textContent = `${g.id_card} - ${g.fullname}`;
+                    selectEl.appendChild(opt);
+                });
+
+                // เปิดใช้งาน TomSelect (ทำให้พิมพ์ค้นหาได้)
+                new TomSelect("#id_card", {
+                    create: false,
+                    sortField: { field: "text", direction: "asc" },
+                    onChange: function(selectedId) {
+                        // 🟢 ดึงชื่อมาใส่ช่องอัตโนมัติ
+                        document.getElementById('fullname').value = guardMap[selectedId] || '';
+                    }
+                });
+            } catch (err) {
+                console.error("Load Master Error:", err);
+                Swal.fire('ข้อผิดพลาด', 'ดึงฐานข้อมูลรายชื่อไม่ได้ กรุณารีเฟรชหน้าจอ', 'error');
+            }
+        }
+
+        // 🔄 3. ฟังก์ชันซ่อน/โชว์ช่อง "อื่นๆ"
+        function handleRemarkChange() {
+            const val = document.getElementById('remark_type').value;
+            const otherDiv = document.getElementById('remark_other_div');
+            if (val === 'อื่นๆ') {
+                otherDiv.classList.remove('hidden');
+                document.getElementById('remark_detail').focus();
+            } else {
+                otherDiv.classList.add('hidden');
+                document.getElementById('remark_detail').value = '';
+            }
+        }
+
+        // 💾 4. ฟังก์ชันกดบันทึกข้อมูล
+        document.getElementById('attendanceForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            // รวบรวมข้อมูลจากฟอร์ม
+            const payload = {
+                work_date: document.getElementById('work_date').value,
+                shift: document.getElementById('shift').value,
+                id_card: document.getElementById('id_card').value,
+                fullname: document.getElementById('fullname').value,
+                time_in: document.getElementById('time_in').value || null,
+                time_out: document.getElementById('time_out').value || null,
+                remark_type: document.getElementById('remark_type').value,
+                remark_detail: document.getElementById('remark_detail').value || null
+            };
+
+            // เช็คว่าไม่ได้กรอกเวลาเลยทั้งคู่
+            if(!payload.time_in && !payload.time_out) {
+                Swal.fire('แจ้งเตือน', 'กรุณาระบุเวลาเข้า หรือ เวลาออก อย่างน้อย 1 ช่องครับ', 'warning');
+                return;
+            }
+
+            // แสดงโหลดดิ้ง
+            Swal.fire({
+                title: 'กำลังบันทึกข้อมูล...',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            try {
+                // บันทึกลงตาราง guard_attendance
+                const { error } = await supabase.from('guard_attendance').insert([payload]);
+                
+                if (error) throw error;
+
+                // สำเร็จ!
+                Swal.fire({
+                    icon: 'success',
+                    title: 'บันทึกสำเร็จ!',
+                    text: `ลงเวลาให้คุณ ${payload.fullname} เรียบร้อยแล้ว`,
+                    confirmButtonText: 'ตกลง',
+                    confirmButtonColor: '#2563eb'
+                }).then(() => {
+                    // ล้างฟอร์ม (ยกเว้นวันที่)
+                    document.getElementById('time_in').value = '';
+                    document.getElementById('time_out').value = '';
+                    document.getElementById('remark_type').value = 'ปกติ';
+                    handleRemarkChange();
+                });
+
+            } catch (err) {
+                console.error("Insert Error:", err);
+                Swal.fire('ข้อผิดพลาด', 'บันทึกข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง', 'error');
+            }
+        });
+
+        // 🚀 โหลดข้อมูลทันทีเมื่อเปิดหน้า
+        window.onload = loadMasterData;
+    </script>
+</body>
+</html>
