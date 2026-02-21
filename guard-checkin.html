@@ -161,16 +161,16 @@
             </div>
 
             <div class="mb-3">
-                <label class="small text-muted fw-bold mb-1"><i class="bi bi-person-badge me-1"></i>รหัสประจำตัว (ID Card)</label>
-                <select id="id_card" required placeholder="พิมพ์ค้นหารหัส หรือ ชื่อ..."></select>
+                <label class="small text-muted fw-bold mb-1"><i class="bi bi-credit-card-2-front me-1"></i>รหัสบัตรที่ใช้สแกน (ID Card)</label>
+                <select id="id_card" required placeholder="พิมพ์ค้นหารหัสบัตร..."></select>
             </div>
 
-            <div class="form-floating mb-3">
-                <input type="text" id="fullname" class="form-control fw-bold text-primary" readonly placeholder="Name">
-                <label for="fullname"><i class="bi bi-person-check me-1"></i>ชื่อ-สกุล (อัตโนมัติ)</label>
+            <div class="mb-3">
+                <label class="small text-muted fw-bold mb-1"><i class="bi bi-person-badge me-1"></i>ชื่อพนักงาน (ผู้ปฏิบัติงานจริง)</label>
+                <select id="fullname" required placeholder="พิมพ์ค้นหาชื่อ-นามสกุล..."></select>
             </div>
 
-            <div class="row g-2 mb-3">
+            <div class="row g-2 mb-3 mt-2">
                 <div class="col-6">
                     <div class="form-floating">
                         <input type="time" id="time_in" class="form-control fw-bold text-success">
@@ -217,12 +217,13 @@
 
 <script>
 // ================= CONFIG =================
+// 🛑 อย่าลืมใส่ KEY และ LIFF ID!
 const SUPABASE_URL = 'https://dqsfioiqwxuxpucwwhsv.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxc2Zpb2lxd3h1eHB1Y3d3aHN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1OTk1NjUsImV4cCI6MjA4NDE3NTU2NX0.L_u0Ff3uHofxiimEs6ySFB4TPNtOWiKeSu3KFoVcA1U';
+
 const LIFF_ID = '2007053300-gJitj7Vr'; 
 
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-let guardMap = {}; 
 
 // ================= INIT =================
 window.onload = async () => {
@@ -284,28 +285,28 @@ function toggleTheme() {
 // ================= APP LOGIC =================
 async function loadMasterData() {
     try {
-        const { data, error } = await db.from('guard_master').select('*').order('id_card');
-        if (error) throw error;
+        // 1. โหลดรหัสบัตร
+        const { data: cards } = await db.from('security_card_master').select('card_number').order('card_number');
+        const selectCard = document.getElementById('id_card');
+        selectCard.innerHTML = '<option value="">พิมพ์ค้นหารหัสบัตร...</option>';
+        if (cards) {
+            cards.forEach(c => {
+                selectCard.innerHTML += `<option value="${c.card_number}">${c.card_number}</option>`;
+            });
+        }
+        new TomSelect("#id_card", { create: false, sortField: { field: "text", direction: "asc" }});
 
-        const selectEl = document.getElementById('id_card');
-        selectEl.innerHTML = '<option value="">พิมพ์ค้นหารหัส หรือ ชื่อ...</option>';
+        // 2. โหลดรายชื่อพนักงาน
+        const { data: persons } = await db.from('security_personnel_master').select('fullname').order('fullname');
+        const selectPerson = document.getElementById('fullname');
+        selectPerson.innerHTML = '<option value="">พิมพ์ค้นหาชื่อ-นามสกุล...</option>';
+        if (persons) {
+            persons.forEach(p => {
+                selectPerson.innerHTML += `<option value="${p.fullname}">${p.fullname}</option>`;
+            });
+        }
+        new TomSelect("#fullname", { create: false, sortField: { field: "text", direction: "asc" }});
 
-        data.forEach(g => {
-            guardMap[g.id_card] = g.fullname; 
-            const opt = document.createElement('option');
-            opt.value = g.id_card;
-            opt.textContent = `${g.id_card} - ${g.fullname}`;
-            selectEl.appendChild(opt);
-        });
-
-        // เปิดใช้งาน TomSelect (โหมด Bootstrap 5)
-        new TomSelect("#id_card", {
-            create: false,
-            sortField: { field: "text", direction: "asc" },
-            onChange: function(selectedId) {
-                document.getElementById('fullname').value = guardMap[selectedId] || '';
-            }
-        });
     } catch (err) {
         console.error("Load Master Error:", err);
     }
@@ -378,8 +379,8 @@ document.getElementById('attendanceForm').addEventListener('submit', async funct
     const payload = {
         work_date: document.getElementById('work_date').value,
         shift: document.getElementById('shift').value,
-        id_card: document.getElementById('id_card').value,
-        fullname: document.getElementById('fullname').value,
+        id_card: document.getElementById('id_card').value,  // ดึงจาก Dropdown บัตร
+        fullname: document.getElementById('fullname').value, // ดึงจาก Dropdown ชื่อ
         time_in: time_in,
         time_out: time_out,
         remark_type: document.getElementById('remark_type').value,
