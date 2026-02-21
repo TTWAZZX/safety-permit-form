@@ -8,14 +8,16 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
-        /* ================= THEME VARIABLES (Super App) ================= */
+        /* ================= THEME VARIABLES ================= */
         :root {
             --primary-color: #0ea5e9;
             --bg-color: #f8fafc;
@@ -46,39 +48,43 @@
             transition: background-color 0.3s ease;
         }
 
-        /* ================= LOADING SCREEN ================= */
+        /* ================= SECURE LOGIN SCREEN ================= */
+        #loginScreen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-color); z-index: 10000;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .login-card {
+            background: var(--card-bg); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            padding: 40px; border-radius: 24px; box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.2); text-align: center; width: 100%; max-width: 400px;
+        }
+        
         #loadingScreen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--bg-color); z-index: 9999;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            background: var(--bg-color); z-index: 9999; display: none;
+            flex-direction: column; justify-content: center; align-items: center;
         }
-        .line-spinner {
-            border: 5px solid var(--border-color);
-            border-top: 5px solid var(--primary-color);
-            border-radius: 50%; width: 50px; height: 50px;
-            animation: spin 1s linear infinite; margin-bottom: 20px;
-        }
-        .loading-text-main { font-weight: bold; font-size: 1.2rem; color: var(--text-color); margin-bottom: 5px; }
+        .line-spinner { border: 5px solid var(--border-color); border-top: 5px solid var(--primary-color); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 20px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         /* ================= MAIN LAYOUT & GLASS CARDS ================= */
         .admin-card {
             background: var(--card-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-            border-radius: 20px; padding: 25px;
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px; padding: 25px; box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
         }
+
+        /* KPIs & Chart */
+        .kpi-card { background: var(--input-bg); border-radius: 16px; padding: 20px; border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 15px rgba(0,0,0,0.02); }
+        .kpi-icon { width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+        .chart-container { height: 180px; width: 100%; display: flex; justify-content: center; }
 
         .top-navbar {
             background: linear-gradient(135deg, #0ea5e9 0%, #1e3a8a 100%);
-            padding: 15px 20px; color: white; border-radius: 0 0 24px 24px;
-            box-shadow: 0 4px 20px rgba(14, 165, 233, 0.2); margin-bottom: 30px;
+            padding: 15px 20px; color: white; border-radius: 0 0 24px 24px; box-shadow: 0 4px 20px rgba(14, 165, 233, 0.2); margin-bottom: 30px;
         }
         
-        .theme-toggle {
-            background: rgba(255,255,255,0.2); color: white;
-            border: none; width: 40px; height: 40px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s;
-        }
+        .theme-toggle { background: rgba(255,255,255,0.2); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s; }
         .theme-toggle:hover { background: rgba(255,255,255,0.3); transform: scale(1.05); }
 
         .form-control, .form-select { background-color: var(--input-bg); color: var(--text-color); border-color: var(--border-color); border-radius: 10px; }
@@ -94,7 +100,7 @@
         .nav-pills .nav-link.active { background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color: white; box-shadow: 0 4px 10px rgba(14, 165, 233, 0.3); }
 
         .btn-gradient { background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color: white; border: none; font-weight: 600; transition: 0.3s; }
-        .btn-gradient:hover { box-shadow: 0 5px 15px rgba(14, 165, 233, 0.4); color: white; transform: translateY(-2px); }
+        .btn-gradient:hover { box-shadow: 0 5px 15px rgba(14, 165, 233, 0.4); transform: translateY(-2px); }
 
         /* ================= PRINT TEMPLATE (PDF ทางการ) ================= */
         .print-only { display: none; }
@@ -122,127 +128,165 @@
 </head>
 <body>
 
-<div id="loadingScreen">
-    <div class="line-spinner"></div>
-    <div class="loading-text-main" id="loadStatusMain">กำลังโหลดข้อมูล...</div>
-</div>
-
-<div class="top-navbar no-print">
-    <div class="container-xl d-flex justify-content-between align-items-center">
-        <div class="d-flex align-items-center">
-            <i class="bi bi-shield-lock-fill fs-2 me-3"></i>
-            <div>
-                <h4 class="mb-0 fw-bold">Security Admin</h4>
-                <small class="opacity-75">Enterprise Dashboard</small>
-            </div>
+<div id="loginScreen" class="animate__animated animate__fadeIn">
+    <div class="login-card">
+        <i class="bi bi-shield-lock-fill text-primary" style="font-size: 4rem;"></i>
+        <h4 class="fw-bold mt-3 mb-1">Security Admin</h4>
+        <p class="text-muted small mb-4">กรุณาระบุรหัสผ่านเพื่อเข้าถึงข้อมูล</p>
+        <div class="input-group mb-3">
+            <span class="input-group-text bg-light"><i class="bi bi-key-fill"></i></span>
+            <input type="password" id="adminPin" class="form-control form-control-lg" placeholder="รหัสผ่าน (PIN)" onkeypress="if(event.key === 'Enter') checkLogin()">
         </div>
-        <button class="theme-toggle" onclick="toggleTheme()"><i class="bi bi-moon-stars-fill fs-5" id="themeIcon"></i></button>
+        <button onclick="checkLogin()" class="btn btn-gradient w-100 py-3 rounded-3 fs-5"><i class="bi bi-box-arrow-in-right me-2"></i>เข้าสู่ระบบ</button>
     </div>
 </div>
 
-<div class="container-xl" style="display: none;" id="mainApp">
-    
-    <ul class="nav nav-pills mb-4 no-print" id="pills-tab" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-attendance" type="button"><i class="bi bi-clock-history me-2"></i>รายงานลงเวลา</button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-master" type="button"><i class="bi bi-database-fill-gear me-2"></i>จัดการบัตร/พนักงาน</button>
-        </li>
-    </ul>
+<div id="loadingScreen">
+    <div class="line-spinner"></div>
+    <div class="loading-text-main" id="loadStatusMain">กำลังประมวลผลข้อมูล...</div>
+</div>
 
-    <div class="tab-content">
-        <div class="tab-pane fade show active" id="tab-attendance">
-            
-            <div class="print-only print-header">
-                <h3>รายงานบันทึกเวลาปฏิบัติงาน (รปภ.)</h3>
-                <p>ประจำเดือน: <span id="print-month-label" class="fw-bold">-</span> | พนักงาน: <span id="print-name-label" class="fw-bold">ทั้งหมด</span></p>
-                <p style="font-size: 10pt; text-align: right; margin-top: 5px;">วันที่พิมพ์: <span id="print-date"></span></p>
+<div id="mainApp" style="display: none;">
+    <div class="top-navbar no-print">
+        <div class="container-xl d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-shield-lock-fill fs-2 me-3"></i>
+                <div>
+                    <h4 class="mb-0 fw-bold">Security Admin</h4>
+                    <small class="opacity-75">Enterprise Dashboard</small>
+                </div>
             </div>
+            <div class="d-flex gap-3 align-items-center">
+                <button class="theme-toggle" onclick="toggleTheme()" title="สลับโหมดมืด/สว่าง"><i class="bi bi-moon-stars-fill fs-5" id="themeIcon"></i></button>
+                <button class="btn btn-sm btn-outline-light rounded-pill px-3" onclick="logout()"><i class="bi bi-box-arrow-right me-1"></i>ออกระบบ</button>
+            </div>
+        </div>
+    </div>
 
-            <div class="admin-card mb-4 no-print animate__animated animate__fadeIn">
-                <div class="row align-items-end g-3">
-                    <div class="col-md-3">
-                        <label class="form-label fw-bold small text-muted">เดือน</label>
-                        <input type="month" id="filterMonth" class="form-control">
+    <div class="container-xl">
+        <ul class="nav nav-pills mb-4 no-print" id="pills-tab" role="tablist">
+            <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-attendance"><i class="bi bi-bar-chart-line-fill me-2"></i>แดชบอร์ด & รายงาน</button></li>
+            <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-master"><i class="bi bi-database-fill-gear me-2"></i>จัดการบัตร/พนักงาน</button></li>
+        </ul>
+
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="tab-attendance">
+                
+                <div class="row g-3 mb-4 no-print animate__animated animate__fadeInDown">
+                    <div class="col-md-8">
+                        <div class="row g-3">
+                            <div class="col-sm-6">
+                                <div class="kpi-card border-start border-4 border-primary">
+                                    <div><small class="text-muted fw-bold">รายการลงเวลาทั้งหมด</small><h3 class="mb-0 fw-bold text-primary" id="kpi-total">0</h3></div>
+                                    <div class="kpi-icon bg-primary bg-opacity-10 text-primary"><i class="bi bi-list-check"></i></div>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="kpi-card border-start border-4 border-warning">
+                                    <div><small class="text-muted fw-bold">กะเช้า ☀️</small><h3 class="mb-0 fw-bold text-warning" id="kpi-morning">0</h3></div>
+                                    <div class="kpi-icon bg-warning bg-opacity-10 text-warning"><i class="bi bi-brightness-high-fill"></i></div>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="kpi-card border-start border-4 border-dark">
+                                    <div><small class="text-muted fw-bold">กะดึก 🌙</small><h3 class="mb-0 fw-bold text-dark" id="kpi-night">0</h3></div>
+                                    <div class="kpi-icon bg-dark bg-opacity-10 text-dark"><i class="bi bi-moon-fill"></i></div>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="kpi-card border-start border-4 border-danger">
+                                    <div><small class="text-muted fw-bold">หมายเหตุ (ควงกะ/แทน)</small><h3 class="mb-0 fw-bold text-danger" id="kpi-issue">0</h3></div>
+                                    <div class="kpi-icon bg-danger bg-opacity-10 text-danger"><i class="bi bi-exclamation-triangle-fill"></i></div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label fw-bold small text-muted">กรองรายบุคคล (ชื่อพนักงาน)</label>
-                        <select id="filterName" class="form-select">
-                            <option value="ALL">ดูทั้งหมดทุกคน</option>
-                            </select>
+                        <div class="admin-card h-100 d-flex flex-column justify-content-center pb-2 pt-3">
+                            <h6 class="fw-bold text-center mb-2">สัดส่วนการเข้ากะ</h6>
+                            <div class="chart-container"><canvas id="shiftChart"></canvas></div>
+                        </div>
                     </div>
-                    <div class="col-md-2">
-                        <button onclick="loadAttendance()" class="btn btn-gradient w-100 fw-bold rounded-3"><i class="bi bi-search me-1"></i> ค้นหา</button>
+                </div>
+
+                <div class="print-only print-header">
+                    <h3>รายงานบันทึกเวลาปฏิบัติงาน (รปภ.)</h3>
+                    <p>ประจำเดือน: <span id="print-month-label" class="fw-bold">-</span> | พนักงาน: <span id="print-name-label" class="fw-bold">ทั้งหมด</span></p>
+                    <p style="font-size: 10pt; text-align: right; margin-top: 5px;">วันที่พิมพ์: <span id="print-date"></span></p>
+                </div>
+
+                <div class="admin-card mb-4 no-print animate__animated animate__fadeInUp">
+                    <div class="row align-items-end g-3">
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold small text-muted">เดือน</label>
+                            <input type="month" id="filterMonth" class="form-control">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small text-muted">กรองรายบุคคล (ชื่อพนักงาน)</label>
+                            <select id="filterName" class="form-select"><option value="ALL">ดูทั้งหมดทุกคน</option></select>
+                        </div>
+                        <div class="col-md-2">
+                            <button onclick="loadAttendance()" class="btn btn-gradient w-100 fw-bold rounded-3"><i class="bi bi-search me-1"></i> ค้นหา</button>
+                        </div>
+                        <div class="col-md-3 text-end">
+                            <button onclick="exportExcel()" class="btn btn-success fw-bold me-2 rounded-3"><i class="bi bi-file-earmark-excel"></i> Excel</button>
+                            <button onclick="exportPDF()" class="btn btn-danger fw-bold rounded-3"><i class="bi bi-file-earmark-pdf"></i> PDF</button>
+                        </div>
                     </div>
-                    <div class="col-md-3 text-end">
-                        <button onclick="exportExcel()" class="btn btn-success fw-bold me-2 rounded-3"><i class="bi bi-file-earmark-excel"></i> Excel</button>
-                        <button onclick="exportPDF()" class="btn btn-danger fw-bold rounded-3"><i class="bi bi-file-earmark-pdf"></i> PDF</button>
+                </div>
+
+                <div class="admin-card animate__animated animate__fadeInUp">
+                    <div class="table-responsive">
+                        <table id="attendanceTable" class="table align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>วันที่</th>
+                                    <th>กะทำงาน</th>
+                                    <th>รหัสบัตร</th>
+                                    <th>ชื่อพนักงาน</th>
+                                    <th class="text-center">เข้า (IN)</th>
+                                    <th class="text-center">ออก (OUT)</th>
+                                    <th>หมายเหตุ</th>
+                                    <th class="text-center no-print">จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="attendanceTbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="print-only print-footer">
+                    <div class="sign-box"><div class="sign-line"></div><p>ผู้ตรวจสอบ/หัวหน้าชุด</p><p>วันที่: _____/_____/_____</p></div>
+                    <div class="sign-box"><div class="sign-line"></div><p>ผู้อนุมัติ (จป./ฝ่ายบุคคล)</p><p>วันที่: _____/_____/_____</p></div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="tab-master">
+                <div class="row g-4 no-print">
+                    <div class="col-md-6">
+                        <div class="admin-card h-100">
+                            <h5 class="fw-bold mb-4 text-primary"><i class="bi bi-credit-card-2-front me-2"></i>จัดการรหัสบัตร (ID Cards)</h5>
+                            <div class="d-flex gap-2 mb-3">
+                                <input type="text" id="new_card" class="form-control" placeholder="เช่น G-001">
+                                <button onclick="addMaster('card')" class="btn btn-primary fw-bold px-4 rounded-3">เพิ่ม</button>
+                            </div>
+                            <div class="table-responsive"><table class="table table-hover"><thead><tr><th>หมายเลขบัตร</th><th class="text-end">ลบ</th></tr></thead><tbody id="cardTbody"></tbody></table></div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="admin-card h-100">
+                            <h5 class="fw-bold mb-4 text-success"><i class="bi bi-person-badge me-2"></i>จัดการรายชื่อ (Personnel)</h5>
+                            <div class="d-flex gap-2 mb-3">
+                                <input type="text" id="new_person" class="form-control" placeholder="ชื่อ-นามสกุล">
+                                <button onclick="addMaster('person')" class="btn btn-success fw-bold px-4 rounded-3">เพิ่ม</button>
+                            </div>
+                            <div class="table-responsive"><table class="table table-hover"><thead><tr><th>ชื่อ-นามสกุล</th><th class="text-end">ลบ</th></tr></thead><tbody id="personTbody"></tbody></table></div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="admin-card animate__animated animate__fadeIn">
-                <div class="table-responsive">
-                    <table id="attendanceTable" class="table align-middle mb-0">
-                        <thead>
-                            <tr>
-                                <th>วันที่</th>
-                                <th>กะทำงาน</th>
-                                <th>รหัสบัตร</th>
-                                <th>ชื่อพนักงาน</th>
-                                <th class="text-center">เวลาเข้า (IN)</th>
-                                <th class="text-center">เวลาออก (OUT)</th>
-                                <th>หมายเหตุ</th>
-                                <th class="text-center no-print">จัดการ</th>
-                            </tr>
-                        </thead>
-                        <tbody id="attendanceTbody"></tbody>
-                    </table>
-                </div>
-            </div>
-            
-            <div class="print-only print-footer">
-                <div class="sign-box"><div class="sign-line"></div><p>ผู้ตรวจสอบ/หัวหน้าชุด</p><p>วันที่: _____/_____/_____</p></div>
-                <div class="sign-box"><div class="sign-line"></div><p>ผู้อนุมัติ (จป./ฝ่ายบุคคล)</p><p>วันที่: _____/_____/_____</p></div>
-            </div>
         </div>
-
-        <div class="tab-pane fade" id="tab-master">
-            <div class="row g-4 no-print">
-                <div class="col-md-6">
-                    <div class="admin-card h-100 animate__animated animate__fadeIn">
-                        <h5 class="fw-bold mb-4 text-primary"><i class="bi bi-credit-card-2-front me-2"></i>จัดการรหัสบัตร (ID Cards)</h5>
-                        <div class="d-flex gap-2 mb-3">
-                            <input type="text" id="new_card" class="form-control" placeholder="เช่น G-001">
-                            <button onclick="addMaster('card')" class="btn btn-primary fw-bold px-4 rounded-3">เพิ่ม</button>
-                        </div>
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead><tr><th>หมายเลขบัตร</th><th class="text-end">ลบ</th></tr></thead>
-                                <tbody id="cardTbody"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="admin-card h-100 animate__animated animate__fadeIn">
-                        <h5 class="fw-bold mb-4 text-success"><i class="bi bi-person-badge me-2"></i>จัดการรายชื่อ (Personnel)</h5>
-                        <div class="d-flex gap-2 mb-3">
-                            <input type="text" id="new_person" class="form-control" placeholder="ชื่อ-นามสกุล">
-                            <button onclick="addMaster('person')" class="btn btn-success fw-bold px-4 rounded-3">เพิ่ม</button>
-                        </div>
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead><tr><th>ชื่อ-นามสกุล</th><th class="text-end">ลบ</th></tr></thead>
-                                <tbody id="personTbody"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
     </div>
 </div>
 
@@ -254,8 +298,40 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// 🔑 ตั้งรหัสผ่านเข้า Admin Dashboard ตรงนี้ครับ
+const ADMIN_PIN = "admin1234"; 
+
+let shiftChartInstance = null;
+
+// ================= INIT & SECURITY =================
 window.onload = async () => {
     initTheme();
+    // เช็คว่าเคยล็อคอินไว้ไหมใน Session นี้
+    if(sessionStorage.getItem('isAdminLoggedIn') === 'true') {
+        unlockDashboard();
+    }
+};
+
+function checkLogin() {
+    const pin = document.getElementById('adminPin').value;
+    if(pin === ADMIN_PIN) {
+        sessionStorage.setItem('isAdminLoggedIn', 'true');
+        unlockDashboard();
+    } else {
+        Swal.fire({ icon: 'error', title: 'รหัสผ่านไม่ถูกต้อง', text: 'กรุณาลองใหม่อีกครั้ง', confirmButtonColor: '#dc3545' });
+        document.getElementById('adminPin').value = '';
+    }
+}
+
+function logout() {
+    sessionStorage.removeItem('isAdminLoggedIn');
+    location.reload();
+}
+
+async function unlockDashboard() {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('loadingScreen').style.display = 'flex';
+    
     const today = new Date();
     document.getElementById('filterMonth').value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
     
@@ -267,10 +343,9 @@ window.onload = async () => {
         document.getElementById('loadingScreen').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
     } catch (err) {
-        console.error(err);
-        Swal.fire('ข้อผิดพลาด', 'โหลดข้อมูลไม่สำเร็จ กรุณารีเฟรชหน้าจอ', 'error');
+        Swal.fire('ข้อผิดพลาด', 'โหลดข้อมูลไม่สำเร็จ', 'error');
     }
-};
+}
 
 // ================= THEME TOGGLE =================
 function initTheme() {
@@ -283,31 +358,26 @@ function toggleTheme() {
     document.documentElement.setAttribute('data-theme', next);
     localStorage.setItem('theme', next);
     document.getElementById('themeIcon').className = next === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-stars-fill';
+    if(shiftChartInstance) loadAttendance(); // อัปเดตสีกราฟ
 }
 
 // ================= โหลดรายชื่อใส่ Filter =================
 async function loadFilterNames() {
     const { data } = await db.from('security_personnel_master').select('fullname').order('fullname');
     const select = document.getElementById('filterName');
-    select.innerHTML = '<option value="ALL">ดูทั้งหมดทุกคน</option>'; // Reset
-    if(data) {
-        data.forEach(p => { select.innerHTML += `<option value="${p.fullname}">${p.fullname}</option>`; });
-    }
+    select.innerHTML = '<option value="ALL">ดูทั้งหมดทุกคน</option>';
+    if(data) data.forEach(p => { select.innerHTML += `<option value="${p.fullname}">${p.fullname}</option>`; });
 }
 
-// ================= ระบบรายงาน & PDF =================
+// ================= ระบบรายงาน & KPIs & Audit Trail =================
 async function loadAttendance() {
     const filterMonth = document.getElementById('filterMonth').value; 
     const filterName = document.getElementById('filterName').value;
 
     let query = db.from('guard_attendance').select('*').order('work_date', { ascending: false }).order('created_at', { ascending: false });
     
-    if (filterMonth) {
-        query = query.gte('work_date', `${filterMonth}-01`).lte('work_date', `${filterMonth}-31`);
-    }
-    if (filterName !== 'ALL') {
-        query = query.eq('fullname', filterName); // กรองรายบุคคล
-    }
+    if (filterMonth) query = query.gte('work_date', `${filterMonth}-01`).lte('work_date', `${filterMonth}-31`);
+    if (filterName !== 'ALL') query = query.eq('fullname', filterName);
 
     const { data, error } = await query;
     if (error) return console.error(error);
@@ -315,12 +385,29 @@ async function loadAttendance() {
     const tbody = document.getElementById('attendanceTbody');
     tbody.innerHTML = '';
 
+    // ตัวแปรเก็บสถิติ KPI
+    let countMorning = 0, countNight = 0, countIssue = 0;
+
     if(data.length === 0) {
         tbody.innerHTML = `<tr><td colspan="8" class="text-center py-5 text-muted">ไม่พบข้อมูล</td></tr>`;
+        updateKPIs(0, 0, 0, 0);
         return;
     }
 
     data.forEach(row => {
+        // นับ KPI
+        if(row.shift.includes('เช้า')) countMorning++;
+        else countNight++;
+        if(row.remark_type !== 'ปกติ') countIssue++;
+
+        // 🕵️ ระบบ Audit Trail: เช็คว่าถูกแก้โดย Admin ไหม
+        let editBadge = '';
+        if(row.updated_by === 'Admin') {
+            const editDate = new Date(row.updated_at).toLocaleString('th-TH');
+            // ไอคอนดินสอสีส้มเตือนว่าถูกแก้เวลา
+            editBadge = `<i class="bi bi-pencil-fill text-warning ms-2" title="แก้ไขโดย Admin เมื่อ: ${editDate}" style="cursor:help; font-size: 0.8rem;"></i>`;
+        }
+
         let remark = row.remark_type !== 'ปกติ' ? `<span class="text-danger fw-bold">${row.remark_type}</span> ${row.remark_detail||''}` : 'ปกติ';
         tbody.innerHTML += `
             <tr>
@@ -328,20 +415,48 @@ async function loadAttendance() {
                 <td>${row.shift.includes('เช้า') ? '☀️' : '🌙'} <span class="opacity-75">${row.shift.split(' ')[0]}</span></td>
                 <td class="fw-bold">${row.id_card}</td>
                 <td>${row.fullname}</td>
-                <td class="text-center text-success fw-bold">${row.time_in || '-'}</td>
-                <td class="text-center text-danger fw-bold">${row.time_out || '-'}</td>
+                <td class="text-center text-success fw-bold">${row.time_in || '-'}${row.time_in ? editBadge : ''}</td>
+                <td class="text-center text-danger fw-bold">${row.time_out || '-'}${row.time_out ? editBadge : ''}</td>
                 <td>${remark}</td>
                 <td class="text-center no-print">
-                    <button onclick="editTime('${row.id}', '${row.time_in || ''}', '${row.time_out || ''}')" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold"><i class="bi bi-pencil-square me-1"></i>แก้เวลา</button>
+                    <button onclick="editTime('${row.id}', '${row.time_in || ''}', '${row.time_out || ''}')" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold"><i class="bi bi-pencil-square me-1"></i>แก้</button>
                 </td>
             </tr>`;
     });
+
+    updateKPIs(data.length, countMorning, countNight, countIssue);
 }
 
-// ================= แก้ไขเวลา (ฟังก์ชันกลับมาแล้ว!) =================
+function updateKPIs(total, morning, night, issue) {
+    document.getElementById('kpi-total').innerText = total;
+    document.getElementById('kpi-morning').innerText = morning;
+    document.getElementById('kpi-night').innerText = night;
+    document.getElementById('kpi-issue').innerText = issue;
+
+    // อัปเดตกราฟวงกลม
+    const ctx = document.getElementById('shiftChart').getContext('2d');
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const textColor = isDark ? '#f1f5f9' : '#334155';
+
+    if(shiftChartInstance) shiftChartInstance.destroy();
+    
+    shiftChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['กะเช้า', 'กะดึก', 'หมายเหตุ'],
+            datasets: [{ data: [morning, night, issue], backgroundColor: ['#f59e0b', '#1e293b', '#ef4444'], borderWidth: 0 }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false, cutout: '70%',
+            plugins: { legend: { position: 'bottom', labels: { color: textColor, font: { family: 'Sarabun' } } } }
+        }
+    });
+}
+
+// ================= แก้ไขเวลา (บันทึก Audit Trail) =================
 async function editTime(id, currentIn, currentOut) {
     const { value: formValues } = await Swal.fire({
-        title: 'แก้ไขเวลาเข้า-ออก',
+        title: 'แก้ไขเวลา (Admin)',
         html: `
             <div class="text-start mt-3">
                 <label class="form-label fw-bold">เวลาเข้า (IN)</label>
@@ -350,32 +465,29 @@ async function editTime(id, currentIn, currentOut) {
                 <input id="swal-out" type="time" value="${currentOut}" class="form-control">
             </div>
         `,
-        focusConfirm: false,
-        showCancelButton: true,
-        confirmButtonText: '<i class="bi bi-save2 me-1"></i> บันทึก',
+        focusConfirm: false, showCancelButton: true,
+        confirmButtonText: '<i class="bi bi-save2 me-1"></i> บันทึกการแก้ไข',
         cancelButtonText: 'ยกเลิก',
         customClass: { confirmButton: 'btn btn-primary px-4', cancelButton: 'btn btn-secondary px-4' },
         buttonsStyling: false,
-        preConfirm: () => {
-            return {
-                in: document.getElementById('swal-in').value,
-                out: document.getElementById('swal-out').value
-            }
-        }
+        preConfirm: () => { return { in: document.getElementById('swal-in').value, out: document.getElementById('swal-out').value } }
     });
 
     if (formValues) {
         Swal.fire({ title: 'กำลังบันทึก...', didOpen: () => { Swal.showLoading(); }});
+        
+        // 🕵️ อัปเดตข้อมูลพร้อมติดแท็ก updated_by: 'Admin'
         const { error } = await db.from('guard_attendance').update({
             time_in: formValues.in || null,
             time_out: formValues.out || null,
-            updated_at: new Date()
+            updated_at: new Date(),
+            updated_by: 'Admin'
         }).eq('id', id);
 
         if (error) {
             Swal.fire('Error', 'แก้ไขไม่ได้', 'error');
         } else {
-            Swal.fire({ icon: 'success', title: 'อัปเดตเรียบร้อย', timer: 1500, showConfirmButton: false });
+            Swal.fire({ icon: 'success', title: 'อัปเดตเรียบร้อย', text: 'ระบบได้บันทึกประวัติการแก้ไขแล้ว', timer: 2000, showConfirmButton: false });
             loadAttendance(); 
         }
     }
@@ -389,7 +501,6 @@ function exportPDF() {
     document.getElementById('print-month-label').innerText = filterMonth ? filterMonth : 'ทั้งหมด';
     document.getElementById('print-name-label').innerText = filterName.options[filterName.selectedIndex].text;
     document.getElementById('print-date').innerText = new Date().toLocaleDateString('th-TH');
-
     window.print();
 }
 
@@ -425,26 +536,19 @@ async function addMaster(type) {
         Swal.fire({ icon: 'success', title: 'เพิ่มข้อมูลเรียบร้อย', timer: 1500, showConfirmButton: false });
         loadMasterTables();
         loadFilterNames(); 
-    } else {
-        Swal.fire('Error', 'ข้อมูลซ้ำหรือผิดพลาด', 'error');
-    }
+    } else { Swal.fire('Error', 'ข้อมูลซ้ำหรือผิดพลาด', 'error'); }
 }
 
 async function delMaster(type, id, name) {
     Swal.fire({
-        title: `ลบ ${name}?`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#dc3545',
-        confirmButtonText: 'ยืนยันการลบ',
-        cancelButtonText: 'ยกเลิก'
+        title: `ลบ ${name}?`, icon: 'warning', showCancelButton: true,
+        confirmButtonColor: '#dc3545', confirmButtonText: 'ยืนยันการลบ', cancelButtonText: 'ยกเลิก'
     }).then(async (result) => {
         if (result.isConfirmed) {
             const table = type === 'card' ? 'security_card_master' : 'security_personnel_master';
             await db.from(table).delete().eq('id', id);
             Swal.fire({ icon: 'success', title: 'ลบสำเร็จ!', timer: 1500, showConfirmButton: false });
-            loadMasterTables();
-            loadFilterNames();
+            loadMasterTables(); loadFilterNames();
         }
     });
 }
