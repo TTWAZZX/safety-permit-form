@@ -48,7 +48,11 @@
         /* ================= HEADER & PROFILE ================= */
         .profile-header { background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; padding: 30px 20px; border-radius: 0 0 30px 30px; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.1); position: relative; }
         .profile-img { width: 90px; height: 90px; border-radius: 50%; border: 3px solid var(--accent-color); object-fit: cover; background: white; padding: 2px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
-        .theme-toggle { position: absolute; top: 15px; right: 15px; background: rgba(255,255,255,0.1); border: none; color: white; border-radius: 50%; width: 35px; height: 35px; }
+        .theme-toggle { background: rgba(255,255,255,0.1); border: none; color: white; border-radius: 50%; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; transition: 0.3s;}
+        
+        /* 🔄 อนิเมชันปุ่มรีเฟรช */
+        .bi-spin { animation: spinIcon 1s linear infinite; }
+        @keyframes spinIcon { 100% { transform: rotate(360deg); } }
 
         /* ================= INFO CARDS ================= */
         .info-card { background: var(--card-bg); border-radius: 16px; padding: 15px; text-align: center; border: 1px solid var(--border-color); box-shadow: 0 4px 10px rgba(0,0,0,0.03); margin-top: -20px; position: relative; z-index: 2; }
@@ -68,6 +72,7 @@
 
         .btn-submit { background: var(--primary-color); color: white; width: 100%; border-radius: 12px; padding: 15px; font-weight: 700; font-size: 1.1rem; border: none; box-shadow: 0 6px 15px rgba(15, 32, 39, 0.3); transition: 0.2s; }
         .btn-submit:active { transform: scale(0.98); }
+        .btn-submit:disabled { background: #6c757d; box-shadow: none; }
 
         /* ================= HISTORY ================= */
         .history-item { background: var(--card-bg); border-radius: 12px; padding: 15px; margin-bottom: 12px; border-left: 4px solid var(--accent-color); border-right: 1px solid var(--border-color); border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
@@ -105,7 +110,15 @@
 </div>
 
 <div class="profile-header animate__animated animate__fadeInDown">
-    <button class="theme-toggle" onclick="toggleTheme()"><i class="bi bi-moon-stars-fill" id="themeIcon"></i></button>
+    <div class="position-absolute d-flex gap-2" style="top: 15px; right: 15px;">
+        <button class="theme-toggle" onclick="refreshData()" title="รีเฟรชข้อมูล">
+            <i class="bi bi-arrow-clockwise" id="refreshIcon"></i>
+        </button>
+        <button class="theme-toggle" onclick="toggleTheme()" title="สลับโหมดสี">
+            <i class="bi bi-moon-stars-fill" id="themeIcon"></i>
+        </button>
+    </div>
+
     <img id="profileImage" src="https://cdn-icons-png.flaticon.com/512/847/847969.png" class="profile-img mb-3">
     <h5 id="displayName" class="fw-bold mb-1">รปภ. ปฏิบัติการ</h5>
     <span class="badge bg-light text-dark bg-opacity-75"><i class="bi bi-person-badge-fill me-1"></i> เจ้าหน้าที่รักษาความปลอดภัย</span>
@@ -230,7 +243,10 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const LIFF_ID = '2007053300-gJitj7Vr';
 
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// 🟢 เพิ่มตัวแปร activeRecordId สำหรับเช็คสถานะ
 let selectCardInstance, selectPersonInstance, selectSubstituteInstance;
+let activeRecordId = null; 
 
 // ================= INIT =================
 window.onload = async () => {
@@ -269,20 +285,18 @@ function updateLoader(text, delay) { return new Promise(r => { document.getEleme
 
 // ================= 📱 APP NAVIGATION =================
 function switchPage(page) {
-    // ซ่อนทุกหน้า และถอด Active ออก
     document.getElementById('formPage').classList.remove('active');
     document.getElementById('historyPage').classList.remove('active');
     document.getElementById('nav-form').classList.remove('active');
     document.getElementById('nav-history').classList.remove('active');
 
-    // โชว์หน้าที่เลือก
     if(page === 'form') {
         document.getElementById('formPage').classList.add('active');
         document.getElementById('nav-form').classList.add('active');
     } else {
         document.getElementById('historyPage').classList.add('active');
         document.getElementById('nav-history').classList.add('active');
-        fetchHistory(); // อัปเดตประวัติทุกครั้งที่กดเข้ามาดู
+        fetchHistory(); 
     }
 }
 
@@ -300,18 +314,95 @@ function toggleTheme() {
     document.getElementById('themeIcon').className = next === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-stars-fill';
 }
 
+// ================= 🔄 SOFT REFRESH DATA =================
+async function refreshData() {
+    const icon = document.getElementById('refreshIcon');
+    icon.classList.add('bi-spin'); 
+    
+    Swal.fire({
+        title: 'กำลังซิงค์ข้อมูล...',
+        text: 'กรุณารอสักครู่ ระบบกำลังอัปเดตข้อมูลล่าสุด',
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading(); }
+    });
+
+    try {
+        await Promise.all([ loadMasterData(), fetchHistory() ]);
+        if (typeof checkActiveSession === "function") await checkActiveSession();
+
+        Swal.fire({ icon: 'success', title: 'อัปเดตข้อมูลเรียบร้อย', timer: 1000, showConfirmButton: false });
+    } catch (error) {
+        Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถดึงข้อมูลได้', confirmButtonColor: '#1e3a8a' });
+    } finally {
+        icon.classList.remove('bi-spin');
+    }
+}
+
+// ================= 🟢 SMART CHECK-IN/OUT =================
+async function checkActiveSession() {
+    const id_card = document.getElementById('id_card').value;
+    const fullname = document.getElementById('fullname').value;
+    const todayStr = document.getElementById('work_date').value;
+
+    const timeInInput = document.getElementById('time_in');
+    const btnSubmit = document.getElementById('btnSubmit');
+    
+    // รีเซ็ต UI
+    activeRecordId = null;
+    timeInInput.disabled = false;
+    timeInInput.value = '';
+    timeInInput.parentElement.style.opacity = "1";
+    btnSubmit.innerHTML = '<i class="bi bi-cloud-arrow-up-fill me-2"></i> บันทึกเวลาเข้าสู่ระบบ';
+
+    if (!id_card || !fullname) return;
+
+    try {
+        const { data, error } = await db.from('guard_attendance')
+            .select('*')
+            .eq('id_card', id_card)
+            .eq('fullname', fullname)
+            .eq('work_date', todayStr)
+            .is('time_out', null) // หาช่องเวลาออกที่ยังว่าง
+            .not('time_in', 'is', null) // แต่ช่องเวลาเข้าต้องไม่ว่าง
+            .order('created_at', { ascending: false })
+            .limit(1);
+
+        if (data && data.length > 0) {
+            // เจอว่ากำลังเข้าเวรอยู่ (ล็อกเวลาเข้า)
+            activeRecordId = data[0].id;
+            timeInInput.value = data[0].time_in;
+            timeInInput.disabled = true;
+            timeInInput.parentElement.style.opacity = "0.5";
+            btnSubmit.innerHTML = '<i class="bi bi-box-arrow-right me-2"></i> บันทึกเวลาออกงาน';
+        }
+    } catch (err) {
+        console.error("Check Session Error:", err);
+    }
+}
+
 // ================= LOAD DATA & MEMORY =================
 async function loadMasterData() {
     try {
         const { data: cards } = await db.from('security_card_master').select('card_number').order('card_number');
         const selectCard = document.getElementById('id_card');
+        
+        // เคลียร์ TomSelect เก่าออกก่อนป้องกัน Error ตอน Refresh
+        if (selectCardInstance) selectCardInstance.destroy();
         selectCard.innerHTML = '<option value="">ค้นหารหัสบัตร...</option>';
         if (cards) cards.forEach(c => selectCard.innerHTML += `<option value="${c.card_number}">${c.card_number}</option>`);
-        selectCardInstance = new TomSelect("#id_card", { create: false, sortField: { field: "text", direction: "asc" }});
+        selectCardInstance = new TomSelect("#id_card", { 
+            create: false, 
+            sortField: { field: "text", direction: "asc" },
+            onChange: function() { checkActiveSession(); } // 🟢 ตรวจสอบสถานะเวลาเลือก
+        });
 
         const { data: persons } = await db.from('security_personnel_master').select('fullname').order('fullname');
         const selectPerson = document.getElementById('fullname');
-        const selectSub = document.getElementById('remark_substitute'); // ช่องใส่ชื่อคนแทน
+        const selectSub = document.getElementById('remark_substitute'); 
+        
+        if (selectPersonInstance) selectPersonInstance.destroy();
+        if (selectSubstituteInstance) selectSubstituteInstance.destroy();
+
         selectPerson.innerHTML = '<option value="">ค้นหาชื่อ-นามสกุล...</option>';
         selectSub.innerHTML = '<option value="">ค้นหาชื่อผู้ที่ถูกแทน...</option>';
         
@@ -321,21 +412,27 @@ async function loadMasterData() {
                 selectSub.innerHTML += `<option value="${p.fullname}">${p.fullname}</option>`;
             });
         }
-        selectPersonInstance = new TomSelect("#fullname", { create: false, sortField: { field: "text", direction: "asc" }});
+        selectPersonInstance = new TomSelect("#fullname", { 
+            create: false, 
+            sortField: { field: "text", direction: "asc" },
+            onChange: function() { checkActiveSession(); } // 🟢 ตรวจสอบสถานะเวลาเลือก
+        });
         selectSubstituteInstance = new TomSelect("#remark_substitute", { create: false, sortField: { field: "text", direction: "asc" }});
 
         // Memory
         if(localStorage.getItem('sec_last_card')) selectCardInstance.setValue(localStorage.getItem('sec_last_card'));
         if(localStorage.getItem('sec_last_name')) selectPersonInstance.setValue(localStorage.getItem('sec_last_name'));
         if(localStorage.getItem('sec_last_shift')) document.getElementById('shift').value = localStorage.getItem('sec_last_shift');
+        
+        checkActiveSession(); // 🟢 เช็คทันทีหลังโหลดข้อมูลเสร็จ
     } catch (err) { console.error("Load Master Error:", err); }
 }
 
 // ================= ⏰ CUSTOM TIME FORMATTER (Numpad) =================
 function formatTime(input) {
-    let val = input.value.replace(/\D/g, ''); // ลบตัวอักษรที่ไม่ใช่ตัวเลขออกให้หมด
+    let val = input.value.replace(/\D/g, ''); 
     if (val.length > 2) {
-        val = val.substring(0, 2) + ':' + val.substring(2, 4); // เติม : อัตโนมัติ
+        val = val.substring(0, 2) + ':' + val.substring(2, 4); 
     }
     input.value = val;
 }
@@ -359,9 +456,9 @@ function handleRemarkChange() {
     selectSubstituteInstance.clear();
 
     if (val.includes('แทน')) {
-        subDiv.classList.remove('d-none'); // โชว์ Dropdown ชื่อคนถูกแทน
+        subDiv.classList.remove('d-none'); 
     } else if (val === 'อื่นๆ') {
-        otherDiv.classList.remove('d-none'); // โชว์ช่องพิมพ์เอง
+        otherDiv.classList.remove('d-none'); 
         document.getElementById('remark_detail').focus();
     }
 }
@@ -469,7 +566,7 @@ async function userDelete(id, id_card) {
     }
 }
 
-// ================= SUBMIT FORM =================
+// ================= SUBMIT FORM (🟢 อัปเดตเงื่อนไข Insert/Update) =================
 document.getElementById('attendanceForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     const time_in = document.getElementById('time_in').value || null;
@@ -483,7 +580,6 @@ document.getElementById('attendanceForm').addEventListener('submit', async funct
     const remark_type = document.getElementById('remark_type').value;
     let final_remark_detail = null;
 
-    // จัดการค่าหมายเหตุตามประเภทที่เลือก
     if (remark_type.includes('แทน')) {
         final_remark_detail = document.getElementById('remark_substitute').value;
         if(!final_remark_detail) return Swal.fire({ icon: 'warning', title: 'ข้อมูลไม่ครบ', text: 'กรุณาเลือกชื่อผู้ที่ปฏิบัติงานแทน' });
@@ -507,8 +603,24 @@ document.getElementById('attendanceForm').addEventListener('submit', async funct
     };
 
     try {
-        const { error } = await db.from('guard_attendance').insert([payload]);
-        if (error) throw error;
+        if (activeRecordId) {
+            // 🎯 กรณีที่ 1: กำลังออกงาน (อัปเดตแถวเดิมที่มีเวลาเข้าอยู่แล้ว)
+            if (!time_out) {
+                btn.disabled = false; btn.innerHTML = originalText;
+                return Swal.fire({ icon: 'warning', title: 'ระบุเวลาออก', text: 'คุณลงเวลาเข้างานไปแล้ว กรุณาระบุเวลาออกงานด้วยครับ' });
+            }
+            const { error } = await db.from('guard_attendance').update({
+                time_out: time_out,
+                remark_type: remark_type,
+                remark_detail: final_remark_detail,
+                profile_pic: document.getElementById('picUrl').value || null
+            }).eq('id', activeRecordId);
+            if (error) throw error;
+        } else {
+            // 🎯 กรณีที่ 2: กำลังเข้างานใหม่ (หรือกรอกทีเดียว 2 ช่อง) (สร้างแถวใหม่)
+            const { error } = await db.from('guard_attendance').insert([payload]);
+            if (error) throw error;
+        }
 
         localStorage.setItem('sec_last_card', payload.id_card);
         localStorage.setItem('sec_last_name', payload.fullname);
@@ -520,11 +632,11 @@ document.getElementById('attendanceForm').addEventListener('submit', async funct
         document.getElementById('time_in').value = ''; document.getElementById('time_out').value = '';
         document.getElementById('remark_type').value = 'ปกติ'; handleRemarkChange();
         
-        // บันทึกเสร็จ เด้งไปหน้าประวัติให้ดูอัตโนมัติ
+        checkActiveSession(); // 🟢 รีเซ็ตหน้าจอใหม่
         switchPage('history');
 
     } catch (err) { Swal.fire('เกิดข้อผิดพลาด', err.message, 'error'); } 
-    finally { btn.disabled = false; btn.innerHTML = originalText; }
+    finally { btn.disabled = false; btn.innerHTML = '<i class="bi bi-cloud-arrow-up-fill me-2"></i> บันทึกเวลาเข้าสู่ระบบ'; }
 });
 </script>
 </body>

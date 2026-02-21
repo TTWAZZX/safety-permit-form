@@ -221,12 +221,13 @@
                             <label class="form-label fw-bold small text-muted">เดือน</label>
                             <input type="month" id="filterMonth" class="form-control">
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label class="form-label fw-bold small text-muted">กรองรายบุคคล (ชื่อพนักงาน)</label>
                             <select id="filterName" class="form-select"><option value="ALL">ดูทั้งหมดทุกคน</option></select>
                         </div>
-                        <div class="col-md-2">
+                        <div class="col-md-3 d-flex gap-2">
                             <button onclick="loadAttendance()" class="btn btn-gradient w-100 fw-bold rounded-3"><i class="bi bi-search me-1"></i> ค้นหา</button>
+                            <button onclick="refreshAdminData()" class="btn btn-secondary fw-bold rounded-3 text-nowrap" title="รีเฟรชข้อมูลล่าสุด"><i class="bi bi-arrow-clockwise"></i> รีเฟรช</button>
                         </div>
                         <div class="col-md-3 text-end">
                             <button onclick="exportExcel()" class="btn btn-success fw-bold me-2 rounded-3"><i class="bi bi-file-earmark-excel"></i> Excel</button>
@@ -243,8 +244,7 @@
                                     <th>วันที่</th>
                                     <th>กะทำงาน</th>
                                     <th>รหัสบัตร</th>
-                                    <th>ชื่อพนักงาน</th>
-                                    <th class="text-center">เข้า (IN)</th>
+                                    <th>ชื่อพนักงาน</th> <th class="text-center">เข้า (IN)</th>
                                     <th class="text-center">ออก (OUT)</th>
                                     <th>หมายเหตุ</th>
                                     <th class="text-center no-print">จัดการ</th>
@@ -292,13 +292,11 @@
 
 <script>
 // ================= CONFIG =================
-// 🛑 เปลี่ยนเป็น KEY ของพี่ จป. ครับ!
 const SUPABASE_URL = 'https://dqsfioiqwxuxpucwwhsv.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxc2Zpb2lxd3h1eHB1Y3d3aHN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1OTk1NjUsImV4cCI6MjA4NDE3NTU2NX0.L_u0Ff3uHofxiimEs6ySFB4TPNtOWiKeSu3KFoVcA1U';
 
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// 🔑 ตั้งรหัสผ่านเข้า Admin Dashboard ตรงนี้ครับ
 const ADMIN_PIN = "admin1234"; 
 
 let shiftChartInstance = null;
@@ -306,7 +304,6 @@ let shiftChartInstance = null;
 // ================= INIT & SECURITY =================
 window.onload = async () => {
     initTheme();
-    // เช็คว่าเคยล็อคอินไว้ไหมใน Session นี้
     if(sessionStorage.getItem('isAdminLoggedIn') === 'true') {
         unlockDashboard();
     }
@@ -358,7 +355,7 @@ function toggleTheme() {
     document.documentElement.setAttribute('data-theme', next);
     localStorage.setItem('theme', next);
     document.getElementById('themeIcon').className = next === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-stars-fill';
-    if(shiftChartInstance) loadAttendance(); // อัปเดตสีกราฟ
+    if(shiftChartInstance) loadAttendance(); 
 }
 
 // ================= โหลดรายชื่อใส่ Filter =================
@@ -367,6 +364,13 @@ async function loadFilterNames() {
     const select = document.getElementById('filterName');
     select.innerHTML = '<option value="ALL">ดูทั้งหมดทุกคน</option>';
     if(data) data.forEach(p => { select.innerHTML += `<option value="${p.fullname}">${p.fullname}</option>`; });
+}
+
+// ================= 🟢 ปุ่ม REFRESH ข้อมูล =================
+async function refreshAdminData() {
+    Swal.fire({ title: 'กำลังดึงข้อมูลล่าสุด...', didOpen: () => { Swal.showLoading(); }, allowOutsideClick: false });
+    await loadAttendance();
+    Swal.fire({ icon: 'success', title: 'อัปเดตเรียบร้อย', timer: 1000, showConfirmButton: false });
 }
 
 // ================= ระบบรายงาน & KPIs & Audit Trail =================
@@ -385,7 +389,6 @@ async function loadAttendance() {
     const tbody = document.getElementById('attendanceTbody');
     tbody.innerHTML = '';
 
-    // ตัวแปรเก็บสถิติ KPI
     let countMorning = 0, countNight = 0, countIssue = 0;
 
     if(data.length === 0) {
@@ -395,28 +398,38 @@ async function loadAttendance() {
     }
 
     data.forEach(row => {
-        // นับ KPI
         if(row.shift.includes('เช้า')) countMorning++;
         else countNight++;
         if(row.remark_type !== 'ปกติ') countIssue++;
 
-        // 🕵️ ระบบ Audit Trail: เช็คว่าถูกแก้โดย Admin ไหม
+        // 🟢 🕵️ ระบบ Audit Trail อัจฉริยะ: แยกสีตามคนแก้ (แอดมินแก้ = ส้ม, รปภ.แก้ = ฟ้า)
         let editBadge = '';
-        if(row.updated_by === 'Admin') {
+        if(row.updated_by) {
             const editDate = new Date(row.updated_at).toLocaleString('th-TH');
-            // ไอคอนดินสอสีส้มเตือนว่าถูกแก้เวลา
-            editBadge = `<i class="bi bi-pencil-fill text-warning ms-2" title="แก้ไขโดย Admin เมื่อ: ${editDate}" style="cursor:help; font-size: 0.8rem;"></i>`;
+            const badgeColor = row.updated_by === 'Admin' ? 'text-warning' : 'text-info'; // แอดมินส้ม / ผู้ใช้ฟ้า
+            editBadge = `<i class="bi bi-pencil-fill ${badgeColor} ms-2" title="แก้ไขโดย ${row.updated_by} เมื่อ: ${editDate}" style="cursor:help; font-size: 0.8rem;"></i>`;
         }
 
+        // 🟢 🖼️ รูปโปรไฟล์พนักงาน
+        let profileImg = row.profile_pic 
+            ? `<img src="${row.profile_pic}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid #e2e8f0;" class="me-2 no-print">` 
+            : `<div style="width: 32px; height: 32px; border-radius: 50%; background: #e2e8f0; display: flex; align-items: center; justify-content: center;" class="me-2 no-print"><i class="bi bi-person text-secondary"></i></div>`;
+
         let remark = row.remark_type !== 'ปกติ' ? `<span class="text-danger fw-bold">${row.remark_type}</span> ${row.remark_detail||''}` : 'ปกติ';
+        
         tbody.innerHTML += `
             <tr>
                 <td class="fw-bold text-primary">${row.work_date}</td>
                 <td>${row.shift.includes('เช้า') ? '☀️' : '🌙'} <span class="opacity-75">${row.shift.split(' ')[0]}</span></td>
                 <td class="fw-bold">${row.id_card}</td>
-                <td>${row.fullname}</td>
-                <td class="text-center text-success fw-bold">${row.time_in || '-'}${row.time_in ? editBadge : ''}</td>
-                <td class="text-center text-danger fw-bold">${row.time_out || '-'}${row.time_out ? editBadge : ''}</td>
+                <td>
+                    <div class="d-flex align-items-center">
+                        ${profileImg}
+                        <span>${row.fullname}</span>
+                    </div>
+                </td>
+                <td class="text-center text-success fw-bold">${row.time_in || '-'}${row.time_in && row.updated_by ? editBadge : ''}</td>
+                <td class="text-center text-danger fw-bold">${row.time_out || '-'}${row.time_out && row.updated_by ? editBadge : ''}</td>
                 <td>${remark}</td>
                 <td class="text-center no-print">
                     <button onclick="editTime('${row.id}', '${row.time_in || ''}', '${row.time_out || ''}')" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold"><i class="bi bi-pencil-square me-1"></i>แก้</button>
@@ -433,7 +446,6 @@ function updateKPIs(total, morning, night, issue) {
     document.getElementById('kpi-night').innerText = night;
     document.getElementById('kpi-issue').innerText = issue;
 
-    // อัปเดตกราฟวงกลม
     const ctx = document.getElementById('shiftChart').getContext('2d');
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     const textColor = isDark ? '#f1f5f9' : '#334155';
@@ -476,7 +488,6 @@ async function editTime(id, currentIn, currentOut) {
     if (formValues) {
         Swal.fire({ title: 'กำลังบันทึก...', didOpen: () => { Swal.showLoading(); }});
         
-        // 🕵️ อัปเดตข้อมูลพร้อมติดแท็ก updated_by: 'Admin'
         const { error } = await db.from('guard_attendance').update({
             time_in: formValues.in || null,
             time_out: formValues.out || null,
