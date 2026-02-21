@@ -384,13 +384,24 @@ async function loadAttendance() {
     // 1. ดึงรายชื่อพนักงานทั้งหมดจาก Master มาเป็นตัวตั้งต้น
     const { data: allPersonnel } = await db.from('security_personnel_master').select('fullname');
     
-    // 2. ดึงข้อมูลการลงเวลาตามเงื่อนไข
+    // 2. ดึงข้อมูลการลงเวลาตามเงื่อนไข (แก้ไขระบบคำนวณวันสิ้นเดือน)
     let query = db.from('guard_attendance').select('*').order('work_date', { ascending: false });
-    query = query.gte('work_date', `${filterMonth}-01`).lte('work_date', `${filterMonth}-31`);
+    
+    // คำนวณวันที่ 1 ถึงวันสุดท้ายของเดือนนั้นๆ ให้ถูกต้อง
+    const startDate = `${filterMonth}-01`;
+    const lastDayInMonth = new Date(filterMonth.split('-')[0], filterMonth.split('-')[1], 0).getDate();
+    const endDate = `${filterMonth}-${String(lastDayInMonth).padStart(2, '0')}`;
+
+    query = query.gte('work_date', startDate).lte('work_date', endDate);
+    
     if (filterName !== 'ALL') query = query.eq('fullname', filterName);
 
     const { data: attendanceData, error } = await query;
-    if (error) return console.error(error);
+    
+    if (error) {
+        console.error("Supabase Error:", error);
+        return Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถดึงข้อมูลได้: ' + error.message, 'error');
+    }
 
     const tbody = document.getElementById('attendanceTbody');
     tbody.innerHTML = '';
