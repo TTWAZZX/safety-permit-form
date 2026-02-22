@@ -225,10 +225,11 @@
                         <button class="btn btn-outline-primary fw-bold" type="button" onclick="addPrefix('AP')">AP</button>
                         <button class="btn btn-outline-success fw-bold" type="button" onclick="addPrefix('SP')">SP</button>
                         
-                        <input type="text" pattern="[0-9]{6}|(AP|SP)[0-9]{4}" maxlength="6" id="empId" class="form-control" placeholder="พิมพ์เลข 6 หลัก หรือกดปุ่มนำหน้า" oninput="this.value = this.value.toUpperCase()" required>
+                        <input type="text" inputmode="numeric" pattern="[0-9]{6}|(AP|SP)[0-9]{4}" maxlength="6" id="empId" class="form-control" placeholder="พิมพ์เลข 6 หลัก หรือกดปุ่มนำหน้า" oninput="this.value = this.value.toUpperCase()" required>
                     </div>
                     <div class="form-text small text-muted">ตัวอย่าง: 123456 หรือกดปุ่ม AP/SP แล้วตามด้วยเลข 4 หลัก</div>
                 </div>
+                
 
                 <div class="mb-3">
                     <label class="form-label"><i class="bi bi-buildings"></i> ส่วนงาน (ค้นหาได้) <span class="text-danger">*</span></label>
