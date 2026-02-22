@@ -99,6 +99,12 @@
         .page-section { display: none; }
         .page-section.active { display: block; animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ขยายขนาดแถวใน Dropdown ให้จิ้มง่ายขึ้นสำหรับมือถือ */
+        .ts-dropdown .option {
+            padding: 12px 15px !important;
+            font-size: 1.1rem !important;
+        }
     </style>
 </head>
 <body>
@@ -388,12 +394,14 @@ async function loadMasterData() {
         
         // เคลียร์ TomSelect เก่าออกก่อนป้องกัน Error ตอน Refresh
         if (selectCardInstance) selectCardInstance.destroy();
-        selectCard.innerHTML = '<option value="">ค้นหารหัสบัตร...</option>';
+        selectCard.innerHTML = '<option value="">เลือกการ์ด...</option>';
         if (cards) cards.forEach(c => selectCard.innerHTML += `<option value="${c.card_number}">${c.card_number}</option>`);
+        
         selectCardInstance = new TomSelect("#id_card", { 
             create: false, 
             sortField: { field: "text", direction: "asc" },
-            onChange: function() { checkActiveSession(); } // 🟢 ตรวจสอบสถานะเวลาเลือก
+            controlInput: null, // 🟢 ปิดช่องพิมพ์ค้นหา ให้เลือกอย่างเดียว
+            onChange: function() { checkActiveSession(); } 
         });
 
         const { data: persons } = await db.from('security_personnel_master').select('fullname').order('fullname');
@@ -403,8 +411,8 @@ async function loadMasterData() {
         if (selectPersonInstance) selectPersonInstance.destroy();
         if (selectSubstituteInstance) selectSubstituteInstance.destroy();
 
-        selectPerson.innerHTML = '<option value="">ค้นหาชื่อ-นามสกุล...</option>';
-        selectSub.innerHTML = '<option value="">ค้นหาชื่อผู้ที่ถูกแทน...</option>';
+        selectPerson.innerHTML = '<option value="">เลือกชื่อ-นามสกุล...</option>';
+        selectSub.innerHTML = '<option value="">เลือกชื่อผู้ที่ถูกแทน...</option>';
         
         if (persons) {
             persons.forEach(p => {
@@ -412,22 +420,30 @@ async function loadMasterData() {
                 selectSub.innerHTML += `<option value="${p.fullname}">${p.fullname}</option>`;
             });
         }
+
+        // สำหรับพนักงานปฏิบัติงาน
         selectPersonInstance = new TomSelect("#fullname", { 
             create: false, 
             sortField: { field: "text", direction: "asc" },
-            onChange: function() { checkActiveSession(); } // 🟢 ตรวจสอบสถานะเวลาเลือก
+            controlInput: null, // 🟢 ปิดช่องพิมพ์ค้นหา ให้เลือกอย่างเดียว
+            onChange: function() { checkActiveSession(); } 
         });
-        selectSubstituteInstance = new TomSelect("#remark_substitute", { create: false, sortField: { field: "text", direction: "asc" }});
 
-        // Memory
+        // สำหรับรายชื่อคนถูกแทนในช่องหมายเหตุ
+        selectSubstituteInstance = new TomSelect("#remark_substitute", { 
+            create: false, 
+            sortField: { field: "text", direction: "asc" },
+            controlInput: null // 🟢 ปิดช่องพิมพ์ค้นหา ให้เลือกอย่างเดียว
+        });
+
+        // Memory (จดจำค่าล่าสุด)
         if(localStorage.getItem('sec_last_card')) selectCardInstance.setValue(localStorage.getItem('sec_last_card'));
         if(localStorage.getItem('sec_last_name')) selectPersonInstance.setValue(localStorage.getItem('sec_last_name'));
         if(localStorage.getItem('sec_last_shift')) document.getElementById('shift').value = localStorage.getItem('sec_last_shift');
         
-        checkActiveSession(); // 🟢 เช็คทันทีหลังโหลดข้อมูลเสร็จ
+        checkActiveSession(); 
     } catch (err) { console.error("Load Master Error:", err); }
 }
-
 // ================= ⏰ CUSTOM TIME FORMATTER (Numpad) =================
 function formatTime(input) {
     let val = input.value.replace(/\D/g, ''); 
