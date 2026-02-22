@@ -127,8 +127,14 @@
                 print-color-adjust: exact;
             }
 
-            /* ซ่อนส่วนที่ไม่เกี่ยวข้อง */
-            .no-print, .btn, .theme-toggle, .top-navbar, .kpi-card, .admin-card:not(#attendanceTableContainer), #pills-tab { 
+            /* 🟢 แก้ไขเป็นก้อนนี้ (ต้องอยู่ข้างในปีกกา @media print เท่านั้น) */
+            .no-print, 
+            .btn, 
+            .theme-toggle, 
+            .top-navbar, 
+            .kpi-card, 
+            #pills-tab,
+            .admin-card:not(#attendanceTableContainer) { 
                 display: none !important; 
             }
             
@@ -334,7 +340,7 @@
                 </div>
 
             <div class="tab-pane fade" id="tab-master">
-                <div class="row g-4 no-print">
+                <div class="row g-4">
                     <div class="col-md-6">
                         <div class="admin-card h-100">
                             <h5 class="fw-bold mb-4 text-primary"><i class="bi bi-credit-card-2-front me-2"></i>จัดการรหัสบัตร (ID Cards)</h5>
