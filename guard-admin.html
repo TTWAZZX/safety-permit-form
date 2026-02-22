@@ -102,27 +102,84 @@
         .btn-gradient { background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color: white; border: none; font-weight: 600; transition: 0.3s; }
         .btn-gradient:hover { box-shadow: 0 5px 15px rgba(14, 165, 233, 0.4); transform: translateY(-2px); }
 
-        /* ================= PRINT TEMPLATE (PDF ทางการ) ================= */
+        /* ================= 🖨️ PRINT TEMPLATE (ฉบับสมบูรณ์) ================= */
         .print-only { display: none; }
         
         @media print {
-            @page { size: A4 portrait; margin: 15mm; }
-            body { background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; color: black !important; padding: 0; }
-            .no-print { display: none !important; }
-            .admin-card { box-shadow: none !important; border: none !important; padding: 0 !important; background: transparent !important; }
+            /* 🟢 ซ่อนหัว/ท้าย URL ของเบราว์เซอร์ และตั้งค่าแนวนอน */
+            @page { 
+                size: A4 landscape; 
+                margin: 1cm; 
+            }
             
-            .print-only { display: block; }
-            .print-header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 15px; }
-            .print-header h3 { font-weight: bold; font-size: 18pt; margin-bottom: 5px; color: black; }
-            .print-header p { font-size: 12pt; margin: 0; color: black; }
+            body { 
+                background: white !important; 
+                color: black !important; 
+                padding: 0; 
+                font-family: 'Sarabun', sans-serif;
+                -webkit-print-color-adjust: exact; 
+                print-color-adjust: exact;
+            }
+
+            /* ซ่อนส่วนที่ไม่เกี่ยวข้อง */
+            .no-print, .btn, .theme-toggle, .top-navbar, .kpi-card, .admin-card:not(#attendanceTableContainer), #pills-tab { 
+                display: none !important; 
+            }
             
-            .table { width: 100%; border-collapse: collapse; margin-top: 15px; border: 1px solid #000 !important; }
-            .table th, .table td { border: 1px solid #000 !important; padding: 8px !important; font-size: 11pt !important; color: #000 !important; }
-            .table th { background-color: #f0f0f0 !important; font-weight: bold; text-align: center; }
-            
-            .print-footer { display: flex; justify-content: space-around; margin-top: 50px; page-break-inside: avoid; }
-            .sign-box { text-align: center; width: 200px; color: black; }
-            .sign-line { border-bottom: 1px dashed #000; margin-bottom: 10px; height: 30px; }
+            .print-only { display: block !important; }
+
+            /* 🟢 หัวรายงาน */
+            .print-header {
+                text-align: center;
+                margin-bottom: 15px;
+                border-bottom: 2px solid #000;
+                padding-bottom: 10px;
+            }
+            .print-header .section-name {
+                font-size: 12pt;
+                font-weight: bold;
+                text-align: left;
+                margin-bottom: 5px;
+            }
+            .print-header h4 { font-size: 16pt; font-weight: bold; margin: 5px 0; color: black !important; }
+
+            /* 🟢 ตาราง: เส้นคมชัดสีดำบาง 0.5pt */
+            .table { 
+                width: 100% !important; 
+                border-collapse: collapse !important;
+                border: 0.5pt solid #000 !important;
+                margin-top: 10px;
+            }
+            .table th, .table td { 
+                border: 0.5pt solid #000 !important;
+                color: black !important;
+                padding: 4px 6px !important;
+                font-size: 10pt !important;
+            }
+            .table th { background-color: #f2f2f2 !important; font-weight: bold; }
+
+            /* 🟢 ส่วนท้าย: จัดกึ่งกลางทั้งหมด */
+            .print-footer-container {
+                margin-top: 30px;
+                page-break-inside: avoid;
+            }
+
+            .print-footer {
+                display: flex;
+                justify-content: center; /* จัดก้อนเซ็นชื่อไว้กลางหน้ากระดาษ */
+            }
+
+            .sign-box {
+                width: 450px; /* ขยายความกว้างเล็กน้อยให้ชื่อแผนกไม่ตัดบรรทัด */
+                text-align: center;
+                color: black !important;
+            }
+
+            .sign-line {
+                border-bottom: 1px solid #000 !important; /* เส้นเซ็นชื่อสีดำทึบ */
+                margin: 30px auto 10px;
+                width: 70%;
+            }
         }
     </style>
 </head>
@@ -210,9 +267,10 @@
                 </div>
 
                 <div class="print-only print-header">
-                    <h3>รายงานบันทึกเวลาปฏิบัติงาน (รปภ.)</h3>
-                    <p>ประจำเดือน: <span id="print-month-label" class="fw-bold">-</span> | พนักงาน: <span id="print-name-label" class="fw-bold">ทั้งหมด</span></p>
-                    <p style="font-size: 10pt; text-align: right; margin-top: 5px;">วันที่พิมพ์: <span id="print-date"></span></p>
+                    <h4>รายงานบันทึกเวลาปฏิบัติงานเจ้าหน้าที่รักษาความปลอดภัย</h4>
+                    <p>บริษัท ไทยซัมมิท ฮาร์เนส จำกัด (มหาชน)</p>
+                    <p id="printInfoLabel" style="font-weight: bold; margin-top: 5px; color: black;"></p>
+                    <p style="text-align: right; font-size: 9pt; margin-top: 5px;">วันที่พิมพ์: <span id="reportPrintDate"></span></p>
                 </div>
 
                 <div class="admin-card mb-4 no-print animate__animated animate__fadeInUp">
@@ -255,11 +313,19 @@
                     </div>
                 </div>
                 
-                <div class="print-only print-footer">
-                    <div class="sign-box"><div class="sign-line"></div><p>ผู้ตรวจสอบ/หัวหน้าชุด</p><p>วันที่: _____/_____/_____</p></div>
-                    <div class="sign-box"><div class="sign-line"></div><p>ผู้อนุมัติ (จป./ฝ่ายบุคคล)</p><p>วันที่: _____/_____/_____</p></div>
+                <div class="print-only print-footer-container">
+                    <div class="print-footer">
+                        <div class="sign-box">
+                            <div class="sign-line"></div>
+                            <p>(...........................................................)</p>
+                            <p>ผู้จัดทำ (จป.วิชาชีพ)</p>
+                            <p>วันที่: _____/_____/_____</p>
+                            <div style="font-weight: bold; font-size: 11pt; margin-top: 15px; color: black;">
+                                Safety Health and Environment Section
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
 
             <div class="tab-pane fade" id="tab-master">
                 <div class="row g-4 no-print">
@@ -535,9 +601,20 @@ function exportPDF() {
     const filterMonth = document.getElementById('filterMonth').value;
     const filterName = document.getElementById('filterName');
     
-    document.getElementById('print-month-label').innerText = filterMonth ? filterMonth : 'ทั้งหมด';
-    document.getElementById('print-name-label').innerText = filterName.options[filterName.selectedIndex].text;
-    document.getElementById('print-date').innerText = new Date().toLocaleDateString('th-TH');
+    // 1. ส่งค่าเดือนและชื่อพนักงานไปที่ id="printInfoLabel" (ที่เราตั้งใหม่ใน HTML)
+    const nameText = filterName.options[filterName.selectedIndex].text;
+    const monthText = filterMonth ? filterMonth : 'ทั้งหมด';
+    
+    if (document.getElementById('printInfoLabel')) {
+        document.getElementById('printInfoLabel').innerText = `ประจำเดือน: ${monthText} | พนักงาน: ${nameText}`;
+    }
+
+    // 2. ส่งค่าวันที่พิมพ์รายงานไปที่ id="reportPrintDate"
+    if (document.getElementById('reportPrintDate')) {
+        document.getElementById('reportPrintDate').innerText = new Date().toLocaleDateString('th-TH');
+    }
+    
+    // 3. สั่งพิมพ์
     window.print();
 }
 
