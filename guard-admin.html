@@ -121,16 +121,22 @@
 
         /* ================= TABLE DESIGN ================= */
         .table-responsive { border-radius: var(--radius-md); border: 1px solid var(--border-color); } 
-        .table { color: var(--text-main); margin-bottom: 0; }
+        .table { color: var(--text-main); margin-bottom: 0; border-collapse: collapse !important; }
+        
+        /* 🟢 บังคับตีเส้นตารางทุกช่องตั้งแต่หน้าเว็บ */
+        .table th, .table td { 
+            border: 1px solid var(--border-color) !important; 
+            padding: 14px 15px; 
+            vertical-align: middle; 
+        }
+        
         .table thead th { 
             background-color: var(--table-header-bg); color: var(--text-muted); 
-            border-bottom: 1px solid var(--border-color); font-weight: 600; 
-            text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.5px; padding: 16px 15px;
+            font-weight: 600; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.5px; 
             position: sticky; top: 0; z-index: 5;
         }
         .table tbody tr { transition: background-color 0.15s; }
         .table tbody tr:hover { background-color: var(--table-hover-bg); }
-        .table td { border-color: var(--border-color); padding: 14px 15px; vertical-align: middle; }
         
         .sortable-ghost { background-color: var(--table-hover-bg) !important; opacity: 0.8; border: 2px dashed var(--primary-color); }
         #attendanceTbody tr { cursor: grab; }
@@ -171,40 +177,51 @@
             .print-header h4 { font-size: 16pt; font-weight: bold; margin: 0 0 6px 0; color: black !important; }
             .print-header p { font-size: 11pt; margin: 0 0 4px 0; color: black !important; }
             
-            /* 🟢 2. โครงสร้างตารางทางการ (กรอบดำคมชัด) */
+            /* 🟢 2. โครงสร้างตารางทางการตอนพิมพ์ */
             table#attendanceTable { 
                 width: 100% !important; 
+                max-width: 100% !important;
                 border-collapse: collapse !important; 
-                border: 1px solid #000 !important; /* กรอบใหญ่รอบตาราง */
+                border: 1px solid #000 !important; /* กรอบนอกสุดของตาราง */
                 margin-top: 0;
             }
-            /* บังคับให้เฉพาะส่วนหัวคอลัมน์ไปปรากฏทุกหน้า */
             #attendanceTable thead { display: table-header-group !important; }
-            tr { page-break-inside: avoid !important; break-inside: avoid !important; }
+            #attendanceTable tr { page-break-inside: avoid !important; break-inside: avoid !important; }
 
-            /* 🟢 เส้นตารางใน Cell ทุกช่องต้องมีเส้น (บังคับขอบดำทุกด้าน) */
-            table#attendanceTable th, 
-            table#attendanceTable td,
-            thead#mainTableHeader th { 
+            /* 🟢 บังคับเส้นขอบสีดำทุกช่องแบบชัดเจน */
+            #attendanceTable th, 
+            #attendanceTable td { 
                 border: 1px solid #000 !important; 
                 padding: 6px 8px !important; 
                 font-size: 10pt !important; 
-                vertical-align: middle;
+                vertical-align: middle !important;
             }
-            thead#mainTableHeader th { 
+            
+            #mainTableHeader th { 
                 background-color: #f2f2f2 !important; 
                 font-weight: bold !important; 
-                text-align: center; 
-                text-transform: none; 
+                text-align: center !important; 
+                text-transform: none !important; 
                 font-size: 11pt !important; 
                 -webkit-print-color-adjust: exact; 
                 print-color-adjust: exact;
-                border: 1px solid #000 !important; /* 🟢 เติมบรรทัดนี้เพื่อย้ำเส้นคั้นแนวตั้ง */
             }
 
-            th[data-col="id_card"], td[data-col="id_card"] { display: none !important; }
+            /* ซ่อนคอลัมน์ที่ไม่ใช้ตอนพิมพ์ */
+            th[data-col="id_card"], td[data-col="id_card"],
+            th[data-col="action"], td[data-col="action"] { 
+                display: none !important; 
+            }
             .col-hidden { display: none !important; } 
-            td[data-col="remark"] { max-width: 140px !important; white-space: pre-wrap !important; word-wrap: break-word !important; font-size: 9pt !important; }
+            
+            /* 🟢 ย้ำขอบขวาของคอลัมน์หมายเหตุ ป้องกันบั๊กขอบแหว่งตอนซ่อนคอลัมน์จัดการ */
+            th[data-col="remark"], td[data-col="remark"] { 
+                border-right: 1px solid #000 !important;
+                max-width: 140px !important; 
+                white-space: pre-wrap !important; 
+                word-wrap: break-word !important; 
+                font-size: 9pt !important; 
+            }
 
             /* 🟢 3. กล่องลายเซ็นต์ท้ายตาราง */
             .print-footer-content { display: block !important; margin-top: 40px; page-break-inside: avoid; }
