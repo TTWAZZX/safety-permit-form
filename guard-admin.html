@@ -163,33 +163,32 @@
             .badge { border: none !important; background: transparent !important; color: black !important; padding: 0 !important; font-size: 10pt !important; font-weight: normal !important; }
             i { display: none !important; } 
             
-            /* 🟢 โครงสร้างตารางทางการ (ขอบดำคมชัด แก้ขอบขวาหาย) */
+            /* 🟢 โครงสร้างตารางทางการ (บังคับเส้นขอบทุกด้านทับ Bootstrap) */
             table#attendanceTable { 
-                page-break-inside: auto; 
                 width: 100% !important; 
                 max-width: 100% !important;
                 border-collapse: collapse !important; 
                 border: 1px solid #000 !important; 
                 margin-top: 0;
             }
-            thead.print-only { display: table-header-group !important; }
-            tr { page-break-inside: avoid !important; break-inside: avoid !important; }
+            #attendanceTable thead { display: table-header-group !important; }
+            #attendanceTable tr { page-break-inside: avoid !important; break-inside: avoid !important; }
 
             .print-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 12px; margin-bottom: 12px; }
             .print-header h4 { font-size: 16pt; font-weight: bold; margin: 0 0 6px 0; color: black !important; }
             .print-header p { font-size: 11pt; margin: 0 0 4px 0; color: black !important; }
-            
-            /* 🟢 เส้นตารางใน Cell ทุกช่องต้องมีเส้น (บังคับใช้ table นำหน้าเพื่อทับคลาส Bootstrap) */
-            table#attendanceTable th, 
-            table#attendanceTable td,
-            thead#mainTableHeader th { 
+
+            /* 🟢 บังคับเส้นขอบซ้าย-ขวา-บน-ล่าง ทุกๆ ช่อง (th, td) */
+            #attendanceTable th, 
+            #attendanceTable td { 
                 border: 1px solid #000 !important; 
+                border-width: 1px !important; /* 🟢 สำคัญมาก: ย้ำความหนาเส้นไม่ให้โดนซ่อน */
                 padding: 6px 8px !important; 
                 font-size: 10pt !important; 
                 vertical-align: middle !important;
             }
             
-            thead#mainTableHeader th { 
+            #attendanceTable thead th { 
                 background-color: #f2f2f2 !important; 
                 font-weight: bold !important; 
                 text-align: center !important; 
@@ -199,7 +198,7 @@
                 print-color-adjust: exact;
             }
 
-            /* 🟢 ย้ำเส้นขอบด้านขวาสุดของตาราง (คอลัมน์หมายเหตุ) เพื่อป้องกันบั๊กเวลาซ่อนคอลัมน์สุดท้าย */
+            /* 🟢 ย้ำเส้นขอบด้านขวาสุดของตาราง (คอลัมน์หมายเหตุ) */
             th[data-col="remark"], td[data-col="remark"] { 
                 border-right: 1px solid #000 !important; 
                 max-width: 140px !important; 
@@ -214,7 +213,7 @@
             .print-footer-content { display: block !important; margin-top: 50px; page-break-inside: avoid; }
             .sign-box-container { display: flex; justify-content: center; width: 100%; }
             .sign-box { width: 320px; text-align: center; font-size: 11pt; }
-            .sign-line { border-bottom: 1px solid #000 !important; margin: 40px auto 10px; width: 90%; } 
+            .sign-line { border-bottom: 1px solid #000 !important; margin: 40px auto 10px; width: 90%; }
         }
     </style>
 </head>
