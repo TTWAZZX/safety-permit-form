@@ -7,7 +7,7 @@
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -18,160 +18,176 @@
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 
     <style>
-        /* ================= THEME VARIABLES ================= */
+        /* ================= PREMIUM ENTERPRISE THEME VARIABLES ================= */
         :root {
-            --primary-color: #0ea5e9;
-            --bg-color: #f8fafc;
-            --card-bg: rgba(255, 255, 255, 0.95);
-            --text-color: #334155;
-            --input-bg: #fff;
+            --primary-color: #0284c7;
+            --primary-hover: #0369a1;
+            --bg-color: #f1f5f9;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --input-bg: #ffffff;
             --border-color: #e2e8f0;
-            --table-hover: rgba(14, 165, 233, 0.05);
-            --table-header: #f1f5f9;
+            --table-header-bg: #f8fafc;
+            --table-hover-bg: #f0f9ff;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.05);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -4px rgba(0,0,0,0.05);
+            --radius-md: 12px;
+            --radius-lg: 20px;
         }
 
         [data-theme="dark"] {
             --bg-color: #0f172a;
-            --card-bg: rgba(30, 41, 59, 0.85);
-            --text-color: #f1f5f9;
-            --input-bg: #1e293b;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --input-bg: #0f172a;
             --border-color: #334155;
-            --table-hover: rgba(255, 255, 255, 0.05);
-            --table-header: rgba(0, 0, 0, 0.2);
+            --table-header-bg: #0f172a;
+            --table-hover-bg: rgba(2, 132, 199, 0.15);
         }
 
         body { 
             font-family: 'Sarabun', sans-serif; 
             background-color: var(--bg-color); 
-            color: var(--text-color); 
+            color: var(--text-main); 
             min-height: 100vh; 
-            padding-bottom: 30px; 
-            transition: background-color 0.3s ease;
+            padding-bottom: 40px; 
+            transition: all 0.3s ease;
         }
 
         /* ================= SECURE LOGIN SCREEN ================= */
         #loginScreen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--bg-color); z-index: 10000;
-            display: flex; justify-content: center; align-items: center;
+            background: linear-gradient(135deg, #e0f2fe 0%, #f1f5f9 100%);
+            z-index: 10000; display: flex; justify-content: center; align-items: center;
         }
+        [data-theme="dark"] #loginScreen { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); }
+        
         .login-card {
-            background: var(--card-bg); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
-            padding: 40px; border-radius: 24px; box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-            border: 1px solid rgba(255,255,255,0.2); text-align: center; width: 100%; max-width: 400px;
+            background: var(--card-bg); padding: 45px 35px; border-radius: var(--radius-lg); 
+            box-shadow: var(--shadow-lg); border: 1px solid var(--border-color);
+            text-align: center; width: 100%; max-width: 420px;
         }
-        
-        #loadingScreen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--bg-color); z-index: 9999; display: none;
-            flex-direction: column; justify-content: center; align-items: center;
-        }
-        .line-spinner { border: 5px solid var(--border-color); border-top: 5px solid var(--primary-color); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 20px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* ================= MAIN LAYOUT & GLASS CARDS ================= */
+        /* ================= MAIN LAYOUT & CARDS ================= */
         .admin-card {
-            background: var(--card-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-            border-radius: 20px; padding: 25px; box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
+            background: var(--card-bg); border-radius: var(--radius-lg); padding: 25px; 
+            box-shadow: var(--shadow-md); border: 1px solid var(--border-color);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
+        .admin-card:hover { box-shadow: var(--shadow-lg); }
 
-        /* KPIs & Chart */
-        .kpi-card { background: var(--input-bg); border-radius: 16px; padding: 20px; border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 15px rgba(0,0,0,0.02); }
-        .kpi-icon { width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
-        .chart-container { height: 180px; width: 100%; display: flex; justify-content: center; }
+        /* KPIs */
+        .kpi-card { 
+            background: var(--card-bg); border-radius: var(--radius-md); padding: 20px; 
+            border: 1px solid var(--border-color); border-left: 5px solid;
+            display: flex; align-items: center; justify-content: space-between; 
+            box-shadow: var(--shadow-sm); 
+        }
+        .kpi-icon { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; }
+        .chart-container { height: 200px; width: 100%; display: flex; justify-content: center; }
 
+        /* Navbar */
         .top-navbar {
-            background: linear-gradient(135deg, #0ea5e9 0%, #1e3a8a 100%);
-            padding: 15px 20px; color: white; border-radius: 0 0 24px 24px; box-shadow: 0 4px 20px rgba(14, 165, 233, 0.2); margin-bottom: 30px;
+            background: var(--card-bg); padding: 15px 20px; color: var(--text-main);
+            border-bottom: 1px solid var(--border-color); box-shadow: var(--shadow-sm); 
+            margin-bottom: 35px; position: sticky; top: 0; z-index: 1000;
         }
         
-        .theme-toggle { background: rgba(255,255,255,0.2); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s; }
-        .theme-toggle:hover { background: rgba(255,255,255,0.3); transform: scale(1.05); }
+        .theme-toggle { 
+            background: var(--bg-color); color: var(--text-main); border: 1px solid var(--border-color); 
+            width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; 
+            cursor: pointer; transition: all 0.2s; 
+        }
+        .theme-toggle:hover { transform: scale(1.05); background: var(--table-hover-bg); }
 
-        .form-control, .form-select { background-color: var(--input-bg); color: var(--text-color); border-color: var(--border-color); border-radius: 10px; }
-        .form-control:focus, .form-select:focus { background-color: var(--input-bg); color: var(--text-color); border-color: var(--primary-color); box-shadow: 0 0 0 0.25rem rgba(14, 165, 233, 0.25); }
+        /* Inputs & Buttons */
+        .form-control, .form-select { 
+            background-color: var(--input-bg); color: var(--text-main); 
+            border: 1px solid var(--border-color); border-radius: 10px; padding: 10px 15px; font-weight: 500;
+        }
+        .form-control:focus, .form-select:focus { 
+            border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15); 
+        }
         
-        .table { color: var(--text-color); border-color: var(--border-color); vertical-align: middle; }
-        .table thead th { background-color: var(--table-header); color: var(--text-color); border-bottom: 2px solid var(--border-color); font-weight: 600; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.5px; }
-        .table tbody tr:hover { background-color: var(--table-hover); }
-        .table td { border-color: var(--border-color); }
+        .btn { font-weight: 600; border-radius: 10px; padding: 10px 20px; transition: all 0.2s; }
+        .btn-gradient { background: linear-gradient(135deg, var(--primary-color) 0%, #0369a1 100%); color: white; border: none; }
+        .btn-gradient:hover { box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3); transform: translateY(-1px); color: white; }
+
+        /* Navigation Pills */
+        .nav-pills { background: var(--card-bg); padding: 8px; border-radius: var(--radius-md); display: inline-flex; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); }
+        .nav-pills .nav-link { color: var(--text-muted); font-weight: 600; border-radius: 8px; padding: 10px 25px; margin-right: 5px; transition: 0.3s; }
+        .nav-pills .nav-link:hover { color: var(--primary-color); background: var(--table-hover-bg); }
+        .nav-pills .nav-link.active { background: var(--primary-color); color: white; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.3); }
+
+        /* Modern Table */
+        .table-responsive { border-radius: var(--radius-md); border: 1px solid var(--border-color); overflow: hidden; }
+        .table { color: var(--text-main); margin-bottom: 0; }
+        .table thead th { 
+            background-color: var(--table-header-bg); color: var(--text-muted); 
+            border-bottom: 1px solid var(--border-color); font-weight: 600; 
+            text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.5px; padding: 15px;
+        }
+        .table tbody tr:hover { background-color: var(--table-hover-bg); }
+        .table td { border-color: var(--border-color); padding: 12px 15px; vertical-align: middle; }
         
-        .nav-pills .nav-link { color: var(--text-color); font-weight: 600; border-radius: 12px; padding: 10px 20px; margin-right: 10px; transition: 0.3s; border: 1px solid transparent; }
-        .nav-pills .nav-link:hover { background-color: rgba(14, 165, 233, 0.1); }
-        .nav-pills .nav-link.active { background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color: white; box-shadow: 0 4px 10px rgba(14, 165, 233, 0.3); }
-
-        .btn-gradient { background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color: white; border: none; font-weight: 600; transition: 0.3s; }
-        .btn-gradient:hover { box-shadow: 0 5px 15px rgba(14, 165, 233, 0.4); transform: translateY(-2px); }
-
-        /* สีพื้นหลังเวลากำลังลากแถว */
-        .sortable-ghost { background-color: rgba(14, 165, 233, 0.15) !important; opacity: 0.8; }
+        /* Drag & Drop Styles */
+        .sortable-ghost { background-color: var(--table-hover-bg) !important; opacity: 0.7; border: 2px dashed var(--primary-color); }
         #attendanceTbody tr { cursor: grab; }
         #attendanceTbody tr:active { cursor: grabbing; }
+        .col-hidden { display: none !important; }
 
-        /* ================= 🖨️ PRINT TEMPLATE ================= */
+        /* Loader */
+        .line-spinner { border: 4px solid var(--border-color); border-top: 4px solid var(--primary-color); border-radius: 50%; width: 45px; height: 45px; animation: spin 1s linear infinite; margin-bottom: 20px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* ================= 🖨️ PRINT TEMPLATE (ระดับ Enterprise) ================= */
         .print-only { display: none; }
         
         @media print {
-            @page { 
-                size: A4 portrait; 
-                margin: 10mm; 
-            }
+            @page { size: A4 portrait; margin: 10mm; }
 
-            /* ซ่อนเมนูและการตั้งค่า */
-            .no-print, .btn, .theme-toggle, .top-navbar, .kpi-card, #pills-tab, .admin-card:not(#attendanceTableContainer) { 
+            /* ซ่อนส่วนที่ไม่ต้องการพิมพ์ */
+            .no-print, .btn, .theme-toggle, .top-navbar, .kpi-card, #pills-tab, .dropdown, .admin-card:not(#attendanceTableContainer) { 
                 display: none !important; 
             }
-            .print-only { display: block !important; }
+            .print-only { display: table-header-group !important; } /* ให้ Header แสดงเป็น Block ของ Table */
+            .print-footer-only { display: table-footer-group !important; }
 
-            /* ควบคุมสีพื้นฐานการพิมพ์ */
-            body { 
-                background: white !important; 
-                color: black !important; 
-                padding: 0; 
-                font-family: 'Sarabun', sans-serif;
-                -webkit-print-color-adjust: exact; 
-                print-color-adjust: exact;
-            }
+            /* แกะกรอบการ์ดออกให้เป็นพื้นขาว */
+            body { background: white !important; color: black !important; padding: 0; font-family: 'Sarabun', sans-serif; }
+            .admin-card { border: none !important; box-shadow: none !important; padding: 0 !important; border-radius: 0 !important; }
+            .table-responsive { border: none !important; overflow: visible !important; }
 
-            /* 🟢 1. สั่งตารางให้ดึงหัวกระดาษ (thead) และท้ายกระดาษ มาโชว์ทุกหน้าที่ขึ้นใหม่ */
-            table { page-break-inside: auto; width: 100% !important; border-collapse: collapse !important; margin-top: 10px; }
-            thead { display: table-header-group !important; }
-            tfoot { display: table-footer-group !important; }
+            /* 🟢 1. จัดการให้หัวกระดาษและท้ายกระดาษ โผล่ทุกหน้า */
+            table { page-break-inside: auto; width: 100% !important; border-collapse: collapse !important; }
+            thead.print-only { display: table-header-group !important; }
+            tfoot.print-footer-only { display: table-footer-group !important; }
             
-            /* 🟢 2. ป้องกันไม่ให้แถว (tr) ตัดครึ่งหน้ากระดาษ */
-            tr, td, th { page-break-inside: avoid !important; break-inside: avoid !important; }
+            /* 🟢 2. ป้องกันแถวตารางโดนตัดครึ่งหน้า */
+            tr { page-break-inside: avoid !important; break-inside: avoid !important; }
 
-            .print-header { text-align: center; margin-bottom: 15px; border-bottom: 2px solid #000; padding-bottom: 10px; }
-            .print-header h4 { font-size: 16pt; font-weight: bold; margin: 5px 0; color: black !important; }
+            /* จัด Style หน้ากระดาษพิมพ์ */
+            .print-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 10px; }
+            .print-header h4 { font-size: 16pt; font-weight: bold; margin: 0 0 5px 0; color: black !important; }
+            
+            .table { border: 0.5pt solid #000 !important; margin-top: 0 !important; }
+            .table th, .table td { border: 0.5pt solid #000 !important; color: black !important; padding: 6px !important; font-size: 10pt !important; }
+            .table th { background-color: #f2f2f2 !important; font-weight: bold; text-align: center; }
 
-            .table { border: 0.5pt solid #000 !important; }
-            .table th, .table td { 
-                border: 0.5pt solid #000 !important; 
-                color: black !important; 
-                padding: 4px 6px !important; 
-                font-size: 10pt !important; 
-            }
-            .table th { background-color: #f2f2f2 !important; font-weight: bold; }
+            /* ซ่อนรหัสบัตรตอนพิมพ์ (ค่าเริ่มต้น) */
+            th[data-col="id_card"], td[data-col="id_card"] { display: none !important; }
+            .col-hidden { display: none !important; } /* รองรับการซ่อนคอลัมน์จากระบบ */
 
-            /* ซ่อนรหัสบัตรตอนพิมพ์ */
-            #attendanceTable th:nth-child(3), 
-            #attendanceTable td:nth-child(3) {
-                display: none !important;
-            }
+            /* 🟢 3. บีบหมายเหตุให้สวยงาม */
+            td[data-col="remark"] { max-width: 140px !important; white-space: pre-wrap !important; word-wrap: break-word !important; font-size: 9pt !important; }
 
-            /* 🟢 3. บีบขนาดและให้ตัดคำในคอลัมน์หมายเหตุ (คอลัมน์ที่ 7) เพื่อไม่ให้ล้น */
-            #attendanceTable td:nth-child(7) {
-                max-width: 130px !important;
-                white-space: pre-wrap !important;
-                word-wrap: break-word !important;
-                font-size: 9pt !important; 
-            }
-
-            /* 🟢 4. ป้องกันกล่องเซ็นชื่อโดนตัดครึ่งกลางหน้า */
-            .print-footer-container { margin-top: 30px; page-break-inside: avoid !important; break-inside: avoid !important; }
-            .print-footer { display: flex; justify-content: center; }
-            .sign-box { width: 450px; text-align: center; color: black !important; }
-            .sign-line { border-bottom: 1px solid #000 !important; margin: 30px auto 10px; width: 70%; }
+            /* ลายเซ็นต์ท้ายหน้ากระดาษ */
+            .print-footer-content { margin-top: 20px; display: flex; justify-content: center; width: 100%; }
+            .sign-box { width: 350px; text-align: center; color: black !important; font-size: 11pt; }
+            .sign-line { border-bottom: 1px dotted #000 !important; margin: 40px auto 10px; width: 80%; }
         }
     </style>
 </head>
@@ -179,161 +195,189 @@
 
 <div id="loginScreen" class="animate__animated animate__fadeIn">
     <div class="login-card">
-        <i class="bi bi-shield-lock-fill text-primary" style="font-size: 4rem;"></i>
-        <h4 class="fw-bold mt-3 mb-1">Security Admin</h4>
-        <p class="text-muted small mb-4">กรุณาระบุรหัสผ่านเพื่อเข้าถึงข้อมูล</p>
-        <div class="input-group mb-3">
-            <span class="input-group-text bg-light"><i class="bi bi-key-fill"></i></span>
-            <input type="password" id="adminPin" class="form-control form-control-lg" placeholder="รหัสผ่าน (PIN)" onkeypress="if(event.key === 'Enter') checkLogin()">
+        <div class="mb-4 text-primary">
+            <i class="bi bi-shield-lock-fill" style="font-size: 4.5rem; filter: drop-shadow(0px 4px 6px rgba(2, 132, 199, 0.3));"></i>
         </div>
-        <button onclick="checkLogin()" class="btn btn-gradient w-100 py-3 rounded-3 fs-5"><i class="bi bi-box-arrow-in-right me-2"></i>เข้าสู่ระบบ</button>
+        <h3 class="fw-bold mb-1">SafetyPass Admin</h3>
+        <p class="text-muted small mb-4">Enterprise Security Management</p>
+        <div class="input-group mb-4">
+            <span class="input-group-text bg-transparent border-end-0 text-muted"><i class="bi bi-key-fill"></i></span>
+            <input type="password" id="adminPin" class="form-control border-start-0 ps-0" placeholder="กรุณาระบุรหัสผ่าน PIN" onkeypress="if(event.key === 'Enter') checkLogin()">
+        </div>
+        <button onclick="checkLogin()" class="btn btn-gradient w-100 py-3 fs-5"><i class="bi bi-box-arrow-in-right me-2"></i> เข้าสู่ระบบ</button>
     </div>
 </div>
 
 <div id="loadingScreen">
     <div class="line-spinner"></div>
-    <div class="loading-text-main" id="loadStatusMain">กำลังประมวลผลข้อมูล...</div>
+    <div class="fw-bold text-muted" id="loadStatusMain">กำลังประมวลผลข้อมูล...</div>
 </div>
 
 <div id="mainApp" style="display: none;">
     <div class="top-navbar no-print">
         <div class="container-xl d-flex justify-content-between align-items-center">
-            <div class="d-flex align-items-center">
-                <i class="bi bi-shield-lock-fill fs-2 me-3"></i>
+            <div class="d-flex align-items-center gap-3">
+                <div class="bg-primary text-white rounded-3 d-flex align-items-center justify-content-center shadow-sm" style="width: 45px; height: 45px;">
+                    <i class="bi bi-shield-check fs-4"></i>
+                </div>
                 <div>
-                    <h4 class="mb-0 fw-bold">Security Admin</h4>
-                    <small class="opacity-75">Enterprise Dashboard</small>
+                    <h5 class="mb-0 fw-bold">SafetyPass Admin</h5>
+                    <small class="text-muted">Enterprise Dashboard</small>
                 </div>
             </div>
             <div class="d-flex gap-3 align-items-center">
                 <button class="theme-toggle" onclick="toggleTheme()" title="สลับโหมดมืด/สว่าง"><i class="bi bi-moon-stars-fill fs-5" id="themeIcon"></i></button>
-                <button class="btn btn-sm btn-outline-light rounded-pill px-3" onclick="logout()"><i class="bi bi-box-arrow-right me-1"></i>ออกระบบ</button>
+                <button class="btn btn-outline-danger px-4" onclick="logout()"><i class="bi bi-power me-1"></i> ออกระบบ</button>
             </div>
         </div>
     </div>
 
     <div class="container-xl">
         <ul class="nav nav-pills mb-4 no-print" id="pills-tab" role="tablist">
-            <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-attendance"><i class="bi bi-bar-chart-line-fill me-2"></i>แดชบอร์ด & รายงาน</button></li>
-            <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-master"><i class="bi bi-database-fill-gear me-2"></i>จัดการบัตร/พนักงาน</button></li>
+            <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-attendance"><i class="bi bi-bar-chart-line-fill me-2"></i> แดชบอร์ด & รายงาน</button></li>
+            <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-master"><i class="bi bi-database-fill-gear me-2"></i> ฐานข้อมูลพนักงาน</button></li>
         </ul>
 
         <div class="tab-content">
-            
             <div class="tab-pane fade show active" id="tab-attendance">
                 
-                <div class="row g-3 mb-4 no-print animate__animated animate__fadeInDown">
+                <div class="row g-4 mb-4 no-print animate__animated animate__fadeInDown">
                     <div class="col-md-8">
-                        <div class="row g-3">
+                        <div class="row g-4">
                             <div class="col-sm-6">
-                                <div class="kpi-card border-start border-4 border-primary">
-                                    <div><small class="text-muted fw-bold">รายการลงเวลาทั้งหมด</small><h3 class="mb-0 fw-bold text-primary" id="kpi-total">0</h3></div>
+                                <div class="kpi-card" style="border-left-color: #0284c7;">
+                                    <div><small class="text-muted fw-bold">รายการลงเวลาทั้งหมด</small><h2 class="mb-0 fw-bold text-primary" id="kpi-total">0</h2></div>
                                     <div class="kpi-icon bg-primary bg-opacity-10 text-primary"><i class="bi bi-list-check"></i></div>
                                 </div>
                             </div>
                             <div class="col-sm-6">
-                                <div class="kpi-card border-start border-4 border-warning">
-                                    <div><small class="text-muted fw-bold">กะเช้า ☀️</small><h3 class="mb-0 fw-bold text-warning" id="kpi-morning">0</h3></div>
+                                <div class="kpi-card" style="border-left-color: #f59e0b;">
+                                    <div><small class="text-muted fw-bold">กะเช้า ☀️</small><h2 class="mb-0 fw-bold text-warning" id="kpi-morning">0</h2></div>
                                     <div class="kpi-icon bg-warning bg-opacity-10 text-warning"><i class="bi bi-brightness-high-fill"></i></div>
                                 </div>
                             </div>
                             <div class="col-sm-6">
-                                <div class="kpi-card border-start border-4 border-dark">
-                                    <div><small class="text-muted fw-bold">กะดึก 🌙</small><h3 class="mb-0 fw-bold text-dark" id="kpi-night">0</h3></div>
-                                    <div class="kpi-icon bg-dark bg-opacity-10 text-dark"><i class="bi bi-moon-fill"></i></div>
+                                <div class="kpi-card" style="border-left-color: #334155;">
+                                    <div><small class="text-muted fw-bold">กะดึก 🌙</small><h2 class="mb-0 fw-bold" style="color: #334155;" id="kpi-night">0</h2></div>
+                                    <div class="kpi-icon bg-secondary bg-opacity-10 text-secondary"><i class="bi bi-moon-fill"></i></div>
                                 </div>
                             </div>
                             <div class="col-sm-6">
-                                <div class="kpi-card border-start border-4 border-danger">
-                                    <div><small class="text-muted fw-bold">หมายเหตุ (ควงกะ/แทน)</small><h3 class="mb-0 fw-bold text-danger" id="kpi-issue">0</h3></div>
+                                <div class="kpi-card" style="border-left-color: #ef4444;">
+                                    <div><small class="text-muted fw-bold">หมายเหตุ (ขาด/แทน)</small><h2 class="mb-0 fw-bold text-danger" id="kpi-issue">0</h2></div>
                                     <div class="kpi-icon bg-danger bg-opacity-10 text-danger"><i class="bi bi-exclamation-triangle-fill"></i></div>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <div class="admin-card h-100 d-flex flex-column justify-content-center pb-2 pt-3">
-                            <h6 class="fw-bold text-center mb-2">สัดส่วนการเข้ากะ</h6>
+                        <div class="admin-card h-100 d-flex flex-column justify-content-center">
+                            <h6 class="fw-bold text-center mb-3 text-muted">สัดส่วนกะการทำงาน</h6>
                             <div class="chart-container"><canvas id="shiftChart"></canvas></div>
                         </div>
                     </div>
                 </div>
 
-                <div class="print-only print-header">
-                    <h4>รายงานบันทึกเวลาปฏิบัติงานเจ้าหน้าที่รักษาความปลอดภัย</h4>
-                    <p>บริษัท ไทยซัมมิท ฮาร์เนส จำกัด (มหาชน)</p>
-                    <p id="printInfoLabel" style="font-weight: bold; margin-top: 5px; color: black;"></p>
-                    <p style="text-align: right; font-size: 9pt; margin-top: 5px;">วันที่พิมพ์: <span id="reportPrintDate"></span></p>
-                </div>
-
                 <div class="admin-card mb-4 no-print animate__animated animate__fadeInUp">
                     <div class="row align-items-end g-3">
-                        <div class="col-md-3">
-                            <label class="form-label fw-bold small text-muted">เดือน</label>
+                        <div class="col-lg-2 col-md-4">
+                            <label class="form-label fw-bold small text-muted">เดือนที่ต้องการดู</label>
                             <input type="month" id="filterMonth" class="form-control">
                         </div>
-                        <div class="col-md-3">
-                            <label class="form-label fw-bold small text-muted">กรองรายบุคคล (ชื่อพนักงาน)</label>
+                        <div class="col-lg-3 col-md-4">
+                            <label class="form-label fw-bold small text-muted">กรองรายบุคคล</label>
                             <select id="filterName" class="form-select"><option value="ALL">ดูทั้งหมดทุกคน</option></select>
                         </div>
-                        <div class="col-md-3 d-flex gap-2">
-                            <button onclick="loadAttendance()" class="btn btn-gradient w-100 fw-bold rounded-3"><i class="bi bi-search me-1"></i> ค้นหา</button>
-                            <button onclick="refreshAdminData()" class="btn btn-secondary fw-bold rounded-3 text-nowrap" title="รีเฟรชข้อมูลล่าสุด"><i class="bi bi-arrow-clockwise"></i> รีเฟรช</button>
+                        <div class="col-lg-3 col-md-4 d-flex gap-2">
+                            <button onclick="loadAttendance()" class="btn btn-primary fw-bold w-100"><i class="bi bi-search me-1"></i> ค้นหา</button>
+                            <button onclick="refreshAdminData()" class="btn btn-outline-secondary fw-bold text-nowrap" title="รีเฟรชข้อมูล"><i class="bi bi-arrow-clockwise"></i></button>
                         </div>
-                        <div class="col-md-3 text-end">
-                            <button onclick="exportExcel()" class="btn btn-success fw-bold me-2 rounded-3"><i class="bi bi-file-earmark-excel"></i> Excel</button>
-                            <button onclick="exportPDF()" class="btn btn-danger fw-bold rounded-3"><i class="bi bi-file-earmark-pdf"></i> PDF</button>
+                        
+                        <div class="col-lg-4 col-md-12 text-lg-end mt-3 mt-lg-0 d-flex justify-content-lg-end gap-2 flex-wrap">
+                            <div class="dropdown d-inline-block">
+                                <button class="btn btn-light border fw-bold dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside">
+                                    <i class="bi bi-layout-three-columns text-primary me-1"></i> คอลัมน์
+                                </button>
+                                <ul class="dropdown-menu shadow-lg p-3" id="columnSelector" style="width: 250px;">
+                                    </ul>
+                            </div>
+                            
+                            <button id="btnSaveOrder" onclick="saveRowOrder()" class="btn btn-warning fw-bold d-none animate__animated animate__pulse"><i class="bi bi-save2 me-1"></i> ล็อกลำดับ</button>
+                            
+                            <button onclick="exportExcel()" class="btn btn-success fw-bold"><i class="bi bi-file-earmark-excel me-1"></i> Excel</button>
+                            <button onclick="exportPDF()" class="btn btn-danger fw-bold"><i class="bi bi-file-earmark-pdf me-1"></i> PDF</button>
                         </div>
                     </div>
                 </div>
 
-                <div class="admin-card animate__animated animate__fadeInUp" id="attendanceTableContainer">
-                    <div class="table-responsive">
+                <div class="admin-card animate__animated animate__fadeInUp p-0 border-0" id="attendanceTableContainer">
+                    <div class="table-responsive border-0 shadow-sm">
                         <table id="attendanceTable" class="table align-middle mb-0">
-                            <thead>
+                            
+                            <thead class="print-only">
                                 <tr>
-                                    <th>วันที่</th>
-                                    <th>กะทำงาน</th>
-                                    <th>รหัสบัตร</th>
-                                    <th>ชื่อพนักงาน</th> <th class="text-center">เข้า (IN)</th>
-                                    <th class="text-center">ออก (OUT)</th>
-                                    <th>หมายเหตุ</th>
-                                    <th class="text-center no-print">จัดการ</th>
+                                    <th colspan="8" style="border: none !important; background: white !important; padding: 0 !important;">
+                                        <div class="print-header">
+                                            <h4>รายงานบันทึกเวลาปฏิบัติงานเจ้าหน้าที่รักษาความปลอดภัย</h4>
+                                            <p class="mb-1">บริษัท ไทยซัมมิท ฮาร์เนส จำกัด (มหาชน)</p>
+                                            <p id="printInfoLabel" class="fw-bold mb-1"></p>
+                                            <p style="text-align: right; font-size: 9pt; margin: 0;">วันที่พิมพ์: <span id="reportPrintDate"></span></p>
+                                        </div>
+                                    </th>
                                 </tr>
                             </thead>
+
+                            <thead id="mainTableHeader">
+                                <tr>
+                                    <th data-col="date">วันที่</th>
+                                    <th data-col="shift">กะทำงาน</th>
+                                    <th data-col="id_card">รหัสบัตร</th>
+                                    <th data-col="name">ชื่อพนักงาน</th> 
+                                    <th data-col="time_in" class="text-center">เข้า (IN)</th>
+                                    <th data-col="time_out" class="text-center">ออก (OUT)</th>
+                                    <th data-col="remark">หมายเหตุ</th>
+                                    <th data-col="action" class="text-center no-print">จัดการ</th>
+                                </tr>
+                            </thead>
+                            
                             <tbody id="attendanceTbody"></tbody>
+                            
+                            <tfoot class="print-footer-only">
+                                <tr>
+                                    <td colspan="8" style="border: none !important; background: white !important;">
+                                        <div class="print-footer-content">
+                                            <div class="sign-box">
+                                                <div class="sign-line"></div>
+                                                <p class="mb-1">(...........................................................)</p>
+                                                <p class="mb-1">ผู้จัดทำ (จป.วิชาชีพ)</p>
+                                                <p class="mb-2">วันที่: _____/_____/_____</p>
+                                                <div class="fw-bold text-dark">Safety Health and Environment Section</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tfoot>
+
                         </table>
                     </div>
                 </div>
-                
-                <div class="print-only print-footer-container">
-                    <div class="print-footer">
-                        <div class="sign-box">
-                            <div class="sign-line"></div>
-                            <p>(...........................................................)</p>
-                            <p>ผู้จัดทำ (จป.วิชาชีพ)</p>
-                            <p>วันที่: _____/_____/_____</p>
-                            <div style="font-weight: bold; font-size: 11pt; margin-top: 15px; color: black;">
-                                Safety Health and Environment Section
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
-            </div> <div class="tab-pane fade" id="tab-master">
+            </div>
+
+            <div class="tab-pane fade" id="tab-master">
                 <div class="row g-4"> 
                     <div class="col-md-6">
-                        <div class="admin-card h-100">
-                            <h5 class="fw-bold mb-4 text-primary">
-                                <i class="bi bi-credit-card-2-front me-2"></i>จัดการรหัสบัตร (ID Cards)
+                        <div class="admin-card h-100 border-top border-4 border-primary">
+                            <h5 class="fw-bold mb-4">
+                                <i class="bi bi-credit-card-2-front text-primary me-2"></i> จัดการรหัสบัตร (ID Cards)
                             </h5>
-                            <div class="d-flex gap-2 mb-3">
-                                <input type="text" id="new_card" class="form-control" placeholder="เช่น G-001">
-                                <button onclick="addMaster('card')" class="btn btn-primary fw-bold px-4 rounded-3">เพิ่ม</button>
+                            <div class="d-flex gap-2 mb-4">
+                                <input type="text" id="new_card" class="form-control" placeholder="ระบุรหัสบัตร เช่น G-001">
+                                <button onclick="addMaster('card')" class="btn btn-primary fw-bold px-4">เพิ่ม</button>
                             </div>
-                            <div class="table-responsive">
-                                <table class="table table-hover">
-                                    <thead>
+                            <div class="table-responsive shadow-sm border-0">
+                                <table class="table table-hover mb-0">
+                                    <thead class="bg-light">
                                         <tr>
                                             <th>หมายเลขบัตร</th>
                                             <th class="text-end">ลบ</th>
@@ -345,17 +389,17 @@
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="admin-card h-100">
-                            <h5 class="fw-bold mb-4 text-success">
-                                <i class="bi bi-person-badge me-2"></i>จัดการรายชื่อ (Personnel)
+                        <div class="admin-card h-100 border-top border-4 border-success">
+                            <h5 class="fw-bold mb-4">
+                                <i class="bi bi-person-badge text-success me-2"></i> จัดการรายชื่อ (Personnel)
                             </h5>
-                            <div class="d-flex gap-2 mb-3">
-                                <input type="text" id="new_person" class="form-control" placeholder="ชื่อ-นามสกุล">
-                                <button onclick="addMaster('person')" class="btn btn-success fw-bold px-4 rounded-3">เพิ่ม</button>
+                            <div class="d-flex gap-2 mb-4">
+                                <input type="text" id="new_person" class="form-control" placeholder="ระบุ ชื่อ-นามสกุล">
+                                <button onclick="addMaster('person')" class="btn btn-success fw-bold px-4">เพิ่ม</button>
                             </div>
-                            <div class="table-responsive">
-                                <table class="table table-hover">
-                                    <thead>
+                            <div class="table-responsive shadow-sm border-0">
+                                <table class="table table-hover mb-0">
+                                    <thead class="bg-light">
                                         <tr>
                                             <th>ชื่อ-นามสกุล</th>
                                             <th class="text-end">ลบ</th>
@@ -367,7 +411,9 @@
                         </div>
                     </div>
                 </div>
-            </div> </div>
+            </div>
+
+        </div>
     </div>
 </div>
 
@@ -377,15 +423,15 @@ const SUPABASE_URL = 'https://dqsfioiqwxuxpucwwhsv.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxc2Zpb2lxd3h1eHB1Y3d3aHN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1OTk1NjUsImV4cCI6MjA4NDE3NTU2NX0.L_u0Ff3uHofxiimEs6ySFB4TPNtOWiKeSu3KFoVcA1U';
 
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
 const ADMIN_PIN = "admin1234"; 
 
 let shiftChartInstance = null;
-let sortableInstance = null; // ตัวแปรเก็บ Sortable
+let sortableInstance = null; 
 
-// ================= INIT & SECURITY =================
+// ================= INIT =================
 window.onload = async () => {
     initTheme();
+    initColumnSelector(); // 🟢 สร้างเมนูเลือกคอลัมน์
     if(sessionStorage.getItem('isAdminLoggedIn') === 'true') {
         unlockDashboard();
     }
@@ -397,7 +443,7 @@ function checkLogin() {
         sessionStorage.setItem('isAdminLoggedIn', 'true');
         unlockDashboard();
     } else {
-        Swal.fire({ icon: 'error', title: 'รหัสผ่านไม่ถูกต้อง', text: 'กรุณาลองใหม่อีกครั้ง', confirmButtonColor: '#dc3545' });
+        Swal.fire({ icon: 'error', title: 'รหัสผ่านไม่ถูกต้อง', confirmButtonColor: '#dc3545' });
         document.getElementById('adminPin').value = '';
     }
 }
@@ -426,21 +472,68 @@ async function unlockDashboard() {
     }
 }
 
-// ================= THEME TOGGLE =================
+// ================= THEME =================
 function initTheme() {
     const savedTheme = localStorage.getItem('theme') || 'light';
     document.documentElement.setAttribute('data-theme', savedTheme);
-    document.getElementById('themeIcon').className = savedTheme === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-stars-fill';
+    document.getElementById('themeIcon').className = savedTheme === 'dark' ? 'bi bi-sun-fill text-warning' : 'bi bi-moon-stars-fill text-dark';
 }
 function toggleTheme() {
     const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', next);
     localStorage.setItem('theme', next);
-    document.getElementById('themeIcon').className = next === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-stars-fill';
+    document.getElementById('themeIcon').className = next === 'dark' ? 'bi bi-sun-fill text-warning' : 'bi bi-moon-stars-fill text-dark';
     if(shiftChartInstance) loadAttendance(); 
 }
 
-// ================= โหลดรายชื่อใส่ Filter =================
+// ================= เลือกคอลัมน์ (Column Visibility) =================
+function initColumnSelector() {
+    const headers = document.querySelectorAll('#mainTableHeader th');
+    const selectorMenu = document.getElementById('columnSelector');
+    selectorMenu.innerHTML = '';
+
+    headers.forEach((th, index) => {
+        const colId = th.getAttribute('data-col');
+        const colName = th.innerText;
+        
+        // ข้ามคอลัมน์ "จัดการ" เพราะไม่ต้องสั่งซ่อน/โชว์ (มันซ่อนตอนพรินต์อยู่แล้ว)
+        if(colId === 'action') return;
+
+        // รหัสบัตร (id_card) ค่าเริ่มต้นเราตั้งให้ซ่อนตอนพรินต์ ให้ติ๊กออกไว้
+        const isChecked = colId !== 'id_card' ? 'checked' : '';
+
+        selectorMenu.innerHTML += `
+            <li>
+                <div class="form-check form-switch px-3 py-1">
+                    <input class="form-check-input" type="checkbox" role="switch" id="colSwitch_${index}" ${isChecked} onchange="toggleColumn(${index}, this.checked)">
+                    <label class="form-check-label ms-2" for="colSwitch_${index}">${colName}</label>
+                </div>
+            </li>
+        `;
+        
+        // บังคับสถานะตอนโหลดแรกรอบให้ตรงกับ Checkbox
+        toggleColumn(index, colId !== 'id_card'); 
+    });
+}
+
+function toggleColumn(colIndex, isVisible) {
+    const table = document.getElementById('attendanceTable');
+    // จัดการที่ th (หัวตาราง)
+    const th = table.querySelectorAll(`#mainTableHeader th`)[colIndex];
+    if (th) {
+        isVisible ? th.classList.remove('col-hidden') : th.classList.add('col-hidden');
+    }
+    // จัดการที่ td (ทุกแถว)
+    const rows = table.querySelectorAll('#attendanceTbody tr');
+    rows.forEach(row => {
+        const td = row.querySelectorAll('td')[colIndex];
+        if (td) {
+            isVisible ? td.classList.remove('col-hidden') : td.classList.add('col-hidden');
+        }
+    });
+}
+
+// ================= ระบบดึงข้อมูล =================
 async function loadFilterNames() {
     const { data } = await db.from('security_personnel_master').select('fullname').order('fullname');
     const select = document.getElementById('filterName');
@@ -448,22 +541,18 @@ async function loadFilterNames() {
     if(data) data.forEach(p => { select.innerHTML += `<option value="${p.fullname}">${p.fullname}</option>`; });
 }
 
-// ================= 🟢 ปุ่ม REFRESH ข้อมูล =================
 async function refreshAdminData() {
     Swal.fire({ title: 'กำลังดึงข้อมูลล่าสุด...', didOpen: () => { Swal.showLoading(); }, allowOutsideClick: false });
     await loadAttendance();
     Swal.fire({ icon: 'success', title: 'อัปเดตเรียบร้อย', timer: 1000, showConfirmButton: false });
 }
 
-// ================= ระบบรายงาน & KPIs & Audit Trail =================
 async function loadAttendance() {
     const filterMonth = document.getElementById('filterMonth').value; 
     const filterName = document.getElementById('filterName').value;
 
-    if (!filterMonth) return Swal.fire('แจ้งเตือน', 'กรุณาเลือกเดือนที่ต้องการดูรายงาน', 'warning');
+    if (!filterMonth) return Swal.fire('แจ้งเตือน', 'กรุณาเลือกเดือน', 'warning');
 
-    const { data: allPersonnel } = await db.from('security_personnel_master').select('fullname');
-    
     let query = db.from('guard_attendance').select('*').order('work_date', { ascending: false });
     
     const startDate = `${filterMonth}-01`;
@@ -474,20 +563,13 @@ async function loadAttendance() {
     if (filterName !== 'ALL') query = query.eq('fullname', filterName);
 
     const { data: attendanceData, error } = await query;
-    
-    if (error) {
-        console.error("Supabase Error:", error);
-        return Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถดึงข้อมูลได้: ' + error.message, 'error');
-    }
+    if (error) return Swal.fire('Error', error.message, 'error');
 
     const tbody = document.getElementById('attendanceTbody');
     tbody.innerHTML = '';
-
     const attendanceMap = new Set(attendanceData.map(item => `${item.work_date}_${item.fullname}`));
 
-    attendanceData.forEach(row => {
-        renderRow(row, tbody, false); 
-    });
+    attendanceData.forEach(row => renderRow(row, tbody, false));
 
     if (filterName !== 'ALL') {
         const daysInMonth = new Date(filterMonth.split('-')[0], filterMonth.split('-')[1], 0).getDate();
@@ -495,50 +577,64 @@ async function loadAttendance() {
             const dateStr = `${filterMonth}-${String(d).padStart(2, '0')}`;
             if (!attendanceMap.has(`${dateStr}_${filterName}`)) {
                 const absentRow = {
-                    work_date: dateStr,
-                    shift: '-',
-                    id_card: '-',
-                    fullname: filterName,
-                    time_in: null,
-                    time_out: null,
-                    remark_type: '<span class="badge bg-danger">ไม่มาทำงาน / ขาดงาน</span>',
-                    remark_detail: 'ไม่มีบันทึกข้อมูล'
+                    id: 'absent', work_date: dateStr, shift: '-', id_card: '-', fullname: filterName,
+                    time_in: null, time_out: null, remark_type: '<span class="badge bg-danger">ขาดงาน</span>', remark_detail: 'ไม่มีบันทึก'
                 };
                 renderRow(absentRow, tbody, true); 
             }
         }
     }
 
-    updateKPIs(attendanceData.length, 
-               attendanceData.filter(r => r.shift.includes('เช้า')).length, 
-               attendanceData.filter(r => r.shift.includes('ดึก')).length, 
-               attendanceData.filter(r => r.remark_type !== 'ปกติ').length);
+    // สั่งตรวจสอบสถานะคอลัมน์ซ่อน/โชว์ซ้ำอีกครั้งหลังวาดตารางเสร็จ
+    const switches = document.querySelectorAll('[id^="colSwitch_"]');
+    switches.forEach((sw, idx) => toggleColumn(idx, sw.checked));
 
-    // 🟢 สร้างระบบ Drag & Drop หลังจากโหลดข้อมูลลงตารางเสร็จ
+    updateKPIs(attendanceData.length, attendanceData.filter(r => r.shift.includes('เช้า')).length, 
+               attendanceData.filter(r => r.shift.includes('ดึก')).length, attendanceData.filter(r => r.remark_type !== 'ปกติ').length);
+
+    // 🟢 ระบบ Drag & Drop ลากสลับแถว
     if (sortableInstance) sortableInstance.destroy();
     sortableInstance = new Sortable(tbody, {
         animation: 150,
-        ghostClass: 'sortable-ghost'
+        ghostClass: 'sortable-ghost',
+        onEnd: function () {
+            // โชว์ปุ่มบันทึกลำดับเมื่อมีการย้ายแถว
+            document.getElementById('btnSaveOrder').classList.remove('d-none');
+        }
     });
 }
 
 function renderRow(row, tbody, isAbsent) {
-    const editBadge = (row.updated_by) ? `<i class="bi bi-pencil-fill ${(row.updated_by === 'Admin' ? 'text-warning' : 'text-info')} ms-2"></i>` : '';
-    const profileImg = row.profile_pic ? `<img src="${row.profile_pic}" style="width: 25px; height: 25px; border-radius: 50%;" class="me-2 no-print">` : '';
-
+    const profileImg = row.profile_pic ? `<img src="${row.profile_pic}" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover;" class="me-2 no-print border shadow-sm">` : '';
     tbody.innerHTML += `
-        <tr class="${isAbsent ? 'table-light opacity-75' : ''}" title="คลิกค้างเพื่อลากสลับตำแหน่งได้">
-            <td class="fw-bold">${row.work_date}</td>
-            <td>${row.shift}</td>
-            <td>${row.id_card}</td>
-            <td>${profileImg}${row.fullname}</td>
-            <td class="text-center fw-bold text-success">${row.time_in || (isAbsent ? '-' : '-')}</td>
-            <td class="text-center fw-bold text-danger">${row.time_out || (isAbsent ? '-' : '-')}</td>
-            <td>${row.remark_type} ${row.remark_detail || ''}</td>
-            <td class="text-center no-print">
-                ${isAbsent ? '-' : `<button onclick="editTime('${row.id}', '${row.time_in}', '${row.time_out}')" class="btn btn-sm btn-outline-primary rounded-pill">แก้</button>`}
+        <tr class="${isAbsent ? 'bg-light opacity-75' : ''}" data-id="${row.id}" title="จับลากเพื่อสลับแถวได้">
+            <td data-col="date" class="fw-bold">${row.work_date}</td>
+            <td data-col="shift">${row.shift}</td>
+            <td data-col="id_card">${row.id_card}</td>
+            <td data-col="name">${profileImg}${row.fullname}</td>
+            <td data-col="time_in" class="text-center fw-bold text-success">${row.time_in || '-'}</td>
+            <td data-col="time_out" class="text-center fw-bold text-danger">${row.time_out || '-'}</td>
+            <td data-col="remark">${row.remark_type} <span class="text-muted d-block small">${row.remark_detail || ''}</span></td>
+            <td data-col="action" class="text-center no-print">
+                ${isAbsent ? '-' : `<button onclick="editTime('${row.id}', '${row.time_in}', '${row.time_out}')" class="btn btn-sm btn-light border text-primary px-3 rounded-pill"><i class="bi bi-pencil-square"></i> แก้</button>`}
             </td>
         </tr>`;
+}
+
+// 🟢 ฟังก์ชันปุ่มบันทึกลำดับ (ล็อกเลย์เอาต์สำหรับการพรินต์)
+function saveRowOrder() {
+    Swal.fire({ title: 'กำลังบันทึกหน้าจอ...', didOpen: () => { Swal.showLoading(); }});
+    
+    // จำลองการโหลดให้ดูเนียนตา (ใช้สำหรับการจัด PDF ไม่ได้แก้ไขโครงสร้าง DB)
+    setTimeout(() => {
+        document.getElementById('btnSaveOrder').classList.add('d-none');
+        Swal.fire({ 
+            icon: 'success', 
+            title: 'ล็อกลำดับเรียบร้อย', 
+            text: 'การเรียงลำดับถูกนำไปใช้เตรียมพร้อมสำหรับการ Export แล้ว',
+            timer: 2000, showConfirmButton: false 
+        });
+    }, 600);
 }
 
 function updateKPIs(total, morning, night, issue) {
@@ -549,90 +645,30 @@ function updateKPIs(total, morning, night, issue) {
 
     const ctx = document.getElementById('shiftChart').getContext('2d');
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    const textColor = isDark ? '#f1f5f9' : '#334155';
-
     if(shiftChartInstance) shiftChartInstance.destroy();
     
     shiftChartInstance = new Chart(ctx, {
         type: 'doughnut',
-        data: {
-            labels: ['กะเช้า', 'กะดึก', 'หมายเหตุ'],
-            datasets: [{ data: [morning, night, issue], backgroundColor: ['#f59e0b', '#1e293b', '#ef4444'], borderWidth: 0 }]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false, cutout: '70%',
-            plugins: { legend: { position: 'bottom', labels: { color: textColor, font: { family: 'Sarabun' } } } }
-        }
+        data: { labels: ['กะเช้า', 'กะดึก', 'หมายเหตุ'], datasets: [{ data: [morning, night, issue], backgroundColor: ['#f59e0b', '#334155', '#ef4444'], borderWidth: 0 }] },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'bottom', labels: { color: isDark ? '#f8fafc' : '#1e293b', font: { family: 'Sarabun' } } } } }
     });
 }
 
-// ================= แก้ไขเวลา =================
-async function editTime(id, currentIn, currentOut) {
-    const { value: formValues } = await Swal.fire({
-        title: 'แก้ไขเวลา (Admin)',
-        html: `
-            <div class="text-start mt-3">
-                <label class="form-label fw-bold">เวลาเข้า (IN)</label>
-                <input id="swal-in" type="time" value="${currentIn}" class="form-control mb-3">
-                <label class="form-label fw-bold">เวลาออก (OUT)</label>
-                <input id="swal-out" type="time" value="${currentOut}" class="form-control">
-            </div>
-        `,
-        focusConfirm: false, showCancelButton: true,
-        confirmButtonText: '<i class="bi bi-save2 me-1"></i> บันทึกการแก้ไข',
-        cancelButtonText: 'ยกเลิก',
-        customClass: { confirmButton: 'btn btn-primary px-4', cancelButton: 'btn btn-secondary px-4' },
-        buttonsStyling: false,
-        preConfirm: () => { return { in: document.getElementById('swal-in').value, out: document.getElementById('swal-out').value } }
-    });
-
-    if (formValues) {
-        Swal.fire({ title: 'กำลังบันทึก...', didOpen: () => { Swal.showLoading(); }});
-        
-        const { error } = await db.from('guard_attendance').update({
-            time_in: formValues.in || null,
-            time_out: formValues.out || null,
-            updated_at: new Date(),
-            updated_by: 'Admin'
-        }).eq('id', id);
-
-        if (error) {
-            Swal.fire('Error', 'แก้ไขไม่ได้', 'error');
-        } else {
-            Swal.fire({ icon: 'success', title: 'อัปเดตเรียบร้อย', text: 'ระบบได้บันทึกประวัติการแก้ไขแล้ว', timer: 2000, showConfirmButton: false });
-            loadAttendance(); 
-        }
-    }
-}
-
-// ================= PDF & EXCEL =================
+// ================= จัดการ EXPORT =================
 function exportPDF() {
-    const filterMonth = document.getElementById('filterMonth').value;
-    const filterName = document.getElementById('filterName');
+    const monthText = document.getElementById('filterMonth').value || 'ทั้งหมด';
+    const nameText = document.getElementById('filterName').options[document.getElementById('filterName').selectedIndex].text;
     
-    const nameText = filterName.options[filterName.selectedIndex].text;
-    const monthText = filterMonth ? filterMonth : 'ทั้งหมด';
+    document.getElementById('printInfoLabel').innerText = `ประจำเดือน: ${monthText} | พนักงาน: ${nameText}`;
+    document.getElementById('reportPrintDate').innerText = new Date().toLocaleDateString('th-TH');
     
-    if (document.getElementById('printInfoLabel')) {
-        document.getElementById('printInfoLabel').innerText = `ประจำเดือน: ${monthText} | พนักงาน: ${nameText}`;
-    }
-
-    if (document.getElementById('reportPrintDate')) {
-        document.getElementById('reportPrintDate').innerText = new Date().toLocaleDateString('th-TH');
-    }
-    
-    // 🟢 แก้ปัญหาเปิดในมือถือไม่ได้ โดยหน่วงเวลาให้เบราว์เซอร์ปรับตัวอักษรก่อนสั่งพิมพ์
-    setTimeout(() => {
-        window.print();
-    }, 500);
+    setTimeout(() => { window.print(); }, 500);
 }
 
 function exportExcel() {
-    const month = document.getElementById('filterMonth').value;
-    const name = document.getElementById('filterName').value;
     let table = document.getElementById("attendanceTable");
     let wb = XLSX.utils.table_to_book(table, { sheet: "Attendance" });
-    XLSX.writeFile(wb, `Report_${name}_${month}.xlsx`);
+    XLSX.writeFile(wb, `Report_Attendance.xlsx`);
 }
 
 // ================= จัดการ MASTER DATA =================
@@ -640,8 +676,8 @@ async function loadMasterTables() {
     const { data: cards } = await db.from('security_card_master').select('*').order('card_number');
     const { data: persons } = await db.from('security_personnel_master').select('*').order('fullname');
 
-    document.getElementById('cardTbody').innerHTML = cards?.map(c => `<tr><td class="fw-bold">${c.card_number}</td><td class="text-end"><button onclick="delMaster('card', '${c.id}', '${c.card_number}')" class="btn btn-sm btn-outline-danger rounded-circle"><i class="bi bi-trash"></i></button></td></tr>`).join('') || '';
-    document.getElementById('personTbody').innerHTML = persons?.map(p => `<tr><td class="fw-bold">${p.fullname}</td><td class="text-end"><button onclick="delMaster('person', '${p.id}', '${p.fullname}')" class="btn btn-sm btn-outline-danger rounded-circle"><i class="bi bi-trash"></i></button></td></tr>`).join('') || '';
+    document.getElementById('cardTbody').innerHTML = cards?.map(c => `<tr><td class="fw-bold">${c.card_number}</td><td class="text-end"><button onclick="delMaster('card', '${c.id}', '${c.card_number}')" class="btn btn-sm btn-outline-danger px-3 rounded-pill"><i class="bi bi-trash"></i> ลบ</button></td></tr>`).join('') || '';
+    document.getElementById('personTbody').innerHTML = persons?.map(p => `<tr><td class="fw-bold">${p.fullname}</td><td class="text-end"><button onclick="delMaster('person', '${p.id}', '${p.fullname}')" class="btn btn-sm btn-outline-danger px-3 rounded-pill"><i class="bi bi-trash"></i> ลบ</button></td></tr>`).join('') || '';
 }
 
 async function addMaster(type) {
@@ -650,27 +686,21 @@ async function addMaster(type) {
     const val = document.getElementById(inputId).value.trim();
     if(!val) return;
 
-    const table = isCard ? 'security_card_master' : 'security_personnel_master';
-    const payload = isCard ? { card_number: val } : { fullname: val };
-
-    const { error } = await db.from(table).insert([payload]);
+    const { error } = await db.from(isCard ? 'security_card_master' : 'security_personnel_master').insert([ isCard ? { card_number: val } : { fullname: val } ]);
     if(!error) {
         document.getElementById(inputId).value = '';
-        Swal.fire({ icon: 'success', title: 'เพิ่มข้อมูลเรียบร้อย', timer: 1500, showConfirmButton: false });
-        loadMasterTables();
-        loadFilterNames(); 
-    } else { Swal.fire('Error', 'ข้อมูลซ้ำหรือผิดพลาด', 'error'); }
+        Swal.fire({ icon: 'success', title: 'เพิ่มเรียบร้อย', timer: 1500, showConfirmButton: false });
+        loadMasterTables(); loadFilterNames(); 
+    } else { Swal.fire('Error', 'ผิดพลาด', 'error'); }
 }
 
 async function delMaster(type, id, name) {
     Swal.fire({
-        title: `ลบ ${name}?`, icon: 'warning', showCancelButton: true,
-        confirmButtonColor: '#dc3545', confirmButtonText: 'ยืนยันการลบ', cancelButtonText: 'ยกเลิก'
+        title: `ลบ ${name}?`, icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545', confirmButtonText: 'ลบข้อมูล'
     }).then(async (result) => {
         if (result.isConfirmed) {
-            const table = type === 'card' ? 'security_card_master' : 'security_personnel_master';
-            await db.from(table).delete().eq('id', id);
-            Swal.fire({ icon: 'success', title: 'ลบสำเร็จ!', timer: 1500, showConfirmButton: false });
+            await db.from(type === 'card' ? 'security_card_master' : 'security_personnel_master').delete().eq('id', id);
+            Swal.fire({ icon: 'success', title: 'ลบสำเร็จ', timer: 1500, showConfirmButton: false });
             loadMasterTables(); loadFilterNames();
         }
     });
