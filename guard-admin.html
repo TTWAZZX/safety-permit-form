@@ -325,13 +325,13 @@
 
                             <thead id="mainTableHeader">
                                 <tr>
-                                    <th data-col="date"><i class="bi bi-calendar-event me-1"></i> วันที่</th>
-                                    <th data-col="shift"><i class="bi bi-clock me-1"></i> กะทำงาน</th>
-                                    <th data-col="id_card"><i class="bi bi-credit-card me-1"></i> รหัสบัตร</th>
-                                    <th data-col="name"><i class="bi bi-person me-1"></i> ชื่อพนักงาน</th> 
+                                    <th data-col="date">วันที่</th>
+                                    <th data-col="shift">กะทำงาน</th>
+                                    <th data-col="id_card">รหัสบัตร</th>
+                                    <th data-col="name">ชื่อพนักงาน</th> 
                                     <th data-col="time_in" class="text-center">เข้า (IN)</th>
                                     <th data-col="time_out" class="text-center">ออก (OUT)</th>
-                                    <th data-col="remark"><i class="bi bi-card-text me-1"></i> หมายเหตุ</th>
+                                    <th data-col="remark">หมายเหตุ</th>
                                     <th data-col="action" class="text-center no-print">จัดการ</th>
                                 </tr>
                             </thead>
@@ -539,7 +539,7 @@ async function refreshAdminData() {
 async function loadAttendance() {
     const filterMonth = document.getElementById('filterMonth').value; 
     const filterName = document.getElementById('filterName').value;
-    const filterShift = document.getElementById('filterShift').value; // 🟢 ดึงค่าตัวกรองกะ
+    const filterShift = document.getElementById('filterShift').value; 
 
     if (!filterMonth) return Swal.fire('แจ้งเตือน', 'กรุณาเลือกเดือน', 'warning');
 
@@ -551,8 +551,6 @@ async function loadAttendance() {
 
     query = query.gte('work_date', startDate).lte('work_date', endDate);
     if (filterName !== 'ALL') query = query.eq('fullname', filterName);
-
-    // 🟢 กรองตามกะการทำงาน (ใช้ like เพราะข้อความใน DB อาจเป็น 'กะเช้า (06:00-18:00)')
     if (filterShift !== 'ALL') query = query.ilike('shift', `%${filterShift}%`);
 
     const { data: attendanceData, error } = await query;
@@ -564,7 +562,6 @@ async function loadAttendance() {
 
     attendanceData.forEach(row => renderRow(row, tbody, false));
 
-    // โชว์คนไม่มีบันทึกเวลา (จะโชว์ก็ต่อเมื่อเราไม่ได้กำลังใช้ตัวกรองกะอยู่ เพราะคนไม่มาคือไม่มีกะ)
     if (filterName !== 'ALL' && filterShift === 'ALL') {
         const daysInMonth = new Date(filterMonth.split('-')[0], filterMonth.split('-')[1], 0).getDate();
         for (let d = 1; d <= daysInMonth; d++) {
@@ -573,7 +570,6 @@ async function loadAttendance() {
                 const absentRow = {
                     id: 'absent', work_date: dateStr, shift: '-', id_card: '-', fullname: filterName,
                     time_in: null, time_out: null, 
-                    // 🟢 เปลี่ยนข้อความขาดงานเป็น "ไม่มีบันทึกเวลา" พร้อมสีเทาอ่อน
                     remark_type: '<span class="badge bg-light text-secondary border px-2 py-1"><i class="bi bi-dash-circle me-1"></i>ไม่มีบันทึกเวลา</span>', 
                     remark_detail: '-'
                 };
@@ -633,7 +629,6 @@ function updateKPIs(total, morning, night, issue) {
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     if(shiftChartInstance) shiftChartInstance.destroy();
     
-    // หากข้อมูลว่างเปล่า (ไม่มีกะ) ให้วงแหวนเป็นสีเทา
     const chartData = (total === 0) ? [1] : [morning, night, issue];
     const chartBg = (total === 0) ? ['#e2e8f0'] : ['#f59e0b', '#334155', '#ef4444'];
 
@@ -671,13 +666,12 @@ async function editTime(id, currentIn, currentOut) {
     }
 }
 
-// ================= จัดการ EXPORT =================
+// ================= EXPORT =================
 function exportPDF() {
     const monthText = document.getElementById('filterMonth').value || 'ทั้งหมด';
     const nameText = document.getElementById('filterName').options[document.getElementById('filterName').selectedIndex].text;
     const shiftText = document.getElementById('filterShift').options[document.getElementById('filterShift').selectedIndex].text;
     
-    // ระบุกะในหัวรายงานด้วย
     document.getElementById('printInfoLabel').innerText = `ประจำเดือน: ${monthText} | พนักงาน: ${nameText} | กะ: ${shiftText}`;
     document.getElementById('reportPrintDate').innerText = new Date().toLocaleDateString('th-TH');
     
