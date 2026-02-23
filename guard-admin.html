@@ -182,8 +182,10 @@
             #attendanceTable thead { display: table-header-group !important; }
             tr { page-break-inside: avoid !important; break-inside: avoid !important; }
 
-            /* เส้นแบ่งแต่ละช่องในตาราง */
-            #attendanceTable th, #attendanceTable td { 
+            /* 🟢 เส้นตารางใน Cell ทุกช่องต้องมีเส้น (เพิ่ม table นำหน้าเพื่อบังคับทับ Bootstrap) */
+            table#attendanceTable th, 
+            table#attendanceTable td,
+            table#attendanceTable thead th { 
                 border: 1px solid #000 !important; 
                 padding: 6px 8px !important; 
                 font-size: 10pt !important; 
