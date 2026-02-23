@@ -146,14 +146,14 @@
         .line-spinner { border: 4px solid var(--border-color); border-top: 4px solid var(--primary-color); border-radius: 50%; width: 45px; height: 45px; animation: spin 1s linear infinite; margin-bottom: 20px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* ================= 🖨️ PRINT TEMPLATE (STRICTLY FORMAL) ================= */
+        /* ================= 🖨️ PRINT TEMPLATE (STRICTLY FORMAL & BORDER FIX) ================= */
         .print-only { display: none; }
         
         @media print {
             @page { size: A4 portrait; margin: 15mm 10mm; } 
             
             .no-print, .btn, .theme-toggle, .top-navbar, .kpi-card, #pills-tab, .dropdown, .admin-card:not(#attendanceTableContainer) { display: none !important; }
-            .print-only { display: table-header-group !important; } 
+            .print-only { display: block !important; } 
 
             body, * { background: white !important; color: black !important; font-family: 'Sarabun', sans-serif !important; }
             
@@ -163,57 +163,54 @@
             .badge { border: none !important; background: transparent !important; color: black !important; padding: 0 !important; font-size: 10pt !important; font-weight: normal !important; }
             i { display: none !important; } 
             
-            /* 🟢 โครงสร้างตารางทางการ (บังคับเส้นขอบทุกด้านทับ Bootstrap) */
-            table#attendanceTable { 
-                width: 100% !important; 
-                max-width: 100% !important;
-                border-collapse: collapse !important; 
-                border: 1px solid #000 !important; 
-                margin-top: 0;
+            /* 🟢 1. หัวรายงาน (แยกออกจากตารางชัดเจนเพื่อไม่ให้มีกรอบดำ) */
+            .print-header { 
+                text-align: center; 
+                margin-bottom: 15px; /* ระยะห่างจากหัวถึงตาราง */
             }
-            #attendanceTable thead { display: table-header-group !important; }
-            #attendanceTable tr { page-break-inside: avoid !important; break-inside: avoid !important; }
-
-            .print-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 12px; margin-bottom: 12px; }
             .print-header h4 { font-size: 16pt; font-weight: bold; margin: 0 0 6px 0; color: black !important; }
             .print-header p { font-size: 11pt; margin: 0 0 4px 0; color: black !important; }
+            
+            /* 🟢 2. โครงสร้างตารางทางการ (กรอบดำคมชัด) */
+            table#attendanceTable { 
+                width: 100% !important; 
+                border-collapse: collapse !important; 
+                border: 1px solid #000 !important; /* กรอบใหญ่รอบตาราง */
+                margin-top: 0;
+            }
+            /* บังคับให้เฉพาะส่วนหัวคอลัมน์ไปปรากฏทุกหน้า */
+            #attendanceTable thead { display: table-header-group !important; }
+            tr { page-break-inside: avoid !important; break-inside: avoid !important; }
 
-            /* 🟢 บังคับเส้นขอบซ้าย-ขวา-บน-ล่าง ทุกๆ ช่อง (th, td) */
-            #attendanceTable th, 
-            #attendanceTable td { 
+            /* 🟢 เส้นตารางใน Cell ทุกช่องต้องมีเส้น (บังคับขอบดำทุกด้าน) */
+            table#attendanceTable th, 
+            table#attendanceTable td,
+            thead#mainTableHeader th { 
                 border: 1px solid #000 !important; 
-                border-width: 1px !important; /* 🟢 สำคัญมาก: ย้ำความหนาเส้นไม่ให้โดนซ่อน */
                 padding: 6px 8px !important; 
                 font-size: 10pt !important; 
-                vertical-align: middle !important;
+                vertical-align: middle;
             }
-            
-            #attendanceTable thead th { 
+            thead#mainTableHeader th { 
                 background-color: #f2f2f2 !important; 
                 font-weight: bold !important; 
-                text-align: center !important; 
-                text-transform: none !important; 
+                text-align: center; 
+                text-transform: none; 
                 font-size: 11pt !important; 
                 -webkit-print-color-adjust: exact; 
                 print-color-adjust: exact;
-            }
-
-            /* 🟢 ย้ำเส้นขอบด้านขวาสุดของตาราง (คอลัมน์หมายเหตุ) */
-            th[data-col="remark"], td[data-col="remark"] { 
-                border-right: 1px solid #000 !important; 
-                max-width: 140px !important; 
-                white-space: pre-wrap !important; 
-                word-wrap: break-word !important; 
-                font-size: 9pt !important; 
+                border: 1px solid #000 !important; /* 🟢 เติมบรรทัดนี้เพื่อย้ำเส้นคั้นแนวตั้ง */
             }
 
             th[data-col="id_card"], td[data-col="id_card"] { display: none !important; }
             .col-hidden { display: none !important; } 
+            td[data-col="remark"] { max-width: 140px !important; white-space: pre-wrap !important; word-wrap: break-word !important; font-size: 9pt !important; }
 
-            .print-footer-content { display: block !important; margin-top: 50px; page-break-inside: avoid; }
+            /* 🟢 3. กล่องลายเซ็นต์ท้ายตาราง */
+            .print-footer-content { display: block !important; margin-top: 40px; page-break-inside: avoid; }
             .sign-box-container { display: flex; justify-content: center; width: 100%; }
             .sign-box { width: 320px; text-align: center; font-size: 11pt; }
-            .sign-line { border-bottom: 1px solid #000 !important; margin: 40px auto 10px; width: 90%; }
+            .sign-line { border-bottom: 1px solid #000 !important; margin: 40px auto 10px; width: 90%; } 
         }
     </style>
 </head>
@@ -576,6 +573,7 @@ async function loadAttendance() {
 
     if (!filterMonth) return Swal.fire('แจ้งเตือน', 'กรุณาเลือกเดือน', 'warning');
 
+    // 🟢 1. กำหนดการเรียงลำดับพื้นฐาน: วันที่ (เก่าไปใหม่) -> กะทำงาน -> ชื่อพนักงาน
     let query = db.from('guard_attendance').select('*')
                 .order('work_date', { ascending: true }) 
                 .order('shift', { ascending: true })
@@ -614,6 +612,7 @@ async function loadAttendance() {
         }
     }
 
+    // 🟢 2. โหลดลำดับแถวที่เคยลากสลับไว้ (ถ้ามี)
     const storageKey = `table_order_${filterMonth}_${filterName}_${filterShift}`;
     const savedOrderStr = localStorage.getItem(storageKey);
     
@@ -628,6 +627,7 @@ async function loadAttendance() {
             return 0;
         });
     } else {
+        // ถ้าไม่เคยเรียง ให้เรียง Absent ให้ถูกวันด้วย
         finalRows.sort((a, b) => new Date(a.work_date) - new Date(b.work_date));
     }
 
@@ -658,6 +658,7 @@ async function loadAttendance() {
 function renderRow(row, tbody, isAbsent) {
     const profileImg = row.profile_pic ? `<img src="${row.profile_pic}" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover;" class="me-2 no-print border shadow-sm">` : '';
     
+    // 🟢 3. ซ่อนคำว่า null ให้อย่างหมดจด
     let detailText = '';
     if (row.remark_detail && String(row.remark_detail).toLowerCase() !== 'null' && row.remark_detail !== '-') {
         detailText = row.remark_detail;
@@ -679,8 +680,9 @@ function renderRow(row, tbody, isAbsent) {
         </tr>`;
 }
 
+// 🟢 4. ระบบบันทึกลำดับแถวจากการลากสลับลง LocalStorage
 function saveRowOrder() {
-    Toast.fire({ icon: 'info', title: 'กำลังล็อกลำดับหน้าจอ...' });
+    Toast.fire({ icon: 'info', title: 'กำลังบันทึกลำดับ...' });
     
     setTimeout(() => {
         const rows = document.querySelectorAll('#attendanceTbody tr');
@@ -694,8 +696,8 @@ function saveRowOrder() {
         localStorage.setItem(storageKey, JSON.stringify(orderIds));
 
         document.getElementById('btnSaveOrder').classList.add('d-none');
-        Toast.fire({ icon: 'success', title: 'ล็อกลำดับตารางเรียบร้อยแล้ว' });
-    }, 600);
+        Toast.fire({ icon: 'success', title: 'ล็อกลำดับตารางเรียบร้อย' });
+    }, 500);
 }
 
 function updateKPIs(total, morning, night, issue) {
