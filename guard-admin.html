@@ -34,7 +34,7 @@
             --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.05);
             --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -4px rgba(0,0,0,0.05);
             --radius-md: 12px;
-            --radius-lg: 20px;
+            --radius-lg: 16px;
         }
 
         [data-theme="dark"] {
@@ -54,10 +54,10 @@
             color: var(--text-main); 
             min-height: 100vh; 
             padding-bottom: 40px; 
-            transition: all 0.3s ease;
+            transition: background-color 0.3s ease;
         }
 
-        /* ================= SECURE LOGIN SCREEN ================= */
+        /* ================= SECURE LOGIN ================= */
         #loginScreen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: linear-gradient(135deg, #e0f2fe 0%, #f1f5f9 100%);
@@ -71,76 +71,78 @@
             text-align: center; width: 100%; max-width: 420px;
         }
 
-        /* ================= MAIN LAYOUT & CARDS ================= */
+        /* ================= MAIN CARDS & KPIs ================= */
         .admin-card {
             background: var(--card-bg); border-radius: var(--radius-lg); padding: 25px; 
-            box-shadow: var(--shadow-md); border: 1px solid var(--border-color);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: var(--shadow-sm); border: 1px solid var(--border-color);
         }
-        .admin-card:hover { box-shadow: var(--shadow-lg); }
 
-        /* KPIs */
         .kpi-card { 
             background: var(--card-bg); border-radius: var(--radius-md); padding: 20px; 
             border: 1px solid var(--border-color); border-left: 5px solid;
             display: flex; align-items: center; justify-content: space-between; 
-            box-shadow: var(--shadow-sm); 
+            box-shadow: var(--shadow-sm); transition: transform 0.2s;
         }
-        .kpi-icon { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; }
-        .chart-container { height: 200px; width: 100%; display: flex; justify-content: center; }
+        .kpi-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+        .kpi-icon { width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+        .chart-container { height: 180px; width: 100%; display: flex; justify-content: center; }
 
-        /* Navbar */
+        /* ================= NAVBAR & CONTROLS ================= */
         .top-navbar {
             background: var(--card-bg); padding: 15px 20px; color: var(--text-main);
             border-bottom: 1px solid var(--border-color); box-shadow: var(--shadow-sm); 
-            margin-bottom: 35px; position: sticky; top: 0; z-index: 1000;
+            margin-bottom: 35px; position: sticky; top: 0; z-index: 1020;
         }
         
         .theme-toggle { 
             background: var(--bg-color); color: var(--text-main); border: 1px solid var(--border-color); 
-            width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; 
+            width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; 
             cursor: pointer; transition: all 0.2s; 
         }
-        .theme-toggle:hover { transform: scale(1.05); background: var(--table-hover-bg); }
+        .theme-toggle:hover { background: var(--table-hover-bg); }
 
-        /* Inputs & Buttons */
         .form-control, .form-select { 
             background-color: var(--input-bg); color: var(--text-main); 
-            border: 1px solid var(--border-color); border-radius: 10px; padding: 10px 15px; font-weight: 500;
+            border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 15px; font-weight: 500;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);
         }
         .form-control:focus, .form-select:focus { 
             border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15); 
         }
         
-        .btn { font-weight: 600; border-radius: 10px; padding: 10px 20px; transition: all 0.2s; }
+        .btn { font-weight: 600; border-radius: 8px; padding: 10px 20px; transition: all 0.2s; }
         .btn-gradient { background: linear-gradient(135deg, var(--primary-color) 0%, #0369a1 100%); color: white; border: none; }
         .btn-gradient:hover { box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3); transform: translateY(-1px); color: white; }
 
-        /* Navigation Pills */
-        .nav-pills { background: var(--card-bg); padding: 8px; border-radius: var(--radius-md); display: inline-flex; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); }
-        .nav-pills .nav-link { color: var(--text-muted); font-weight: 600; border-radius: 8px; padding: 10px 25px; margin-right: 5px; transition: 0.3s; }
+        .nav-pills { background: var(--card-bg); padding: 6px; border-radius: var(--radius-md); display: inline-flex; border: 1px solid var(--border-color); }
+        .nav-pills .nav-link { color: var(--text-muted); font-weight: 600; border-radius: 8px; padding: 10px 25px; transition: 0.3s; }
         .nav-pills .nav-link:hover { color: var(--primary-color); background: var(--table-hover-bg); }
-        .nav-pills .nav-link.active { background: var(--primary-color); color: white; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.3); }
+        .nav-pills .nav-link.active { background: var(--primary-color); color: white; }
 
-        /* Modern Table */
-        /* 🟢 แก้ไข: ลบ overflow:hidden เพื่อไม่ให้ Dropdown โดนบัง */
+        /* ================= TABLE DESIGN ================= */
         .table-responsive { border-radius: var(--radius-md); border: 1px solid var(--border-color); } 
         .table { color: var(--text-main); margin-bottom: 0; }
         .table thead th { 
             background-color: var(--table-header-bg); color: var(--text-muted); 
             border-bottom: 1px solid var(--border-color); font-weight: 600; 
-            text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.5px; padding: 15px;
+            text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.5px; padding: 16px 15px;
+            position: sticky; top: 0; z-index: 5; /* 🟢 Sticky Header */
         }
+        .table tbody tr { transition: background-color 0.15s; }
         .table tbody tr:hover { background-color: var(--table-hover-bg); }
-        .table td { border-color: var(--border-color); padding: 12px 15px; vertical-align: middle; }
+        .table td { border-color: var(--border-color); padding: 14px 15px; vertical-align: middle; }
         
-        /* Drag & Drop Styles */
-        .sortable-ghost { background-color: var(--table-hover-bg) !important; opacity: 0.7; border: 2px dashed var(--primary-color); }
+        .sortable-ghost { background-color: var(--table-hover-bg) !important; opacity: 0.8; border: 2px dashed var(--primary-color); }
         #attendanceTbody tr { cursor: grab; }
         #attendanceTbody tr:active { cursor: grabbing; }
         .col-hidden { display: none !important; }
 
-        /* Loader */
+        /* ================= LOADER & TOAST ================= */
+        #loadingScreen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-color); z-index: 9999; display: none;
+            flex-direction: column; justify-content: center; align-items: center;
+        }
         .line-spinner { border: 4px solid var(--border-color); border-top: 4px solid var(--primary-color); border-radius: 50%; width: 45px; height: 45px; animation: spin 1s linear infinite; margin-bottom: 20px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
@@ -149,40 +151,27 @@
         
         @media print {
             @page { size: A4 portrait; margin: 10mm; }
-
-            /* ซ่อนส่วนที่ไม่ต้องการพิมพ์ */
-            .no-print, .btn, .theme-toggle, .top-navbar, .kpi-card, #pills-tab, .dropdown, .admin-card:not(#attendanceTableContainer) { 
-                display: none !important; 
-            }
+            .no-print, .btn, .theme-toggle, .top-navbar, .kpi-card, #pills-tab, .dropdown, .admin-card:not(#attendanceTableContainer) { display: none !important; }
             .print-only { display: table-header-group !important; } 
 
             body { background: white !important; color: black !important; padding: 0; font-family: 'Sarabun', sans-serif; }
             .admin-card { border: none !important; box-shadow: none !important; padding: 0 !important; border-radius: 0 !important; }
             .table-responsive { border: none !important; overflow: visible !important; }
 
-            /* 🟢 1. จัดการตารางและหัวกระดาษให้แสดงทุกหน้า แต่ "ไม่มีกรอบครอบทั้งหมด" */
             table { page-break-inside: auto; width: 100% !important; border-collapse: collapse !important; border: none !important; }
             thead.print-only { display: table-header-group !important; }
-            
-            /* 🟢 2. ป้องกันแถวตารางโดนตัดครึ่งหน้า */
             tr { page-break-inside: avoid !important; break-inside: avoid !important; }
 
-            /* จัด Style หน้ากระดาษพิมพ์ */
             .print-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 10px; }
             .print-header h4 { font-size: 16pt; font-weight: bold; margin: 0 0 5px 0; color: black !important; }
             
-            /* 🟢 3. ตีเส้นเฉพาะตารางข้อมูล (thead และ tbody จริงๆ) */
-            #mainTableHeader th, #attendanceTbody td { 
-                border: 0.5pt solid #000 !important; color: black !important; padding: 6px !important; font-size: 10pt !important; 
-            }
+            #mainTableHeader th, #attendanceTbody td { border: 0.5pt solid #000 !important; color: black !important; padding: 6px !important; font-size: 10pt !important; }
             #mainTableHeader th { background-color: #f2f2f2 !important; font-weight: bold; text-align: center; }
 
             th[data-col="id_card"], td[data-col="id_card"] { display: none !important; }
             .col-hidden { display: none !important; } 
-
             td[data-col="remark"] { max-width: 140px !important; white-space: pre-wrap !important; word-wrap: break-word !important; font-size: 9pt !important; }
 
-            /* 🟢 4. ลายเซ็นต์อยู่ท้ายสุดของตาราง (ไม่ทำซ้ำทุกหน้า) */
             .print-footer-content { display: block !important; margin-top: 40px; page-break-inside: avoid; }
             .sign-box-container { display: flex; justify-content: center; width: 100%; }
             .sign-box { width: 350px; text-align: center; color: black !important; font-size: 11pt; }
@@ -195,15 +184,15 @@
 <div id="loginScreen" class="animate__animated animate__fadeIn">
     <div class="login-card">
         <div class="mb-4 text-primary">
-            <i class="bi bi-shield-lock-fill" style="font-size: 4.5rem; filter: drop-shadow(0px 4px 6px rgba(2, 132, 199, 0.3));"></i>
+            <i class="bi bi-shield-lock" style="font-size: 4rem;"></i>
         </div>
         <h3 class="fw-bold mb-1">SafetyPass Admin</h3>
         <p class="text-muted small mb-4">Enterprise Security Management</p>
-        <div class="input-group mb-4">
-            <span class="input-group-text bg-transparent border-end-0 text-muted"><i class="bi bi-key-fill"></i></span>
-            <input type="password" id="adminPin" class="form-control border-start-0 ps-0" placeholder="กรุณาระบุรหัสผ่าน PIN" onkeypress="if(event.key === 'Enter') checkLogin()">
+        <div class="input-group mb-4 shadow-sm rounded-3">
+            <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-key"></i></span>
+            <input type="password" id="adminPin" class="form-control border-start-0 ps-0 form-control-lg" placeholder="กรุณาระบุรหัสผ่าน PIN" onkeypress="if(event.key === 'Enter') checkLogin()">
         </div>
-        <button onclick="checkLogin()" class="btn btn-gradient w-100 py-3 fs-5"><i class="bi bi-box-arrow-in-right me-2"></i> เข้าสู่ระบบ</button>
+        <button onclick="checkLogin()" class="btn btn-gradient w-100 py-3 fs-5 rounded-3"><i class="bi bi-box-arrow-in-right me-2"></i> เข้าสู่ระบบ</button>
     </div>
 </div>
 
@@ -216,7 +205,7 @@
     <div class="top-navbar no-print">
         <div class="container-xl d-flex justify-content-between align-items-center">
             <div class="d-flex align-items-center gap-3">
-                <div class="bg-primary text-white rounded-3 d-flex align-items-center justify-content-center shadow-sm" style="width: 45px; height: 45px;">
+                <div class="bg-primary bg-opacity-10 text-primary rounded-3 d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
                     <i class="bi bi-shield-check fs-4"></i>
                 </div>
                 <div>
@@ -225,46 +214,48 @@
                 </div>
             </div>
             <div class="d-flex gap-3 align-items-center">
-                <button class="theme-toggle" onclick="toggleTheme()" title="สลับโหมดมืด/สว่าง"><i class="bi bi-moon-stars-fill fs-5" id="themeIcon"></i></button>
-                <button class="btn btn-outline-danger px-4" onclick="logout()"><i class="bi bi-power me-1"></i> ออกระบบ</button>
+                <button class="theme-toggle" onclick="toggleTheme()" title="สลับโหมดมืด/สว่าง"><i class="bi bi-moon" id="themeIcon"></i></button>
+                <button class="btn btn-light border text-danger px-4" onclick="logout()"><i class="bi bi-power me-1"></i> ออกระบบ</button>
             </div>
         </div>
     </div>
 
     <div class="container-xl">
-        <ul class="nav nav-pills mb-4 no-print" id="pills-tab" role="tablist">
-            <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-attendance"><i class="bi bi-bar-chart-line-fill me-2"></i> แดชบอร์ด & รายงาน</button></li>
-            <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-master"><i class="bi bi-database-fill-gear me-2"></i> ฐานข้อมูลพนักงาน</button></li>
-        </ul>
+        <div class="d-flex justify-content-center mb-4 no-print">
+            <ul class="nav nav-pills" id="pills-tab" role="tablist">
+                <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-attendance"><i class="bi bi-grid me-2"></i> แดชบอร์ด & ลงเวลา</button></li>
+                <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-master"><i class="bi bi-people me-2"></i> จัดการพนักงาน</button></li>
+            </ul>
+        </div>
 
         <div class="tab-content">
             <div class="tab-pane fade show active" id="tab-attendance">
                 
-                <div class="row g-4 mb-4 no-print animate__animated animate__fadeInDown">
+                <div class="row g-3 mb-4 no-print animate__animated animate__fadeInDown">
                     <div class="col-md-8">
-                        <div class="row g-4">
+                        <div class="row g-3">
                             <div class="col-sm-6">
                                 <div class="kpi-card" style="border-left-color: #0284c7;">
-                                    <div><small class="text-muted fw-bold">รายการลงเวลาทั้งหมด</small><h2 class="mb-0 fw-bold text-primary" id="kpi-total">0</h2></div>
-                                    <div class="kpi-icon bg-primary bg-opacity-10 text-primary"><i class="bi bi-list-check"></i></div>
+                                    <div><small class="text-muted fw-bold"><i class="bi bi-file-earmark-text me-1"></i> รายการทั้งหมด</small><h2 class="mb-0 fw-bold text-primary mt-1" id="kpi-total">0</h2></div>
+                                    <div class="kpi-icon bg-primary bg-opacity-10 text-primary"><i class="bi bi-list-ul"></i></div>
                                 </div>
                             </div>
                             <div class="col-sm-6">
                                 <div class="kpi-card" style="border-left-color: #f59e0b;">
-                                    <div><small class="text-muted fw-bold">กะเช้า ☀️</small><h2 class="mb-0 fw-bold text-warning" id="kpi-morning">0</h2></div>
-                                    <div class="kpi-icon bg-warning bg-opacity-10 text-warning"><i class="bi bi-brightness-high-fill"></i></div>
+                                    <div><small class="text-muted fw-bold"><i class="bi bi-sun me-1"></i> กะเช้า (Day Shift)</small><h2 class="mb-0 fw-bold text-warning mt-1" id="kpi-morning">0</h2></div>
+                                    <div class="kpi-icon bg-warning bg-opacity-10 text-warning"><i class="bi bi-brightness-high"></i></div>
                                 </div>
                             </div>
                             <div class="col-sm-6">
                                 <div class="kpi-card" style="border-left-color: #334155;">
-                                    <div><small class="text-muted fw-bold">กะดึก 🌙</small><h2 class="mb-0 fw-bold" style="color: #334155;" id="kpi-night">0</h2></div>
-                                    <div class="kpi-icon bg-secondary bg-opacity-10 text-secondary"><i class="bi bi-moon-fill"></i></div>
+                                    <div><small class="text-muted fw-bold"><i class="bi bi-moon-stars me-1"></i> กะดึก (Night Shift)</small><h2 class="mb-0 fw-bold mt-1" style="color: #334155;" id="kpi-night">0</h2></div>
+                                    <div class="kpi-icon bg-secondary bg-opacity-10 text-secondary"><i class="bi bi-moon"></i></div>
                                 </div>
                             </div>
                             <div class="col-sm-6">
                                 <div class="kpi-card" style="border-left-color: #ef4444;">
-                                    <div><small class="text-muted fw-bold">หมายเหตุ (ขาด/แทน)</small><h2 class="mb-0 fw-bold text-danger" id="kpi-issue">0</h2></div>
-                                    <div class="kpi-icon bg-danger bg-opacity-10 text-danger"><i class="bi bi-exclamation-triangle-fill"></i></div>
+                                    <div><small class="text-muted fw-bold"><i class="bi bi-clock-history me-1"></i> ไม่มีบันทึกเวลา (No Record)</small><h2 class="mb-0 fw-bold text-danger mt-1" id="kpi-issue">0</h2></div>
+                                    <div class="kpi-icon bg-danger bg-opacity-10 text-danger"><i class="bi bi-clipboard-x"></i></div>
                                 </div>
                             </div>
                         </div>
@@ -277,28 +268,35 @@
                     </div>
                 </div>
 
-                <div class="admin-card mb-4 no-print animate__animated animate__fadeInUp">
+                <div class="admin-card mb-4 no-print animate__animated animate__fadeInUp" style="position: relative; z-index: 10;">
                     <div class="row align-items-end g-3">
-                        <div class="col-lg-2 col-md-4">
-                            <label class="form-label fw-bold small text-muted">เดือนที่ต้องการดู</label>
+                        <div class="col-lg-2 col-md-3">
+                            <label class="form-label fw-bold small text-muted">เดือน</label>
                             <input type="month" id="filterMonth" class="form-control">
                         </div>
-                        <div class="col-lg-3 col-md-4">
-                            <label class="form-label fw-bold small text-muted">กรองรายบุคคล</label>
-                            <select id="filterName" class="form-select"><option value="ALL">ดูทั้งหมดทุกคน</option></select>
+                        <div class="col-lg-2 col-md-3">
+                            <label class="form-label fw-bold small text-muted">รายบุคคล</label>
+                            <select id="filterName" class="form-select"><option value="ALL">ทุกคน</option></select>
                         </div>
-                        <div class="col-lg-3 col-md-4 d-flex gap-2">
+                        <div class="col-lg-2 col-md-3">
+                            <label class="form-label fw-bold small text-muted">กะการทำงาน</label>
+                            <select id="filterShift" class="form-select">
+                                <option value="ALL">ทั้งหมด</option>
+                                <option value="เช้า">กะเช้า</option>
+                                <option value="ดึก">กะดึก</option>
+                            </select>
+                        </div>
+                        <div class="col-lg-2 col-md-3 d-flex gap-2">
                             <button onclick="loadAttendance()" class="btn btn-primary fw-bold w-100"><i class="bi bi-search me-1"></i> ค้นหา</button>
-                            <button onclick="refreshAdminData()" class="btn btn-outline-secondary fw-bold text-nowrap" title="รีเฟรชข้อมูล"><i class="bi bi-arrow-clockwise"></i></button>
+                            <button onclick="refreshAdminData()" class="btn btn-light border text-muted" title="รีเฟรชข้อมูล"><i class="bi bi-arrow-clockwise"></i></button>
                         </div>
                         
                         <div class="col-lg-4 col-md-12 text-lg-end mt-3 mt-lg-0 d-flex justify-content-lg-end gap-2 flex-wrap">
                             <div class="dropdown d-inline-block">
-                                <button class="btn btn-light border fw-bold dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside">
-                                    <i class="bi bi-layout-three-columns text-primary me-1"></i> คอลัมน์
+                                <button class="btn btn-light border fw-bold dropdown-toggle text-muted" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside">
+                                    <i class="bi bi-layout-three-columns me-1"></i> คอลัมน์
                                 </button>
-                                <ul class="dropdown-menu shadow-lg p-3" id="columnSelector" style="width: 250px; z-index: 1050;">
-                                    </ul>
+                                <ul class="dropdown-menu shadow-lg p-3 border-0" id="columnSelector" style="width: 220px; z-index: 1050;"></ul>
                             </div>
                             
                             <button id="btnSaveOrder" onclick="saveRowOrder()" class="btn btn-warning fw-bold d-none animate__animated animate__pulse"><i class="bi bi-save2 me-1"></i> ล็อกลำดับ</button>
@@ -310,8 +308,8 @@
                 </div>
 
                 <div class="admin-card animate__animated animate__fadeInUp p-0 border-0" id="attendanceTableContainer">
-                    <div class="table-responsive border-0 shadow-sm" style="overflow: visible;"> <table id="attendanceTable" class="table align-middle mb-0">
-                            
+                    <div class="table-responsive border-0 shadow-sm" style="overflow: visible;"> 
+                        <table id="attendanceTable" class="table align-middle mb-0">
                             <thead class="print-only">
                                 <tr>
                                     <th colspan="8" style="border: none !important; background: white !important; padding: 0 !important;">
@@ -327,13 +325,13 @@
 
                             <thead id="mainTableHeader">
                                 <tr>
-                                    <th data-col="date">วันที่</th>
-                                    <th data-col="shift">กะทำงาน</th>
-                                    <th data-col="id_card">รหัสบัตร</th>
-                                    <th data-col="name">ชื่อพนักงาน</th> 
+                                    <th data-col="date"><i class="bi bi-calendar-event me-1"></i> วันที่</th>
+                                    <th data-col="shift"><i class="bi bi-clock me-1"></i> กะทำงาน</th>
+                                    <th data-col="id_card"><i class="bi bi-credit-card me-1"></i> รหัสบัตร</th>
+                                    <th data-col="name"><i class="bi bi-person me-1"></i> ชื่อพนักงาน</th> 
                                     <th data-col="time_in" class="text-center">เข้า (IN)</th>
                                     <th data-col="time_out" class="text-center">ออก (OUT)</th>
-                                    <th data-col="remark">หมายเหตุ</th>
+                                    <th data-col="remark"><i class="bi bi-card-text me-1"></i> หมายเหตุ</th>
                                     <th data-col="action" class="text-center no-print">จัดการ</th>
                                 </tr>
                             </thead>
@@ -353,28 +351,29 @@
                             </div>
                         </div>
                     </div>
-
                 </div>
-
             </div>
 
             <div class="tab-pane fade" id="tab-master">
                 <div class="row g-4"> 
                     <div class="col-md-6">
-                        <div class="admin-card h-100 border-top border-4 border-primary">
-                            <h5 class="fw-bold mb-4">
-                                <i class="bi bi-credit-card-2-front text-primary me-2"></i> จัดการรหัสบัตร (ID Cards)
-                            </h5>
-                            <div class="d-flex gap-2 mb-4">
-                                <input type="text" id="new_card" class="form-control" placeholder="ระบุรหัสบัตร เช่น G-001">
-                                <button onclick="addMaster('card')" class="btn btn-primary fw-bold px-4">เพิ่ม</button>
+                        <div class="admin-card h-100">
+                            <div class="d-flex align-items-center mb-4 pb-3 border-bottom">
+                                <div class="bg-primary bg-opacity-10 text-primary rounded-3 d-flex justify-content-center align-items-center me-3" style="width:40px; height:40px;">
+                                    <i class="bi bi-credit-card-2-front fs-5"></i>
+                                </div>
+                                <h5 class="fw-bold mb-0 text-primary">จัดการรหัสบัตร</h5>
                             </div>
-                            <div class="table-responsive shadow-sm border-0">
+                            <div class="input-group mb-4 shadow-sm">
+                                <input type="text" id="new_card" class="form-control bg-light" placeholder="เช่น G-001">
+                                <button onclick="addMaster('card')" class="btn btn-primary fw-bold px-4"><i class="bi bi-plus-lg me-1"></i> เพิ่มบัตร</button>
+                            </div>
+                            <div class="table-responsive shadow-sm border-0 rounded-3">
                                 <table class="table table-hover mb-0">
                                     <thead class="bg-light">
                                         <tr>
-                                            <th>หมายเลขบัตร</th>
-                                            <th class="text-end">ลบ</th>
+                                            <th class="text-muted"><small>หมายเลขบัตรในระบบ</small></th>
+                                            <th class="text-end text-muted"><small>จัดการ</small></th>
                                         </tr>
                                     </thead>
                                     <tbody id="cardTbody"></tbody>
@@ -383,20 +382,23 @@
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="admin-card h-100 border-top border-4 border-success">
-                            <h5 class="fw-bold mb-4">
-                                <i class="bi bi-person-badge text-success me-2"></i> จัดการรายชื่อ (Personnel)
-                            </h5>
-                            <div class="d-flex gap-2 mb-4">
-                                <input type="text" id="new_person" class="form-control" placeholder="ระบุ ชื่อ-นามสกุล">
-                                <button onclick="addMaster('person')" class="btn btn-success fw-bold px-4">เพิ่ม</button>
+                        <div class="admin-card h-100">
+                            <div class="d-flex align-items-center mb-4 pb-3 border-bottom">
+                                <div class="bg-success bg-opacity-10 text-success rounded-3 d-flex justify-content-center align-items-center me-3" style="width:40px; height:40px;">
+                                    <i class="bi bi-person-badge fs-5"></i>
+                                </div>
+                                <h5 class="fw-bold mb-0 text-success">จัดการรายชื่อพนักงาน</h5>
                             </div>
-                            <div class="table-responsive shadow-sm border-0">
+                            <div class="input-group mb-4 shadow-sm">
+                                <input type="text" id="new_person" class="form-control bg-light" placeholder="ชื่อ-นามสกุล">
+                                <button onclick="addMaster('person')" class="btn btn-success fw-bold px-4"><i class="bi bi-plus-lg me-1"></i> เพิ่มชื่อ</button>
+                            </div>
+                            <div class="table-responsive shadow-sm border-0 rounded-3">
                                 <table class="table table-hover mb-0">
                                     <thead class="bg-light">
                                         <tr>
-                                            <th>ชื่อ-นามสกุล</th>
-                                            <th class="text-end">ลบ</th>
+                                            <th class="text-muted"><small>รายชื่อในระบบ</small></th>
+                                            <th class="text-end text-muted"><small>จัดการ</small></th>
                                         </tr>
                                     </thead>
                                     <tbody id="personTbody"></tbody>
@@ -421,6 +423,11 @@ const ADMIN_PIN = "admin1234";
 
 let shiftChartInstance = null;
 let sortableInstance = null; 
+
+// ================= TOAST NOTIFICATION (ลื่นไหล ไม่บล็อกจอ) =================
+const Toast = Swal.mixin({
+    toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, timerProgressBar: true
+});
 
 // ================= INIT =================
 window.onload = async () => {
@@ -470,17 +477,17 @@ async function unlockDashboard() {
 function initTheme() {
     const savedTheme = localStorage.getItem('theme') || 'light';
     document.documentElement.setAttribute('data-theme', savedTheme);
-    document.getElementById('themeIcon').className = savedTheme === 'dark' ? 'bi bi-sun-fill text-warning' : 'bi bi-moon-stars-fill text-dark';
+    document.getElementById('themeIcon').className = savedTheme === 'dark' ? 'bi bi-sun text-warning' : 'bi bi-moon text-muted';
 }
 function toggleTheme() {
     const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', next);
     localStorage.setItem('theme', next);
-    document.getElementById('themeIcon').className = next === 'dark' ? 'bi bi-sun-fill text-warning' : 'bi bi-moon-stars-fill text-dark';
+    document.getElementById('themeIcon').className = next === 'dark' ? 'bi bi-sun text-warning' : 'bi bi-moon text-muted';
     if(shiftChartInstance) loadAttendance(); 
 }
 
-// ================= เลือกคอลัมน์ (Column Visibility) =================
+// ================= เลือกคอลัมน์ =================
 function initColumnSelector() {
     const headers = document.querySelectorAll('#mainTableHeader th');
     const selectorMenu = document.getElementById('columnSelector');
@@ -489,20 +496,16 @@ function initColumnSelector() {
     headers.forEach((th, index) => {
         const colId = th.getAttribute('data-col');
         const colName = th.innerText;
-        
         if(colId === 'action') return;
-
         const isChecked = colId !== 'id_card' ? 'checked' : '';
-
         selectorMenu.innerHTML += `
             <li>
-                <div class="form-check form-switch px-3 py-1">
+                <div class="form-check form-switch px-3 py-2 border-bottom border-light">
                     <input class="form-check-input" type="checkbox" role="switch" id="colSwitch_${index}" ${isChecked} onchange="toggleColumn(${index}, this.checked)">
-                    <label class="form-check-label ms-2" for="colSwitch_${index}">${colName}</label>
+                    <label class="form-check-label ms-2 small text-muted fw-bold" for="colSwitch_${index}">${colName}</label>
                 </div>
             </li>
         `;
-        
         toggleColumn(index, colId !== 'id_card'); 
     });
 }
@@ -510,15 +513,12 @@ function initColumnSelector() {
 function toggleColumn(colIndex, isVisible) {
     const table = document.getElementById('attendanceTable');
     const th = table.querySelectorAll(`#mainTableHeader th`)[colIndex];
-    if (th) {
-        isVisible ? th.classList.remove('col-hidden') : th.classList.add('col-hidden');
-    }
+    if (th) isVisible ? th.classList.remove('col-hidden') : th.classList.add('col-hidden');
+    
     const rows = table.querySelectorAll('#attendanceTbody tr');
     rows.forEach(row => {
         const td = row.querySelectorAll('td')[colIndex];
-        if (td) {
-            isVisible ? td.classList.remove('col-hidden') : td.classList.add('col-hidden');
-        }
+        if (td) isVisible ? td.classList.remove('col-hidden') : td.classList.add('col-hidden');
     });
 }
 
@@ -526,19 +526,20 @@ function toggleColumn(colIndex, isVisible) {
 async function loadFilterNames() {
     const { data } = await db.from('security_personnel_master').select('fullname').order('fullname');
     const select = document.getElementById('filterName');
-    select.innerHTML = '<option value="ALL">ดูทั้งหมดทุกคน</option>';
+    select.innerHTML = '<option value="ALL">ทุกคน</option>';
     if(data) data.forEach(p => { select.innerHTML += `<option value="${p.fullname}">${p.fullname}</option>`; });
 }
 
 async function refreshAdminData() {
-    Swal.fire({ title: 'กำลังดึงข้อมูลล่าสุด...', didOpen: () => { Swal.showLoading(); }, allowOutsideClick: false });
+    Toast.fire({ icon: 'info', title: 'กำลังดึงข้อมูล...' });
     await loadAttendance();
-    Swal.fire({ icon: 'success', title: 'อัปเดตเรียบร้อย', timer: 1000, showConfirmButton: false });
+    Toast.fire({ icon: 'success', title: 'อัปเดตเรียบร้อย' });
 }
 
 async function loadAttendance() {
     const filterMonth = document.getElementById('filterMonth').value; 
     const filterName = document.getElementById('filterName').value;
+    const filterShift = document.getElementById('filterShift').value; // 🟢 ดึงค่าตัวกรองกะ
 
     if (!filterMonth) return Swal.fire('แจ้งเตือน', 'กรุณาเลือกเดือน', 'warning');
 
@@ -551,6 +552,9 @@ async function loadAttendance() {
     query = query.gte('work_date', startDate).lte('work_date', endDate);
     if (filterName !== 'ALL') query = query.eq('fullname', filterName);
 
+    // 🟢 กรองตามกะการทำงาน (ใช้ like เพราะข้อความใน DB อาจเป็น 'กะเช้า (06:00-18:00)')
+    if (filterShift !== 'ALL') query = query.ilike('shift', `%${filterShift}%`);
+
     const { data: attendanceData, error } = await query;
     if (error) return Swal.fire('Error', error.message, 'error');
 
@@ -560,14 +564,18 @@ async function loadAttendance() {
 
     attendanceData.forEach(row => renderRow(row, tbody, false));
 
-    if (filterName !== 'ALL') {
+    // โชว์คนไม่มีบันทึกเวลา (จะโชว์ก็ต่อเมื่อเราไม่ได้กำลังใช้ตัวกรองกะอยู่ เพราะคนไม่มาคือไม่มีกะ)
+    if (filterName !== 'ALL' && filterShift === 'ALL') {
         const daysInMonth = new Date(filterMonth.split('-')[0], filterMonth.split('-')[1], 0).getDate();
         for (let d = 1; d <= daysInMonth; d++) {
             const dateStr = `${filterMonth}-${String(d).padStart(2, '0')}`;
             if (!attendanceMap.has(`${dateStr}_${filterName}`)) {
                 const absentRow = {
                     id: 'absent', work_date: dateStr, shift: '-', id_card: '-', fullname: filterName,
-                    time_in: null, time_out: null, remark_type: '<span class="badge bg-danger">ขาดงาน</span>', remark_detail: 'ไม่มีบันทึก'
+                    time_in: null, time_out: null, 
+                    // 🟢 เปลี่ยนข้อความขาดงานเป็น "ไม่มีบันทึกเวลา" พร้อมสีเทาอ่อน
+                    remark_type: '<span class="badge bg-light text-secondary border px-2 py-1"><i class="bi bi-dash-circle me-1"></i>ไม่มีบันทึกเวลา</span>', 
+                    remark_detail: '-'
                 };
                 renderRow(absentRow, tbody, true); 
             }
@@ -594,30 +602,24 @@ function renderRow(row, tbody, isAbsent) {
     const profileImg = row.profile_pic ? `<img src="${row.profile_pic}" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover;" class="me-2 no-print border shadow-sm">` : '';
     tbody.innerHTML += `
         <tr class="${isAbsent ? 'bg-light opacity-75' : ''}" data-id="${row.id}" title="จับลากเพื่อสลับแถวได้">
-            <td data-col="date" class="fw-bold">${row.work_date}</td>
+            <td data-col="date" class="fw-bold text-muted">${row.work_date}</td>
             <td data-col="shift">${row.shift}</td>
-            <td data-col="id_card">${row.id_card}</td>
-            <td data-col="name">${profileImg}${row.fullname}</td>
+            <td data-col="id_card"><span class="badge bg-light text-dark border">${row.id_card}</span></td>
+            <td data-col="name" class="fw-bold">${profileImg}${row.fullname}</td>
             <td data-col="time_in" class="text-center fw-bold text-success">${row.time_in || '-'}</td>
             <td data-col="time_out" class="text-center fw-bold text-danger">${row.time_out || '-'}</td>
-            <td data-col="remark">${row.remark_type} <span class="text-muted d-block small">${row.remark_detail || ''}</span></td>
+            <td data-col="remark">${row.remark_type} <span class="text-muted d-block small mt-1">${row.remark_detail !== '-' ? row.remark_detail : ''}</span></td>
             <td data-col="action" class="text-center no-print">
-                ${isAbsent ? '-' : `<button onclick="editTime('${row.id}', '${row.time_in}', '${row.time_out}')" class="btn btn-sm btn-light border text-primary px-3 rounded-pill"><i class="bi bi-pencil-square"></i> แก้</button>`}
+                ${isAbsent ? '-' : `<button onclick="editTime('${row.id}', '${row.time_in}', '${row.time_out}')" class="btn btn-sm btn-light border text-primary px-3 rounded-pill"><i class="bi bi-pencil-square"></i></button>`}
             </td>
         </tr>`;
 }
 
 function saveRowOrder() {
-    Swal.fire({ title: 'กำลังบันทึกหน้าจอ...', didOpen: () => { Swal.showLoading(); }});
-    
+    Toast.fire({ icon: 'info', title: 'กำลังล็อกลำดับหน้าจอ...' });
     setTimeout(() => {
         document.getElementById('btnSaveOrder').classList.add('d-none');
-        Swal.fire({ 
-            icon: 'success', 
-            title: 'ล็อกลำดับเรียบร้อย', 
-            text: 'การเรียงลำดับถูกนำไปใช้เตรียมพร้อมสำหรับการ Export แล้ว',
-            timer: 2000, showConfirmButton: false 
-        });
+        Toast.fire({ icon: 'success', title: 'เตรียมพร้อมสำหรับพิมพ์แล้ว' });
     }, 600);
 }
 
@@ -631,19 +633,52 @@ function updateKPIs(total, morning, night, issue) {
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     if(shiftChartInstance) shiftChartInstance.destroy();
     
+    // หากข้อมูลว่างเปล่า (ไม่มีกะ) ให้วงแหวนเป็นสีเทา
+    const chartData = (total === 0) ? [1] : [morning, night, issue];
+    const chartBg = (total === 0) ? ['#e2e8f0'] : ['#f59e0b', '#334155', '#ef4444'];
+
     shiftChartInstance = new Chart(ctx, {
         type: 'doughnut',
-        data: { labels: ['กะเช้า', 'กะดึก', 'หมายเหตุ'], datasets: [{ data: [morning, night, issue], backgroundColor: ['#f59e0b', '#334155', '#ef4444'], borderWidth: 0 }] },
-        options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'bottom', labels: { color: isDark ? '#f8fafc' : '#1e293b', font: { family: 'Sarabun' } } } } }
+        data: { labels: ['กะเช้า', 'กะดึก', 'หมายเหตุ'], datasets: [{ data: chartData, backgroundColor: chartBg, borderWidth: 0 }] },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'bottom', labels: { color: isDark ? '#f8fafc' : '#1e293b', font: { family: 'Sarabun' } }, display: total > 0 } } }
     });
+}
+
+// ================= แก้ไขเวลา =================
+async function editTime(id, currentIn, currentOut) {
+    const { value: formValues } = await Swal.fire({
+        title: 'แก้ไขเวลา (Admin)',
+        html: `
+            <div class="text-start mt-3">
+                <label class="form-label fw-bold text-muted small">เวลาเข้า (IN)</label>
+                <input id="swal-in" type="time" value="${currentIn}" class="form-control mb-3">
+                <label class="form-label fw-bold text-muted small">เวลาออก (OUT)</label>
+                <input id="swal-out" type="time" value="${currentOut}" class="form-control">
+            </div>
+        `,
+        focusConfirm: false, showCancelButton: true,
+        confirmButtonText: 'บันทึกข้อมูล', cancelButtonText: 'ยกเลิก',
+        customClass: { confirmButton: 'btn btn-primary px-4', cancelButton: 'btn btn-light border px-4' },
+        buttonsStyling: false,
+        preConfirm: () => { return { in: document.getElementById('swal-in').value, out: document.getElementById('swal-out').value } }
+    });
+
+    if (formValues) {
+        Toast.fire({ icon: 'info', title: 'กำลังอัปเดต...' });
+        const { error } = await db.from('guard_attendance').update({ time_in: formValues.in || null, time_out: formValues.out || null, updated_at: new Date(), updated_by: 'Admin' }).eq('id', id);
+        if (error) { Swal.fire('Error', 'แก้ไขไม่ได้', 'error'); } 
+        else { Toast.fire({ icon: 'success', title: 'อัปเดตเวลาเรียบร้อย' }); loadAttendance(); }
+    }
 }
 
 // ================= จัดการ EXPORT =================
 function exportPDF() {
     const monthText = document.getElementById('filterMonth').value || 'ทั้งหมด';
     const nameText = document.getElementById('filterName').options[document.getElementById('filterName').selectedIndex].text;
+    const shiftText = document.getElementById('filterShift').options[document.getElementById('filterShift').selectedIndex].text;
     
-    document.getElementById('printInfoLabel').innerText = `ประจำเดือน: ${monthText} | พนักงาน: ${nameText}`;
+    // ระบุกะในหัวรายงานด้วย
+    document.getElementById('printInfoLabel').innerText = `ประจำเดือน: ${monthText} | พนักงาน: ${nameText} | กะ: ${shiftText}`;
     document.getElementById('reportPrintDate').innerText = new Date().toLocaleDateString('th-TH');
     
     setTimeout(() => { window.print(); }, 500);
@@ -660,8 +695,8 @@ async function loadMasterTables() {
     const { data: cards } = await db.from('security_card_master').select('*').order('card_number');
     const { data: persons } = await db.from('security_personnel_master').select('*').order('fullname');
 
-    document.getElementById('cardTbody').innerHTML = cards?.map(c => `<tr><td class="fw-bold">${c.card_number}</td><td class="text-end"><button onclick="delMaster('card', '${c.id}', '${c.card_number}')" class="btn btn-sm btn-outline-danger px-3 rounded-pill"><i class="bi bi-trash"></i> ลบ</button></td></tr>`).join('') || '';
-    document.getElementById('personTbody').innerHTML = persons?.map(p => `<tr><td class="fw-bold">${p.fullname}</td><td class="text-end"><button onclick="delMaster('person', '${p.id}', '${p.fullname}')" class="btn btn-sm btn-outline-danger px-3 rounded-pill"><i class="bi bi-trash"></i> ลบ</button></td></tr>`).join('') || '';
+    document.getElementById('cardTbody').innerHTML = cards?.map(c => `<tr><td class="fw-bold"><span class="badge bg-light text-dark border px-3 py-2 fs-6">${c.card_number}</span></td><td class="text-end"><button onclick="delMaster('card', '${c.id}', '${c.card_number}')" class="btn btn-sm btn-light border text-danger rounded-circle"><i class="bi bi-trash3"></i></button></td></tr>`).join('') || '';
+    document.getElementById('personTbody').innerHTML = persons?.map(p => `<tr><td class="fw-bold text-muted">${p.fullname}</td><td class="text-end"><button onclick="delMaster('person', '${p.id}', '${p.fullname}')" class="btn btn-sm btn-light border text-danger rounded-circle"><i class="bi bi-trash3"></i></button></td></tr>`).join('') || '';
 }
 
 async function addMaster(type) {
@@ -673,18 +708,18 @@ async function addMaster(type) {
     const { error } = await db.from(isCard ? 'security_card_master' : 'security_personnel_master').insert([ isCard ? { card_number: val } : { fullname: val } ]);
     if(!error) {
         document.getElementById(inputId).value = '';
-        Swal.fire({ icon: 'success', title: 'เพิ่มเรียบร้อย', timer: 1500, showConfirmButton: false });
+        Toast.fire({ icon: 'success', title: 'เพิ่มข้อมูลเรียบร้อย' });
         loadMasterTables(); loadFilterNames(); 
-    } else { Swal.fire('Error', 'ผิดพลาด', 'error'); }
+    } else { Swal.fire('Error', 'เกิดข้อผิดพลาด อาจมีข้อมูลซ้ำ', 'error'); }
 }
 
 async function delMaster(type, id, name) {
     Swal.fire({
-        title: `ลบ ${name}?`, icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545', confirmButtonText: 'ลบข้อมูล'
+        title: `ยืนยันลบ ${name}?`, text: "หากลบแล้วจะไม่สามารถกู้คืนได้", icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545', confirmButtonText: 'ลบข้อมูล', cancelButtonText: 'ยกเลิก'
     }).then(async (result) => {
         if (result.isConfirmed) {
             await db.from(type === 'card' ? 'security_card_master' : 'security_personnel_master').delete().eq('id', id);
-            Swal.fire({ icon: 'success', title: 'ลบสำเร็จ', timer: 1500, showConfirmButton: false });
+            Toast.fire({ icon: 'success', title: 'ลบข้อมูลเรียบร้อย' });
             loadMasterTables(); loadFilterNames();
         }
     });
