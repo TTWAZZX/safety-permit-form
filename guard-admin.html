@@ -15,6 +15,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 
     <style>
         /* ================= THEME VARIABLES ================= */
@@ -102,22 +103,27 @@
         .btn-gradient { background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color: white; border: none; font-weight: 600; transition: 0.3s; }
         .btn-gradient:hover { box-shadow: 0 5px 15px rgba(14, 165, 233, 0.4); transform: translateY(-2px); }
 
-        /* ================= 🖨️ PRINT TEMPLATE (ฉบับสมบูรณ์) ================= */
+        /* สีพื้นหลังเวลากำลังลากแถว */
+        .sortable-ghost { background-color: rgba(14, 165, 233, 0.15) !important; opacity: 0.8; }
+        #attendanceTbody tr { cursor: grab; }
+        #attendanceTbody tr:active { cursor: grabbing; }
+
+        /* ================= 🖨️ PRINT TEMPLATE ================= */
         .print-only { display: none; }
         
         @media print {
-            /* 🟢 ซ่อนหัว/ท้าย URL ของเบราว์เซอร์ และตั้งค่าแนวนอน */
             @page { 
-                size: A4 portrait; /* 🟢 ปรับกลับเป็นแนวตั้ง */
+                size: A4 portrait; 
                 margin: 10mm; 
             }
 
-            /* 🟢 ซ่อนเฉพาะคอลัมน์ที่ 3 (รหัสบัตร) */
-            #attendanceTable th:nth-child(3), 
-            #attendanceTable td:nth-child(3) {
-                display: none !important;
+            /* ซ่อนเมนูและการตั้งค่า */
+            .no-print, .btn, .theme-toggle, .top-navbar, .kpi-card, #pills-tab, .admin-card:not(#attendanceTableContainer) { 
+                display: none !important; 
             }
-            
+            .print-only { display: block !important; }
+
+            /* ควบคุมสีพื้นฐานการพิมพ์ */
             body { 
                 background: white !important; 
                 color: black !important; 
@@ -127,71 +133,45 @@
                 print-color-adjust: exact;
             }
 
-            /* 🟢 แก้ไขเป็นก้อนนี้ (ต้องอยู่ข้างในปีกกา @media print เท่านั้น) */
-            .no-print, 
-            .btn, 
-            .theme-toggle, 
-            .top-navbar, 
-            .kpi-card, 
-            #pills-tab,
-            .admin-card:not(#attendanceTableContainer) { 
-                display: none !important; 
-            }
+            /* 🟢 1. สั่งตารางให้ดึงหัวกระดาษ (thead) และท้ายกระดาษ มาโชว์ทุกหน้าที่ขึ้นใหม่ */
+            table { page-break-inside: auto; width: 100% !important; border-collapse: collapse !important; margin-top: 10px; }
+            thead { display: table-header-group !important; }
+            tfoot { display: table-footer-group !important; }
             
-            .print-only { display: block !important; }
+            /* 🟢 2. ป้องกันไม่ให้แถว (tr) ตัดครึ่งหน้ากระดาษ */
+            tr, td, th { page-break-inside: avoid !important; break-inside: avoid !important; }
 
-            /* 🟢 หัวรายงาน */
-            .print-header {
-                text-align: center;
-                margin-bottom: 15px;
-                border-bottom: 2px solid #000;
-                padding-bottom: 10px;
-            }
-            .print-header .section-name {
-                font-size: 12pt;
-                font-weight: bold;
-                text-align: left;
-                margin-bottom: 5px;
-            }
+            .print-header { text-align: center; margin-bottom: 15px; border-bottom: 2px solid #000; padding-bottom: 10px; }
             .print-header h4 { font-size: 16pt; font-weight: bold; margin: 5px 0; color: black !important; }
 
-            /* 🟢 ตาราง: เส้นคมชัดสีดำบาง 0.5pt */
-            .table { 
-                width: 100% !important; 
-                border-collapse: collapse !important;
-                border: 0.5pt solid #000 !important;
-                margin-top: 10px;
-            }
+            .table { border: 0.5pt solid #000 !important; }
             .table th, .table td { 
-                border: 0.5pt solid #000 !important;
-                color: black !important;
-                padding: 4px 6px !important;
-                font-size: 10pt !important;
+                border: 0.5pt solid #000 !important; 
+                color: black !important; 
+                padding: 4px 6px !important; 
+                font-size: 10pt !important; 
             }
             .table th { background-color: #f2f2f2 !important; font-weight: bold; }
 
-            /* 🟢 ส่วนท้าย: จัดกึ่งกลางทั้งหมด */
-            .print-footer-container {
-                margin-top: 30px;
-                page-break-inside: avoid;
+            /* ซ่อนรหัสบัตรตอนพิมพ์ */
+            #attendanceTable th:nth-child(3), 
+            #attendanceTable td:nth-child(3) {
+                display: none !important;
             }
 
-            .print-footer {
-                display: flex;
-                justify-content: center; /* จัดก้อนเซ็นชื่อไว้กลางหน้ากระดาษ */
+            /* 🟢 3. บีบขนาดและให้ตัดคำในคอลัมน์หมายเหตุ (คอลัมน์ที่ 7) เพื่อไม่ให้ล้น */
+            #attendanceTable td:nth-child(7) {
+                max-width: 130px !important;
+                white-space: pre-wrap !important;
+                word-wrap: break-word !important;
+                font-size: 9pt !important; 
             }
 
-            .sign-box {
-                width: 450px; /* ขยายความกว้างเล็กน้อยให้ชื่อแผนกไม่ตัดบรรทัด */
-                text-align: center;
-                color: black !important;
-            }
-
-            .sign-line {
-                border-bottom: 1px solid #000 !important; /* เส้นเซ็นชื่อสีดำทึบ */
-                margin: 30px auto 10px;
-                width: 70%;
-            }
+            /* 🟢 4. ป้องกันกล่องเซ็นชื่อโดนตัดครึ่งกลางหน้า */
+            .print-footer-container { margin-top: 30px; page-break-inside: avoid !important; break-inside: avoid !important; }
+            .print-footer { display: flex; justify-content: center; }
+            .sign-box { width: 450px; text-align: center; color: black !important; }
+            .sign-line { border-bottom: 1px solid #000 !important; margin: 30px auto 10px; width: 70%; }
         }
     </style>
 </head>
@@ -239,6 +219,7 @@
         </ul>
 
         <div class="tab-content">
+            
             <div class="tab-pane fade show active" id="tab-attendance">
                 
                 <div class="row g-3 mb-4 no-print animate__animated animate__fadeInDown">
@@ -386,9 +367,7 @@
                         </div>
                     </div>
                 </div>
-            </div>
-
-        </div>
+            </div> </div>
     </div>
 </div>
 
@@ -402,6 +381,7 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const ADMIN_PIN = "admin1234"; 
 
 let shiftChartInstance = null;
+let sortableInstance = null; // ตัวแปรเก็บ Sortable
 
 // ================= INIT & SECURITY =================
 window.onload = async () => {
@@ -476,26 +456,21 @@ async function refreshAdminData() {
 }
 
 // ================= ระบบรายงาน & KPIs & Audit Trail =================
-// ================= อัปเกรดระบบรายงานให้โชว์คนขาดงาน =================
 async function loadAttendance() {
     const filterMonth = document.getElementById('filterMonth').value; 
     const filterName = document.getElementById('filterName').value;
 
     if (!filterMonth) return Swal.fire('แจ้งเตือน', 'กรุณาเลือกเดือนที่ต้องการดูรายงาน', 'warning');
 
-    // 1. ดึงรายชื่อพนักงานทั้งหมดจาก Master มาเป็นตัวตั้งต้น
     const { data: allPersonnel } = await db.from('security_personnel_master').select('fullname');
     
-    // 2. ดึงข้อมูลการลงเวลาตามเงื่อนไข (แก้ไขระบบคำนวณวันสิ้นเดือน)
     let query = db.from('guard_attendance').select('*').order('work_date', { ascending: false });
     
-    // คำนวณวันที่ 1 ถึงวันสุดท้ายของเดือนนั้นๆ ให้ถูกต้อง
     const startDate = `${filterMonth}-01`;
     const lastDayInMonth = new Date(filterMonth.split('-')[0], filterMonth.split('-')[1], 0).getDate();
     const endDate = `${filterMonth}-${String(lastDayInMonth).padStart(2, '0')}`;
 
     query = query.gte('work_date', startDate).lte('work_date', endDate);
-    
     if (filterName !== 'ALL') query = query.eq('fullname', filterName);
 
     const { data: attendanceData, error } = await query;
@@ -508,23 +483,16 @@ async function loadAttendance() {
     const tbody = document.getElementById('attendanceTbody');
     tbody.innerHTML = '';
 
-    // 3. ประมวลผลข้อมูล (Logic เปรียบเทียบ)
-    // เราจะสร้าง Map เพื่อเช็คว่าในแต่ละวัน ใครลงเวลาไปแล้วบ้าง
     const attendanceMap = new Set(attendanceData.map(item => `${item.work_date}_${item.fullname}`));
 
-    // --- ส่วนการแสดงผลในตาราง ---
-    // โชว์รายการที่มีการลงเวลาจริงก่อน (ตามที่พี่ทำไว้เดิม)
     attendanceData.forEach(row => {
-        renderRow(row, tbody, false); // false คือ มาทำงานปกติ
+        renderRow(row, tbody, false); 
     });
 
-    // 4. [ไอเดียเด็ด] ถ้าเลือกกรอง "รายบุคคล" และ "เดือน" 
-    // ระบบจะเช็คให้ว่าวันไหนในเดือนนั้นที่เขา "ไม่มา" (ยังไม่มีในระบบ)
     if (filterName !== 'ALL') {
         const daysInMonth = new Date(filterMonth.split('-')[0], filterMonth.split('-')[1], 0).getDate();
         for (let d = 1; d <= daysInMonth; d++) {
             const dateStr = `${filterMonth}-${String(d).padStart(2, '0')}`;
-            // ถ้าวันที่ d ยังไม่มีการลงเวลาของคนนี้
             if (!attendanceMap.has(`${dateStr}_${filterName}`)) {
                 const absentRow = {
                     work_date: dateStr,
@@ -536,25 +504,30 @@ async function loadAttendance() {
                     remark_type: '<span class="badge bg-danger">ไม่มาทำงาน / ขาดงาน</span>',
                     remark_detail: 'ไม่มีบันทึกข้อมูล'
                 };
-                renderRow(absentRow, tbody, true); // true คือ ขาดงาน
+                renderRow(absentRow, tbody, true); 
             }
         }
     }
 
-    // อัปเดต KPIs (นับเฉพาะคนที่มาจริง)
     updateKPIs(attendanceData.length, 
                attendanceData.filter(r => r.shift.includes('เช้า')).length, 
                attendanceData.filter(r => r.shift.includes('ดึก')).length, 
                attendanceData.filter(r => r.remark_type !== 'ปกติ').length);
+
+    // 🟢 สร้างระบบ Drag & Drop หลังจากโหลดข้อมูลลงตารางเสร็จ
+    if (sortableInstance) sortableInstance.destroy();
+    sortableInstance = new Sortable(tbody, {
+        animation: 150,
+        ghostClass: 'sortable-ghost'
+    });
 }
 
-// ฟังก์ชันช่วยวาดแถว (แยกออกมาเพื่อให้โค้ดสะอาด)
 function renderRow(row, tbody, isAbsent) {
     const editBadge = (row.updated_by) ? `<i class="bi bi-pencil-fill ${(row.updated_by === 'Admin' ? 'text-warning' : 'text-info')} ms-2"></i>` : '';
     const profileImg = row.profile_pic ? `<img src="${row.profile_pic}" style="width: 25px; height: 25px; border-radius: 50%;" class="me-2 no-print">` : '';
 
     tbody.innerHTML += `
-        <tr class="${isAbsent ? 'table-light opacity-75' : ''}">
+        <tr class="${isAbsent ? 'table-light opacity-75' : ''}" title="คลิกค้างเพื่อลากสลับตำแหน่งได้">
             <td class="fw-bold">${row.work_date}</td>
             <td>${row.shift}</td>
             <td>${row.id_card}</td>
@@ -593,7 +566,7 @@ function updateKPIs(total, morning, night, issue) {
     });
 }
 
-// ================= แก้ไขเวลา (บันทึก Audit Trail) =================
+// ================= แก้ไขเวลา =================
 async function editTime(id, currentIn, currentOut) {
     const { value: formValues } = await Swal.fire({
         title: 'แก้ไขเวลา (Admin)',
@@ -637,7 +610,6 @@ function exportPDF() {
     const filterMonth = document.getElementById('filterMonth').value;
     const filterName = document.getElementById('filterName');
     
-    // 1. ส่งค่าเดือนและชื่อพนักงานไปที่ id="printInfoLabel" (ที่เราตั้งใหม่ใน HTML)
     const nameText = filterName.options[filterName.selectedIndex].text;
     const monthText = filterMonth ? filterMonth : 'ทั้งหมด';
     
@@ -645,13 +617,14 @@ function exportPDF() {
         document.getElementById('printInfoLabel').innerText = `ประจำเดือน: ${monthText} | พนักงาน: ${nameText}`;
     }
 
-    // 2. ส่งค่าวันที่พิมพ์รายงานไปที่ id="reportPrintDate"
     if (document.getElementById('reportPrintDate')) {
         document.getElementById('reportPrintDate').innerText = new Date().toLocaleDateString('th-TH');
     }
     
-    // 3. สั่งพิมพ์
-    window.print();
+    // 🟢 แก้ปัญหาเปิดในมือถือไม่ได้ โดยหน่วงเวลาให้เบราว์เซอร์ปรับตัวอักษรก่อนสั่งพิมพ์
+    setTimeout(() => {
+        window.print();
+    }, 500);
 }
 
 function exportExcel() {
@@ -662,7 +635,7 @@ function exportExcel() {
     XLSX.writeFile(wb, `Report_${name}_${month}.xlsx`);
 }
 
-// ================= จัดการ MASTER DATA แยก =================
+// ================= จัดการ MASTER DATA =================
 async function loadMasterTables() {
     const { data: cards } = await db.from('security_card_master').select('*').order('card_number');
     const { data: persons } = await db.from('security_personnel_master').select('*').order('fullname');
