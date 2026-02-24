@@ -147,11 +147,15 @@
 
                 <div class="row g-3 mb-3">
                     <div class="col-6">
-                        <label class="form-label"><i class="bi bi-calendar-event me-1"></i> วันที่ทำงาน</label>
+                        <label class="form-label">
+                            <i class="bi bi-calendar-event me-1"></i> วันที่ทำงาน
+                        </label>
                         <input type="date" id="work_date" class="form-control" required>
                     </div>
                     <div class="col-6">
-                        <label class="form-label"><i class="bi bi-arrow-repeat me-1"></i> กะการทำงาน</label>
+                        <label class="form-label">
+                            <i class="bi bi-arrow-repeat me-1"></i> กะการทำงาน
+                        </label>
                         <select id="shift" class="form-select" required>
                             <option value="" disabled selected>เลือกกะ...</option>
                             <option value="กะเช้า (06:00-18:00)">กะเช้า (06:00-18:00)</option>
@@ -160,12 +164,49 @@
                     </div>
                 </div>
 
+                <!-- 🔵 เลือกโหมดก่อน -->
+                <div class="mb-3 text-center">
+                    <div class="btn-group w-100">
+                        <button type="button"
+                                class="btn btn-outline-primary active"
+                                id="modeWork"
+                                onclick="setMode('work')">
+                            ลงเวลา
+                        </button>
+                        <button type="button"
+                                class="btn btn-outline-danger"
+                                id="modeLeave"
+                                onclick="setMode('leave')">
+                            ลางาน
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 🔵 Leave Type (ซ่อนอยู่จนกว่าจะกดลางาน) -->
+                <div class="mb-3 d-none" id="leaveTypeDiv">
+                    <label class="form-label text-danger">
+                        <i class="bi bi-calendar-x me-1"></i> ประเภทการลา
+                    </label>
+                    <select id="leave_type" class="form-select">
+                        <option value="">เลือกประเภทการลา...</option>
+                        <option value="ลาป่วย">ลาป่วย</option>
+                        <option value="ลากิจ">ลากิจ</option>
+                        <option value="ลาพักร้อน">ลาพักร้อน</option>
+                        <option value="ขาดงาน">ขาดงาน</option>
+                    </select>
+                </div>
+
                 <div class="mb-3">
-                    <label class="form-label"><i class="bi bi-upc-scan me-1"></i> รหัสบัตรประจำตัว</label>
+                    <label class="form-label">
+                        <i class="bi bi-upc-scan me-1"></i> รหัสบัตรประจำตัว
+                    </label>
                     <select id="id_card" required placeholder="ค้นหารหัสบัตร..."></select>
                 </div>
+
                 <div class="mb-3">
-                    <label class="form-label"><i class="bi bi-person-vcard me-1"></i> ชื่อ-นามสกุลผู้ปฏิบัติงาน</label>
+                    <label class="form-label">
+                        <i class="bi bi-person-vcard me-1"></i> ชื่อ-นามสกุลผู้ปฏิบัติงาน
+                    </label>
                     <select id="fullname" required placeholder="ค้นหาชื่อ-นามสกุล..."></select>
                 </div>
 
@@ -253,6 +294,7 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // 🟢 เพิ่มตัวแปร activeRecordId สำหรับเช็คสถานะ
 let selectCardInstance, selectPersonInstance, selectSubstituteInstance;
 let activeRecordId = null; 
+let currentMode = 'work'; // โหมดเริ่มต้น
 
 // ================= INIT =================
 window.onload = async () => {
@@ -479,6 +521,34 @@ function handleRemarkChange() {
     }
 }
 
+// ================= 🏖️ MODE SWITCH (WORK / LEAVE) =================
+function setMode(mode) {
+    currentMode = mode;
+
+    const leaveDiv = document.getElementById('leaveTypeDiv');
+    const timeRow = document.getElementById('time_in').closest('.row');
+    const btn = document.getElementById('btnSubmit');
+
+    document.getElementById('modeWork').classList.remove('active');
+    document.getElementById('modeLeave').classList.remove('active');
+
+    if (mode === 'leave') {
+        leaveDiv.classList.remove('d-none');
+        timeRow.classList.add('d-none');
+        btn.innerHTML = '<i class="bi bi-calendar-x me-2"></i> บันทึกลางาน';
+        document.getElementById('modeLeave').classList.add('active');
+
+        // เคลียร์เวลาออก/เข้า
+        document.getElementById('time_in').value = '';
+        document.getElementById('time_out').value = '';
+    } else {
+        leaveDiv.classList.add('d-none');
+        timeRow.classList.remove('d-none');
+        btn.innerHTML = '<i class="bi bi-cloud-arrow-up-fill me-2"></i> บันทึกเวลาเข้าสู่ระบบ';
+        document.getElementById('modeWork').classList.add('active');
+    }
+}
+
 // ================= HISTORY =================
 async function fetchHistory() {
     try {
@@ -588,9 +658,23 @@ document.getElementById('attendanceForm').addEventListener('submit', async funct
     const time_in = document.getElementById('time_in').value || null;
     const time_out = document.getElementById('time_out').value || null;
 
-    if(!time_in && !time_out) return Swal.fire({ icon: 'warning', title: 'ข้อมูลไม่ครบ', text: 'กรุณาระบุเวลาอย่างน้อย 1 ช่อง' });
-    if((time_in && !validateTimeStr(time_in)) || (time_out && !validateTimeStr(time_out))) {
-        return Swal.fire({ icon: 'error', title: 'เวลาผิดพลาด', text: 'กรุณากรอกเวลาให้ถูกต้อง (00:00 - 23:59)' });
+    // ================= VALIDATE TIME (เฉพาะโหมดทำงาน) =================
+    if (currentMode === 'work') {
+        if(!time_in && !time_out) {
+            return Swal.fire({
+                icon: 'warning',
+                title: 'ข้อมูลไม่ครบ',
+                text: 'กรุณาระบุเวลาอย่างน้อย 1 ช่อง'
+            });
+        }
+
+        if((time_in && !validateTimeStr(time_in)) || (time_out && !validateTimeStr(time_out))) {
+            return Swal.fire({
+                icon: 'error',
+                title: 'เวลาผิดพลาด',
+                text: 'กรุณากรอกเวลาให้ถูกต้อง (00:00 - 23:59)'
+            });
+        }
     }
 
     const remark_type = document.getElementById('remark_type').value;
@@ -618,6 +702,37 @@ document.getElementById('attendanceForm').addEventListener('submit', async funct
         profile_pic: document.getElementById('picUrl').value || null
     };
 
+    // ================= 🏖️ HANDLE LEAVE MODE =================
+    if (currentMode === 'leave') {
+        const leaveType = document.getElementById('leave_type').value;
+
+        if (!leaveType) {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+            return Swal.fire({
+                icon: 'warning',
+                title: 'กรุณาเลือกประเภทการลา'
+            });
+        }
+
+        payload.time_in = null;
+        payload.time_out = null;
+        payload.remark_type = leaveType;
+        payload.remark_detail = null;
+    }
+
+    // ================= 🚫 PREVENT LEAVE IF SESSION ACTIVE =================
+    if (currentMode === 'leave' && activeRecordId) {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+
+        return Swal.fire({
+            icon: 'warning',
+            title: 'ไม่สามารถลางานได้',
+            text: 'คุณยังไม่ได้ลงเวลาออกงาน กรุณาลงเวลาออกก่อน'
+        });
+    }
+
     try {
         if (activeRecordId) {
             // 🎯 กรณีที่ 1: กำลังออกงาน (อัปเดตแถวเดิมที่มีเวลาเข้าอยู่แล้ว)
@@ -626,10 +741,10 @@ document.getElementById('attendanceForm').addEventListener('submit', async funct
                 return Swal.fire({ icon: 'warning', title: 'ระบุเวลาออก', text: 'คุณลงเวลาเข้างานไปแล้ว กรุณาระบุเวลาออกงานด้วยครับ' });
             }
             const { error } = await db.from('guard_attendance').update({
-                time_out: time_out,
-                remark_type: remark_type,
-                remark_detail: final_remark_detail,
-                profile_pic: document.getElementById('picUrl').value || null
+                time_out: payload.time_out,
+                remark_type: payload.remark_type,
+                remark_detail: payload.remark_detail,
+                profile_pic: payload.profile_pic
             }).eq('id', activeRecordId);
             if (error) throw error;
         } else {
