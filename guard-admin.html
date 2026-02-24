@@ -215,13 +215,17 @@
                 margin: 2px 0;
             }
 
+            table#attendanceTable th {
+                white-space: nowrap !important;
+            }
+
             /* ================= TABLE CORE ================= */
 
             table#attendanceTable {
                 width: 100% !important;
                 border-collapse: collapse !important;
                 border-spacing: 0 !important;
-                table-layout: fixed !important;
+                table-layout: auto !important;
                 border: 1px solid #000 !important;
                 margin-top: 0;
             }
@@ -237,14 +241,9 @@
             table#attendanceTable th,
             table#attendanceTable td {
                 border: 1px solid #000 !important;
-                padding: 6px 6px !important;
-                font-size: 9.5pt !important;
+                padding: 6px 8px !important;
+                font-size: 9.6pt !important;
                 vertical-align: middle !important;
-
-                /* 🔥 ไม่ให้ตกบรรทัด */
-                white-space: nowrap !important;
-                overflow: hidden !important;
-                text-overflow: ellipsis !important;
             }
 
             /* หัวคอลัมน์ */
@@ -270,36 +269,44 @@
 
             /* วันที่ */
             th[data-col="date"],
+            /* วันที่ */
             td[data-col="date"] {
                 width: 90px !important;
+                white-space: nowrap !important;
             }
 
             /* กะทำงาน */
             th[data-col="shift"],
             td[data-col="shift"] {
                 width: 135px !important;
+                white-space: nowrap !important;
             }
 
-            /* ชื่อพนักงาน (ให้กว้างสุด) */
+            /* ชื่อพนักงาน */
             th[data-col="name"],
             td[data-col="name"] {
-                width: 220px !important;
+                width: 170px !important;
             }
 
-            /* เข้า / ออก (บีบให้เล็กลงอย่างเป็นทางการ) */
-            th[data-col="time_in"],
+            td[data-col="name"] {
+                font-weight: 600 !important;
+                white-space: nowrap !important;
+            }
+
+            /* เข้า / ออก */
             td[data-col="time_in"],
-            th[data-col="time_out"],
             td[data-col="time_out"] {
                 width: 65px !important;
                 text-align: center !important;
                 font-weight: bold !important;
+                white-space: nowrap !important;
             }
 
-            /* หมายเหตุ ให้กินพื้นที่ที่เหลือ */
-            th[data-col="remark"],
+            /* หมายเหตุ */
             td[data-col="remark"] {
                 width: auto !important;
+                white-space: normal !important; /* 🔥 อนุญาต wrap */
+                line-height: 1.35 !important;
             }
 
             /* ================= ซ่อนคอลัมน์ที่ไม่ต้องการ ================= */
