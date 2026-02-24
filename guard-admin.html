@@ -152,84 +152,155 @@
         .line-spinner { border: 4px solid var(--border-color); border-top: 4px solid var(--primary-color); border-radius: 50%; width: 45px; height: 45px; animation: spin 1s linear infinite; margin-bottom: 20px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* ================= 🖨️ PRINT TEMPLATE (STRICTLY FORMAL & BORDER FIX) ================= */
+        /* ================= 🖨️ PRINT TEMPLATE (STRICTLY FORMAL & BORDER FIX - SAFE VERSION) ================= */
         .print-only { display: none; }
-        
-        @media print {
-            @page { size: A4 portrait; margin: 15mm 10mm; } 
-            
-            /* ซ่อนส่วนที่ไม่เกี่ยวข้อง */
-            .no-print, .btn, .theme-toggle, .top-navbar, .kpi-card, #pills-tab, .dropdown, .admin-card:not(#attendanceTableContainer) { 
-                display: none !important; 
-            }
-            .print-only { display: block !important; } 
 
-            /* ปรับสีและฟอนต์พื้นฐาน */
-            body, * { background: white !important; color: black !important; font-family: 'Sarabun', sans-serif !important; }
-            .admin-card { border: none !important; box-shadow: none !important; padding: 0 !important; border-radius: 0 !important; }
-            .table-responsive { border: none !important; overflow: visible !important; }
-            .badge { border: none !important; background: transparent !important; color: black !important; padding: 0 !important; font-size: 10pt !important; font-weight: normal !important; }
-            i { display: none !important; } 
-            
-            /* 🟢 1. หัวรายงาน (สะอาดตา ไม่มีเส้นกรอบ) */
-            .print-header { 
-                text-align: center; 
+        @media print {
+            @page { size: A4 portrait; margin: 15mm 10mm; }
+
+            /* ซ่อนส่วนที่ไม่เกี่ยวข้อง */
+            .no-print, .btn, .theme-toggle, .top-navbar, .kpi-card, #pills-tab, .dropdown,
+            .admin-card:not(#attendanceTableContainer) {
+                display: none !important;
+            }
+
+            .print-only { display: block !important; }
+
+            /* รีเซ็ตพื้นฐาน */
+            body, * {
+                background: white !important;
+                color: black !important;
+                font-family: 'Sarabun', sans-serif !important;
+            }
+
+            .admin-card {
+                border: none !important;
+                box-shadow: none !important;
+                padding: 0 !important;
+                border-radius: 0 !important;
+            }
+
+            .table-responsive {
+                border: none !important;
+                overflow: visible !important;
+            }
+
+            .badge {
+                border: none !important;
+                background: transparent !important;
+                color: black !important;
+                padding: 0 !important;
+                font-size: 10pt !important;
+                font-weight: normal !important;
+            }
+
+            i { display: none !important; }
+
+            /* 🟢 1. หัวรายงาน */
+            .print-header {
+                text-align: center;
                 margin-bottom: 20px;
                 border-bottom: 2px solid #000;
                 padding-bottom: 10px;
             }
-            .print-header h4 { font-size: 16pt; font-weight: bold; margin-bottom: 5px; }
-            .print-header p { font-size: 11pt; margin: 2px 0; }
-            
-            /* 🟢 2. โครงสร้างตาราง (บังคับเส้นขอบทุกช่อง) */
-            table#attendanceTable { 
-                width: 100% !important; 
-                border-collapse: collapse !important; 
-                border: 1px solid #000 !important; /* กรอบดำรอบนอกสุดของตาราง */
+
+            .print-header h4 {
+                font-size: 16pt;
+                font-weight: bold;
+                margin-bottom: 5px;
+            }
+
+            .print-header p {
+                font-size: 11pt;
+                margin: 2px 0;
+            }
+
+            /* 🟢 2. ตารางหลัก (FIX เส้นหัวตารางหาย) */
+
+            table#attendanceTable {
+                width: 100% !important;
+                border-collapse: collapse !important;
+                border-spacing: 0 !important;
+                table-layout: fixed !important;
+                border: 1px solid #000 !important;
                 margin-top: 0;
             }
 
-            /* บังคับเส้นขอบแนวตั้งและแนวนอน ให้ทุกช่อง (th, td) ในทุกส่วน (thead, tbody) */
-            table#attendanceTable thead th,
-            table#attendanceTable tbody td {
+            /* 🔴 FIX สำคัญ: ปิด sticky header ตอนพิมพ์ */
+            table#attendanceTable thead th {
+                position: static !important;
+                top: auto !important;
+                z-index: auto !important;
+            }
+
+            /* 🔴 FIX: บังคับเส้นทุก cell (thead + tbody + tfoot ถ้ามี) */
+            table#attendanceTable th,
+            table#attendanceTable td {
                 border: 1px solid #000 !important;
                 padding: 8px 6px !important;
                 font-size: 10pt !important;
                 vertical-align: middle !important;
-            }
-
-            /* หัวข้อคอลัมน์ (พื้นหลังเทาอ่อน + ตัวหนา) */
-            #mainTableHeader th { 
-                background-color: #f2f2f2 !important; 
-                font-weight: bold !important; 
-                text-align: center !important; 
-                -webkit-print-color-adjust: exact; 
-                print-color-adjust: exact;
-            }
-
-            /* บังคับหัวตารางให้ไปปรากฏทุกหน้า */
-            table#attendanceTable thead { display: table-header-group !important; }
-            tr { page-break-inside: avoid !important; break-inside: avoid !important; }
-
-            /* ซ่อนคอลัมน์ที่ไม่ต้องการใน PDF */
-            th[data-col="id_card"], td[data-col="id_card"],
-            th[data-col="action"], td[data-col="action"] { 
-                display: none !important; 
-            }
-            .col-hidden { display: none !important; } 
-            
-            /* 🟢 ย้ำเส้นขอบขวาสุดของคอลัมน์สุดท้าย (หมายเหตุ) ให้หนาเท่าเพื่อน */
-            th[data-col="remark"], td[data-col="remark"] { 
-                border-right: 1px solid #000 !important;
-                max-width: 150px !important;
                 word-wrap: break-word !important;
             }
 
-            /* 🟢 3. กล่องลายเซ็นต์ (เส้นทึบ ทางการ) */
-            .print-footer-content { display: block !important; margin-top: 50px; page-break-inside: avoid; }
-            .sign-box-container { display: flex; justify-content: center; width: 100%; }
-            .sign-box { width: 350px; text-align: center; font-size: 11pt; }
-            .sign-line { border-bottom: 1px solid #000 !important; margin: 40px auto 10px; width: 80%; } 
+            /* หัวคอลัมน์ */
+            #mainTableHeader th {
+                background-color: #f2f2f2 !important;
+                font-weight: bold !important;
+                text-align: center !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            /* บังคับหัวตารางให้ขึ้นทุกหน้า */
+            table#attendanceTable thead {
+                display: table-header-group !important;
+            }
+
+            tr {
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+
+            /* ซ่อนคอลัมน์ที่ไม่ต้องการ */
+            th[data-col="id_card"], td[data-col="id_card"],
+            th[data-col="action"], td[data-col="action"] {
+                display: none !important;
+            }
+
+            .col-hidden {
+                display: none !important;
+            }
+
+            /* จำกัดความกว้างหมายเหตุ */
+            th[data-col="remark"], td[data-col="remark"] {
+                max-width: 150px !important;
+            }
+
+            /* 🟢 3. ลายเซ็นต์ */
+            .print-footer-content {
+                display: block !important;
+                margin-top: 50px;
+                page-break-inside: avoid;
+            }
+
+            .sign-box-container {
+                display: flex;
+                justify-content: center;
+                width: 100%;
+            }
+
+            .sign-box {
+                width: 350px;
+                text-align: center;
+                font-size: 11pt;
+            }
+
+            .sign-line {
+                border-bottom: 1px solid #000 !important;
+                margin: 40px auto 10px;
+                width: 80%;
+            }
         }
     </style>
 </head>
