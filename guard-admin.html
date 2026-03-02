@@ -789,8 +789,8 @@ function renderRow(row, tbody, isAbsentDummy, hideInPrint, webCounter, printCoun
         detailText = row.remark_detail;
     }
     
-    // 🔥 ปรับให้หมายเหตุต่อท้ายกันเป็นบรรทัดเดียว และย่อขนาดตัวอักษรลง
-    const remarkDetailHtml = detailText ? ` <span class="text-muted ms-1" style="font-size: 0.65em; font-weight: normal;">${detailText}</span>` : '';
+    // 🔥 ปรับให้ชื่อคนแทนต่อท้าย และย่อขนาดตัวอักษรให้เล็กลงอีก 2 ระดับ
+    const remarkDetailHtml = detailText ? ` <span class="text-muted ms-1" style="font-weight: normal; font-size: 0.8em;">${detailText}</span>` : '';
 
     const rowClasses = ['data-row'];
     if (isAbsentDummy) rowClasses.push('bg-light', 'opacity-75');
