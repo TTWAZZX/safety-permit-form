@@ -235,12 +235,21 @@
                 border-bottom: 1px solid #000 !important;
             }
 
-            /* สีแถบกะดึก (พื้นกรมท่าเข้ม ตัวหนังสือขาว) */
-            .header-night td {
+            /* สีแถบกะดึก (พื้นเทาเข้ม/กรมท่า) */
+            tr.header-night td {
                 background-color: #334155 !important;
-                color: #ffffff !important;
                 border-top: 1px solid #000 !important;
                 border-bottom: 1px solid #000 !important;
+            }
+            /* 🔴 บังคับตัวหนังสือสีขาวขั้นสุด (แก้ปัญหาปริ้นขาวดำแล้วตัวหนังสือดำ) */
+            tr.header-night td, 
+            tr.header-night td span, 
+            tr.header-night td i, 
+            tr.header-night td strong {
+                color: #ffffff !important;
+                -webkit-text-fill-color: #ffffff !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
             }
 
             /* ================= COLUMN WIDTH CONTROL ================= */
@@ -679,35 +688,29 @@ async function loadAttendance() {
     // 🟢 เรียงลำดับข้อมูล: วันที่ -> กะ (เช้ามาก่อนดึก) -> ชื่อพนักงาน
     const storageKey = `table_order_${filterMonth}_${filterName}_${filterShift}`;
     const savedOrderStr = localStorage.getItem(storageKey);
+    const savedOrder = savedOrderStr ? JSON.parse(savedOrderStr) : [];
     
-    if (savedOrderStr) {
-        const savedOrder = JSON.parse(savedOrderStr);
-        finalRows.sort((a, b) => {
-            const indexA = savedOrder.indexOf(String(a.id));
-            const indexB = savedOrder.indexOf(String(b.id));
-            if (indexA !== -1 && indexB !== -1) return indexA - indexB;
-            if (indexA !== -1) return -1;
-            if (indexB !== -1) return 1;
-            return 0;
-        });
-    } else {
-        finalRows.sort((a, b) => {
-            // 1. เทียบวันที่
-            if (a.work_date < b.work_date) return -1;
-            if (a.work_date > b.work_date) return 1;
+    finalRows.sort((a, b) => {
+        const indexA = savedOrder.indexOf(String(a.id));
+        const indexB = savedOrder.indexOf(String(b.id));
 
-            // 2. เทียบกะการทำงาน (บังคับให้เช้าขึ้นก่อนดึก)
-            const shiftA = (a.shift && a.shift.includes('เช้า')) ? 1 : 2;
-            const shiftB = (b.shift && b.shift.includes('เช้า')) ? 1 : 2;
-            if (shiftA !== shiftB) return shiftA - shiftB;
+        // ถ้าทั้ง 2 แถวเคยถูกจัดลำดับไว้แล้ว ให้เรียงตามที่เคยลากเซฟไว้
+        if (indexA !== -1 && indexB !== -1) return indexA - indexB;
 
-            // 3. เทียบชื่อ
-            if (a.fullname < b.fullname) return -1;
-            if (a.fullname > b.fullname) return 1;
+        // 🔥 อัปเกรดลอจิก: ถ้ามีอันไหนเป็น "ข้อมูลใหม่" ให้บังคับแทรกเข้าตาม "วันที่และกะ" เสมอ 
+        // (แก้ปัญหาข้อมูลใหม่เด้งไปอยู่ท้ายตารางจนทำให้ Header สร้างซ้ำซ้อน)
+        if (a.work_date < b.work_date) return -1;
+        if (a.work_date > b.work_date) return 1;
 
-            return 0;
-        });
-    }
+        const shiftA = (a.shift && a.shift.includes('เช้า')) ? 1 : 2;
+        const shiftB = (b.shift && b.shift.includes('เช้า')) ? 1 : 2;
+        if (shiftA !== shiftB) return shiftA - shiftB;
+
+        if (a.fullname < b.fullname) return -1;
+        if (a.fullname > b.fullname) return 1;
+
+        return 0;
+    });
 
     const tbody = document.getElementById('attendanceTbody');
     tbody.innerHTML = '';
