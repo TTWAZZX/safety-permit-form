@@ -557,22 +557,23 @@ function setMode(mode) {
     }
 }
 
-// ================= HISTORY (ระบบใหม่ เฉพาะบุคคล + แบ่งหน้า) =================
+// ================= HISTORY (ระบบใหม่ เฉพาะบุคคล + วันที่ไทยเป๊ะๆ) =================
 async function fetchHistory() {
     currentPastPage = 1;
     const listToday = document.getElementById('listToday');
     const listPast = document.getElementById('listPast');
     const btnContainer = document.getElementById('btnLoadMoreContainer');
 
-    // 🟢 1. ดึงชื่อจาก Dropdown หน้าลงเวลา หรือจากที่ระบบจำไว้
-    const nameFilter = document.getElementById('fullname').value || localStorage.getItem('sec_last_name'); 
+    // 🟢 1. พยายามดึงชื่อจากหลายๆ จุด เพื่อให้ได้ชื่อที่ถูกต้องที่สุด
+    let nameFilter = document.getElementById('fullname').value;
+    if (!nameFilter && selectPersonInstance) { nameFilter = selectPersonInstance.getValue(); }
+    if (!nameFilter) { nameFilter = localStorage.getItem('sec_last_name'); }
 
-    // 🟢 2. บังคับว่า "ต้องมีชื่อพนักงาน" ถึงจะโชว์ประวัติได้ (ป้องกันเห็นของคนอื่นรวมกัน)
     if (!nameFilter) {
-        listToday.innerHTML = '<div class="text-center text-muted small py-4"><i class="bi bi-info-circle text-primary mb-2" style="font-size: 2rem; display: block;"></i>กรุณาเลือกชื่อ-นามสกุล<br>ในหน้า "ลงเวลา" ก่อนดูประวัติครับ</div>';
-        listPast.innerHTML = '<div class="text-center text-muted small py-4"><i class="bi bi-info-circle text-primary mb-2" style="font-size: 2rem; display: block;"></i>กรุณาเลือกชื่อ-นามสกุล<br>ในหน้า "ลงเวลา" ก่อนดูประวัติครับ</div>';
+        listToday.innerHTML = '<div class="text-center text-muted small py-4"><i class="bi bi-info-circle text-primary mb-2" style="font-size: 2rem; display: block;"></i>กรุณาเลือกรหัส/ชื่อ<br>ในหน้า "ลงเวลา" ก่อนดูประวัติครับ</div>';
+        listPast.innerHTML = '<div class="text-center text-muted small py-4"><i class="bi bi-info-circle text-primary mb-2" style="font-size: 2rem; display: block;"></i>กรุณาเลือกรหัส/ชื่อ<br>ในหน้า "ลงเวลา" ก่อนดูประวัติครับ</div>';
         btnContainer.classList.add('d-none');
-        return; // หยุดการทำงาน ไม่ดึงข้อมูล
+        return;
     }
 
     listToday.innerHTML = '<div class="text-center text-muted small py-3">กำลังโหลด...</div>';
@@ -580,38 +581,48 @@ async function fetchHistory() {
     btnContainer.classList.add('d-none');
 
     try {
-        const todayStr = new Date().toISOString().split('T')[0];
+        // 🟢 2. บังคับใช้วันที่เวลาประเทศไทย (ป้องกันบั๊ก UTC ข้ามวัน)
+        const todayLocal = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Bangkok"}));
+        const yyyy = todayLocal.getFullYear();
+        const mm = String(todayLocal.getMonth() + 1).padStart(2, '0');
+        const dd = String(todayLocal.getDate()).padStart(2, '0');
+        const todayStr = `${yyyy}-${mm}-${dd}`;
         
-        // 🟢 3. ดึงข้อมูล "วันนี้" (บังคับกรองเฉพาะชื่อตัวเองเท่านั้น)
+        // 🟢 3. ดึงข้อมูล "วันนี้"
         const { data: dataToday, error: errToday } = await db.from('guard_attendance')
             .select('*')
             .eq('work_date', todayStr)
-            .eq('fullname', nameFilter) // ล็อกชื่อเป๊ะๆ
+            .eq('fullname', nameFilter) // ล็อกชื่อ
             .order('created_at', { ascending: false });
 
         if (errToday) throw errToday;
 
-        let htmlToday = '';
-        dataToday.forEach(item => { htmlToday += generateHistoryCard(item); });
-        listToday.innerHTML = htmlToday || '<div class="text-center text-muted small py-3">ไม่มีประวัติวันนี้</div>';
+        // ใส่ป้ายบอกว่ากำลังดูของใครอยู่
+        let htmlToday = `<div class="badge bg-primary bg-opacity-10 text-primary mb-3 w-100 py-2 fs-6 shadow-sm border">📅 ประวัติวันนี้ของ: ${nameFilter}</div>`;
+        
+        if (dataToday && dataToday.length > 0) {
+            dataToday.forEach(item => { htmlToday += generateHistoryCard(item); });
+        } else {
+            htmlToday += '<div class="text-center text-muted small py-3">ไม่มีประวัติลงเวลาของวันนี้</div>';
+        }
+        listToday.innerHTML = htmlToday;
 
-        // โหลดข้อมูล "ย้อนหลัง" พร้อมส่งชื่อไปให้ค้นหา
-        await loadPastHistory(nameFilter);
+        // 🟢 4. โหลดข้อมูล "ย้อนหลัง" พร้อมส่งวันที่ไทยเข้าไป
+        await loadPastHistory(nameFilter, todayStr);
 
     } catch (err) { console.error(err); }
 }
 
-async function loadPastHistory(nameFilter) {
+async function loadPastHistory(nameFilter, todayStr) {
     try {
-        const todayStr = new Date().toISOString().split('T')[0];
         const from = (currentPastPage - 1) * ITEMS_PER_PAGE;
         const to = from + ITEMS_PER_PAGE - 1;
         
-        // 🟢 ดึงข้อมูล "ย้อนหลัง" (บังคับกรองเฉพาะชื่อตัวเองเท่านั้น)
+        // ดึงย้อนหลังที่ วันที่ < วันนี้
         const { data: dataPast, error: errPast } = await db.from('guard_attendance')
             .select('*')
             .lt('work_date', todayStr)
-            .eq('fullname', nameFilter) // ล็อกชื่อเป๊ะๆ
+            .eq('fullname', nameFilter) // ล็อกชื่อ
             .order('work_date', { ascending: false })
             .order('created_at', { ascending: false })
             .range(from, to);
@@ -619,17 +630,27 @@ async function loadPastHistory(nameFilter) {
         if (errPast) throw errPast;
 
         let htmlPast = '';
-        dataPast.forEach(item => { htmlPast += generateHistoryCard(item); });
+        // ถ้าเป็นหน้าแรก ให้แสดงป้ายชื่อด้วย
+        if (currentPastPage === 1) {
+            htmlPast = `<div class="badge bg-secondary bg-opacity-10 text-secondary mb-3 w-100 py-2 fs-6 shadow-sm border">⏳ ประวัติย้อนหลังของ: ${nameFilter}</div>`;
+        }
+
+        if (dataPast && dataPast.length > 0) {
+            dataPast.forEach(item => { htmlPast += generateHistoryCard(item); });
+        } else if (currentPastPage === 1) {
+            htmlPast += '<div class="text-center text-muted small py-3">ไม่มีประวัติย้อนหลังในระบบ</div>';
+        }
 
         const listPast = document.getElementById('listPast');
         if (currentPastPage === 1) {
-            listPast.innerHTML = htmlPast || '<div class="text-center text-muted small py-3">ไม่มีประวัติย้อนหลัง</div>';
+            listPast.innerHTML = htmlPast;
         } else {
             listPast.insertAdjacentHTML('beforeend', htmlPast); 
         }
 
+        // เช็คโชว์ปุ่ม Load More
         const btnContainer = document.getElementById('btnLoadMoreContainer');
-        if (dataPast.length === ITEMS_PER_PAGE) {
+        if (dataPast && dataPast.length === ITEMS_PER_PAGE) {
             btnContainer.classList.remove('d-none');
         } else {
             btnContainer.classList.add('d-none');
@@ -644,8 +665,12 @@ function loadMorePast() {
     btn.disabled = true;
 
     currentPastPage++; 
-    const nameFilter = document.getElementById('fullname').value || localStorage.getItem('sec_last_name');
-    loadPastHistory(nameFilter).then(() => {
+    
+    let nameFilter = document.getElementById('fullname').value || localStorage.getItem('sec_last_name');
+    const todayLocal = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Bangkok"}));
+    const todayStr = `${todayLocal.getFullYear()}-${String(todayLocal.getMonth() + 1).padStart(2, '0')}-${String(todayLocal.getDate()).padStart(2, '0')}`;
+
+    loadPastHistory(nameFilter, todayStr).then(() => {
         btn.innerHTML = 'ดูประวัติเก่ากว่านี้ <i class="bi bi-chevron-down"></i>';
         btn.disabled = false;
     });
