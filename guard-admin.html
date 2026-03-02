@@ -408,6 +408,7 @@
                             
                             <button id="btnSaveOrder" onclick="saveRowOrder()" class="btn btn-warning fw-bold d-none animate__animated animate__pulse"><i class="bi bi-save2 me-1"></i> ล็อกลำดับ</button>
                             
+                            <button onclick="openRecordModal()" class="btn btn-primary fw-bold"><i class="bi bi-plus-circle me-1"></i> เพิ่มรายการ</button>
                             <button onclick="exportExcel()" class="btn btn-success fw-bold"><i class="bi bi-file-earmark-excel me-1"></i> Excel</button>
                             <button onclick="exportPDF()" class="btn btn-danger fw-bold"><i class="bi bi-file-earmark-pdf me-1"></i> PDF</button>
                         </div>
@@ -716,6 +717,7 @@ async function loadAttendance() {
         return 0;
     });
 
+    window.currentAttendanceData = finalRows; // ให้ระบบจำข้อมูลไว้ส่งให้ฟอร์มแก้ไข
     const tbody = document.getElementById('attendanceTbody');
     tbody.innerHTML = '';
     
@@ -814,7 +816,7 @@ function renderRow(row, tbody, isAbsentDummy, hideInPrint, webCounter, printCoun
             <td data-col="time_out" class="text-center fw-bold text-danger">${row.time_out || '-'}</td>
             <td data-col="remark">${row.remark_type}${remarkDetailHtml}</td>
             <td data-col="action" class="text-center no-print">
-                ${isAbsentDummy ? '-' : `<button onclick="editTime('${row.id}', '${row.time_in}', '${row.time_out}')" class="btn btn-sm btn-light border text-primary px-3 rounded-pill"><i class="bi bi-pencil-square"></i></button>`}
+                <button onclick="openRecordModal('${row.id}')" class="btn btn-sm btn-light border text-primary px-3 rounded-pill"><i class="bi bi-pencil-square"></i></button>
             </td>
         </tr>`;
 }
@@ -861,30 +863,140 @@ function updateKPIs(total, morning, night, issue) {
     });
 }
 
-// ================= แก้ไขเวลา =================
-async function editTime(id, currentIn, currentOut) {
-    const { value: formValues } = await Swal.fire({
-        title: 'แก้ไขเวลา (Admin)',
-        html: `
-            <div class="text-start mt-3">
-                <label class="form-label fw-bold text-muted small">เวลาเข้า (IN)</label>
-                <input id="swal-in" type="time" value="${currentIn}" class="form-control mb-3">
-                <label class="form-label fw-bold text-muted small">เวลาออก (OUT)</label>
-                <input id="swal-out" type="time" value="${currentOut}" class="form-control">
+// ================= จัดการข้อมูล (เพิ่ม/แก้ไข/ลบ) แบบ Full Control =================
+async function openRecordModal(rowId = null) {
+    let isEdit = false;
+    let rowData = {
+        work_date: document.getElementById('filterMonth').value + '-01', 
+        shift: 'เช้า', id_card: '', fullname: '', time_in: '', time_out: '', remark_type: 'ปกติ', remark_detail: ''
+    };
+
+    if (rowId) {
+        const found = window.currentAttendanceData?.find(r => String(r.id) === String(rowId));
+        if (found) rowData = { ...found };
+        if (!String(rowId).startsWith('absent_')) isEdit = true; 
+    }
+
+    // ดึงรายชื่อพนักงานมาใส่ Dropdown
+    const nameOptions = Array.from(document.getElementById('filterName').options)
+        .filter(opt => opt.value !== 'ALL')
+        .map(opt => `<option value="${opt.value}">${opt.text}</option>`).join('');
+
+    // 🟢 ดึงรหัสบัตรจาก Master Data ในฐานข้อมูลมาใส่ Dropdown
+    const { data: cardData } = await db.from('security_card_master').select('card_number').order('card_number');
+    const cardOptions = cardData ? cardData.map(c => `<option value="${c.card_number}" ${c.card_number === rowData.id_card ? 'selected' : ''}>${c.card_number}</option>`).join('') : '';
+
+    // สร้าง HTML ฟอร์ม
+    const html = `
+        <div class="row text-start g-2 mt-2">
+            <div class="col-6"><label class="small fw-bold text-muted">วันที่</label><input id="m-date" type="date" class="form-control" value="${rowData.work_date}"></div>
+            <div class="col-6"><label class="small fw-bold text-muted">กะการทำงาน</label>
+                <select id="m-shift" class="form-select">
+                    <option value="เช้า" ${rowData.shift?.includes('เช้า') ? 'selected':''}>กะเช้า</option>
+                    <option value="ดึก" ${rowData.shift?.includes('ดึก') ? 'selected':''}>กะดึก</option>
+                </select>
             </div>
-        `,
-        focusConfirm: false, showCancelButton: true,
-        confirmButtonText: 'บันทึกข้อมูล', cancelButtonText: 'ยกเลิก',
-        customClass: { confirmButton: 'btn btn-primary px-4', cancelButton: 'btn btn-light border px-4' },
+            <div class="col-12 mt-2"><label class="small fw-bold text-muted">ชื่อพนักงาน</label>
+                <select id="m-name" class="form-select">
+                    <option value="">-- เลือกพนักงาน --</option>
+                    ${nameOptions.replace(`value="${rowData.fullname}"`, `value="${rowData.fullname}" selected`)}
+                </select>
+            </div>
+            
+            <div class="col-12 mt-2"><label class="small fw-bold text-muted">รหัสบัตร</label>
+                <select id="m-card" class="form-select">
+                    <option value="">-- เลือกรหัสบัตร --</option>
+                    ${cardOptions}
+                </select>
+            </div>
+
+            <div class="col-6 mt-2"><label class="small fw-bold text-muted">เวลาเข้า (IN)</label><input id="m-in" type="time" class="form-control" value="${rowData.time_in || ''}"></div>
+            <div class="col-6 mt-2"><label class="small fw-bold text-muted">เวลาออก (OUT)</label><input id="m-out" type="time" class="form-control" value="${rowData.time_out || ''}"></div>
+            <div class="col-6 mt-2"><label class="small fw-bold text-muted">สถานะ</label>
+                <select id="m-type" class="form-select">
+                    <option value="ปกติ" ${rowData.remark_type === 'ปกติ' ? 'selected':''}>ปกติ</option>
+                    <option value="ลาป่วย" ${rowData.remark_type === 'ลาป่วย' ? 'selected':''}>ลาป่วย</option>
+                    <option value="ลากิจ" ${rowData.remark_type === 'ลากิจ' ? 'selected':''}>ลากิจ</option>
+                    <option value="ขาดงาน" ${rowData.remark_type === 'ขาดงาน' ? 'selected':''}>ขาดงาน</option>
+                    <option value="แทน (รปภ.)" ${rowData.remark_type === 'แทน (รปภ.)' ? 'selected':''}>แทน (รปภ.)</option>
+                    <option value="แทน (หัวหน้าชุด รปภ.)" ${rowData.remark_type === 'แทน (หัวหน้าชุด รปภ.)' ? 'selected':''}>แทน (หัวหน้าชุด รปภ.)</option>
+                </select>
+            </div>
+            <div class="col-6 mt-2">
+                <label class="small fw-bold text-muted" id="m-detail-label">หมายเหตุ</label>
+                <input id="m-detail" type="text" class="form-control" value="${rowData.remark_detail === '-' ? '' : (rowData.remark_detail || '')}" placeholder="พิมพ์หมายเหตุ...">
+                <select id="m-substitute" class="form-select d-none">
+                    <option value="">-- เลือกคนที่ถูกแทน --</option>
+                    ${nameOptions.replace(`value="${rowData.remark_detail}"`, `value="${rowData.remark_detail}" selected`)}
+                </select>
+            </div>
+        </div>`;
+
+    const { value: formValues, isDenied } = await Swal.fire({
+        title: isEdit ? 'แก้ไขข้อมูลลงเวลา' : 'เพิ่มข้อมูลลงเวลา',
+        html: html,
+        showCancelButton: true,
+        showDenyButton: isEdit, 
+        confirmButtonText: '<i class="bi bi-save"></i> บันทึก',
+        cancelButtonText: 'ยกเลิก',
+        denyButtonText: '<i class="bi bi-trash3"></i> ลบข้อมูล',
+        customClass: { confirmButton: 'btn btn-primary px-4', cancelButton: 'btn btn-light border px-4', denyButton: 'btn btn-danger px-4 ms-auto' },
         buttonsStyling: false,
-        preConfirm: () => { return { in: document.getElementById('swal-in').value, out: document.getElementById('swal-out').value } }
+        didOpen: () => {
+            const typeSelect = document.getElementById('m-type');
+            const detailInput = document.getElementById('m-detail');
+            const substituteSelect = document.getElementById('m-substitute');
+            const detailLabel = document.getElementById('m-detail-label');
+
+            const toggleFields = () => {
+                if (typeSelect.value.includes('แทน')) {
+                    detailInput.classList.add('d-none');
+                    substituteSelect.classList.remove('d-none');
+                    detailLabel.innerText = "ชื่อคนที่ถูกแทน";
+                } else {
+                    detailInput.classList.remove('d-none');
+                    substituteSelect.classList.add('d-none');
+                    detailLabel.innerText = "หมายเหตุ";
+                }
+            };
+            typeSelect.addEventListener('change', toggleFields);
+            toggleFields(); 
+        },
+        preConfirm: () => {
+            const typeVal = document.getElementById('m-type').value;
+            let detailVal = typeVal.includes('แทน') ? document.getElementById('m-substitute').value : document.getElementById('m-detail').value;
+
+            return {
+                work_date: document.getElementById('m-date').value, shift: document.getElementById('m-shift').value,
+                fullname: document.getElementById('m-name').value, id_card: document.getElementById('m-card').value || '-',
+                time_in: document.getElementById('m-in').value || null, time_out: document.getElementById('m-out').value || null,
+                remark_type: typeVal, remark_detail: detailVal || null,
+            }
+        }
     });
 
-    if (formValues) {
-        Toast.fire({ icon: 'info', title: 'กำลังอัปเดต...' });
-        const { error } = await db.from('guard_attendance').update({ time_in: formValues.in || null, time_out: formValues.out || null, updated_at: new Date(), updated_by: 'Admin' }).eq('id', id);
-        if (error) { Swal.fire('Error', 'แก้ไขไม่ได้', 'error'); } 
-        else { Toast.fire({ icon: 'success', title: 'อัปเดตเวลาเรียบร้อย' }); loadAttendance(); }
+    if (isDenied) {
+        Swal.fire({ title: 'ยืนยันการลบ?', text: "ข้อมูลนี้จะหายไปจากระบบทันที", icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545', confirmButtonText: 'ลบข้อมูล' })
+        .then(async (result) => {
+            if (result.isConfirmed) {
+                Toast.fire({ icon: 'info', title: 'กำลังลบ...' });
+                await db.from('guard_attendance').delete().eq('id', rowId);
+                Toast.fire({ icon: 'success', title: 'ลบเรียบร้อย' }); loadAttendance();
+            }
+        });
+    } else if (formValues) {
+        if (!formValues.work_date || !formValues.fullname) return Swal.fire('แจ้งเตือน', 'กรุณาใส่วันที่และเลือกชื่อพนักงาน', 'warning');
+        if (formValues.remark_type.includes('แทน') && !formValues.remark_detail) return Swal.fire('แจ้งเตือน', 'กรุณาเลือกชื่อคนที่ถูกแทน', 'warning');
+        
+        Toast.fire({ icon: 'info', title: 'กำลังบันทึก...' });
+        
+        if (isEdit) {
+            const { error } = await db.from('guard_attendance').update({ ...formValues, updated_at: new Date(), updated_by: 'Admin' }).eq('id', rowId);
+            if (error) Swal.fire('Error', error.message, 'error'); else { Toast.fire({ icon: 'success', title: 'อัปเดตเรียบร้อย' }); loadAttendance(); }
+        } else {
+            const { error } = await db.from('guard_attendance').insert([{ ...formValues, updated_by: 'Admin' }]);
+            if (error) Swal.fire('Error', error.message, 'error'); else { Toast.fire({ icon: 'success', title: 'เพิ่มข้อมูลเรียบร้อย' }); loadAttendance(); }
+        }
     }
 }
 
