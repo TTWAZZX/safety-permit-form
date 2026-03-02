@@ -253,17 +253,21 @@
             }
 
             /* ================= COLUMN WIDTH CONTROL ================= */
-            /* ลำดับ */
-            th[data-col="no"], td[data-col="no"] { width: 45px !important; text-align: center !important; font-weight: bold !important; }
+            /* ลำดับ (คงเดิม) */
+            th[data-col="no"], td[data-col="no"] { width: 50px !important; text-align: center !important; font-weight: bold !important; }
             
-            /* ชื่อพนักงาน (ขยายให้กว้างขึ้น) */
-            th[data-col="name"], td[data-col="name"] { width: 220px !important; font-weight: 600 !important; white-space: nowrap !important; }
+            /* 🟢 ชื่อพนักงาน (ลดเหลือ 200px ตามที่คุณพี่ต้องการครับ กว้างพอดีสำหรับชื่อ-สกุล) */
+            th[data-col="name"], td[data-col="name"] { width: 200px !important; font-weight: 600 !important; white-space: nowrap !important; }
             
-            /* เข้า / ออก */
-            td[data-col="time_in"], td[data-col="time_out"] { width: 65px !important; text-align: center !important; font-weight: bold !important; white-space: nowrap !important; }
+            /* เข้า / ออก (คงเดิม) */
+            td[data-col="time_in"], td[data-col="time_out"] { width: 70px !important; text-align: center !important; font-weight: bold !important; white-space: nowrap !important; }
             
-            /* 🟢 หมายเหตุ (ปรับให้แคบลง) */
-            td[data-col="remark"] { width: 140px !important; white-space: normal !important; line-height: 1.35 !important; }
+            /* 🟢 หมายเหตุ (ให้กินพื้นที่หน้ากระดาษที่เหลือทั้งหมด และบังคับห้ามตัดลงบรรทัดใหม่) */
+            th[data-col="remark"], td[data-col="remark"] { 
+                width: auto !important; 
+                white-space: nowrap !important; 
+                font-size: 8pt !important; 
+            }
 
             /* ================= ซ่อนคอลัมน์ที่ไม่ต้องการใน PDF ================= */
             th[data-col="date"], td[data-col="date"],
