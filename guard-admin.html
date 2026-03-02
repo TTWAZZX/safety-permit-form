@@ -212,16 +212,35 @@
             table#attendanceTable thead { display: table-header-group !important; }
             tr { page-break-inside: avoid !important; break-inside: avoid !important; }
 
-            /* 🟢 ปรับแต่ง Group Header ใน PDF */
+            /* 🟢 ปรับแต่ง Group Header ใน PDF + แก้ไฮไลท์ขาว + แยกสีกะ */
             .group-header td {
-                background-color: #e2e8f0 !important;
-                color: #000 !important;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
                 font-weight: bold !important;
                 text-align: left !important;
                 padding: 8px 15px !important;
                 font-size: 10pt !important;
+            }
+            
+            /* ล้างพื้นหลังสีขาวที่แอบติดมากับตัวหนังสือ */
+            .group-header td * {
+                background-color: transparent !important; 
+            }
+
+            /* สีแถบกะเช้า (พื้นส้มอ่อน ตัวหนังสือดำ) */
+            .header-day td {
+                background-color: #fef3c7 !important;
+                color: #000000 !important;
+                border-top: 1px solid #000 !important;
+                border-bottom: 1px solid #000 !important;
+            }
+
+            /* สีแถบกะดึก (พื้นกรมท่าเข้ม ตัวหนังสือขาว) */
+            .header-night td {
+                background-color: #334155 !important;
+                color: #ffffff !important;
+                border-top: 1px solid #000 !important;
+                border-bottom: 1px solid #000 !important;
             }
 
             /* ================= COLUMN WIDTH CONTROL ================= */
@@ -713,14 +732,15 @@ async function loadAttendance() {
             webCounter = 1; 
             printCounter = 1; 
             
-            // สร้าง Header Group คั่นกลาง
-            const shiftIcon = shiftGroup === 'เช้า' ? '<i class="bi bi-sun-fill text-warning me-1"></i>' : (shiftGroup === 'ดึก' ? '<i class="bi bi-moon-stars-fill text-secondary me-1"></i>' : '📅');
+            // สร้าง Header Group คั่นกลาง (เพิ่ม Class สีกะเช้า-ดึก)
+            const shiftClass = shiftGroup === 'เช้า' ? 'header-day' : (shiftGroup === 'ดึก' ? 'header-night' : '');
+            const shiftIcon = shiftGroup === 'เช้า' ? '<i class="bi bi-sun-fill text-warning me-1"></i>' : (shiftGroup === 'ดึก' ? '<i class="bi bi-moon-stars-fill text-info me-1"></i>' : '📅');
             const shiftTime = shiftGroup === 'เช้า' ? '(06:00 - 18:00)' : (shiftGroup === 'ดึก' ? '(18:00 - 06:00)' : '');
             
             tbody.innerHTML += `
-                <tr class="group-header no-sort">
+                <tr class="group-header no-sort ${shiftClass}">
                     <td colspan="9" class="text-start fs-6 border-0">
-                        ${shiftIcon} <strong>วันที่: ${formatDateThai(row.work_date)} | กะ${shiftGroup} ${shiftTime}</strong>
+                        ${shiftIcon} <span>วันที่: ${formatDateThai(row.work_date)} | กะ${shiftGroup} ${shiftTime}</span>
                     </td>
                 </tr>
             `;
@@ -766,8 +786,8 @@ function renderRow(row, tbody, isAbsentDummy, hideInPrint, webCounter, printCoun
         detailText = row.remark_detail;
     }
     
-    // 🔥 ปรับให้หมายเหตุต่อท้ายกันเป็นบรรทัดเดียว ไม่ขึ้นบรรทัดใหม่
-    const remarkDetailHtml = detailText ? ` <span class="text-muted ms-1">${detailText}</span>` : '';
+    // 🔥 ปรับให้หมายเหตุต่อท้ายกันเป็นบรรทัดเดียว และย่อขนาดตัวอักษรลง
+    const remarkDetailHtml = detailText ? ` <span class="text-muted ms-1" style="font-size: 0.65em; font-weight: normal;">${detailText}</span>` : '';
 
     const rowClasses = ['data-row'];
     if (isAbsentDummy) rowClasses.push('bg-light', 'opacity-75');
