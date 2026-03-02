@@ -123,7 +123,6 @@
         .table-responsive { border-radius: var(--radius-md); border: 1px solid var(--border-color); } 
         .table { color: var(--text-main); margin-bottom: 0; border-collapse: collapse !important; }
         
-        /* 🟢 บังคับตีเส้นตารางทุกช่องตั้งแต่หน้าเว็บ */
         .table th, .table td { 
             border: 1px solid var(--border-color) !important; 
             padding: 14px 15px; 
@@ -138,9 +137,21 @@
         .table tbody tr { transition: background-color 0.15s; }
         .table tbody tr:hover { background-color: var(--table-hover-bg); }
         
+        /* 🟢 สไตล์สำหรับแถวหัวข้อกลุ่ม (Group Header) */
+        .group-header td {
+            background-color: #f8fafc;
+            color: var(--primary-color);
+            padding: 12px 20px !important;
+            border-top: 2px solid var(--primary-color) !important;
+        }
+        [data-theme="dark"] .group-header td {
+            background-color: #1e293b;
+            color: #38bdf8;
+        }
+
         .sortable-ghost { background-color: var(--table-hover-bg) !important; opacity: 0.8; border: 2px dashed var(--primary-color); }
-        #attendanceTbody tr { cursor: grab; }
-        #attendanceTbody tr:active { cursor: grabbing; }
+        #attendanceTbody tr:not(.group-header) { cursor: grab; }
+        #attendanceTbody tr:not(.group-header):active { cursor: grabbing; }
         .col-hidden { display: none !important; }
 
         /* ================= LOADER ================= */
@@ -152,13 +163,13 @@
         .line-spinner { border: 4px solid var(--border-color); border-top: 4px solid var(--primary-color); border-radius: 50%; width: 45px; height: 45px; animation: spin 1s linear infinite; margin-bottom: 20px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* ================= 🖨️ PRINT TEMPLATE (STRICTLY FORMAL - PROFESSIONAL LAYOUT UPGRADE) ================= */
+        /* ================= 🖨️ PRINT TEMPLATE (PDF EXPORT) ================= */
         .print-only { display: none; }
+        .print-no { display: none; } /* ซ่อนตัวเลข PDF ในหน้าเว็บ */
 
         @media print {
             @page { size: A4 portrait; margin: 15mm 10mm; }
 
-            /* ซ่อนส่วนที่ไม่เกี่ยวข้อง */
             .no-print, .btn, .theme-toggle, .top-navbar, .kpi-card, #pills-tab, .dropdown,
             .admin-card:not(#attendanceTableContainer) {
                 display: none !important;
@@ -166,192 +177,75 @@
 
             .print-only { display: block !important; }
 
-            /* รีเซ็ตพื้นฐาน */
             body, * {
                 background: white !important;
                 color: black !important;
                 font-family: 'Sarabun', sans-serif !important;
             }
 
-            .admin-card {
-                border: none !important;
-                box-shadow: none !important;
-                padding: 0 !important;
-                border-radius: 0 !important;
-            }
-
-            .table-responsive {
-                border: none !important;
-                overflow: visible !important;
-            }
-
-            .badge {
-                border: none !important;
-                background: transparent !important;
-                color: black !important;
-                padding: 0 !important;
-                font-size: 9.5pt !important;
-                font-weight: normal !important;
-            }
-
+            .admin-card { border: none !important; box-shadow: none !important; padding: 0 !important; border-radius: 0 !important; }
+            .table-responsive { border: none !important; overflow: visible !important; }
+            .badge { border: none !important; background: transparent !important; color: black !important; padding: 0 !important; font-size: 9.5pt !important; font-weight: normal !important; }
             i { display: none !important; }
 
-            /* ================= HEADER ================= */
-            .print-header {
-                text-align: center;
-                margin-bottom: 20px;
-                border-bottom: 2px solid #000;
-                padding-bottom: 10px;
-            }
+            /* HEADER PDF */
+            .print-header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; }
+            .print-header h4 { font-size: 16pt; font-weight: bold; margin-bottom: 5px; }
+            .print-header p { font-size: 11pt; margin: 2px 0; }
 
-            .print-header h4 {
-                font-size: 16pt;
-                font-weight: bold;
-                margin-bottom: 5px;
-            }
+            /* TABLE PDF */
+            table#attendanceTable { width: 100% !important; border-collapse: collapse !important; border-spacing: 0 !important; table-layout: auto !important; border: 1px solid #000 !important; margin-top: 0; }
+            table#attendanceTable thead th { position: static !important; top: auto !important; z-index: auto !important; }
+            table#attendanceTable th, table#attendanceTable td { border: 1px solid #000 !important; padding: 6px 8px !important; font-size: 9.6pt !important; vertical-align: middle !important; }
+            #mainTableHeader th { background-color: #f2f2f2 !important; font-weight: bold !important; text-align: center !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            table#attendanceTable thead { display: table-header-group !important; }
+            tr { page-break-inside: avoid !important; break-inside: avoid !important; }
 
-            .print-header p {
-                font-size: 11pt;
-                margin: 2px 0;
-            }
+            /* 🟢 COLUMN CONTROL IN PDF */
+            th[data-col="no"], td[data-col="no"] { width: 45px !important; text-align: center !important; font-weight: bold !important; }
+            th[data-col="name"], td[data-col="name"] { width: 190px !important; font-weight: 600 !important; white-space: nowrap !important; }
+            td[data-col="time_in"], td[data-col="time_out"] { width: 65px !important; text-align: center !important; font-weight: bold !important; white-space: nowrap !important; }
+            td[data-col="remark"] { width: auto !important; white-space: normal !important; line-height: 1.35 !important; }
 
-            table#attendanceTable th {
-                white-space: nowrap !important;
-            }
-
-            /* ================= TABLE CORE ================= */
-
-            table#attendanceTable {
-                width: 100% !important;
-                border-collapse: collapse !important;
-                border-spacing: 0 !important;
-                table-layout: auto !important;
-                border: 1px solid #000 !important;
-                margin-top: 0;
-            }
-
-            /* 🔴 ปิด sticky header ตอน print */
-            table#attendanceTable thead th {
-                position: static !important;
-                top: auto !important;
-                z-index: auto !important;
-            }
-
-            /* 🔴 บังคับเส้นทุก cell */
-            table#attendanceTable th,
-            table#attendanceTable td {
-                border: 1px solid #000 !important;
-                padding: 6px 8px !important;
-                font-size: 9.6pt !important;
-                vertical-align: middle !important;
-            }
-
-            /* หัวคอลัมน์ */
-            #mainTableHeader th {
-                background-color: #f2f2f2 !important;
-                font-weight: bold !important;
-                text-align: center !important;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
-
-            /* ให้หัวตารางขึ้นทุกหน้า */
-            table#attendanceTable thead {
-                display: table-header-group !important;
-            }
-
-            tr {
-                page-break-inside: avoid !important;
-                break-inside: avoid !important;
-            }
-
-            /* ================= COLUMN WIDTH CONTROL ================= */
-
-            /* ลำดับ (เพิ่มใหม่) */
-            th[data-col="no"], td[data-col="no"] {
-                width: 45px !important;
-                text-align: center !important;
-                font-weight: bold !important;
-            }
-
-            /* วันที่ */
-            th[data-col="date"],
-            td[data-col="date"] {
-                width: 90px !important;
-                white-space: nowrap !important;
-                text-align: center !important;
-            }
-
-            /* กะทำงาน */
-            th[data-col="shift"],
-            td[data-col="shift"] {
-                width: 135px !important;
-                white-space: nowrap !important;
-            }
-
-            /* ชื่อพนักงาน */
-            th[data-col="name"],
-            td[data-col="name"] {
-                width: 170px !important;
-            }
-
-            td[data-col="name"] {
-                font-weight: 600 !important;
-                white-space: nowrap !important;
-            }
-
-            /* เข้า / ออก */
-            td[data-col="time_in"],
-            td[data-col="time_out"] {
-                width: 65px !important;
-                text-align: center !important;
-                font-weight: bold !important;
-                white-space: nowrap !important;
-            }
-
-            /* หมายเหตุ */
-            td[data-col="remark"] {
-                width: auto !important;
-                white-space: normal !important; /* 🔥 อนุญาต wrap */
-                line-height: 1.35 !important;
-            }
-
-            /* ================= ซ่อนคอลัมน์ที่ไม่ต้องการ ================= */
-
+            /* 🟢 ซ่อนคอลัมน์ที่ไม่จำเป็นใน PDF (เพื่อให้ตารางกว้างขึ้น) */
+            th[data-col="date"], td[data-col="date"],
+            th[data-col="shift"], td[data-col="shift"],
             th[data-col="id_card"], td[data-col="id_card"],
             th[data-col="action"], td[data-col="action"] {
                 display: none !important;
             }
 
-            .col-hidden {
-                display: none !important;
+            .col-hidden { display: none !important; }
+
+            /* 🟢 ปรับแต่ง Group Header ใน PDF */
+            .group-header td {
+                background-color: #e2e8f0 !important;
+                color: #000 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+                font-weight: bold !important;
+                text-align: left !important;
+                padding: 8px 15px !important;
+                font-size: 10pt !important;
             }
 
-            /* ================= FOOTER ================= */
+            /* 🔥 ลอจิกซ่อนคนลาออกจาก PDF */
+            .hide-in-print { display: none !important; }
 
-            .print-footer-content {
-                display: block !important;
-                margin-top: 50px;
-                page-break-inside: avoid;
-            }
+            /* 🔥 ระบบรันเลข 1, 2, 3 อัตโนมัติใน PDF (ข้ามคนลา) */
+            tbody { counter-reset: printCounter; }
+            .group-header { counter-reset: printCounter; } /* รีเซ็ตเลขเมื่อขึ้นกลุ่มใหม่ */
+            tr.data-row:not(.hide-in-print) { counter-increment: printCounter; }
+            
+            .web-no { display: none !important; } /* ซ่อนเลขของหน้าเว็บ */
+            .print-no { display: inline !important; } /* แสดงเลขที่คำนวณใหม่ของ PDF */
+            tr.data-row:not(.hide-in-print) .print-no::before { content: counter(printCounter); }
 
-            .sign-box-container {
-                display: flex;
-                justify-content: center;
-                width: 100%;
-            }
-
-            .sign-box {
-                width: 350px;
-                text-align: center;
-                font-size: 11pt;
-            }
-
-            .sign-line {
-                border-bottom: 1px solid #000 !important;
-                margin: 40px auto 10px;
-                width: 80%;
-            }
+            /* FOOTER PDF */
+            .print-footer-content { display: block !important; margin-top: 50px; page-break-inside: avoid; }
+            .sign-box-container { display: flex; justify-content: center; width: 100%; }
+            .sign-box { width: 350px; text-align: center; font-size: 11pt; }
+            .sign-line { border-bottom: 1px solid #000 !important; margin: 40px auto 10px; width: 80%; }
         }
     </style>
 </head>
@@ -496,7 +390,8 @@
                         <table id="attendanceTable" class="table align-middle mb-0">
                             <thead id="mainTableHeader">
                                 <tr>
-                                    <th data-col="no" class="text-center" style="width: 60px;">ลำดับ</th> <th data-col="date" class="text-center">วันที่</th>
+                                    <th data-col="no" class="text-center" style="width: 60px;">ลำดับ</th>
+                                    <th data-col="date" class="text-center">วันที่</th>
                                     <th data-col="shift">กะทำงาน</th>
                                     <th data-col="id_card">รหัสบัตร</th>
                                     <th data-col="name">ชื่อพนักงาน</th> 
@@ -595,35 +490,22 @@ const ADMIN_PIN = "admin1234";
 let shiftChartInstance = null;
 let sortableInstance = null; 
 
-// ================= TOAST NOTIFICATION =================
-const Toast = Swal.mixin({
-    toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, timerProgressBar: true
-});
+const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, timerProgressBar: true });
 
 // ================= INIT =================
 window.onload = async () => {
     initTheme();
     initColumnSelector(); 
-    if(sessionStorage.getItem('isAdminLoggedIn') === 'true') {
-        unlockDashboard();
-    }
+    if(sessionStorage.getItem('isAdminLoggedIn') === 'true') unlockDashboard();
 };
 
 function checkLogin() {
     const pin = document.getElementById('adminPin').value;
-    if(pin === ADMIN_PIN) {
-        sessionStorage.setItem('isAdminLoggedIn', 'true');
-        unlockDashboard();
-    } else {
-        Swal.fire({ icon: 'error', title: 'รหัสผ่านไม่ถูกต้อง', confirmButtonColor: '#dc3545' });
-        document.getElementById('adminPin').value = '';
-    }
+    if(pin === ADMIN_PIN) { sessionStorage.setItem('isAdminLoggedIn', 'true'); unlockDashboard(); } 
+    else { Swal.fire({ icon: 'error', title: 'รหัสผ่านไม่ถูกต้อง', confirmButtonColor: '#dc3545' }); document.getElementById('adminPin').value = ''; }
 }
 
-function logout() {
-    sessionStorage.removeItem('isAdminLoggedIn');
-    location.reload();
-}
+function logout() { sessionStorage.removeItem('isAdminLoggedIn'); location.reload(); }
 
 async function unlockDashboard() {
     document.getElementById('loginScreen').style.display = 'none';
@@ -636,12 +518,9 @@ async function unlockDashboard() {
         await loadFilterNames(); 
         await loadAttendance();
         await loadMasterTables();
-        
         document.getElementById('loadingScreen').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
-    } catch (err) {
-        Swal.fire('ข้อผิดพลาด', 'โหลดข้อมูลไม่สำเร็จ', 'error');
-    }
+    } catch (err) { Swal.fire('ข้อผิดพลาด', 'โหลดข้อมูลไม่สำเร็จ', 'error'); }
 }
 
 // ================= THEME =================
@@ -668,7 +547,6 @@ function initColumnSelector() {
         const colId = th.getAttribute('data-col');
         const colName = th.innerText;
         if(colId === 'action') return;
-        // 🟢 เพิ่ม default check ให้ ลำดับ (no)
         const isChecked = colId !== 'id_card' ? 'checked' : '';
         selectorMenu.innerHTML += `
             <li>
@@ -694,6 +572,13 @@ function toggleColumn(colIndex, isVisible) {
     });
 }
 
+// Helper จัดฟอร์แมตวันที่แบบไทย
+function formatDateThai(dateStr) {
+    if (!dateStr) return '';
+    const [year, month, day] = dateStr.split('-');
+    return `${day}/${month}/${year}`;
+}
+
 // ================= ระบบดึงข้อมูล =================
 async function loadFilterNames() {
     const { data } = await db.from('security_personnel_master').select('fullname').order('fullname');
@@ -702,11 +587,7 @@ async function loadFilterNames() {
     if(data) data.forEach(p => { select.innerHTML += `<option value="${p.fullname}">${p.fullname}</option>`; });
 }
 
-async function refreshAdminData() {
-    Toast.fire({ icon: 'info', title: 'กำลังดึงข้อมูล...' });
-    await loadAttendance();
-    Toast.fire({ icon: 'success', title: 'อัปเดตเรียบร้อย' });
-}
+async function refreshAdminData() { Toast.fire({ icon: 'info', title: 'กำลังดึงข้อมูล...' }); await loadAttendance(); Toast.fire({ icon: 'success', title: 'อัปเดตเรียบร้อย' }); }
 
 async function loadAttendance() {
     const filterMonth = document.getElementById('filterMonth').value; 
@@ -716,7 +597,6 @@ async function loadAttendance() {
     if (!filterMonth) return Swal.fire('แจ้งเตือน', 'กรุณาเลือกเดือน', 'warning');
 
     let query = db.from('guard_attendance').select('*');
-    
     const startDate = `${filterMonth}-01`;
     const lastDayInMonth = new Date(filterMonth.split('-')[0], filterMonth.split('-')[1], 0).getDate();
     const endDate = `${filterMonth}-${String(lastDayInMonth).padStart(2, '0')}`;
@@ -730,7 +610,6 @@ async function loadAttendance() {
 
     let finalRows = [];
     const attendanceMap = new Set(attendanceData.map(item => `${item.work_date}_${item.fullname}`));
-    
     attendanceData.forEach(row => finalRows.push(row));
 
     if (filterName !== 'ALL' && filterShift === 'ALL') {
@@ -738,20 +617,16 @@ async function loadAttendance() {
         for (let d = 1; d <= daysInMonth; d++) {
             const dateStr = `${filterMonth}-${String(d).padStart(2, '0')}`;
             if (!attendanceMap.has(`${dateStr}_${filterName}`)) {
-                const absentRow = {
-                    id: 'absent_' + dateStr, 
-                    work_date: dateStr, shift: '-', id_card: '-', fullname: filterName,
+                finalRows.push({
+                    id: 'absent_' + dateStr, work_date: dateStr, shift: '-', id_card: '-', fullname: filterName,
                     time_in: null, time_out: null, 
-                    remark_type: '<span class="badge bg-light text-secondary border px-2 py-1">ไม่มีบันทึกเวลา</span>', 
-                    remark_detail: '-'
-                };
-                finalRows.push(absentRow);
+                    remark_type: '<span class="badge bg-light text-secondary border px-2 py-1">ไม่มีบันทึกเวลา</span>', remark_detail: '-'
+                });
             }
         }
     }
 
-    // 🟢 เรียงลำดับข้อมูล: วันที่ -> กะ (เช้ามาก่อนดึก) -> ชื่อพนักงาน
-    // หรือถ้ามีการลากสลับค้างไว้ ก็ให้โหลดจาก LocalStorage
+    // เรียงลำดับ: วันที่ -> กะเช้าขึ้นก่อน -> ชื่อพนักงาน
     const storageKey = `table_order_${filterMonth}_${filterName}_${filterShift}`;
     const savedOrderStr = localStorage.getItem(storageKey);
     
@@ -766,21 +641,14 @@ async function loadAttendance() {
             return 0;
         });
     } else {
-        // 🟢 ลอจิกการ Sort อัตโนมัติ (บังคับเช้าขึ้นก่อนดึก)
         finalRows.sort((a, b) => {
-            // 1. เทียบวันที่
             if (a.work_date < b.work_date) return -1;
             if (a.work_date > b.work_date) return 1;
-
-            // 2. เทียบกะการทำงาน (ให้ "เช้า" มีค่าน้อยกว่า เพื่อให้ขึ้นก่อน "ดึก")
             const shiftA = (a.shift && a.shift.includes('เช้า')) ? 1 : 2;
             const shiftB = (b.shift && b.shift.includes('เช้า')) ? 1 : 2;
             if (shiftA !== shiftB) return shiftA - shiftB;
-
-            // 3. เทียบชื่อ
             if (a.fullname < b.fullname) return -1;
             if (a.fullname > b.fullname) return 1;
-
             return 0;
         });
     }
@@ -788,29 +656,40 @@ async function loadAttendance() {
     const tbody = document.getElementById('attendanceTbody');
     tbody.innerHTML = '';
     
-    // 🟢 ระบบคำนวณตัวเลข ลำดับที่ 1-6 (รีเซ็ตเมื่อขึ้นวันใหม่หรือกะใหม่)
     let currentDate = null;
     let currentShiftGroup = null;
-    let counter = 1;
+    let webCounter = 1;
 
     finalRows.forEach(row => {
-        // ดึงเฉพาะคำว่า 'เช้า' หรือ 'ดึก' มาเป็นตัวเช็คกลุ่ม
         let shiftGroup = '-';
         if (row.shift && row.shift.includes('เช้า')) shiftGroup = 'เช้า';
         else if (row.shift && row.shift.includes('ดึก')) shiftGroup = 'ดึก';
 
+        // 🟢 ตรวจจับเพื่อแทรก "แถวหัวข้อกลุ่ม"
         if (row.work_date !== currentDate || shiftGroup !== currentShiftGroup) {
             currentDate = row.work_date;
             currentShiftGroup = shiftGroup;
-            counter = 1; // รีเซ็ตเลขกลับไปเป็น 1
+            webCounter = 1; 
+            
+            const shiftIcon = shiftGroup === 'เช้า' ? '<i class="bi bi-sun-fill text-warning me-1"></i>' : (shiftGroup === 'ดึก' ? '<i class="bi bi-moon-stars-fill text-secondary me-1"></i>' : '📅');
+            const shiftTime = shiftGroup === 'เช้า' ? '(06:00 - 18:00)' : (shiftGroup === 'ดึก' ? '(18:00 - 06:00)' : '');
+            
+            tbody.innerHTML += `
+                <tr class="group-header no-sort">
+                    <td colspan="9" class="text-start fs-6 border-0">
+                        ${shiftIcon} <strong>วันที่: ${formatDateThai(row.work_date)} | กะ${shiftGroup} ${shiftTime}</strong>
+                    </td>
+                </tr>
+            `;
         }
 
-        const isAbsent = String(row.id).startsWith('absent');
-        
-        // ส่งตัวแปร counter ไปแสดงผลด้วย
-        renderRow(row, tbody, isAbsent, counter);
-        
-        counter++; // รันเลขต่อไป
+        // 🔥 ลอจิกตรวจสอบคนลา/ขาด เพื่อซ่อนใน PDF
+        const isAbsentDummy = String(row.id).startsWith('absent');
+        const isLeave = row.remark_type && row.remark_type.includes('ลา');
+        const hideInPrint = isAbsentDummy || isLeave; // ตัวแปรคุมให้ซ่อนในหน้า PDF
+
+        renderRow(row, tbody, isAbsentDummy, hideInPrint, webCounter);
+        webCounter++;
     });
 
     const switches = document.querySelectorAll('[id^="colSwitch_"]');
@@ -823,15 +702,13 @@ async function loadAttendance() {
     sortableInstance = new Sortable(tbody, {
         animation: 150,
         ghostClass: 'sortable-ghost',
-        onEnd: function () {
-            document.getElementById('btnSaveOrder').classList.remove('d-none');
-            // แจ้งเตือนผู้ใช้ว่าถ้าลากสลับ เลขลำดับอาจจะเพี้ยน ต้องกดรีเฟรชถ้าอยากให้รันใหม่
-        }
+        filter: '.group-header', // ป้องกันการลากแถบหัวข้อกลุ่ม
+        preventOnFilter: false,
+        onEnd: function () { document.getElementById('btnSaveOrder').classList.remove('d-none'); }
     });
 }
 
-// 🟢 อัปเดตฟังก์ชัน renderRow ให้รับค่าลำดับ (rowNumber) ด้วย
-function renderRow(row, tbody, isAbsent, rowNumber) {
+function renderRow(row, tbody, isAbsentDummy, hideInPrint, webCounter) {
     const profileImg = row.profile_pic ? `<img src="${row.profile_pic}" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover;" class="me-2 no-print border shadow-sm">` : '';
     
     let detailText = '';
@@ -840,9 +717,16 @@ function renderRow(row, tbody, isAbsent, rowNumber) {
     }
     const remarkDetailHtml = detailText ? `<span class="text-muted d-block small mt-1">${detailText}</span>` : '';
 
+    // 🔥 ใส่คลาส 'data-row' เพื่อให้ PDF รันเลขถูก และ 'hide-in-print' ถ้าเป็นคนลา
+    const rowClasses = ['data-row'];
+    if (isAbsentDummy) rowClasses.push('bg-light', 'opacity-75');
+    if (hideInPrint) rowClasses.push('hide-in-print');
+
     tbody.innerHTML += `
-        <tr class="${isAbsent ? 'bg-light opacity-75' : ''}" data-id="${row.id}" title="จับลากเพื่อสลับแถวได้">
-            <td data-col="no" class="text-center fw-bold text-muted">${rowNumber}</td> <td data-col="date" class="text-center fw-bold text-muted">${row.work_date}</td>
+        <tr class="${rowClasses.join(' ')}" data-id="${row.id}" title="จับลากเพื่อสลับแถวได้">
+            <td data-col="no" class="text-center fw-bold text-muted">
+                <span class="web-no">${webCounter}</span> <span class="print-no"></span> </td>
+            <td data-col="date" class="text-center fw-bold text-muted">${row.work_date}</td>
             <td data-col="shift">${row.shift}</td>
             <td data-col="id_card"><span class="badge bg-light text-dark border">${row.id_card}</span></td>
             <td data-col="name" class="fw-bold">${profileImg}${row.fullname}</td>
@@ -850,7 +734,7 @@ function renderRow(row, tbody, isAbsent, rowNumber) {
             <td data-col="time_out" class="text-center fw-bold text-danger">${row.time_out || '-'}</td>
             <td data-col="remark">${row.remark_type} ${remarkDetailHtml}</td>
             <td data-col="action" class="text-center no-print">
-                ${isAbsent ? '-' : `<button onclick="editTime('${row.id}', '${row.time_in}', '${row.time_out}')" class="btn btn-sm btn-light border text-primary px-3 rounded-pill"><i class="bi bi-pencil-square"></i></button>`}
+                ${isAbsentDummy ? '-' : `<button onclick="editTime('${row.id}', '${row.time_in}', '${row.time_out}')" class="btn btn-sm btn-light border text-primary px-3 rounded-pill"><i class="bi bi-pencil-square"></i></button>`}
             </td>
         </tr>`;
 }
@@ -858,22 +742,17 @@ function renderRow(row, tbody, isAbsent, rowNumber) {
 // ================= ระบบบันทึกลำดับ =================
 function saveRowOrder() {
     Toast.fire({ icon: 'info', title: 'กำลังบันทึกลำดับ...' });
-    
     setTimeout(() => {
-        const rows = document.querySelectorAll('#attendanceTbody tr');
+        const rows = document.querySelectorAll('#attendanceTbody tr:not(.group-header)');
         const orderIds = Array.from(rows).map(tr => tr.getAttribute('data-id'));
         
         const filterMonth = document.getElementById('filterMonth').value || 'ALL';
         const filterName = document.getElementById('filterName').value || 'ALL';
         const filterShift = document.getElementById('filterShift').value || 'ALL';
-        const storageKey = `table_order_${filterMonth}_${filterName}_${filterShift}`;
-        
-        localStorage.setItem(storageKey, JSON.stringify(orderIds));
+        localStorage.setItem(`table_order_${filterMonth}_${filterName}_${filterShift}`, JSON.stringify(orderIds));
 
         document.getElementById('btnSaveOrder').classList.add('d-none');
         Toast.fire({ icon: 'success', title: 'ล็อกลำดับตารางเรียบร้อย' });
-        
-        // โหลดใหม่เพื่อให้ลำดับเลขรันให้ถูกต้องตามที่ลาก
         loadAttendance();
     }, 500);
 }
@@ -910,18 +789,15 @@ async function editTime(id, currentIn, currentOut) {
                 <input id="swal-out" type="time" value="${currentOut}" class="form-control">
             </div>
         `,
-        focusConfirm: false, showCancelButton: true,
-        confirmButtonText: 'บันทึกข้อมูล', cancelButtonText: 'ยกเลิก',
-        customClass: { confirmButton: 'btn btn-primary px-4', cancelButton: 'btn btn-light border px-4' },
-        buttonsStyling: false,
+        focusConfirm: false, showCancelButton: true, confirmButtonText: 'บันทึกข้อมูล', cancelButtonText: 'ยกเลิก',
+        customClass: { confirmButton: 'btn btn-primary px-4', cancelButton: 'btn btn-light border px-4' }, buttonsStyling: false,
         preConfirm: () => { return { in: document.getElementById('swal-in').value, out: document.getElementById('swal-out').value } }
     });
 
     if (formValues) {
         Toast.fire({ icon: 'info', title: 'กำลังอัปเดต...' });
         const { error } = await db.from('guard_attendance').update({ time_in: formValues.in || null, time_out: formValues.out || null, updated_at: new Date(), updated_by: 'Admin' }).eq('id', id);
-        if (error) { Swal.fire('Error', 'แก้ไขไม่ได้', 'error'); } 
-        else { Toast.fire({ icon: 'success', title: 'อัปเดตเวลาเรียบร้อย' }); loadAttendance(); }
+        if (error) { Swal.fire('Error', 'แก้ไขไม่ได้', 'error'); } else { Toast.fire({ icon: 'success', title: 'อัปเดตเวลาเรียบร้อย' }); loadAttendance(); }
     }
 }
 
@@ -959,21 +835,16 @@ async function addMaster(type) {
     if(!val) return;
 
     const { error } = await db.from(isCard ? 'security_card_master' : 'security_personnel_master').insert([ isCard ? { card_number: val } : { fullname: val } ]);
-    if(!error) {
-        document.getElementById(inputId).value = '';
-        Toast.fire({ icon: 'success', title: 'เพิ่มข้อมูลเรียบร้อย' });
-        loadMasterTables(); loadFilterNames(); 
-    } else { Swal.fire('Error', 'เกิดข้อผิดพลาด อาจมีข้อมูลซ้ำ', 'error'); }
+    if(!error) { document.getElementById(inputId).value = ''; Toast.fire({ icon: 'success', title: 'เพิ่มข้อมูลเรียบร้อย' }); loadMasterTables(); loadFilterNames(); } 
+    else { Swal.fire('Error', 'เกิดข้อผิดพลาด อาจมีข้อมูลซ้ำ', 'error'); }
 }
 
 async function delMaster(type, id, name) {
-    Swal.fire({
-        title: `ยืนยันลบ ${name}?`, text: "หากลบแล้วจะไม่สามารถกู้คืนได้", icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545', confirmButtonText: 'ลบข้อมูล', cancelButtonText: 'ยกเลิก'
+    Swal.fire({ title: `ยืนยันลบ ${name}?`, text: "หากลบแล้วจะไม่สามารถกู้คืนได้", icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545', confirmButtonText: 'ลบข้อมูล', cancelButtonText: 'ยกเลิก'
     }).then(async (result) => {
         if (result.isConfirmed) {
             await db.from(type === 'card' ? 'security_card_master' : 'security_personnel_master').delete().eq('id', id);
-            Toast.fire({ icon: 'success', title: 'ลบข้อมูลเรียบร้อย' });
-            loadMasterTables(); loadFilterNames();
+            Toast.fire({ icon: 'success', title: 'ลบข้อมูลเรียบร้อย' }); loadMasterTables(); loadFilterNames();
         }
     });
 }
