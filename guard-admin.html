@@ -722,6 +722,16 @@ async function loadAttendance() {
     const savedOrder = savedOrderStr ? JSON.parse(savedOrderStr) : [];
     
     finalRows.sort((a, b) => {
+        // 🔥 [ทางแยกใหม่]: ถ้าดู "รายบุคคล" บังคับเรียงวันที่เป๊ะๆ ป้องกันวันที่กระโดด
+        if (filterName !== 'ALL') {
+            if (a.work_date < b.work_date) return -1;
+            if (a.work_date > b.work_date) return 1;
+            const shiftA = (a.shift && a.shift.includes('เช้า')) ? 1 : 2;
+            const shiftB = (b.shift && b.shift.includes('เช้า')) ? 1 : 2;
+            return shiftA - shiftB;
+        }
+
+        // 👇👇👇 โค้ดเดิมสำหรับ "ทุกคน" (ไม่ถูกแก้ไข ทำงานเหมือนเดิม 100%) 👇👇👇
         const indexA = savedOrder.indexOf(String(a.id));
         const indexB = savedOrder.indexOf(String(b.id));
 
@@ -783,14 +793,23 @@ async function loadAttendance() {
 
         const isAbsentDummy = String(row.id).startsWith('absent');
         const isLeave = row.remark_type && row.remark_type.includes('ลา');
-        const hideInPrint = isAbsentDummy || isLeave; // เงื่อนไขการซ่อนในหน้า PDF
+        
+        // 🔥 [ทางแยกใหม่]: จัดการการแสดงผลใน PDF
+        let hideInPrint = false;
+        if (filterName === 'ALL') {
+            // ถ้าเลือก "ทุกคน" ให้ซ่อนคนลา (เหมือนของเดิม 100%)
+            hideInPrint = isAbsentDummy || isLeave; 
+        } else {
+            // ถ้าเลือก "รายบุคคล" ให้ค่า hideInPrint เป็น false เสมอ (ไม่ซ่อนเลย โชว์ครบทุกวัน)
+            hideInPrint = false;
+        }
 
         // โยนค่า counter ทั้งเว็บและ PDF ลงไปประมวลผล
         renderRow(row, tbody, isAbsentDummy, hideInPrint, webCounter, hideInPrint ? '-' : printCounter);
 
         webCounter++; // รันเลขหน้าเว็บไปเรื่อยๆ
         if (!hideInPrint) {
-            printCounter++; // รันเลข PDF เฉพาะคนที่ไม่ลา
+            printCounter++; // รันเลข PDF เฉพาะคนที่ไม่ลา (ถ้าดูรายบุคคล มันจะบวกทุกวันตามปกติ)
         }
     });
 
