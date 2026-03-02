@@ -557,49 +557,65 @@ function setMode(mode) {
     }
 }
 
-// ================= HISTORY (ระบบใหม่ แยกวันนี้/ย้อนหลัง + แบ่งหน้า) =================
+// ================= HISTORY (ระบบใหม่ เฉพาะบุคคล + แบ่งหน้า) =================
 async function fetchHistory() {
-    // รีเซ็ตหน้ากลับเป็นหน้า 1 เสมอเมื่อเปิดแท็บหรือรีเฟรช
     currentPastPage = 1;
-    document.getElementById('listToday').innerHTML = '<div class="text-center text-muted small py-3">กำลังโหลด...</div>';
-    document.getElementById('listPast').innerHTML = '<div class="text-center text-muted small py-3">กำลังโหลด...</div>';
-    document.getElementById('btnLoadMoreContainer').classList.add('d-none');
+    const listToday = document.getElementById('listToday');
+    const listPast = document.getElementById('listPast');
+    const btnContainer = document.getElementById('btnLoadMoreContainer');
+
+    // 🟢 1. ดึงชื่อจาก Dropdown หน้าลงเวลา หรือจากที่ระบบจำไว้
+    const nameFilter = document.getElementById('fullname').value || localStorage.getItem('sec_last_name'); 
+
+    // 🟢 2. บังคับว่า "ต้องมีชื่อพนักงาน" ถึงจะโชว์ประวัติได้ (ป้องกันเห็นของคนอื่นรวมกัน)
+    if (!nameFilter) {
+        listToday.innerHTML = '<div class="text-center text-muted small py-4"><i class="bi bi-info-circle text-primary mb-2" style="font-size: 2rem; display: block;"></i>กรุณาเลือกชื่อ-นามสกุล<br>ในหน้า "ลงเวลา" ก่อนดูประวัติครับ</div>';
+        listPast.innerHTML = '<div class="text-center text-muted small py-4"><i class="bi bi-info-circle text-primary mb-2" style="font-size: 2rem; display: block;"></i>กรุณาเลือกชื่อ-นามสกุล<br>ในหน้า "ลงเวลา" ก่อนดูประวัติครับ</div>';
+        btnContainer.classList.add('d-none');
+        return; // หยุดการทำงาน ไม่ดึงข้อมูล
+    }
+
+    listToday.innerHTML = '<div class="text-center text-muted small py-3">กำลังโหลด...</div>';
+    listPast.innerHTML = '<div class="text-center text-muted small py-3">กำลังโหลด...</div>';
+    btnContainer.classList.add('d-none');
 
     try {
         const todayStr = new Date().toISOString().split('T')[0];
-        const nameFilter = localStorage.getItem('sec_last_name'); 
         
-        // 1. 🟢 โหลดข้อมูล "วันนี้" (ดึงเฉพาะวันที่ตรงกับวันนี้)
-        let queryToday = db.from('guard_attendance').select('*').eq('work_date', todayStr).order('created_at', { ascending: false });
-        if(nameFilter) queryToday = queryToday.eq('fullname', nameFilter);
+        // 🟢 3. ดึงข้อมูล "วันนี้" (บังคับกรองเฉพาะชื่อตัวเองเท่านั้น)
+        const { data: dataToday, error: errToday } = await db.from('guard_attendance')
+            .select('*')
+            .eq('work_date', todayStr)
+            .eq('fullname', nameFilter) // ล็อกชื่อเป๊ะๆ
+            .order('created_at', { ascending: false });
 
-        const { data: dataToday, error: errToday } = await queryToday;
         if (errToday) throw errToday;
 
         let htmlToday = '';
         dataToday.forEach(item => { htmlToday += generateHistoryCard(item); });
-        document.getElementById('listToday').innerHTML = htmlToday || '<div class="text-center text-muted small py-3">ไม่มีประวัติวันนี้</div>';
+        listToday.innerHTML = htmlToday || '<div class="text-center text-muted small py-3">ไม่มีประวัติวันนี้</div>';
 
-        // 2. 🟢 โหลดข้อมูล "ย้อนหลัง" (หน้าแรก)
-        await loadPastHistory();
+        // โหลดข้อมูล "ย้อนหลัง" พร้อมส่งชื่อไปให้ค้นหา
+        await loadPastHistory(nameFilter);
 
     } catch (err) { console.error(err); }
 }
 
-async function loadPastHistory() {
+async function loadPastHistory(nameFilter) {
     try {
         const todayStr = new Date().toISOString().split('T')[0];
-        const nameFilter = localStorage.getItem('sec_last_name'); 
-
-        // คำนวณช่วงข้อมูล (เช่น หน้า 1: 0-9, หน้า 2: 10-19)
         const from = (currentPastPage - 1) * ITEMS_PER_PAGE;
         const to = from + ITEMS_PER_PAGE - 1;
         
-        // ดึงเฉพาะวันที่ "น้อยกว่า" วันนี้ (ย้อนหลัง)
-        let queryPast = db.from('guard_attendance').select('*').lt('work_date', todayStr).order('work_date', { ascending: false }).order('created_at', { ascending: false }).range(from, to);
-        if(nameFilter) queryPast = queryPast.eq('fullname', nameFilter);
+        // 🟢 ดึงข้อมูล "ย้อนหลัง" (บังคับกรองเฉพาะชื่อตัวเองเท่านั้น)
+        const { data: dataPast, error: errPast } = await db.from('guard_attendance')
+            .select('*')
+            .lt('work_date', todayStr)
+            .eq('fullname', nameFilter) // ล็อกชื่อเป๊ะๆ
+            .order('work_date', { ascending: false })
+            .order('created_at', { ascending: false })
+            .range(from, to);
 
-        const { data: dataPast, error: errPast } = await queryPast;
         if (errPast) throw errPast;
 
         let htmlPast = '';
@@ -609,10 +625,9 @@ async function loadPastHistory() {
         if (currentPastPage === 1) {
             listPast.innerHTML = htmlPast || '<div class="text-center text-muted small py-3">ไม่มีประวัติย้อนหลัง</div>';
         } else {
-            listPast.insertAdjacentHTML('beforeend', htmlPast); // แทรกต่อท้ายของเดิม
+            listPast.insertAdjacentHTML('beforeend', htmlPast); 
         }
 
-        // 🟢 เช็คว่าต้องโชว์ปุ่ม "โหลดเพิ่มเติม" ไหม (ถ้าดึงมาได้ครบ 10 แปลว่าอาจจะมีหน้าถัดไป)
         const btnContainer = document.getElementById('btnLoadMoreContainer');
         if (dataPast.length === ITEMS_PER_PAGE) {
             btnContainer.classList.remove('d-none');
@@ -623,14 +638,14 @@ async function loadPastHistory() {
     } catch (err) { console.error(err); }
 }
 
-// ฟังก์ชันเมื่อกดปุ่มโหลดเพิ่มเติม
 function loadMorePast() {
     const btn = document.getElementById('btnLoadMore');
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" style="width: 1rem; height: 1rem;"></span> กำลังโหลด...';
     btn.disabled = true;
 
-    currentPastPage++; // เพิ่มเลขหน้า
-    loadPastHistory().then(() => {
+    currentPastPage++; 
+    const nameFilter = document.getElementById('fullname').value || localStorage.getItem('sec_last_name');
+    loadPastHistory(nameFilter).then(() => {
         btn.innerHTML = 'ดูประวัติเก่ากว่านี้ <i class="bi bi-chevron-down"></i>';
         btn.disabled = false;
     });
