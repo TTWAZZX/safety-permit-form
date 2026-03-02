@@ -757,27 +757,29 @@ async function loadAttendance() {
     const tbody = document.getElementById('attendanceTbody');
     tbody.innerHTML = '';
     
-    // 🟢 ระบบคำนวณตัวเลข ลำดับรีเซ็ตตามวันและกะ
+    // 🟢 ระบบคำนวณตัวเลข (ปรับใหม่: รายบุคคลรันเลขยาว / ทุกคนรีเซ็ตเลขตามกลุ่ม)
     let currentDate = null;
     let currentShiftGroup = null;
-    let webCounter = 1;   // สำหรับโชว์บนหน้าเว็บ (รันตามปกติ)
-    let printCounter = 1; // สำหรับโชว์ใน PDF (ข้ามคนที่ลา)
+    let webCounter = 1;   
+    let printCounter = 1; 
 
     finalRows.forEach(row => {
         let shiftGroup = '-';
         if (row.shift && row.shift.includes('เช้า')) shiftGroup = 'เช้า';
         else if (row.shift && row.shift.includes('ดึก')) shiftGroup = 'ดึก';
 
-        // เช็คว่าขึ้นวันใหม่ หรือเปลี่ยนกะการทำงานหรือไม่
+        // เช็คว่าขึ้นกลุ่มใหม่หรือไม่
         if (row.work_date !== currentDate || shiftGroup !== currentShiftGroup) {
             currentDate = row.work_date;
             currentShiftGroup = shiftGroup;
             
-            // 🔥 รีเซ็ตตัวเลขกลับไปเป็น 1 เสมอเมื่อเริ่มกลุ่มใหม่
-            webCounter = 1; 
-            printCounter = 1; 
+            // 🔥 ลอจิกใหม่: ถ้าเลือก "ทุกคน" ให้รีเซ็ตตัวเลขเป็น 1 เสมอเมื่อเปลี่ยนกลุ่ม
+            // แต่ถ้าเลือก "รายบุคคล" ไม่ต้องรีเซ็ต ให้มันบวกเลขต่อไปเรื่อยๆ
+            if (filterName === 'ALL') {
+                webCounter = 1; 
+                printCounter = 1; 
+            }
             
-            // สร้าง Header Group คั่นกลาง (เพิ่ม Class สีกะเช้า-ดึก)
             const shiftClass = shiftGroup === 'เช้า' ? 'header-day' : (shiftGroup === 'ดึก' ? 'header-night' : '');
             const shiftIcon = shiftGroup === 'เช้า' ? '<i class="bi bi-sun-fill text-warning me-1"></i>' : (shiftGroup === 'ดึก' ? '<i class="bi bi-moon-stars-fill text-info me-1"></i>' : '📅');
             const shiftTime = shiftGroup === 'เช้า' ? '(06:00 - 18:00)' : (shiftGroup === 'ดึก' ? '(18:00 - 06:00)' : '');
@@ -794,22 +796,17 @@ async function loadAttendance() {
         const isAbsentDummy = String(row.id).startsWith('absent');
         const isLeave = row.remark_type && row.remark_type.includes('ลา');
         
-        // 🔥 [ทางแยกใหม่]: จัดการการแสดงผลใน PDF
         let hideInPrint = false;
         if (filterName === 'ALL') {
-            // ถ้าเลือก "ทุกคน" ให้ซ่อนคนลา (เหมือนของเดิม 100%)
             hideInPrint = isAbsentDummy || isLeave; 
-        } else {
-            // ถ้าเลือก "รายบุคคล" ให้ค่า hideInPrint เป็น false เสมอ (ไม่ซ่อนเลย โชว์ครบทุกวัน)
-            hideInPrint = false;
         }
 
-        // โยนค่า counter ทั้งเว็บและ PDF ลงไปประมวลผล
+        // โยนค่า counter ลงไปประมวลผล
         renderRow(row, tbody, isAbsentDummy, hideInPrint, webCounter, hideInPrint ? '-' : printCounter);
 
-        webCounter++; // รันเลขหน้าเว็บไปเรื่อยๆ
+        webCounter++; // บวกลำดับหน้าเว็บ
         if (!hideInPrint) {
-            printCounter++; // รันเลข PDF เฉพาะคนที่ไม่ลา (ถ้าดูรายบุคคล มันจะบวกทุกวันตามปกติ)
+            printCounter++; // บวกลำดับ PDF เฉพาะคนที่ไม่ถูกซ่อน
         }
     });
 
