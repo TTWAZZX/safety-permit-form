@@ -266,6 +266,11 @@
             </div>
             <div class="tab-pane fade" id="tab-past">
                 <div id="listPast"><div class="text-center text-muted small py-3">กำลังโหลด...</div></div>
+                <div class="text-center mt-3 mb-4 d-none" id="btnLoadMoreContainer">
+                    <button id="btnLoadMore" onclick="loadMorePast()" class="btn btn-outline-secondary rounded-pill px-4 btn-sm fw-bold">
+                        ดูประวัติเก่ากว่านี้ <i class="bi bi-chevron-down"></i>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -291,10 +296,13 @@ const LIFF_ID = '2007053300-gJitj7Vr';
 
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// 🟢 เพิ่มตัวแปร activeRecordId สำหรับเช็คสถานะ
 let selectCardInstance, selectPersonInstance, selectSubstituteInstance;
 let activeRecordId = null; 
 let currentMode = 'work'; // โหมดเริ่มต้น
+
+// 🟢 ตัวแปรสำหรับระบบแบ่งหน้า (Pagination)
+let currentPastPage = 1;
+const ITEMS_PER_PAGE = 10;
 
 // ================= INIT =================
 window.onload = async () => {
@@ -549,53 +557,111 @@ function setMode(mode) {
     }
 }
 
-// ================= HISTORY =================
+// ================= HISTORY (ระบบใหม่ แยกวันนี้/ย้อนหลัง + แบ่งหน้า) =================
 async function fetchHistory() {
+    // รีเซ็ตหน้ากลับเป็นหน้า 1 เสมอเมื่อเปิดแท็บหรือรีเฟรช
+    currentPastPage = 1;
+    document.getElementById('listToday').innerHTML = '<div class="text-center text-muted small py-3">กำลังโหลด...</div>';
+    document.getElementById('listPast').innerHTML = '<div class="text-center text-muted small py-3">กำลังโหลด...</div>';
+    document.getElementById('btnLoadMoreContainer').classList.add('d-none');
+
     try {
         const todayStr = new Date().toISOString().split('T')[0];
         const nameFilter = localStorage.getItem('sec_last_name'); 
         
-        let query = db.from('guard_attendance').select('*').order('created_at', { ascending: false }).limit(20);
-        if(nameFilter) query = query.eq('fullname', nameFilter);
+        // 1. 🟢 โหลดข้อมูล "วันนี้" (ดึงเฉพาะวันที่ตรงกับวันนี้)
+        let queryToday = db.from('guard_attendance').select('*').eq('work_date', todayStr).order('created_at', { ascending: false });
+        if(nameFilter) queryToday = queryToday.eq('fullname', nameFilter);
 
-        const { data, error } = await query;
-        if (error) throw error;
+        const { data: dataToday, error: errToday } = await queryToday;
+        if (errToday) throw errToday;
 
-        let htmlToday = '', htmlPast = '';
-        
-        data.forEach(item => {
-            const isToday = item.work_date === todayStr;
-            const shiftText = item.shift.split(' ')[0];
-            const timeIn = item.time_in ? `<span class="text-success fw-bold">IN: ${item.time_in}</span>` : '-';
-            const timeOut = item.time_out ? `<span class="text-danger fw-bold ms-2">OUT: ${item.time_out}</span>` : '';
-            
-            const actionBtns = `
-                <div class="mt-2 text-end border-top pt-2">
-                    <button type="button" class="action-btn" onclick="userEdit('${item.id}', '${item.id_card}', '${item.time_in||''}', '${item.time_out||''}')"><i class="bi bi-pencil-square"></i> แก้ไข</button>
-                    <button type="button" class="action-btn delete ms-2" onclick="userDelete('${item.id}', '${item.id_card}')"><i class="bi bi-trash"></i> ลบ</button>
-                </div>
-            `;
-
-            const card = `
-                <div class="history-item animate__animated animate__fadeIn">
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <div class="fw-bold" style="color: var(--primary-color);">${item.work_date}</div>
-                        <div class="badge bg-secondary bg-opacity-10 text-dark border">${shiftText}</div>
-                    </div>
-                    <div class="small text-muted mb-2"><i class="bi bi-person-vcard"></i> ${item.id_card} | ${item.remark_type} ${item.remark_detail ? `(${item.remark_detail})` : ''}</div>
-                    <div class="bg-light p-2 rounded text-center border" style="font-size: 0.9rem;">
-                        ${timeIn} ${timeOut}
-                    </div>
-                    ${actionBtns}
-                </div>
-            `;
-            if(isToday) htmlToday += card; else htmlPast += card;
-        });
-
+        let htmlToday = '';
+        dataToday.forEach(item => { htmlToday += generateHistoryCard(item); });
         document.getElementById('listToday').innerHTML = htmlToday || '<div class="text-center text-muted small py-3">ไม่มีประวัติวันนี้</div>';
-        document.getElementById('listPast').innerHTML = htmlPast || '<div class="text-center text-muted small py-3">ไม่มีประวัติย้อนหลัง</div>';
+
+        // 2. 🟢 โหลดข้อมูล "ย้อนหลัง" (หน้าแรก)
+        await loadPastHistory();
 
     } catch (err) { console.error(err); }
+}
+
+async function loadPastHistory() {
+    try {
+        const todayStr = new Date().toISOString().split('T')[0];
+        const nameFilter = localStorage.getItem('sec_last_name'); 
+
+        // คำนวณช่วงข้อมูล (เช่น หน้า 1: 0-9, หน้า 2: 10-19)
+        const from = (currentPastPage - 1) * ITEMS_PER_PAGE;
+        const to = from + ITEMS_PER_PAGE - 1;
+        
+        // ดึงเฉพาะวันที่ "น้อยกว่า" วันนี้ (ย้อนหลัง)
+        let queryPast = db.from('guard_attendance').select('*').lt('work_date', todayStr).order('work_date', { ascending: false }).order('created_at', { ascending: false }).range(from, to);
+        if(nameFilter) queryPast = queryPast.eq('fullname', nameFilter);
+
+        const { data: dataPast, error: errPast } = await queryPast;
+        if (errPast) throw errPast;
+
+        let htmlPast = '';
+        dataPast.forEach(item => { htmlPast += generateHistoryCard(item); });
+
+        const listPast = document.getElementById('listPast');
+        if (currentPastPage === 1) {
+            listPast.innerHTML = htmlPast || '<div class="text-center text-muted small py-3">ไม่มีประวัติย้อนหลัง</div>';
+        } else {
+            listPast.insertAdjacentHTML('beforeend', htmlPast); // แทรกต่อท้ายของเดิม
+        }
+
+        // 🟢 เช็คว่าต้องโชว์ปุ่ม "โหลดเพิ่มเติม" ไหม (ถ้าดึงมาได้ครบ 10 แปลว่าอาจจะมีหน้าถัดไป)
+        const btnContainer = document.getElementById('btnLoadMoreContainer');
+        if (dataPast.length === ITEMS_PER_PAGE) {
+            btnContainer.classList.remove('d-none');
+        } else {
+            btnContainer.classList.add('d-none');
+        }
+
+    } catch (err) { console.error(err); }
+}
+
+// ฟังก์ชันเมื่อกดปุ่มโหลดเพิ่มเติม
+function loadMorePast() {
+    const btn = document.getElementById('btnLoadMore');
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" style="width: 1rem; height: 1rem;"></span> กำลังโหลด...';
+    btn.disabled = true;
+
+    currentPastPage++; // เพิ่มเลขหน้า
+    loadPastHistory().then(() => {
+        btn.innerHTML = 'ดูประวัติเก่ากว่านี้ <i class="bi bi-chevron-down"></i>';
+        btn.disabled = false;
+    });
+}
+
+// 🎨 ฟังก์ชันแยกสำหรับสร้างการ์ด HTML (เพื่อไม่ให้โค้ดซ้ำซ้อน)
+function generateHistoryCard(item) {
+    const shiftText = item.shift ? item.shift.split(' ')[0] : '-';
+    const timeIn = item.time_in ? `<span class="text-success fw-bold">IN: ${item.time_in}</span>` : '-';
+    const timeOut = item.time_out ? `<span class="text-danger fw-bold ms-2">OUT: ${item.time_out}</span>` : '';
+    
+    const actionBtns = `
+        <div class="mt-2 text-end border-top pt-2">
+            <button type="button" class="action-btn" onclick="userEdit('${item.id}', '${item.id_card}', '${item.time_in||''}', '${item.time_out||''}')"><i class="bi bi-pencil-square"></i> แก้ไข</button>
+            <button type="button" class="action-btn delete ms-2" onclick="userDelete('${item.id}', '${item.id_card}')"><i class="bi bi-trash"></i> ลบ</button>
+        </div>
+    `;
+
+    return `
+        <div class="history-item animate__animated animate__fadeIn">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+                <div class="fw-bold" style="color: var(--primary-color);"><i class="bi bi-calendar-event me-1"></i>${item.work_date}</div>
+                <div class="badge bg-secondary bg-opacity-10 text-dark border">${shiftText}</div>
+            </div>
+            <div class="small text-muted mb-2"><i class="bi bi-person-vcard"></i> ${item.id_card} | ${item.remark_type} ${item.remark_detail ? `(${item.remark_detail})` : ''}</div>
+            <div class="bg-light p-2 rounded text-center border" style="font-size: 0.9rem;">
+                ${timeIn} ${timeOut}
+            </div>
+            ${actionBtns}
+        </div>
+    `;
 }
 
 // ================= USER EDIT/DELETE =================
