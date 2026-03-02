@@ -528,6 +528,22 @@ const ADMIN_PIN = "admin1234";
 let shiftChartInstance = null;
 let sortableInstance = null; 
 
+// ================= ⏰ CUSTOM TIME FORMATTER =================
+function formatTime(input) {
+    let val = input.value.replace(/\D/g, ''); 
+    if (val.length > 2) {
+        val = val.substring(0, 2) + ':' + val.substring(2, 4); 
+    }
+    input.value = val;
+}
+function validateTimeStr(timeStr) {
+    if (!timeStr) return true;
+    if (timeStr.length !== 5) return false;
+    const [h, m] = timeStr.split(':');
+    if (parseInt(h) > 23 || parseInt(m) > 59) return false;
+    return true;
+}
+
 // ================= TOAST NOTIFICATION =================
 const Toast = Swal.mixin({
     toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, timerProgressBar: true
@@ -643,8 +659,10 @@ async function loadFilterNames() {
 }
 
 async function refreshAdminData() {
-    Toast.fire({ icon: 'info', title: 'กำลังดึงข้อมูล...' });
+    // 1. เรียกฟังก์ชันดึงข้อมูล (ซึ่งมันจะเด้งหน้าต่างโหลดหมุนๆ อันใหญ่ให้เอง)
     await loadAttendance();
+    
+    // 2. พอโหลดเสร็จ และหน้าต่างหมุนๆ ปิดลง ค่อยเด้ง Toast สีเขียวมุมขวาบนบอกว่าเสร็จแล้ว
     Toast.fire({ icon: 'success', title: 'อัปเดตเรียบร้อย' });
 }
 
@@ -654,6 +672,14 @@ async function loadAttendance() {
     const filterShift = document.getElementById('filterShift').value; 
 
     if (!filterMonth) return Swal.fire('แจ้งเตือน', 'กรุณาเลือกเดือน', 'warning');
+
+    // 🟢 โชว์หน้าต่างโหลดตอนเริ่มค้นหา (ล็อคหน้าจอ)
+    Swal.fire({ 
+        title: 'กำลังดึงข้อมูลตาราง...', 
+        text: 'กรุณารอสักครู่ครับ',
+        allowOutsideClick: false, 
+        didOpen: () => { Swal.showLoading(); } 
+    });
 
     let query = db.from('guard_attendance').select('*');
     
@@ -778,12 +804,15 @@ async function loadAttendance() {
     sortableInstance = new Sortable(tbody, {
         animation: 150,
         ghostClass: 'sortable-ghost',
-        filter: '.group-header', // ป้องกันการลากแถวหัวข้อ
+        filter: '.group-header', 
         preventOnFilter: false,
         onEnd: function () {
             document.getElementById('btnSaveOrder').classList.remove('d-none');
         }
     });
+
+    // 🟢 สั่งปิดหน้าต่างโหลดเมื่อข้อมูลตารางแสดงผลเสร็จสมบูรณ์
+    Swal.close(); 
 }
 
 // 🟢 อัปเดตฟังก์ชัน renderRow
@@ -910,8 +939,8 @@ async function openRecordModal(rowId = null) {
                 </select>
             </div>
 
-            <div class="col-6 mt-2"><label class="small fw-bold text-muted">เวลาเข้า (IN)</label><input id="m-in" type="time" class="form-control" value="${rowData.time_in || ''}"></div>
-            <div class="col-6 mt-2"><label class="small fw-bold text-muted">เวลาออก (OUT)</label><input id="m-out" type="time" class="form-control" value="${rowData.time_out || ''}"></div>
+            <div class="col-6 mt-2"><label class="small fw-bold text-muted">เวลาเข้า (IN)</label><input id="m-in" type="text" class="form-control text-center text-success fw-bold" placeholder="--:--" maxlength="5" inputmode="numeric" oninput="formatTime(this)" value="${rowData.time_in || ''}"></div>
+            <div class="col-6 mt-2"><label class="small fw-bold text-muted">เวลาออก (OUT)</label><input id="m-out" type="text" class="form-control text-center text-danger fw-bold" placeholder="--:--" maxlength="5" inputmode="numeric" oninput="formatTime(this)" value="${rowData.time_out || ''}"></div>
             <div class="col-6 mt-2"><label class="small fw-bold text-muted">สถานะ</label>
                 <select id="m-type" class="form-select">
                     <option value="ปกติ" ${rowData.remark_type === 'ปกติ' ? 'selected':''}>ปกติ</option>
@@ -966,36 +995,61 @@ async function openRecordModal(rowId = null) {
             const typeVal = document.getElementById('m-type').value;
             let detailVal = typeVal.includes('แทน') ? document.getElementById('m-substitute').value : document.getElementById('m-detail').value;
 
+            const timeIn = document.getElementById('m-in').value || null;
+            const timeOut = document.getElementById('m-out').value || null;
+
+            // 🟢 ตรวจสอบว่าแอดมินพิมพ์เวลาถูกต้องหรือไม่ (เช่น ห้ามพิมพ์ 25:99)
+            if((timeIn && !validateTimeStr(timeIn)) || (timeOut && !validateTimeStr(timeOut))) {
+                Swal.showValidationMessage('รูปแบบเวลาไม่ถูกต้อง (กรุณาระบุ 00:00 - 23:59)');
+                return false;
+            }
+
             return {
                 work_date: document.getElementById('m-date').value, shift: document.getElementById('m-shift').value,
                 fullname: document.getElementById('m-name').value, id_card: document.getElementById('m-card').value || '-',
-                time_in: document.getElementById('m-in').value || null, time_out: document.getElementById('m-out').value || null,
+                time_in: timeIn, time_out: timeOut,
                 remark_type: typeVal, remark_detail: detailVal || null,
             }
         }
     });
 
+    // ================= ลอจิกบันทึกและลบข้อมูล =================
     if (isDenied) {
         Swal.fire({ title: 'ยืนยันการลบ?', text: "ข้อมูลนี้จะหายไปจากระบบทันที", icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545', confirmButtonText: 'ลบข้อมูล' })
         .then(async (result) => {
             if (result.isConfirmed) {
-                Toast.fire({ icon: 'info', title: 'กำลังลบ...' });
+                Swal.fire({ title: 'กำลังลบข้อมูล...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
                 await db.from('guard_attendance').delete().eq('id', rowId);
-                Toast.fire({ icon: 'success', title: 'ลบเรียบร้อย' }); loadAttendance();
+                
+                // 🟢 เพิ่ม await เพื่อบังคับให้โชว์เครื่องหมายถูก 1 วินาทีก่อนโหลดตาราง
+                await Swal.fire({ icon: 'success', title: 'ลบเรียบร้อย', timer: 1000, showConfirmButton: false }); 
+                loadAttendance();
             }
         });
     } else if (formValues) {
         if (!formValues.work_date || !formValues.fullname) return Swal.fire('แจ้งเตือน', 'กรุณาใส่วันที่และเลือกชื่อพนักงาน', 'warning');
         if (formValues.remark_type.includes('แทน') && !formValues.remark_detail) return Swal.fire('แจ้งเตือน', 'กรุณาเลือกชื่อคนที่ถูกแทน', 'warning');
         
-        Toast.fire({ icon: 'info', title: 'กำลังบันทึก...' });
+        Swal.fire({ title: 'กำลังบันทึกข้อมูล...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
         
         if (isEdit) {
             const { error } = await db.from('guard_attendance').update({ ...formValues, updated_at: new Date(), updated_by: 'Admin' }).eq('id', rowId);
-            if (error) Swal.fire('Error', error.message, 'error'); else { Toast.fire({ icon: 'success', title: 'อัปเดตเรียบร้อย' }); loadAttendance(); }
+            if (error) {
+                Swal.fire('Error', error.message, 'error'); 
+            } else { 
+                // 🟢 เพิ่ม await
+                await Swal.fire({ icon: 'success', title: 'อัปเดตเรียบร้อย', timer: 1000, showConfirmButton: false }); 
+                loadAttendance(); 
+            }
         } else {
             const { error } = await db.from('guard_attendance').insert([{ ...formValues, updated_by: 'Admin' }]);
-            if (error) Swal.fire('Error', error.message, 'error'); else { Toast.fire({ icon: 'success', title: 'เพิ่มข้อมูลเรียบร้อย' }); loadAttendance(); }
+            if (error) {
+                Swal.fire('Error', error.message, 'error'); 
+            } else { 
+                // 🟢 เพิ่ม await
+                await Swal.fire({ icon: 'success', title: 'เพิ่มข้อมูลเรียบร้อย', timer: 1000, showConfirmButton: false }); 
+                loadAttendance(); 
+            }
         }
     }
 }
