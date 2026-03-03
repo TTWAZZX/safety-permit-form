@@ -296,8 +296,15 @@
                     
                     <div class="mb-0">
                         <label class="form-label text-warning"><i class="bi bi-file-earmark-medical"></i> ใบรับรองแพทย์ (บังคับ)</label>
-                        <input type="file" id="medicalCertFile" class="form-control" accept="image/*,.pdf">
+                        <input type="file" id="medicalCertFile" class="form-control" accept="image/*,.pdf" onchange="previewImage(event)">
                         <div class="form-text small text-muted">รองรับไฟล์รูปภาพ หรือ PDF</div>
+                        
+                        <div id="previewContainer" class="mt-2 text-center" style="display: none;">
+                            <img id="imagePreview" src="" alt="Preview" class="img-thumbnail shadow-sm" style="max-height: 150px; border-radius: 10px; display: none;">
+                            <div id="pdfPreview" class="p-3 border rounded bg-white text-danger shadow-sm" style="display: none;">
+                                <i class="bi bi-file-earmark-pdf fs-1"></i><br><small class="text-dark">แนบไฟล์ PDF พร้อมอัปโหลด</small>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -565,7 +572,7 @@ async function autoFillLastRequest() {
     }
 }
 
-// 🌟 FEATURE 3 & 4: Load History
+// 🌟 FEATURE 3 & 4: Load History (อัปเดตเพิ่มปุ่มยกเลิกคำขอ)
 async function loadHistory() {
     const userId = document.getElementById('userId').value;
     if (!userId) return;
@@ -593,11 +600,23 @@ async function loadHistory() {
             let borderClass = 'border-pending';
             let statusText = 'รออนุมัติ';
             let isApproved = false;
+            let cancelBtnHtml = ''; // 🌟 ตัวแปรสำหรับเก็บปุ่มยกเลิก
             
             if (item.status === 'Approved' || item.status === 'Completed') { 
                 statusClass = 'status-approved'; borderClass = 'border-approved'; statusText = 'อนุมัติแล้ว'; isApproved = true;
             } else if (item.status === 'Rejected') { 
                 statusClass = 'status-rejected'; borderClass = 'border-rejected'; statusText = 'ไม่อนุมัติ'; 
+            } else if (item.status === 'Cancelled') {
+                // 🌟 เพิ่มการแสดงผลสถานะ "ยกเลิกคำขอ"
+                statusClass = 'bg-secondary text-white'; borderClass = 'border-secondary'; statusText = 'ยกเลิกคำขอ';
+            } else if (item.status === 'Pending') {
+                // 🌟 ถ้าสถานะเป็น Pending (รออนุมัติ) ให้สร้างปุ่มยกเลิก
+                cancelBtnHtml = `
+                <div class="mt-3">
+                    <button class="btn btn-sm btn-outline-danger w-100 fw-bold rounded-3" onclick="cancelRequest(${item.id}); event.stopPropagation();">
+                        <i class="bi bi-x-circle me-1"></i>ยกเลิกคำขอ
+                    </button>
+                </div>`;
             }
 
             const date = new Date(item.request_date).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
@@ -618,7 +637,7 @@ async function loadHistory() {
                     </div>
                     <div class="small text-muted text-truncate"><i class="bi bi-chat-text me-1"></i>${item.reason}</div>
                     ${clickHint}
-                </div>`;
+                    ${cancelBtnHtml} </div>`;
             listDiv.innerHTML += html;
         });
 
@@ -626,6 +645,37 @@ async function loadHistory() {
         console.error(err);
         loadingDiv.style.display = 'none';
         listDiv.innerHTML = `<div class="alert alert-danger">โหลดข้อมูลไม่สำเร็จ</div>`;
+    }
+}
+
+// 🌟 ฟังก์ชันใหม่: สำหรับกดยกเลิกคำขอ (ใส่ต่อท้าย loadHistory ได้เลย)
+async function cancelRequest(recordId) {
+    const confirm = await Swal.fire({
+        title: 'ยกเลิกคำขอ?',
+        text: 'คุณต้องการยกเลิกคำขออนุญาตนี้ใช่หรือไม่?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'ใช่, ยกเลิกเลย',
+        cancelButtonText: 'ปิด',
+        reverseButtons: true
+    });
+
+    if (confirm.isConfirmed) {
+        Swal.fire({ title: 'กำลังยกเลิก...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+        try {
+            // อัปเดตสถานะใน Database เป็น Cancelled
+            const { error } = await db.from('slipper_requests').update({ status: 'Cancelled' }).eq('id', recordId);
+            if (error) throw error;
+            
+            Swal.fire({ icon: 'success', title: 'ยกเลิกสำเร็จ!', text: 'คำขอของคุณถูกยกเลิกแล้ว', timer: 1500, showConfirmButton: false });
+            
+            // โหลดหน้าประวัติใหม่เพื่ออัปเดต UI ทันที
+            loadHistory(); 
+        } catch (err) {
+            Swal.fire('เกิดข้อผิดพลาด', err.message, 'error');
+        }
     }
 }
 
@@ -646,6 +696,7 @@ function toggleDurationMode() {
     const section = document.getElementById('longTermSection');
     const endDate = document.getElementById('endDate');
     const fileInput = document.getElementById('medicalCertFile');
+    const previewContainer = document.getElementById('previewContainer'); // <-- เพิ่มบรรทัดนี้
 
     if (isLongTerm) {
         section.style.display = 'block';
@@ -653,7 +704,9 @@ function toggleDurationMode() {
         endDate.required = true; fileInput.required = true;
     } else {
         section.style.display = 'none';
-        endDate.required = false; fileInput.required = false; endDate.value = ''; fileInput.value = '';
+        endDate.required = false; fileInput.required = false; 
+        endDate.value = ''; fileInput.value = '';
+        if(previewContainer) previewContainer.style.display = 'none'; // <-- เพิ่มบรรทัดนี้ (เคลียร์พรีวิวเวลากดยกเลิก)
     }
 }
 
@@ -733,6 +786,38 @@ document.getElementById('slipperForm').addEventListener('submit', async (e) => {
         if (!ok) return;
     }
 
+    const btn = document.getElementById('btnSubmit');
+    const originalText = btn.innerHTML;
+    btn.disabled = true; 
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> กำลังตรวจสอบสิทธิ์...';
+
+    // 🌟 ระบบเช็คการยืมซ้ำ (Duplicate Request Prevention)
+    try {
+        const userId = document.getElementById('userId').value;
+        const { data: activeRequests, error: checkError } = await db
+            .from('slipper_requests')
+            .select('id, status')
+            .eq('line_user_id', userId)
+            // เช็คว่ามีสถานะที่ยังไม่จบกระบวนการอยู่ไหม
+            .in('status', ['Pending', 'Approved', 'Returning']);
+
+        if (checkError) throw checkError;
+
+        if (activeRequests && activeRequests.length > 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'ไม่สามารถทำรายการได้',
+                text: 'คุณมีคำขอที่กำลังดำเนินการอยู่ (รออนุมัติ หรือ บัตรยังไม่ได้คืน) กรุณาคืนบัตรเดิม หรือยกเลิกคำขอก่อนครับ',
+                confirmButtonColor: '#ef4444'
+            });
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+            return; // 🛑 หยุดการส่งข้อมูลตรงนี้เลย
+        }
+    } catch (err) {
+        console.error('Check duplicate error:', err);
+    }
+
     let section = document.getElementById('section').value;
     if (section === 'OTHER') section = document.getElementById('otherSection').value;
     let reason = document.getElementById('reasonSelect').value;
@@ -769,11 +854,13 @@ document.getElementById('slipperForm').addEventListener('submit', async (e) => {
         confirmButtonColor: '#1e3a8a', cancelButtonColor: '#64748b', reverseButtons: true
     });
 
-    if (!confirm.isConfirmed) return;
+    if (!confirm.isConfirmed) {
+        btn.disabled = false; 
+        btn.innerHTML = originalText;
+        return;
+    }
 
-    const btn = document.getElementById('btnSubmit');
-    const originalText = btn.innerHTML;
-    btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> กำลังบันทึก...';
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> กำลังบันทึก...';
 
     try {
         let certUrl = null;
@@ -840,6 +927,28 @@ function addPrefix(prefix) {
     const input = document.getElementById('empId');
     input.value = prefix;
     input.focus(); // ให้เคอร์เซอร์ไปกะพริบรอพิมพ์ต่อทันที
+}
+
+// ฟังก์ชันสำหรับพรีวิวรูปภาพ
+function previewImage(event) {
+    const file = event.target.files[0];
+    const previewContainer = document.getElementById('previewContainer');
+    const imagePreview = document.getElementById('imagePreview');
+    const pdfPreview = document.getElementById('pdfPreview');
+
+    if (file) {
+        previewContainer.style.display = 'block';
+        if (file.type.startsWith('image/')) {
+            imagePreview.src = URL.createObjectURL(file);
+            imagePreview.style.display = 'inline-block';
+            pdfPreview.style.display = 'none';
+        } else if (file.type === 'application/pdf') {
+            imagePreview.style.display = 'none';
+            pdfPreview.style.display = 'block';
+        }
+    } else {
+        previewContainer.style.display = 'none';
+    }
 }
 </script>
 </body>
