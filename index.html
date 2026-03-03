@@ -39,15 +39,13 @@
             padding-bottom: calc(90px + env(safe-area-inset-bottom)); 
         }
 
-        /* ✅ 1. เพิ่ม CSS สำหรับ Loading Screen */
-        #mainApp { display: none; } /* ซ่อนเนื้อหาหลักก่อน */
-
+        /* Loading Screen */
+        #mainApp { display: none; } 
         #loadingScreen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: white; z-index: 9999;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
         }
-
         .spinner-custom {
             border: 5px solid #f3f3f3;
             border-top: 5px solid var(--primary-color);
@@ -55,10 +53,8 @@
             animation: spin 1s linear infinite; margin-bottom: 20px;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
         .loading-text-main { font-weight: bold; font-size: 1.2rem; color: #1e293b; margin-bottom: 5px; }
         .loading-text-sub { font-size: 0.9rem; color: #64748b; }
-        /* ------------------------------------- */
 
         .container { max-width: 500px; padding: 0 15px; }
 
@@ -515,6 +511,8 @@ function switchTab(tab) {
     if (tab === 'request') {
         document.getElementById('view-request').style.display = 'block';
         document.getElementById('view-history').style.display = 'none';
+        // 🌟 อัปเดตบัตรที่ถูกล็อกทันทีที่กลับมาหน้าฟอร์ม
+        lockBusyCards();
     } else {
         document.getElementById('view-request').style.display = 'none';
         document.getElementById('view-history').style.display = 'block';
@@ -522,7 +520,40 @@ function switchTab(tab) {
     }
 }
 
-// 🌟 FEATURE 4: Auto Fill Last Request
+// ================= FEATURES =================
+
+// 🌟 FEATURE 5: ฟังก์ชันล็อกหมายเลขบัตรที่ถูกยืมไปแล้ว
+async function lockBusyCards() {
+    try {
+        const { data, error } = await db.from('slipper_requests')
+            .select('card_no')
+            .in('status', ['Pending', 'Approved', 'Returning']);
+        
+        if (error) throw error;
+
+        const busyCards = data.map(item => String(item.card_no).trim());
+        const cardSelect = document.getElementById('card_no'); 
+        if (!cardSelect) return;
+
+        Array.from(cardSelect.options).forEach(option => {
+            if (!option.value) return; 
+
+            if (busyCards.includes(String(option.value).trim())) {
+                option.disabled = true; 
+                if (!option.text.includes('(ถูกยืม)')) {
+                    option.text = `${option.value} 🔴 (ถูกยืม)`; 
+                }
+            } else {
+                option.disabled = false; 
+                option.text = option.value.split(' 🔴')[0]; 
+            }
+        });
+    } catch (err) {
+        console.error("🔥 Error locking cards:", err);
+    }
+}
+
+// 🌟 FEATURE 4: Auto Fill Last Request (แก้ไขบั๊กบัตรโดนล็อก)
 async function autoFillLastRequest() {
     const userId = document.getElementById('userId').value;
     if(!userId) return Swal.fire('ไม่พบข้อมูลผู้ใช้', 'กรุณาลองใหม่อีกครั้ง', 'error');
@@ -537,7 +568,21 @@ async function autoFillLastRequest() {
         if (error || !data) throw new Error('ไม่พบประวัติเดิม');
 
         document.getElementById('empId').value = data.emp_id;
-        document.getElementById('cardNo').value = data.card_no;
+        
+        // 🌟 ตรวจสอบว่าบัตรเดิมว่างไหม ถ้าโดนล็อกอยู่ให้ข้ามไป
+        const cardSelect = document.getElementById('cardNo');
+        const oldCardOption = Array.from(cardSelect.options).find(opt => opt.value === data.card_no);
+        if (oldCardOption && !oldCardOption.disabled) {
+            cardSelect.value = data.card_no;
+        } else {
+            // ถ้ายืมอยู่ ให้ปล่อยว่างไว้แล้วแจ้งผู้ใช้
+            cardSelect.value = "";
+            Swal.fire({
+                toast: true, position: 'top', icon: 'info',
+                title: `บัตรเดิม (${data.card_no}) ถูกยืมไปแล้ว กรุณาเลือกบัตรใบอื่น`,
+                showConfirmButton: false, timer: 3000
+            });
+        }
         
         if (sectionSelect) {
             sectionSelect.setValue(data.section);
@@ -572,7 +617,7 @@ async function autoFillLastRequest() {
     }
 }
 
-// 🌟 FEATURE 3 & 4: Load History (อัปเดตเพิ่มปุ่มยกเลิกคำขอ & ปุ่มแจ้งคืนบัตร)
+// 🌟 FEATURE 3 & 4: Load History
 async function loadHistory() {
     const userId = document.getElementById('userId').value;
     if (!userId) return;
@@ -650,7 +695,7 @@ async function loadHistory() {
             listDiv.innerHTML += html;
         });
 
-        // 🌟 สั่งให้ฟังก์ชันล็อกบัตรทำงานทุกครั้งที่มีการโหลดประวัติ
+        // 🌟 อัปเดตสถานะล็อกบัตรทุกครั้งที่มีการดึงประวัติ
         lockBusyCards();
 
     } catch (err) {
@@ -660,7 +705,7 @@ async function loadHistory() {
     }
 }
 
-// 🌟 ฟังก์ชัน: สำหรับกดยกเลิกคำขอ
+// ฟังก์ชัน: ยกเลิกคำขอ
 async function cancelRequest(recordId) {
     const confirm = await Swal.fire({
         title: 'ยกเลิกคำขอ?',
@@ -682,14 +727,17 @@ async function cancelRequest(recordId) {
             
             Swal.fire({ icon: 'success', title: 'ยกเลิกสำเร็จ!', text: 'คำขอของคุณถูกยกเลิกแล้ว', timer: 1500, showConfirmButton: false });
             
-            loadHistory(); 
+            setTimeout(() => {
+                loadHistory(); 
+            }, 500);
+
         } catch (err) {
             Swal.fire('เกิดข้อผิดพลาด', err.message, 'error');
         }
     }
 }
 
-// 🌟 ฟังก์ชันใหม่: สำหรับกดแจ้งคืนบัตรหน้าเว็บ
+// ฟังก์ชัน: แจ้งคืนบัตรหน้าเว็บ
 async function returnRequest(recordId) {
     const confirm = await Swal.fire({
         title: 'แจ้งคืนบัตร?',
@@ -715,44 +763,13 @@ async function returnRequest(recordId) {
             
             Swal.fire({ icon: 'success', title: 'แจ้งคืนสำเร็จ!', text: 'กรุณานำของไปส่งให้ รปภ. ที่ป้อมนะครับ', timer: 2000, showConfirmButton: false });
             
-            loadHistory(); 
+            setTimeout(() => {
+                loadHistory(); 
+            }, 500);
+
         } catch (err) {
             Swal.fire('เกิดข้อผิดพลาด', err.message, 'error');
         }
-    }
-}
-
-// 🌟 FEATURE 5: ฟังก์ชันล็อกหมายเลขบัตรที่ถูกยืมไปแล้ว
-async function lockBusyCards() {
-    try {
-        const { data, error } = await db.from('slipper_requests')
-            .select('card_no')
-            .in('status', ['Pending', 'Approved', 'Returning']);
-        
-        if (error) throw error;
-
-        const busyCards = data.map(item => String(item.card_no).trim());
-
-        const cardSelect = document.getElementById('card_no'); 
-        if (!cardSelect) return;
-
-        Array.from(cardSelect.options).forEach(option => {
-            if (!option.value) return; 
-
-            if (busyCards.includes(String(option.value).trim())) {
-                option.disabled = true; 
-                if (!option.text.includes('(ถูกยืม)')) {
-                    option.text = `${option.value} 🔴 (ถูกยืม)`; 
-                }
-            } else {
-                option.disabled = false; 
-                // คืนค่า text กลับเป็นปกติ (ตัดข้อความ 🔴 (ถูกยืม) ออก)
-                option.text = option.value.split(' 🔴')[0]; 
-            }
-        });
-
-    } catch (err) {
-        console.error("🔥 Error locking cards:", err);
     }
 }
 
@@ -773,7 +790,7 @@ function toggleDurationMode() {
     const section = document.getElementById('longTermSection');
     const endDate = document.getElementById('endDate');
     const fileInput = document.getElementById('medicalCertFile');
-    const previewContainer = document.getElementById('previewContainer'); // <-- เพิ่มบรรทัดนี้
+    const previewContainer = document.getElementById('previewContainer');
 
     if (isLongTerm) {
         section.style.display = 'block';
@@ -783,7 +800,7 @@ function toggleDurationMode() {
         section.style.display = 'none';
         endDate.required = false; fileInput.required = false; 
         endDate.value = ''; fileInput.value = '';
-        if(previewContainer) previewContainer.style.display = 'none'; // <-- เพิ่มบรรทัดนี้ (เคลียร์พรีวิวเวลากดยกเลิก)
+        if(previewContainer) previewContainer.style.display = 'none';
     }
 }
 
@@ -797,7 +814,6 @@ function compressImage(file) {
     });
 }
 
-// ================= INITIALIZATION & LOADER =================
 function updateLoader(text, delay) {
     return new Promise(resolve => {
         const el = document.getElementById('loadStatusMain');
@@ -806,6 +822,48 @@ function updateLoader(text, delay) {
     });
 }
 
+function acceptRules() {
+    var modalEl = document.getElementById('rulesModal');
+    var modal = bootstrap.Modal.getInstance(modalEl); 
+    
+    if (modal) {
+        modal.hide();
+    } else {
+        modalEl.classList.remove('show');
+        modalEl.style.display = 'none';
+        document.body.classList.remove('modal-open');
+        document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+    }
+}
+
+function addPrefix(prefix) {
+    const input = document.getElementById('empId');
+    input.value = prefix;
+    input.focus(); 
+}
+
+function previewImage(event) {
+    const file = event.target.files[0];
+    const previewContainer = document.getElementById('previewContainer');
+    const imagePreview = document.getElementById('imagePreview');
+    const pdfPreview = document.getElementById('pdfPreview');
+
+    if (file) {
+        previewContainer.style.display = 'block';
+        if (file.type.startsWith('image/')) {
+            imagePreview.src = URL.createObjectURL(file);
+            imagePreview.style.display = 'inline-block';
+            pdfPreview.style.display = 'none';
+        } else if (file.type === 'application/pdf') {
+            imagePreview.style.display = 'none';
+            pdfPreview.style.display = 'block';
+        }
+    } else {
+        previewContainer.style.display = 'none';
+    }
+}
+
+// ================= INITIALIZATION & LOADER =================
 window.onload = async () => {
     // 1. Setup UI
     const today = new Date().toISOString().split('T')[0];
@@ -839,7 +897,6 @@ window.onload = async () => {
         document.getElementById('fullname').value = profile.displayName; 
         document.getElementById('fullname').classList.remove('bg-light'); 
 
-        // ✅ เก็บ URL รูปลงตัวแปรซ่อน (เพื่อเอาไปเซฟลง DB)
         if (profile.pictureUrl) {
             document.getElementById('profileImage').src = profile.pictureUrl;
             document.getElementById('userPictureUrl').value = profile.pictureUrl;
@@ -847,11 +904,12 @@ window.onload = async () => {
 
     } catch (err) { console.error('LIFF Error:', err); }
 
-    // 3. Finish Loading
+    // 3. Finish Loading & Lock Cards
     document.getElementById('loadingScreen').style.display = 'none';
     document.getElementById('mainApp').style.display = 'block';
     
-    // Show Rules Modal after loading
+    lockBusyCards(); // 🌟 อัปเดตบัตรเมื่อโหลดหน้าเสร็จ
+    
     new bootstrap.Modal(document.getElementById('rulesModal')).show();
 };
 
@@ -868,14 +926,12 @@ document.getElementById('slipperForm').addEventListener('submit', async (e) => {
     btn.disabled = true; 
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> กำลังตรวจสอบสิทธิ์...';
 
-    // 🌟 ระบบเช็คการยืมซ้ำ (Duplicate Request Prevention)
     try {
         const userId = document.getElementById('userId').value;
         const { data: activeRequests, error: checkError } = await db
             .from('slipper_requests')
             .select('id, status')
             .eq('line_user_id', userId)
-            // เช็คว่ามีสถานะที่ยังไม่จบกระบวนการอยู่ไหม
             .in('status', ['Pending', 'Approved', 'Returning']);
 
         if (checkError) throw checkError;
@@ -889,7 +945,7 @@ document.getElementById('slipperForm').addEventListener('submit', async (e) => {
             });
             btn.disabled = false;
             btn.innerHTML = originalText;
-            return; // 🛑 หยุดการส่งข้อมูลตรงนี้เลย
+            return; 
         }
     } catch (err) {
         console.error('Check duplicate error:', err);
@@ -963,7 +1019,6 @@ document.getElementById('slipperForm').addEventListener('submit', async (e) => {
             reason, access_type: document.querySelector('input[name="accessType"]:checked').value,
             request_date: document.getElementById('requestDate').value,
             end_date: endDateVal, medical_cert_url: certUrl, status: 'Pending',
-            // ✅ ส่ง URL รูปภาพไปบันทึกด้วย
             user_picture_url: document.getElementById('userPictureUrl').value || null 
         };
 
@@ -974,6 +1029,8 @@ document.getElementById('slipperForm').addEventListener('submit', async (e) => {
         localStorage.setItem('saved_section', formData.section);
 
         await Swal.fire({ icon: 'success', title: 'เรียบร้อย!', text: 'ส่งคำขอแล้ว กรุณารอผลอนุมัติ', timer: 2000, showConfirmButton: false });
+        
+        lockBusyCards(); // 🌟 อัปเดตบัตรที่ถูกล็อกทันทีที่ส่งสำเร็จ
         switchTab('history'); 
         btn.disabled = false; btn.innerHTML = originalText;
 
@@ -982,56 +1039,6 @@ document.getElementById('slipperForm').addEventListener('submit', async (e) => {
         Swal.fire('บันทึกไม่สำเร็จ', err.message, 'error');
         btn.disabled = false; btn.innerHTML = originalText;
     }
-});
-
-function acceptRules() {
-    // ดึงตัว Modal เดิมที่เปิดอยู่มาใช้งาน
-    var modalEl = document.getElementById('rulesModal');
-    var modal = bootstrap.Modal.getInstance(modalEl); 
-    
-    if (modal) {
-        modal.hide();
-    } else {
-        // กันเหนียว: ถ้าหาตัวเดิมไม่เจอจริงๆ ให้บังคับลบ Class และ Backdrop
-        modalEl.classList.remove('show');
-        modalEl.style.display = 'none';
-        document.body.classList.remove('modal-open');
-        document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
-    }
-}
-
-function addPrefix(prefix) {
-    const input = document.getElementById('empId');
-    input.value = prefix;
-    input.focus(); // ให้เคอร์เซอร์ไปกะพริบรอพิมพ์ต่อทันที
-}
-
-// ฟังก์ชันสำหรับพรีวิวรูปภาพ
-function previewImage(event) {
-    const file = event.target.files[0];
-    const previewContainer = document.getElementById('previewContainer');
-    const imagePreview = document.getElementById('imagePreview');
-    const pdfPreview = document.getElementById('pdfPreview');
-
-    if (file) {
-        previewContainer.style.display = 'block';
-        if (file.type.startsWith('image/')) {
-            imagePreview.src = URL.createObjectURL(file);
-            imagePreview.style.display = 'inline-block';
-            pdfPreview.style.display = 'none';
-        } else if (file.type === 'application/pdf') {
-            imagePreview.style.display = 'none';
-            pdfPreview.style.display = 'block';
-        }
-    } else {
-        previewContainer.style.display = 'none';
-    }
-}
-
-// วางไว้ล่างสุดของไฟล์ JS เลยครับ
-window.addEventListener('DOMContentLoaded', () => {
-    // หน่วงเวลาเล็กน้อยเพื่อให้ Supabase DB โหลดพร้อม
-    setTimeout(() => { lockBusyCards(); }, 1000);
 });
 </script>
 </body>
