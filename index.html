@@ -532,22 +532,26 @@ async function lockBusyCards() {
         if (error) throw error;
 
         const busyCards = data.map(item => String(item.card_no).trim());
-        const cardSelect = document.getElementById('card_no'); 
+
+        // 🛑 แก้จุดนี้! เปลี่ยนจาก 'card_no' เป็น 'cardNo' ให้ตรงกับ HTML
+        const cardSelect = document.getElementById('cardNo'); 
         if (!cardSelect) return;
 
         Array.from(cardSelect.options).forEach(option => {
             if (!option.value) return; 
 
             if (busyCards.includes(String(option.value).trim())) {
-                option.disabled = true; 
+                option.disabled = true; // ล็อกไม่ให้กด
                 if (!option.text.includes('(ถูกยืม)')) {
                     option.text = `${option.value} 🔴 (ถูกยืม)`; 
                 }
             } else {
-                option.disabled = false; 
+                option.disabled = false; // ปลดล็อกให้กดได้
+                // คืนค่า text กลับเป็นปกติ
                 option.text = option.value.split(' 🔴')[0]; 
             }
         });
+
     } catch (err) {
         console.error("🔥 Error locking cards:", err);
     }
