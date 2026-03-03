@@ -572,7 +572,7 @@ async function autoFillLastRequest() {
     }
 }
 
-// 🌟 FEATURE 3 & 4: Load History (อัปเดตเพิ่มปุ่มยกเลิกคำขอ)
+// 🌟 FEATURE 3 & 4: Load History (อัปเดตเพิ่มปุ่มยกเลิกคำขอ & ปุ่มแจ้งคืนบัตร)
 async function loadHistory() {
     const userId = document.getElementById('userId').value;
     if (!userId) return;
@@ -600,23 +600,31 @@ async function loadHistory() {
             let borderClass = 'border-pending';
             let statusText = 'รออนุมัติ';
             let isApproved = false;
-            let cancelBtnHtml = ''; // 🌟 ตัวแปรสำหรับเก็บปุ่มยกเลิก
+            let actionBtnHtml = ''; 
             
-            if (item.status === 'Approved' || item.status === 'Completed') { 
-                statusClass = 'status-approved'; borderClass = 'border-approved'; statusText = 'อนุมัติแล้ว'; isApproved = true;
-            } else if (item.status === 'Rejected') { 
-                statusClass = 'status-rejected'; borderClass = 'border-rejected'; statusText = 'ไม่อนุมัติ'; 
-            } else if (item.status === 'Cancelled') {
-                // 🌟 เพิ่มการแสดงผลสถานะ "ยกเลิกคำขอ"
-                statusClass = 'bg-secondary text-white'; borderClass = 'border-secondary'; statusText = 'ยกเลิกคำขอ';
-            } else if (item.status === 'Pending') {
-                // 🌟 ถ้าสถานะเป็น Pending (รออนุมัติ) ให้สร้างปุ่มยกเลิก
-                cancelBtnHtml = `
+            if (item.status === 'Pending') {
+                actionBtnHtml = `
                 <div class="mt-3">
                     <button class="btn btn-sm btn-outline-danger w-100 fw-bold rounded-3" onclick="cancelRequest(${item.id}); event.stopPropagation();">
                         <i class="bi bi-x-circle me-1"></i>ยกเลิกคำขอ
                     </button>
                 </div>`;
+            } else if (item.status === 'Approved') { 
+                statusClass = 'status-approved'; borderClass = 'border-approved'; statusText = 'อนุมัติแล้ว'; isApproved = true;
+                actionBtnHtml = `
+                <div class="mt-3">
+                    <button class="btn btn-sm btn-warning w-100 fw-bold rounded-3 text-dark" style="background-color: #f59e0b; border-color: #f59e0b;" onclick="returnRequest(${item.id}); event.stopPropagation();">
+                        <i class="bi bi-arrow-return-left me-1"></i> แจ้งคืนบัตร
+                    </button>
+                </div>`;
+            } else if (item.status === 'Returning') {
+                statusClass = 'bg-info text-dark'; borderClass = 'border-info'; statusText = '⏳ รอ รปภ. รับคืน';
+            } else if (item.status === 'Completed') {
+                statusClass = 'bg-success text-white'; borderClass = 'border-success'; statusText = '✅ คืนเรียบร้อย';
+            } else if (item.status === 'Rejected') { 
+                statusClass = 'status-rejected'; borderClass = 'border-rejected'; statusText = 'ไม่อนุมัติ'; 
+            } else if (item.status === 'Cancelled') {
+                statusClass = 'bg-secondary text-white'; borderClass = 'border-secondary'; statusText = 'ยกเลิกคำขอ';
             }
 
             const date = new Date(item.request_date).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
@@ -637,9 +645,13 @@ async function loadHistory() {
                     </div>
                     <div class="small text-muted text-truncate"><i class="bi bi-chat-text me-1"></i>${item.reason}</div>
                     ${clickHint}
-                    ${cancelBtnHtml} </div>`;
+                    ${actionBtnHtml}
+                </div>`;
             listDiv.innerHTML += html;
         });
+
+        // 🌟 สั่งให้ฟังก์ชันล็อกบัตรทำงานทุกครั้งที่มีการโหลดประวัติ
+        lockBusyCards();
 
     } catch (err) {
         console.error(err);
@@ -648,7 +660,7 @@ async function loadHistory() {
     }
 }
 
-// 🌟 ฟังก์ชันใหม่: สำหรับกดยกเลิกคำขอ (ใส่ต่อท้าย loadHistory ได้เลย)
+// 🌟 ฟังก์ชัน: สำหรับกดยกเลิกคำขอ
 async function cancelRequest(recordId) {
     const confirm = await Swal.fire({
         title: 'ยกเลิกคำขอ?',
@@ -665,17 +677,82 @@ async function cancelRequest(recordId) {
     if (confirm.isConfirmed) {
         Swal.fire({ title: 'กำลังยกเลิก...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
         try {
-            // อัปเดตสถานะใน Database เป็น Cancelled
             const { error } = await db.from('slipper_requests').update({ status: 'Cancelled' }).eq('id', recordId);
             if (error) throw error;
             
             Swal.fire({ icon: 'success', title: 'ยกเลิกสำเร็จ!', text: 'คำขอของคุณถูกยกเลิกแล้ว', timer: 1500, showConfirmButton: false });
             
-            // โหลดหน้าประวัติใหม่เพื่ออัปเดต UI ทันที
             loadHistory(); 
         } catch (err) {
             Swal.fire('เกิดข้อผิดพลาด', err.message, 'error');
         }
+    }
+}
+
+// 🌟 ฟังก์ชันใหม่: สำหรับกดแจ้งคืนบัตรหน้าเว็บ
+async function returnRequest(recordId) {
+    const confirm = await Swal.fire({
+        title: 'แจ้งคืนบัตร?',
+        text: 'คุณกำลังนำบัตรและรองเท้าไปคืนที่ป้อม รปภ. ใช่หรือไม่?',
+        icon: 'info',
+        showCancelButton: true,
+        confirmButtonColor: '#f59e0b',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'ใช่, กำลังไปคืน',
+        cancelButtonText: 'ปิด',
+        reverseButtons: true
+    });
+
+    if (confirm.isConfirmed) {
+        Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+        try {
+            const { error } = await db.from('slipper_requests').update({ 
+                status: 'Returning',
+                returned_at: new Date()
+            }).eq('id', recordId);
+            
+            if (error) throw error;
+            
+            Swal.fire({ icon: 'success', title: 'แจ้งคืนสำเร็จ!', text: 'กรุณานำของไปส่งให้ รปภ. ที่ป้อมนะครับ', timer: 2000, showConfirmButton: false });
+            
+            loadHistory(); 
+        } catch (err) {
+            Swal.fire('เกิดข้อผิดพลาด', err.message, 'error');
+        }
+    }
+}
+
+// 🌟 FEATURE 5: ฟังก์ชันล็อกหมายเลขบัตรที่ถูกยืมไปแล้ว
+async function lockBusyCards() {
+    try {
+        const { data, error } = await db.from('slipper_requests')
+            .select('card_no')
+            .in('status', ['Pending', 'Approved', 'Returning']);
+        
+        if (error) throw error;
+
+        const busyCards = data.map(item => String(item.card_no).trim());
+
+        const cardSelect = document.getElementById('card_no'); 
+        if (!cardSelect) return;
+
+        Array.from(cardSelect.options).forEach(option => {
+            if (!option.value) return; 
+
+            if (busyCards.includes(String(option.value).trim())) {
+                option.disabled = true; 
+                if (!option.text.includes('(ถูกยืม)')) {
+                    option.text = `${option.value} 🔴 (ถูกยืม)`; 
+                }
+            } else {
+                option.disabled = false; 
+                // คืนค่า text กลับเป็นปกติ (ตัดข้อความ 🔴 (ถูกยืม) ออก)
+                option.text = option.value.split(' 🔴')[0]; 
+            }
+        });
+
+    } catch (err) {
+        console.error("🔥 Error locking cards:", err);
     }
 }
 
