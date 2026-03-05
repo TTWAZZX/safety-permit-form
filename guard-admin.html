@@ -278,8 +278,41 @@
             }
             .col-hidden { display: none !important; }
 
+            /* ================= PENALTY SUMMARY TABLE (PRINT STYLES) ================= */
+            #penalty-summary-section {
+                margin-top: 20px !important;
+                margin-bottom: 20px !important;
+                border: none !important;
+                padding: 0 !important;
+            }
+            #penalty-summary-section h5 {
+                font-size: 11pt !important;
+                font-weight: bold !important;
+                text-align: left !important;
+                border-bottom: 1px solid #000;
+                padding-bottom: 5px;
+                margin-bottom: 10px;
+                color: #000 !important;
+            }
+            #penalty-summary-section table {
+                border-collapse: collapse !important;
+                width: 100% !important;
+                border: 1px solid #000 !important;
+            }
+            #penalty-summary-section th, #penalty-summary-section td {
+                border: 1px solid #000 !important;
+                padding: 6px !important;
+                font-size: 9.5pt !important;
+                color: #000 !important;
+            }
+            #penalty-summary-section thead th, #penalty-summary-section tr.table-active td {
+                background-color: #f2f2f2 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
             /* ================= FOOTER ================= */
-            .print-footer-content { display: block !important; margin-top: 50px; page-break-inside: avoid; }
+            .print-footer-content { display: block !important; margin-top: 30px; page-break-inside: avoid; }
             .sign-box-container { display: flex; justify-content: center; width: 100%; }
             .sign-box { width: 350px; text-align: center; font-size: 11pt; }
             .sign-line { border-bottom: 1px solid #000 !important; margin: 40px auto 10px; width: 80%; }
@@ -408,6 +441,8 @@
                             
                             <button id="btnSaveOrder" onclick="saveRowOrder()" class="btn btn-warning fw-bold d-none animate__animated animate__pulse"><i class="bi bi-save2 me-1"></i> ล็อกลำดับ</button>
                             
+                            <button onclick="openPenaltyModal()" class="btn btn-warning fw-bold text-dark"><i class="bi bi-cash-coin me-1"></i> หักเงิน</button>
+                            
                             <button onclick="openRecordModal()" class="btn btn-primary fw-bold"><i class="bi bi-plus-circle me-1"></i> เพิ่มรายการ</button>
                             <button onclick="exportExcel()" class="btn btn-success fw-bold"><i class="bi bi-file-earmark-excel me-1"></i> Excel</button>
                             <button onclick="exportPDF()" class="btn btn-danger fw-bold"><i class="bi bi-file-earmark-pdf me-1"></i> PDF</button>
@@ -444,6 +479,45 @@
                         </table>
                     </div>
                     
+                    <div id="penalty-summary-section" class="mt-4 mb-3 p-3 border shadow-sm rounded-3" style="background-color: var(--card-bg); page-break-inside: avoid;">
+                        <h5 class="text-start fw-bold mb-3" style="color: var(--text-main);">
+                            สรุปการปรับหักค่าบริการ รปภ. ประจำเดือน <span id="print_month_year">มกราคม 2569</span>
+                        </h5>
+                        <table class="table text-center align-middle m-0" style="border: 1px solid var(--border-color); border-collapse: collapse !important;">
+                            <thead style="background-color: var(--table-header-bg); color: var(--text-muted); font-size: 0.9rem;">
+                                <tr>
+                                    <th style="width: 40%; border: 1px solid var(--border-color) !important;" class="text-start">รายการ</th>
+                                    <th style="width: 20%; border: 1px solid var(--border-color) !important;">อัตราหัก (บาท/ครั้ง)</th>
+                                    <th style="width: 20%; border: 1px solid var(--border-color) !important;">จำนวน (ครั้ง/ชั่วโมง)</th>
+                                    <th style="width: 20%; border: 1px solid var(--border-color) !important;">รวมเป็นเงิน (บาท)</th>
+                                </tr>
+                            </thead>
+                            <tbody style="color: var(--text-main);">
+                                <tr>
+                                    <td class="text-start" style="border: 1px solid var(--border-color) !important;"><strong>ขาดจุด/ทิ้งจุด (หัวหน้าชุด รปภ.)</strong></td>
+                                    <td id="print_chief_rate" style="border: 1px solid var(--border-color) !important;">0.00</td>
+                                    <td id="print_chief_times" style="border: 1px solid var(--border-color) !important;">0</td>
+                                    <td id="print_chief_total" style="border: 1px solid var(--border-color) !important;">0.00</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-start" style="border: 1px solid var(--border-color) !important;"><strong>ขาดจุด/ทิ้งจุด (พนักงาน รปภ.)</strong></td>
+                                    <td id="print_guard_rate" style="border: 1px solid var(--border-color) !important;">0.00</td>
+                                    <td id="print_guard_times" style="border: 1px solid var(--border-color) !important;">0</td>
+                                    <td id="print_guard_total" style="border: 1px solid var(--border-color) !important;">0.00</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-start" style="border: 1px solid var(--border-color) !important;"><strong>หักสาย (ชั่วโมง)</strong></td>
+                                    <td id="print_late_rate" style="border: 1px solid var(--border-color) !important;">0.00</td>
+                                    <td id="print_late_hours" style="border: 1px solid var(--border-color) !important;">0</td>
+                                    <td id="print_late_total" style="border: 1px solid var(--border-color) !important;">0.00</td>
+                                </tr>
+                                <tr>
+                                    <td colspan="3" class="text-end fw-bold" style="border: 1px solid var(--border-color) !important; color: var(--text-main);">รวมหักในเดือน <span id="print_total_month">มกราคม 2569</span> ทั้งหมด</td>
+                                    <td id="print_grand_total" class="fw-bold fs-5" style="border: 1px solid var(--border-color) !important; color: #dc2626;">0.00</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                     <div class="print-only print-footer-content">
                         <div class="sign-box-container">
                             <div class="sign-box">
@@ -517,6 +591,63 @@
     </div>
 </div>
 
+<div class="modal fade" id="penaltyModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title fw-bold text-dark"><i class="bi bi-cash-coin me-2"></i> จัดการข้อมูลหักค่าบริการ</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label fw-bold text-dark">ระบุชื่อเดือนที่ต้องการพิมพ์</label>
+                    <input type="text" id="input_month_year" class="form-control" placeholder="เช่น มกราคม 2569">
+                </div>
+                
+                <h6 class="fw-bold text-danger mt-4">1. ขาดจุด/ทิ้งจุด (หัวหน้าชุด รปภ.)</h6>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <label class="form-label small text-muted">อัตราหัก (บาท)</label>
+                        <input type="number" id="input_chief_rate" class="form-control" step="0.01">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small text-muted">จำนวน (ครั้ง)</label>
+                        <input type="number" id="input_chief_times" class="form-control" step="1">
+                    </div>
+                </div>
+
+                <h6 class="fw-bold text-danger mt-3">2. ขาดจุด/ทิ้งจุด (พนักงาน รปภ.)</h6>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <label class="form-label small text-muted">อัตราหัก (บาท)</label>
+                        <input type="number" id="input_guard_rate" class="form-control" step="0.01">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small text-muted">จำนวน (ครั้ง)</label>
+                        <input type="number" id="input_guard_times" class="form-control" step="1">
+                    </div>
+                </div>
+
+                <h6 class="fw-bold text-danger mt-3">3. หักสาย</h6>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <label class="form-label small text-muted">อัตราหัก (บาท/ชม.)</label>
+                        <input type="number" id="input_late_rate" class="form-control" step="0.01">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small text-muted">จำนวน (ชั่วโมง)</label>
+                        <input type="number" id="input_late_hours" class="form-control" step="0.5">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-top-0 pt-0">
+                <button type="button" class="btn btn-light border px-4" data-bs-dismiss="modal">ยกเลิก</button>
+                <button type="button" class="btn btn-primary px-4 fw-bold" onclick="savePenaltyData()"><i class="bi bi-save me-1"></i> บันทึกข้อมูล</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 // ================= CONFIG =================
 const SUPABASE_URL = 'https://dqsfioiqwxuxpucwwhsv.supabase.co';
@@ -585,6 +716,7 @@ async function unlockDashboard() {
         await loadFilterNames(); 
         await loadAttendance();
         await loadMasterTables();
+        await initPenaltyTable(); // 🌟 ดึงข้อมูล Penalty มาแสดงตอนโหลดหน้าเว็บ
         
         document.getElementById('loadingScreen').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
@@ -1121,6 +1253,93 @@ async function delMaster(type, id, name) {
             loadMasterTables(); loadFilterNames();
         }
     });
+}
+
+// ================= 🌟 จัดการตารางสรุปการหักเงิน (Penalty) 🌟 =================
+async function initPenaltyTable() {
+    try {
+        const { data, error } = await db.from('guard_penalty').select('*').eq('id', 1).single();
+        if (data && !error) {
+            renderPenaltyTable(data);
+        }
+    } catch (err) {
+        console.warn("ยังไม่มีตาราง guard_penalty หรือข้อมูลว่างอยู่");
+    }
+}
+
+async function openPenaltyModal() {
+    try {
+        const { data, error } = await db.from('guard_penalty').select('*').eq('id', 1).single();
+        // เอาค่าจาก DB ไปใส่ในช่องกรอก (ถ้าว่างให้เป็น 0)
+        document.getElementById('input_month_year').value = data?.month_year || 'มกราคม 2569';
+        document.getElementById('input_chief_rate').value = data?.chief_rate || 786.67;
+        document.getElementById('input_chief_times').value = data?.chief_times || 0;
+        document.getElementById('input_guard_rate').value = data?.guard_rate || 739.17;
+        document.getElementById('input_guard_times').value = data?.guard_times || 0;
+        document.getElementById('input_late_rate').value = data?.late_rate || 100;
+        document.getElementById('input_late_hours').value = data?.late_hours || 0;
+
+        new bootstrap.Modal(document.getElementById('penaltyModal')).show();
+    } catch (err) {
+        console.error("Error fetching penalty data:", err);
+        // กรณี Error แต่ยังยอมให้เปิด Modal (เผื่อยังไม่ได้สร้าง row แรก)
+        new bootstrap.Modal(document.getElementById('penaltyModal')).show();
+    }
+}
+
+async function savePenaltyData() {
+    try {
+        const payload = {
+            id: 1, // บังคับ id = 1 เสมอเพื่อให้มีแค่บรรทัดเดียว
+            month_year: document.getElementById('input_month_year').value || 'ไม่ระบุ',
+            chief_rate: parseFloat(document.getElementById('input_chief_rate').value) || 0,
+            chief_times: parseFloat(document.getElementById('input_chief_times').value) || 0,
+            guard_rate: parseFloat(document.getElementById('input_guard_rate').value) || 0,
+            guard_times: parseFloat(document.getElementById('input_guard_times').value) || 0,
+            late_rate: parseFloat(document.getElementById('input_late_rate').value) || 0,
+            late_hours: parseFloat(document.getElementById('input_late_hours').value) || 0
+        };
+
+        // ใช้ upsert เพื่อให้เพิ่มอัตโนมัติถ้ายังไม่มี id = 1
+        const { error } = await db.from('guard_penalty').upsert(payload);
+        if (error) throw error;
+
+        // ปิดหน้าต่าง Popup
+        const modalEl = document.getElementById('penaltyModal');
+        const modalInstance = bootstrap.Modal.getInstance(modalEl);
+        if (modalInstance) modalInstance.hide();
+        
+        Toast.fire({ icon: 'success', title: 'บันทึกข้อมูลหักเงินเรียบร้อย' });
+        renderPenaltyTable(payload);
+
+    } catch (err) {
+        console.error("Error saving penalty:", err);
+        Swal.fire('ข้อผิดพลาด', 'ไม่สามารถบันทึกข้อมูลได้ กรุณาตรวจสอบว่าสร้างตาราง guard_penalty แล้วหรือยัง', 'error');
+    }
+}
+
+function renderPenaltyTable(data) {
+    document.getElementById('print_month_year').innerText = data.month_year;
+    document.getElementById('print_total_month').innerText = data.month_year;
+
+    const chiefTotal = data.chief_rate * data.chief_times;
+    const guardTotal = data.guard_rate * data.guard_times;
+    const lateTotal = data.late_rate * data.late_hours;
+    const grandTotal = chiefTotal + guardTotal + lateTotal;
+
+    document.getElementById('print_chief_rate').innerText = data.chief_rate.toLocaleString('th-TH', {minimumFractionDigits: 2});
+    document.getElementById('print_chief_times').innerText = data.chief_times;
+    document.getElementById('print_chief_total').innerText = chiefTotal.toLocaleString('th-TH', {minimumFractionDigits: 2});
+
+    document.getElementById('print_guard_rate').innerText = data.guard_rate.toLocaleString('th-TH', {minimumFractionDigits: 2});
+    document.getElementById('print_guard_times').innerText = data.guard_times;
+    document.getElementById('print_guard_total').innerText = guardTotal.toLocaleString('th-TH', {minimumFractionDigits: 2});
+
+    document.getElementById('print_late_rate').innerText = data.late_rate.toLocaleString('th-TH', {minimumFractionDigits: 2});
+    document.getElementById('print_late_hours').innerText = data.late_hours;
+    document.getElementById('print_late_total').innerText = lateTotal.toLocaleString('th-TH', {minimumFractionDigits: 2});
+
+    document.getElementById('print_grand_total').innerText = grandTotal.toLocaleString('th-TH', {minimumFractionDigits: 2}) + ' บาท';
 }
 </script>
 </body>
