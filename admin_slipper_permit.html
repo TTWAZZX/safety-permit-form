@@ -59,24 +59,32 @@
 
         /* 🃏 Premium Cards */
         .premium-card { background: var(--surface); border-radius: 24px; padding: 25px; box-shadow: 0 10px 30px -5px rgba(0,0,0,0.05); border: 1px solid rgba(255,255,255,0.8); transition: transform 0.2s; }
-        .stat-card { border-left: 8px solid; }
+        .stat-card { border-left: 8px solid; cursor: default; }
         .stat-card:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
 
-        /* 💺 Grid Slots */
+        /* 💺 Grid Slots & New Statuses */
         .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 15px; }
         .card-slot { background: white; border: 2px dashed #cbd5e1; border-radius: 20px; height: 140px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; position: relative; transition: all 0.2s; }
         .card-slot:hover { transform: scale(1.05); border-style: solid; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); z-index: 10; }
         .slot-number { font-weight: 800; font-size: 1.4rem; color: #94a3b8; }
+        
         .slot-available { border-color: var(--success); border-style: solid; background: #f0fdf4; }
         .slot-available .slot-number { color: var(--success); }
         .slot-pending { border-color: var(--warning); border-style: solid; background: #fffbeb; animation: pulse-yellow 2s infinite; }
         .slot-active { border-color: var(--danger); border-style: solid; background: #fef2f2; }
         .slot-returning { border-color: var(--info); border-style: solid; background: #f0f9ff; animation: pulse-blue 2s infinite; }
         
+        /* 🚨 OVERDUE MODE */
+        .slot-overdue { border-color: #7f1d1d !important; border-width: 3px !important; border-style: solid; background: #fef2f2; animation: pulse-red-alert 1s infinite !important; }
+        /* 🛠️ MAINTENANCE MODE */
+        .slot-maintenance { border-color: #64748b; border-style: solid; background: #e2e8f0; opacity: 0.8; }
+        .slot-maintenance .slot-number { color: #475569; }
+
         @keyframes pulse-yellow { 0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); } 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); } }
         @keyframes pulse-blue { 0% { box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(14, 165, 233, 0); } 100% { box-shadow: 0 0 0 0 rgba(14, 165, 233, 0); } }
+        @keyframes pulse-red-alert { 0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.6); } 50% { box-shadow: 0 0 0 15px rgba(220, 38, 38, 0); } 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); } }
 
-        .slot-avatar { width: 55px; height: 55px; border-radius: 50%; object-fit: cover; border: 3px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.15); position: absolute; top: -20px; }
+        .slot-avatar { width: 55px; height: 55px; border-radius: 50%; object-fit: cover; border: 3px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.15); position: absolute; top: -20px; background: white; }
         .slot-name { font-size: 0.8rem; font-weight: 700; margin-top: 15px; color: var(--primary); max-width: 90%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .slot-dept { font-size: 0.65rem; color: #64748b; font-weight: 600; }
         .slot-badge { position: absolute; bottom: -12px; font-size: 0.7rem; padding: 4px 12px; border-radius: 20px; font-weight: bold; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
@@ -99,21 +107,18 @@
         /* ================= 🖨️ PRINT STYLES (PDF EXPORT) ================= */
         #printArea { display: none; }
         @media print {
-            body * { visibility: hidden; }
-            #printArea, #printArea * { visibility: visible; }
-            #printArea { position: absolute; left: 0; top: 0; width: 100%; background: white; padding: 20px; font-family: 'Sarabun', sans-serif; }
-            
-            .print-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
+            body { background: white !important; }
+            #loginScreen, #mainApp { display: none !important; }
+            #printArea { display: block !important; position: relative; width: 100%; background: white; color: black; font-family: 'Sarabun', sans-serif; }
+            .print-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; color: black; }
             .print-table th, .print-table td { border: 1px solid #333; padding: 8px; text-align: left; vertical-align: middle; }
-            .print-table th { background-color: #f1f5f9 !important; -webkit-print-color-adjust: exact; color: black; font-weight: bold; text-align: center; }
-            
+            .print-table th { background-color: #f1f5f9 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; color: black; font-weight: bold; text-align: center; }
             .print-header { text-align: center; margin-bottom: 30px; color: black; }
             .print-header h3 { font-weight: 800; font-size: 24px; margin-bottom: 5px; }
             .print-header h4 { font-weight: 600; font-size: 18px; margin-bottom: 5px; }
             .print-header p { margin-bottom: 5px; font-size: 16px; }
             .print-dept { font-weight: bold; font-size: 16px; text-decoration: underline; margin-top: 10px; }
-            
-            @page { size: A4 landscape; margin: 1cm; }
+            @page { size: A4 landscape; margin: 10mm; }
         }
     </style>
 </head>
@@ -144,18 +149,17 @@
             </div>
             
             <ul class="nav nav-pills nav-pills-custom mx-auto" id="adminTabs">
-                <li class="nav-item">
-                    <a class="nav-link active" id="tab-dashboard" href="#" onclick="switchTab('dashboard')"><i class="bi bi-grid-1x2-fill me-2"></i>Live Dashboard</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" id="tab-history" href="#" onclick="switchTab('history')"><i class="bi bi-database-fill me-2"></i>Database & Reports</a>
-                </li>
+                <li class="nav-item"><a class="nav-link active" id="tab-dashboard" href="#" onclick="switchTab('dashboard')"><i class="bi bi-grid-1x2-fill me-2"></i>Live Dashboard</a></li>
+                <li class="nav-item"><a class="nav-link" id="tab-history" href="#" onclick="switchTab('history')"><i class="bi bi-database-fill me-2"></i>Database & Reports</a></li>
             </ul>
 
             <div class="d-flex align-items-center gap-2">
                 <span id="lastUpdate" class="small fw-bold text-muted me-2"></span>
+                <button class="btn btn-danger btn-sm fw-bold rounded-pill px-3 shadow-sm" onclick="viewBlacklist()">
+                    <i class="bi bi-person-fill-slash"></i> Blacklist
+                </button>
                 <button class="btn btn-dark btn-sm fw-bold rounded-pill px-3 shadow-sm" onclick="forceRefresh()">
-                    <i class="bi bi-arrow-clockwise"></i> อัปเดตข้อมูล
+                    <i class="bi bi-arrow-clockwise"></i> รีเฟรช
                 </button>
             </div>
         </div>
@@ -167,7 +171,7 @@
                     <div class="col-md-3"><div class="premium-card stat-card stat-total"><div class="text-success small fw-bold mb-1"><i class="bi bi-check-circle-fill me-1"></i>บัตรว่าง (Ready)</div><h2 class="fw-bold text-dark mb-0"><span id="statAvailable">-</span> <span class="fs-6 text-muted fw-normal">ใบ</span></h2></div></div>
                     <div class="col-md-3"><div class="premium-card stat-card stat-pending"><div class="text-warning small fw-bold mb-1"><i class="bi bi-hourglass-split me-1"></i>รออนุมัติ (Pending)</div><h2 class="fw-bold text-dark mb-0"><span id="statPending">-</span> <span class="fs-6 text-muted fw-normal">รายการ</span></h2></div></div>
                     <div class="col-md-3"><div class="premium-card stat-card stat-active"><div class="text-danger small fw-bold mb-1"><i class="bi bi-person-walking me-1"></i>ถูกยืมใช้งาน (In Use)</div><h2 class="fw-bold text-dark mb-0"><span id="statActive">-</span> <span class="fs-6 text-muted fw-normal">รายการ</span></h2></div></div>
-                    <div class="col-md-3"><div class="premium-card stat-card stat-returning"><div class="text-info small fw-bold mb-1"><i class="bi bi-arrow-return-left me-1"></i>กำลังมาคืน (Returning)</div><h2 class="fw-bold text-dark mb-0"><span id="statReturning">-</span> <span class="fs-6 text-muted fw-normal">รายการ</span></h2></div></div>
+                    <div class="col-md-3"><div class="premium-card stat-card stat-returning"><div class="text-info small fw-bold mb-1"><i class="bi bi-wrench-adjustable me-1"></i>แจ้งซ่อม/สูญหาย</div><h2 class="fw-bold text-dark mb-0"><span id="statMaintenance">-</span> <span class="fs-6 text-muted fw-normal">รายการ</span></h2></div></div>
                 </div>
 
                 <div class="row g-4 mb-4">
@@ -179,10 +183,12 @@
                                     <span class="badge bg-success bg-opacity-10 text-success border border-success me-1 px-2 py-1">ว่าง</span>
                                     <span class="badge bg-warning text-dark me-1 px-2 py-1">รออนุมัติ</span>
                                     <span class="badge bg-danger me-1 px-2 py-1">ถูกยืม</span>
-                                    <span class="badge bg-info text-dark px-2 py-1">กำลังคืน</span>
+                                    <span class="badge" style="background: #7f1d1d;">เกิน 24 ชม.</span>
+                                    <span class="badge bg-secondary ms-1 px-2 py-1">ซ่อม/สูญหาย</span>
                                 </div>
                             </div>
                             <div class="grid-container pb-2" id="cardGrid"></div>
+                            <div class="small text-muted mt-3"><i class="bi bi-info-circle"></i> <b>เคล็ดลับ:</b> คลิกที่ "บัตรว่าง" เพื่อตั้งสถานะแจ้งซ่อม/ระงับการใช้งานชั่วคราว</div>
                         </div>
                     </div>
                     <div class="col-lg-4">
@@ -286,7 +292,7 @@
         if (tabId === 'history') loadHistoryData();
     }
 
-    // ================= 2. CONFIG =================
+    // ================= 2. CONFIG & DB =================
     const SUPABASE_URL = 'https://dqsfioiqwxuxpucwwhsv.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxc2Zpb2lxd3h1eHB1Y3d3aHN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1OTk1NjUsImV4cCI6MjA4NDE3NTU2NX0.L_u0Ff3uHofxiimEs6ySFB4TPNtOWiKeSu3KFoVcA1U';
     
@@ -295,7 +301,7 @@
     
     let dashboardData = []; 
     let historyDataList = []; 
-    let currentFilteredData = []; // เก็บข้อมูลที่กำลังโชว์ในตารางสำหรับ Print
+    let currentFilteredData = []; 
     const TOTAL_CARDS = 30;
     let deptChartInstance = null, reasonChartInstance = null;
 
@@ -312,7 +318,7 @@
             if (error) throw error;
             dashboardData = data;
             renderDashboard(); updateCharts();
-            document.getElementById('lastUpdate').innerHTML = `<i class="bi bi-clock-history"></i> ซิงค์ล่าสุด: ${moment().format('HH:mm:ss น.')}`;
+            document.getElementById('lastUpdate').innerHTML = `<i class="bi bi-clock-history"></i> อัปเดตล่าสุด: ${moment().format('HH:mm:ss')}`;
         } catch (err) { console.error(err); }
     }
 
@@ -325,42 +331,71 @@
             const { data, error } = await db.from('slipper_requests').select('*').gte('request_date', start).lte('request_date', end).order('request_date', { ascending: false });
             if (error) throw error;
             historyDataList = data;
-            currentFilteredData = data; // อัปเดตข้อมูลที่จำ
+            currentFilteredData = data;
             renderHistoryTable(historyDataList);
             Swal.close();
-            document.getElementById('lastUpdate').innerHTML = `<i class="bi bi-clock-history"></i> ซิงค์ล่าสุด: ${moment().format('HH:mm:ss น.')}`;
+            document.getElementById('lastUpdate').innerHTML = `<i class="bi bi-clock-history"></i> อัปเดตล่าสุด: ${moment().format('HH:mm:ss')}`;
         } catch (err) { Swal.fire('Error', err.message, 'error'); }
     }
 
-    // ================= 4. UI RENDERERS =================
+    // ================= 4. DASHBOARD RENDER & OVERDUE =================
     function renderDashboard() {
         const activeRequests = dashboardData.filter(r => ['Pending', 'Approved', 'Returning'].includes(r.status));
-        const cardMap = {}; let countPending = 0, countActive = 0, countReturning = 0;
+        const cardMap = {}; 
+        let countPending = 0, countActive = 0, countReturning = 0, countMaintenance = 0;
+
         activeRequests.forEach(r => {
             cardMap[r.card_no] = r;
-            if (r.status === 'Pending') countPending++;
-            if (r.status === 'Approved') countActive++;
-            if (r.status === 'Returning') countReturning++;
+            if (r.emp_id === 'SYS-MAINT') countMaintenance++;
+            else if (r.status === 'Pending') countPending++;
+            else if (r.status === 'Approved') countActive++;
+            else if (r.status === 'Returning') countReturning++;
         });
 
         animateValue('statAvailable', TOTAL_CARDS - Object.keys(cardMap).length);
-        animateValue('statPending', countPending); animateValue('statActive', countActive); animateValue('statReturning', countReturning);
+        animateValue('statPending', countPending); 
+        animateValue('statActive', countActive); 
+        animateValue('statMaintenance', countMaintenance);
 
         const grid = document.getElementById('cardGrid'); grid.innerHTML = '';
         for (let i = 1; i <= TOTAL_CARDS; i++) {
             const cardName = `No.${i}`; const req = cardMap[cardName];
-            if (!req) grid.innerHTML += `<div class="card-slot slot-available"><div class="slot-number">${cardName}</div><div class="slot-dept mt-2 text-success"><i class="bi bi-check-circle-fill"></i> ว่าง</div></div>`;
+            
+            // 🟢 ว่าง (คลิกเพื่อแจ้งซ่อมได้)
+            if (!req) {
+                grid.innerHTML += `<div class="card-slot slot-available" onclick="markAsMaintenance('${cardName}')"><div class="slot-number">${cardName}</div><div class="slot-dept mt-2 text-success"><i class="bi bi-check-circle-fill"></i> ว่าง</div></div>`;
+            } 
+            // 🛠️ ถูกระงับ/แจ้งซ่อม (SYS-MAINT)
+            else if (req.emp_id === 'SYS-MAINT') {
+                const safeReq = JSON.stringify(req).replace(/"/g, '&quot;');
+                grid.innerHTML += `<div class="card-slot slot-maintenance" onclick="unlockMaintenance(${safeReq})"><i class="bi bi-wrench-adjustable text-secondary fs-3 position-absolute top-0 mt-2"></i><div class="slot-number mt-3">${cardName}</div><div class="slot-name text-secondary">ระงับใช้งาน</div><div class="slot-dept">${req.reason}</div></div>`;
+            }
+            // 🟡🔴🔵 ถูกใช้งานปกติ (Pending, Approved, Returning)
             else {
-                let statusClass = '', badgeHtml = ''; const img = req.user_picture_url || "https://cdn-icons-png.flaticon.com/512/847/847969.png";
+                let statusClass = '', badgeHtml = ''; 
+                const img = req.user_picture_url || "https://cdn-icons-png.flaticon.com/512/847/847969.png";
+                
+                // ตรวจสอบคนดองบัตร (ยืมเกิน 24 ชม.)
+                let isOverdue = false;
+                if (req.status === 'Approved' && req.approved_at) {
+                    const hoursPassed = moment().diff(moment(req.approved_at), 'hours');
+                    if (hoursPassed >= 24) isOverdue = true;
+                }
+
                 if (req.status === 'Pending') { statusClass = 'slot-pending'; badgeHtml = `<span class="slot-badge bg-warning text-dark">รออนุมัติ</span>`; }
-                else if (req.status === 'Approved') { statusClass = 'slot-active'; badgeHtml = `<span class="slot-badge bg-danger">กำลังยืม</span>`; }
+                else if (req.status === 'Approved') { 
+                    statusClass = isOverdue ? 'slot-overdue' : 'slot-active'; 
+                    badgeHtml = isOverdue ? `<span class="slot-badge bg-dark"><i class="bi bi-exclamation-triangle-fill text-warning me-1"></i>ดองบัตร!</span>` : `<span class="slot-badge bg-danger">กำลังยืม</span>`; 
+                }
                 else if (req.status === 'Returning') { statusClass = 'slot-returning'; badgeHtml = `<span class="slot-badge bg-info text-dark">กำลังมาคืน</span>`; }
+                
                 const safeReq = JSON.stringify(req).replace(/"/g, '&quot;');
                 grid.innerHTML += `<div class="card-slot ${statusClass}" onclick="showUserActionModal(${safeReq})"><img src="${img}" class="slot-avatar"><div class="slot-number mt-3">${cardName}</div><div class="slot-name">${req.fullname.split(' ')[0]}</div><div class="slot-dept">${req.emp_id}</div>${badgeHtml}</div>`;
             }
         }
 
-        const pendingList = activeRequests.filter(r => r.status === 'Pending');
+        // Action List (รออนุมัติ) ลบ SYS-MAINT ออก
+        const pendingList = activeRequests.filter(r => r.status === 'Pending' && r.emp_id !== 'SYS-MAINT');
         const list = document.getElementById('actionList'); list.innerHTML = '';
         if (pendingList.length === 0) list.innerHTML = `<tr><td class="text-center text-muted py-5 border-0"><i class="bi bi-shield-check fs-1 opacity-50 d-block mb-2"></i>ไม่มีรายการค้างอนุมัติ</td></tr>`;
         else pendingList.forEach(req => {
@@ -369,10 +404,14 @@
         });
     }
 
+    // ================= 5. HISTORY RENDER =================
     function renderHistoryTable(dataArray) {
         const tbody = document.getElementById('historyTableBody'); tbody.innerHTML = '';
-        if (dataArray.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-muted"><i class="bi bi-inbox fs-1 d-block mb-2"></i>ไม่พบข้อมูลในเดือนนี้</td></tr>`; return; }
-        dataArray.forEach(req => {
+        const realData = dataArray.filter(r => r.emp_id !== 'SYS-MAINT'); // ซ่อนประวัติที่แอดมินกดระงับบัตร
+
+        if (realData.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-muted"><i class="bi bi-inbox fs-1 d-block mb-2"></i>ไม่พบข้อมูลในเดือนนี้</td></tr>`; return; }
+        
+        realData.forEach(req => {
             const img = req.user_picture_url || "https://cdn-icons-png.flaticon.com/512/847/847969.png";
             let badge = '';
             if (req.status === 'Completed') badge = `<span class="badge bg-success bg-opacity-10 text-success border border-success px-2 py-1"><i class="bi bi-check-circle-fill me-1"></i>คืนแล้ว</span>`;
@@ -391,64 +430,117 @@
         renderHistoryTable(currentFilteredData);
     }
 
-    // ================= 5. FORMAL PDF REPORT =================
-    function generatePDFReport() {
-        if (currentFilteredData.length === 0) {
-            return Swal.fire('แจ้งเตือน', 'ไม่มีข้อมูลในตารางสำหรับพิมพ์รายงาน', 'warning');
-        }
-
-        // 1. ตั้งค่าเดือนบนหัวกระดาษ
-        const monthVal = document.getElementById('monthPicker').value;
-        const monthText = moment(monthVal, 'YYYY-MM').format('MMMM YYYY');
-        document.getElementById('printMonthText').innerText = `ประจำเดือน: ${monthText}`;
-
-        // 2. เติมข้อมูลลงตาราง Print
-        const tbody = document.getElementById('printTableBody');
-        tbody.innerHTML = '';
-        
-        currentFilteredData.forEach((req, index) => {
-            let statusTh = req.status === 'Completed' ? 'คืนแล้ว' : 
-                          (req.status === 'Approved' ? 'กำลังยืม' : 
-                          (req.status === 'Pending' ? 'รออนุมัติ' : 
-                          (req.status === 'Returning' ? 'กำลังคืน' : 'ยกเลิก/ไม่อนุมัติ')));
-            
-            tbody.innerHTML += `
-                <tr>
-                    <td style="text-align: center;">${index + 1}</td>
-                    <td style="text-align: center;">${moment(req.request_date).format('DD/MM/YYYY')}</td>
-                    <td style="text-align: center;">${req.emp_id}</td>
-                    <td>${req.fullname}</td>
-                    <td>${req.section}</td>
-                    <td style="text-align: center;"><b>${req.card_no}</b></td>
-                    <td>${req.reason}</td>
-                    <td style="text-align: center;">${statusTh}</td>
-                </tr>
-            `;
+    // ================= 6. MAINTENANCE ACTIONS (ไอเดีย 1) =================
+    async function markAsMaintenance(cardNo) {
+        Swal.fire({
+            title: `ระงับการใช้ ${cardNo}`,
+            text: "ต้องการแจ้งชำรุด หรือระงับการใช้บัตรใบนี้ใช่หรือไม่? (พนักงานจะไม่สามารถกดจองได้)",
+            icon: 'warning', showCancelButton: true, confirmButtonText: 'ยืนยันระงับใช้', confirmButtonColor: '#ef4444', cancelButtonText: 'ยกเลิก'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    // ใช้ทริคสร้าง Request ปลอม (User จะเห็นว่าถูกยืมแล้วและมองไม่เห็นบัตรใบนี้)
+                    const dummyReq = {
+                        emp_id: 'SYS-MAINT', fullname: 'ระงับการใช้งาน', section: 'Admin System',
+                        card_no: cardNo, reason: 'ชำรุด / สูญหาย', request_date: moment().format('YYYY-MM-DD'),
+                        status: 'Approved', approved_by: 'SuperAdmin', approved_at: new Date()
+                    };
+                    await db.from('slipper_requests').insert([dummyReq]);
+                    Swal.fire({ icon: 'success', title: 'ระงับการใช้งานสำเร็จ', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
+                    forceRefresh();
+                } catch (err) { Swal.fire('Error', err.message, 'error'); }
+            }
         });
-
-        // 3. สั่งพิมพ์ (เบราว์เซอร์จะเปิดหน้าต่าง Print และ CSS จะแสดงเฉพาะส่วนหัวกระดาษที่เราเตรียมไว้)
-        window.print();
     }
 
-    // ================= 6. ACTIONS & CHARTS (คงเดิม) =================
-    function updateCharts() {
-        const validReqs = dashboardData.filter(r => r.status !== 'Cancelled');
-        const deptCount = {}; validReqs.forEach(r => { deptCount[r.section] = (deptCount[r.section] || 0) + 1; });
-        if(deptChartInstance) deptChartInstance.destroy();
-        deptChartInstance = new Chart(document.getElementById('deptChart'), { type: 'doughnut', data: { labels: Object.keys(deptCount), datasets: [{ data: Object.values(deptCount), backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { family: 'Sarabun' } } } }, cutout: '60%' } });
-        const reasonCount = {}; validReqs.forEach(r => { reasonCount[r.reason] = (reasonCount[r.reason] || 0) + 1; });
-        if(reasonChartInstance) reasonChartInstance.destroy();
-        reasonChartInstance = new Chart(document.getElementById('reasonChart'), { type: 'bar', data: { labels: Object.keys(reasonCount), datasets: [{ data: Object.values(reasonCount), backgroundColor: '#3b82f6', borderRadius: 8 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } }, x: { grid: { display: false } } }, plugins: { legend: { display: false } } } });
+    async function unlockMaintenance(req) {
+        Swal.fire({
+            title: `ปลดล็อก ${req.card_no}`,
+            text: "ซ่อมเสร็จแล้ว หรือได้บัตรใหม่มาทดแทนใช่หรือไม่?",
+            icon: 'info', showCancelButton: true, confirmButtonText: 'ปลดล็อกบัตรนี้', confirmButtonColor: '#10b981', cancelButtonText: 'ยกเลิก'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                // อัปเดตสถานะเป็น Completed เพื่อให้บัตรกลับมาว่าง (สีเขียว)
+                await updateStatus(req.id, 'Completed');
+            }
+        });
     }
 
+    // ================= 7. BLACKLIST & MODALS (ไอเดีย 2) =================
     function showUserActionModal(req) {
         const countMonth = dashboardData.filter(r => r.emp_id === req.emp_id).length;
+        
+        // เช็คว่าเกิน 24 ชม หรือยัง
+        let overdueAlert = '';
+        if (req.status === 'Approved' && req.approved_at) {
+            const hoursPassed = moment().diff(moment(req.approved_at), 'hours');
+            if (hoursPassed >= 24) {
+                overdueAlert = `<div class="alert alert-danger p-2 small fw-bold text-center mb-3"><i class="bi bi-exclamation-triangle-fill me-1"></i> ดองบัตร! ยืมเกิน ${hoursPassed} ชั่วโมงแล้ว</div>`;
+            }
+        }
+
         let actionButtons = '';
         if (req.status === 'Pending') actionButtons = `<button class="btn btn-success w-100 mb-2 fw-bold rounded-4 py-2" onclick="updateStatus('${req.id}', 'Approved'); Swal.close();"><i class="bi bi-check-circle-fill me-2"></i>อนุมัติคำขอ</button><button class="btn btn-outline-danger w-100 fw-bold rounded-4 py-2" onclick="updateStatus('${req.id}', 'Rejected'); Swal.close();"><i class="bi bi-x-circle-fill me-2"></i>ไม่อนุมัติ</button>`;
-        else if (req.status === 'Approved') actionButtons = `<button class="btn btn-warning w-100 fw-bold rounded-4 py-2 text-dark shadow-sm" onclick="updateStatus('${req.id}', 'Returning'); Swal.close();"><i class="bi bi-person-walking me-2"></i>บังคับแจ้งคืนบัตร (แทนผู้ใช้)</button>`;
-        else if (req.status === 'Returning') actionButtons = `<button class="btn btn-dark w-100 fw-bold rounded-4 py-2 shadow-sm" onclick="updateStatus('${req.id}', 'Completed'); Swal.close();"><i class="bi bi-shield-fill-check me-2"></i>รับคืนบัตรเรียบร้อย (แทน รปภ.)</button>`;
+        else if (req.status === 'Approved') actionButtons = `<button class="btn btn-warning w-100 mb-2 fw-bold rounded-4 py-2 text-dark shadow-sm" onclick="updateStatus('${req.id}', 'Returning'); Swal.close();"><i class="bi bi-person-walking me-2"></i>บังคับแจ้งคืนบัตร (แทนผู้ใช้)</button>`;
+        else if (req.status === 'Returning') actionButtons = `<button class="btn btn-dark w-100 mb-2 fw-bold rounded-4 py-2 shadow-sm" onclick="updateStatus('${req.id}', 'Completed'); Swal.close();"><i class="bi bi-shield-fill-check me-2"></i>รับคืนบัตรเรียบร้อย (แทน รปภ.)</button>`;
+        
+        // ปุ่ม Blacklist
+        const blacklistBtn = `<button class="btn btn-outline-danger w-100 fw-bold rounded-4 py-2 mt-2" onclick="addToBlacklist('${req.emp_id}', '${req.fullname}')"><i class="bi bi-person-fill-slash me-2"></i>ขึ้นบัญชีดำ (Blacklist)</button>`;
+        
         const certHtml = req.medical_cert_url ? `<a href="${req.medical_cert_url}" target="_blank" class="btn btn-outline-primary btn-sm w-100 mt-3 rounded-pill fw-bold"><i class="bi bi-file-earmark-medical-fill me-1"></i> ดูใบรับรองแพทย์</a>` : '';
-        Swal.fire({ html: `<div class="text-center mb-4 mt-2"><img src="${req.user_picture_url || 'https://cdn-icons-png.flaticon.com/512/847/847969.png'}" class="rounded-circle border border-4 border-primary mb-3 shadow" width="90" height="90" style="object-fit:cover;"><h5 class="fw-bold text-dark mb-1">${req.fullname}</h5><p class="text-muted small mb-0">${req.emp_id} | ${req.section}</p></div><div class="bg-light p-3 rounded-4 text-start mb-4 border"><div class="text-center mb-3"><div class="text-muted small fw-bold">สถิติยืมเดือนนี้</div><div class="fs-4 fw-bold text-primary">${countMonth} <span class="fs-6 text-muted fw-normal">ครั้ง</span></div></div><hr class="opacity-25"><div class="d-flex justify-content-between mb-2"><span class="text-muted small">บัตร:</span><span class="badge bg-primary rounded-pill">${req.card_no}</span></div><div class="d-flex justify-content-between mb-2"><span class="text-muted small">วันที่:</span><strong class="text-dark">${moment(req.request_date).format('D MMM YYYY')}</strong></div><div class="mt-3 p-2 bg-white rounded border border-warning border-opacity-50"><span class="text-muted small d-block mb-1">เหตุผล:</span><strong class="text-dark">${req.reason}</strong></div>${certHtml}</div>${actionButtons}`, showConfirmButton: false, showCloseButton: true, width: '400px' });
+        
+        Swal.fire({ 
+            html: `<div class="text-center mb-4 mt-2"><img src="${req.user_picture_url || 'https://cdn-icons-png.flaticon.com/512/847/847969.png'}" class="rounded-circle border border-4 border-primary mb-3 shadow" width="90" height="90" style="object-fit:cover;"><h5 class="fw-bold text-dark mb-1">${req.fullname}</h5><p class="text-muted small mb-0">${req.emp_id} | ${req.section}</p></div>${overdueAlert}<div class="bg-light p-3 rounded-4 text-start mb-4 border"><div class="text-center mb-3"><div class="text-muted small fw-bold">สถิติยืมเดือนนี้</div><div class="fs-4 fw-bold text-primary">${countMonth} <span class="fs-6 text-muted fw-normal">ครั้ง</span></div></div><hr class="opacity-25"><div class="d-flex justify-content-between mb-2"><span class="text-muted small">บัตร:</span><span class="badge bg-primary rounded-pill">${req.card_no}</span></div><div class="d-flex justify-content-between mb-2"><span class="text-muted small">วันที่:</span><strong class="text-dark">${moment(req.request_date).format('D MMM YYYY')}</strong></div><div class="mt-3 p-2 bg-white rounded border border-warning border-opacity-50"><span class="text-muted small d-block mb-1">เหตุผล:</span><strong class="text-dark">${req.reason}</strong></div>${certHtml}</div>${actionButtons}${blacklistBtn}`, 
+            showConfirmButton: false, showCloseButton: true, width: '400px' 
+        });
+    }
+
+    // ฟังก์ชันจัดการ Blacklist (ต้องมีตาราง slipper_blacklist ใน Supabase)
+    async function addToBlacklist(emp_id, fullname) {
+        Swal.fire({
+            title: 'แบนพนักงานคนนี้?',
+            input: 'text', inputPlaceholder: 'ระบุสาเหตุที่แบน (เช่น ทำบัตรหาย, ไม่คืนบัตร)',
+            icon: 'warning', showCancelButton: true, confirmButtonText: 'ยืนยันแบน', confirmButtonColor: '#ef4444'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    const { error } = await db.from('slipper_blacklist').insert([{ emp_id: emp_id, fullname: fullname, reason: result.value || '-' }]);
+                    if (error) throw error;
+                    Swal.fire('สำเร็จ', 'เพิ่มเข้า Blacklist แล้ว (ไม่สามารถยืมบัตรได้อีก)', 'success');
+                } catch (e) { Swal.fire('Error', 'กรุณาสร้างตาราง slipper_blacklist ใน Supabase ก่อน', 'error'); }
+            }
+        });
+    }
+
+    async function viewBlacklist() {
+        try {
+            const { data, error } = await db.from('slipper_blacklist').select('*').order('created_at', { ascending: false });
+            if (error) throw error;
+            let listHtml = data.length === 0 ? '<p class="text-muted">ไม่มีพนักงานในแบล็กลิสต์</p>' : '';
+            data.forEach(b => {
+                listHtml += `<div class="d-flex justify-content-between align-items-center border-bottom py-2 text-start"><div><strong class="text-danger">${b.fullname}</strong><div class="small text-muted">${b.emp_id} | สาเหตุ: ${b.reason}</div></div><button class="btn btn-sm btn-outline-success" onclick="removeFromBlacklist('${b.emp_id}')">ปลดแบน</button></div>`;
+            });
+            Swal.fire({ title: '🚫 Blacklist Management', html: `<div style="max-height: 300px; overflow-y: auto;">${listHtml}</div>`, showConfirmButton: false, showCloseButton: true });
+        } catch (e) { Swal.fire('Error', 'ยังไม่มีตาราง Blacklist ในฐานข้อมูล', 'info'); }
+    }
+
+    async function removeFromBlacklist(emp_id) {
+        await db.from('slipper_blacklist').delete().eq('emp_id', emp_id);
+        Swal.close(); Swal.fire({ icon: 'success', title: 'ปลดแบนสำเร็จ', toast: true, position: 'top-end', timer: 1500 });
+    }
+
+    // ================= 8. GENERAL FUNCTIONS =================
+    async function updateStatus(id, newStatus) {
+        try {
+            const updateData = { status: newStatus };
+            if (newStatus === 'Approved' || newStatus === 'Rejected') { updateData.approved_by = 'SuperAdmin'; updateData.approved_at = new Date(); }
+            else if (newStatus === 'Returning') { updateData.returned_at = new Date(); updateData.received_by = 'SuperAdmin'; }
+            else if (newStatus === 'Completed') { updateData.received_at = new Date(); updateData.received_by = 'SuperAdmin'; }
+            const { error } = await db.from('slipper_requests').update(updateData).eq('id', id);
+            if (error) throw error;
+            Swal.fire({ icon: 'success', title: 'ดำเนินการสำเร็จ', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
+            forceRefresh(); 
+        } catch (err) { Swal.fire('Error', err.message, 'error'); }
     }
 
     async function showUserFullHistory(empId) {
@@ -463,32 +555,38 @@
                 let txt = r.status === 'Completed' ? 'คืนแล้ว' : (r.status === 'Rejected' ? 'ไม่อนุมัติ' : 'ยืม');
                 historyListHtml += `<div class="d-flex justify-content-between align-items-center border-bottom py-2"><div><div class="fw-bold text-dark small">${moment(r.request_date).format('D MMM YYYY')}</div><div class="text-muted" style="font-size:11px;">${r.reason}</div></div><div class="text-end"><span class="badge bg-primary rounded-pill mb-1">${r.card_no}</span><br><span class="badge bg-${color} bg-opacity-10 text-${color} border border-${color}" style="font-size:10px;">${txt}</span></div></div>`;
             });
-            Swal.fire({ html: `<div class="text-center mb-3 mt-2"><img src="${user.user_picture_url || 'https://cdn-icons-png.flaticon.com/512/847/847969.png'}" class="rounded-circle border border-4 border-primary mb-2 shadow" width="80" height="80" style="object-fit:cover;"><h5 class="fw-bold text-dark mb-0">${user.fullname}</h5><p class="text-muted small">${user.emp_id}</p><div class="badge bg-primary px-3 py-2 rounded-pill fs-6">ยอดการยืมทั้งหมด: ${totalBorrows} ครั้ง</div></div><div class="text-start mt-4"><h6 class="fw-bold text-secondary mb-3"><i class="bi bi-clock-history me-2"></i>Timeline การยืม-คืน</h6><div class="bg-light p-2 rounded-4 border" style="max-height: 250px; overflow-y: auto;">${historyListHtml}</div></div>`, showConfirmButton: true, confirmButtonText: 'ปิดหน้าต่าง', confirmButtonColor: '#0f172a', width: '450px' });
+            Swal.fire({ html: `<div class="text-center mb-3 mt-2"><img src="${user.user_picture_url || 'https://cdn-icons-png.flaticon.com/512/847/847969.png'}" class="rounded-circle border border-4 border-primary mb-2 shadow" width="80" height="80" style="object-fit:cover;"><h5 class="fw-bold text-dark mb-0">${user.fullname}</h5><p class="text-muted small">${user.emp_id}</p><div class="badge bg-primary px-3 py-2 rounded-pill fs-6">ยอดการยืมทั้งหมด: ${totalBorrows} ครั้ง</div></div><div class="text-start mt-4"><h6 class="fw-bold text-secondary mb-3"><i class="bi bi-clock-history me-2"></i>Timeline การยืม-คืน</h6><div class="bg-light p-2 rounded-4 border" style="max-height: 250px; overflow-y: auto;">${historyListHtml}</div><button class="btn btn-outline-danger w-100 mt-3 rounded-pill fw-bold" onclick="addToBlacklist('${user.emp_id}', '${user.fullname}')"><i class="bi bi-person-fill-slash me-1"></i> แบนพนักงานคนนี้</button></div>`, showConfirmButton: false, showCloseButton: true, width: '450px' });
         } catch (e) { Swal.fire('Error', 'ดึงข้อมูลไม่สำเร็จ', 'error'); }
     }
 
-    async function updateStatus(id, newStatus) {
-        try {
-            const updateData = { status: newStatus };
-            if (newStatus === 'Approved' || newStatus === 'Rejected') { updateData.approved_by = 'SuperAdmin'; updateData.approved_at = new Date(); }
-            else if (newStatus === 'Returning') { updateData.returned_at = new Date(); updateData.received_by = 'SuperAdmin'; }
-            else if (newStatus === 'Completed') { updateData.received_at = new Date(); updateData.received_by = 'SuperAdmin'; }
-            const { error } = await db.from('slipper_requests').update(updateData).eq('id', id);
-            if (error) throw error;
-            Swal.fire({ icon: 'success', title: 'ดำเนินการสำเร็จ', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
-            forceRefresh(); 
-        } catch (err) { Swal.fire('Error', err.message, 'error'); }
+    function generatePDFReport() {
+        if (currentFilteredData.length === 0) return Swal.fire('แจ้งเตือน', 'ไม่มีข้อมูลพิมพ์', 'warning');
+        const monthVal = document.getElementById('monthPicker').value;
+        document.getElementById('printMonthText').innerText = `ประจำเดือน: ${moment(monthVal, 'YYYY-MM').format('MMMM YYYY')}`;
+        const tbody = document.getElementById('printTableBody'); tbody.innerHTML = '';
+        currentFilteredData.filter(r => r.emp_id !== 'SYS-MAINT').forEach((req, index) => {
+            let statusTh = req.status === 'Completed' ? 'คืนแล้ว' : (req.status === 'Approved' ? 'กำลังยืม' : (req.status === 'Pending' ? 'รออนุมัติ' : (req.status === 'Returning' ? 'กำลังคืน' : 'ยกเลิก')));
+            tbody.innerHTML += `<tr><td style="text-align: center;">${index + 1}</td><td style="text-align: center;">${moment(req.request_date).format('DD/MM/YYYY')}</td><td style="text-align: center;">${req.emp_id}</td><td>${req.fullname}</td><td>${req.section}</td><td style="text-align: center;"><b>${req.card_no}</b></td><td>${req.reason}</td><td style="text-align: center;">${statusTh}</td></tr>`;
+        });
+        window.print();
     }
 
     function exportToExcel() {
         if(currentFilteredData.length === 0) return Swal.fire('แจ้งเตือน', 'ไม่มีข้อมูลให้ดาวน์โหลด', 'warning');
-        const exportData = currentFilteredData.map(r => ({ 'วันที่ขอ': moment(r.request_date).format('DD/MM/YYYY'), 'รหัสพนักงาน': r.emp_id, 'ชื่อ-สกุล': r.fullname, 'แผนก': r.section, 'หมายเลขบัตร': r.card_no, 'เหตุผลที่ขอ': r.reason, 'สถานะ': r.status === 'Completed' ? 'คืนบัตรแล้ว' : (r.status === 'Approved' ? 'กำลังยืม' : r.status), 'ผู้อนุมัติ': r.approved_by || '-', 'ผู้รับคืน': r.received_by || '-', 'มีใบรับรองแพทย์': r.medical_cert_url ? 'มี' : 'ไม่มี' }));
+        const exportData = currentFilteredData.filter(r => r.emp_id !== 'SYS-MAINT').map(r => ({ 'วันที่ขอ': moment(r.request_date).format('DD/MM/YYYY'), 'รหัสพนักงาน': r.emp_id, 'ชื่อ-สกุล': r.fullname, 'แผนก': r.section, 'หมายเลขบัตร': r.card_no, 'เหตุผลที่ขอ': r.reason, 'สถานะ': r.status === 'Completed' ? 'คืนบัตรแล้ว' : (r.status === 'Approved' ? 'กำลังยืม' : r.status), 'ผู้อนุมัติ': r.approved_by || '-', 'ผู้รับคืน': r.received_by || '-', 'มีใบรับรองแพทย์': r.medical_cert_url ? 'มี' : 'ไม่มี' }));
         const ws = XLSX.utils.json_to_sheet(exportData); const wb = XLSX.utils.book_new(); const monthVal = document.getElementById('monthPicker').value;
         XLSX.utils.book_append_sheet(wb, ws, "Slipper History"); XLSX.writeFile(wb, `Slipper_Report_${monthVal}.xlsx`);
     }
 
+    function updateCharts() {
+        const validReqs = dashboardData.filter(r => r.status !== 'Cancelled' && r.emp_id !== 'SYS-MAINT');
+        const deptCount = {}; validReqs.forEach(r => { deptCount[r.section] = (deptCount[r.section] || 0) + 1; });
+        if(deptChartInstance) deptChartInstance.destroy(); deptChartInstance = new Chart(document.getElementById('deptChart'), { type: 'doughnut', data: { labels: Object.keys(deptCount), datasets: [{ data: Object.values(deptCount), backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { family: 'Sarabun' } } } }, cutout: '60%' } });
+        const reasonCount = {}; validReqs.forEach(r => { reasonCount[r.reason] = (reasonCount[r.reason] || 0) + 1; });
+        if(reasonChartInstance) reasonChartInstance.destroy(); reasonChartInstance = new Chart(document.getElementById('reasonChart'), { type: 'bar', data: { labels: Object.keys(reasonCount), datasets: [{ data: Object.values(reasonCount), backgroundColor: '#3b82f6', borderRadius: 8 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } }, x: { grid: { display: false } } }, plugins: { legend: { display: false } } } });
+    }
+
     function animateValue(id, end) { const obj = document.getElementById(id); if (obj.innerText == end) return; obj.style.opacity = 0; setTimeout(() => { obj.innerText = end; obj.style.opacity = 1; }, 200); }
 </script>
-
 </body>
 </html>

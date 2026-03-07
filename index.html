@@ -932,6 +932,22 @@ document.getElementById('slipperForm').addEventListener('submit', async (e) => {
 
     try {
         const userId = document.getElementById('userId').value;
+
+        // 👇👇👇 เริ่มแทรกโค้ด Blacklist ตรงนี้ 👇👇👇
+        const currentEmpId = document.getElementById('empId').value;
+        const { data: blacklisted } = await db.from('slipper_blacklist').select('*').eq('emp_id', currentEmpId);
+        
+        if (blacklisted && blacklisted.length > 0) {
+            Swal.fire({
+                icon: 'error',
+                title: 'ถูกระงับสิทธิ์ 🚫',
+                text: `คุณถูกระงับสิทธิ์การยืมชั่วคราว (สาเหตุ: ${blacklisted[0].reason}) กรุณาติดต่อ จป.`,
+                confirmButtonColor: '#ef4444'
+            });
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+            return; // หยุดทำงาน ไม่บันทึกข้อมูล
+        }
         const { data: activeRequests, error: checkError } = await db
             .from('slipper_requests')
             .select('id, status')
