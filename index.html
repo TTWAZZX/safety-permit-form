@@ -522,16 +522,28 @@ function switchTab(tab) {
 
 // ================= FEATURES =================
 
-// 🌟 FEATURE 5: ฟังก์ชันล็อกหมายเลขบัตรที่ถูกยืมไปแล้ว
+// 🌟 FEATURE 5: ฟังก์ชันล็อกหมายเลขบัตรที่ถูกยืมไปแล้ว หรือ แจ้งซ่อม
 async function lockBusyCards() {
     try {
+        // เพิ่มการ select 'emp_id' มาด้วย เพื่อแยกว่าเป็นการแจ้งซ่อมหรือไม่
         const { data, error } = await db.from('slipper_requests')
-            .select('card_no')
+            .select('card_no, emp_id')
             .in('status', ['Pending', 'Approved', 'Returning']);
         
         if (error) throw error;
 
-        const busyCards = data.map(item => String(item.card_no).trim());
+        // สร้างที่เก็บแยกกันระหว่าง บัตรที่คนยืมปกติ กับ บัตรที่แจ้งซ่อม
+        const borrowedCards = [];
+        const maintenanceCards = [];
+
+        data.forEach(item => {
+            const cardStr = String(item.card_no).trim();
+            if (item.emp_id === 'SYS-MAINT') {
+                maintenanceCards.push(cardStr); // บัตรแจ้งซ่อม
+            } else {
+                borrowedCards.push(cardStr); // บัตรถูกยืมปกติ
+            }
+        });
 
         // 🛑 แก้จุดนี้! เปลี่ยนจาก 'card_no' เป็น 'cardNo' ให้ตรงกับ HTML
         const cardSelect = document.getElementById('cardNo'); 
@@ -540,15 +552,25 @@ async function lockBusyCards() {
         Array.from(cardSelect.options).forEach(option => {
             if (!option.value) return; 
 
-            if (busyCards.includes(String(option.value).trim())) {
+            const val = String(option.value).trim();
+
+            if (maintenanceCards.includes(val)) {
+                // กรณี: แจ้งซ่อม
+                option.disabled = true; // ล็อกไม่ให้กด
+                if (!option.text.includes('(ไม่พร้อมใช้งาน)')) {
+                    option.text = `${val} 🔧 (ไม่พร้อมใช้งาน)`; 
+                }
+            } else if (borrowedCards.includes(val)) {
+                // กรณี: ถูกยืมปกติ
                 option.disabled = true; // ล็อกไม่ให้กด
                 if (!option.text.includes('(ถูกยืม)')) {
-                    option.text = `${option.value} 🔴 (ถูกยืม)`; 
+                    option.text = `${val} 🔴 (ถูกยืม)`; 
                 }
             } else {
+                // กรณี: บัตรว่าง (ปลดล็อก)
                 option.disabled = false; // ปลดล็อกให้กดได้
-                // คืนค่า text กลับเป็นปกติ
-                option.text = option.value.split(' 🔴')[0]; 
+                // คืนค่า text กลับเป็นปกติ (ใช้ option.value ได้เลย เพราะค่ามันคือ "No.X" อยู่แล้ว)
+                option.text = val; 
             }
         });
 
