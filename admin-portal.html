@@ -24,6 +24,8 @@
             background-image: radial-gradient(#e2e8f0 1px, transparent 1px); 
             background-size: 24px 24px;
             min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
         /* 💎 Header Navbar */
@@ -92,6 +94,8 @@
         .module-guard .icon-box { background: #fef2f2; color: #ef4444; } /* แดง */
         .module-gatepass .icon-box { background: #f0fdf4; color: #10b981; } /* เขียว */
         .module-ppe .icon-box { background: #fffbeb; color: #f59e0b; } /* ส้ม */
+        .module-spot .icon-box { background: #f3e8ff; color: #a855f7; } /* ม่วง */
+        .module-royal .icon-box { background: #e0e7ff; color: #4f46e5; } /* คราม/Indigo */
 
         .card-title { font-weight: 800; color: var(--primary); font-size: 1.25rem; margin-bottom: 10px; }
         .card-desc { color: #64748b; font-size: 0.95rem; margin-bottom: 25px; flex-grow: 1; }
@@ -140,21 +144,21 @@
     <div class="container pb-5">
         <div class="row g-4">
 
-            <div class="col-md-6 col-lg-3">
+            <div class="col-md-6 col-lg-4">
                 <div class="system-card module-slipper">
                     <div class="d-flex justify-content-between align-items-start">
                         <div class="icon-box"><i class="bi bi-person-walking"></i></div>
                         <span class="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-3 py-1">Active</span>
                     </div>
                     <h3 class="card-title">Slipper Permit</h3>
-                    <p class="card-desc">ระบบจัดการและอนุมัติการขออนุญาตสวมรองเท้าแตะ ดู Dashboard และพิมพ์รายงาน</p>
+                    <p class="card-desc">ระบบจัดการและอนุมัติการขออนุญาตสวมรองเท้าแตะ ดู Dashboard สถิติ และพิมพ์รายงาน</p>
                     <a href="admin_slipper_permit.html" class="btn-enter" target="_blank">
                         เข้าสู่ระบบ <i class="bi bi-arrow-right ms-1"></i>
                     </a>
                 </div>
             </div>
 
-            <div class="col-md-6 col-lg-3">
+            <div class="col-md-6 col-lg-4">
                 <div class="system-card module-guard">
                     <div class="d-flex justify-content-between align-items-start">
                         <div class="icon-box"><i class="bi bi-shield-lock-fill"></i></div>
@@ -168,7 +172,7 @@
                 </div>
             </div>
 
-            <div class="col-md-6 col-lg-3">
+            <div class="col-md-6 col-lg-4">
                 <div class="system-card module-gatepass">
                     <div class="d-flex justify-content-between align-items-start">
                         <div class="icon-box"><i class="bi bi-door-open-fill"></i></div>
@@ -182,7 +186,7 @@
                 </div>
             </div>
 
-            <div class="col-md-6 col-lg-3">
+            <div class="col-md-6 col-lg-4">
                 <div class="system-card module-ppe">
                     <div class="d-flex justify-content-between align-items-start">
                         <div class="icon-box"><i class="bi bi-box-seam-fill"></i></div>
@@ -191,6 +195,34 @@
                     <h3 class="card-title">PPE Stock</h3>
                     <p class="card-desc">ระบบบริหารจัดการคลังอุปกรณ์คุ้มครองความปลอดภัยส่วนบุคคล (PPE Inventory)</p>
                     <a href="https://tsh-ppe-stock.vercel.app/" class="btn-enter" target="_blank">
+                        เข้าสู่ระบบ <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-lg-4">
+                <div class="system-card module-spot">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="icon-box"><i class="bi bi-pin-map-fill"></i></div>
+                        <span class="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-3 py-1">Active</span>
+                    </div>
+                    <h3 class="card-title">Safety Spot</h3>
+                    <p class="card-desc">ระบบรายงานจุดเสี่ยงและแจ้งซ่อมบำรุงด้านความปลอดภัยภายในพื้นที่โรงงาน (Hazard Reporting)</p>
+                    <a href="https://liff.line.me/2007053300-9xLKdwZp" class="btn-enter" target="_blank">
+                        เข้าสู่ระบบ <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-lg-4">
+                <div class="system-card module-royal">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="icon-box"><i class="bi bi-award-fill"></i></div>
+                        <span class="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-3 py-1">Active</span>
+                    </div>
+                    <h3 class="card-title">Safety Royal Point</h3>
+                    <p class="card-desc">ระบบสะสมคะแนนพฤติกรรมความปลอดภัย เพื่อแลกรับของรางวัล (Safety Reward Program)</p>
+                    <a href="https://liff.line.me/2007053300-QoEvbXyn" class="btn-enter" target="_blank">
                         เข้าสู่ระบบ <i class="bi bi-arrow-right ms-1"></i>
                     </a>
                 </div>
