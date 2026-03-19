@@ -805,7 +805,8 @@ document.getElementById('attendanceForm').addEventListener('submit', async funct
         time_out: time_out,
         remark_type: remark_type,
         remark_detail: final_remark_detail,
-        profile_pic: document.getElementById('picUrl').value || null
+        profile_pic: document.getElementById('picUrl').value || null,
+        status: 'Active' // ตรงกับ DB schema
     };
 
     // ================= 🏖️ HANDLE LEAVE MODE =================

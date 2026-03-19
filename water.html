@@ -359,12 +359,17 @@ async function fetchRecentData() {
                 </div>
             `;
         });
-    } catch (err) { console.error(err); }
+    } catch (err) {
+        console.error(err);
+        listDiv.innerHTML = `<div class="history-item text-center text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>โหลดประวัติไม่สำเร็จ</div>`;
+        const lastMeterEl = document.getElementById('lastMeter');
+        if (lastMeterEl) { lastMeterEl.classList.remove('skeleton'); lastMeterEl.innerText = '-'; }
+    }
 }
 
 async function fetchYearlyStats() {
     try {
-        const startOfYear = new Date(new Date().getFullYear(), 0, 1).toISOString();
+        const startOfYear = `${new Date().getFullYear()}-01-01`;
         const { data, error } = await db.from('water_meter_logs').select('units_used').gte('record_date', startOfYear);
         if (error) throw error;
         let totalWaterM3 = 0;

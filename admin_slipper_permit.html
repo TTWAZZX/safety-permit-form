@@ -273,16 +273,30 @@
     function checkLogin() {
         const pass = document.getElementById('adminPassword').value;
         if (pass === ADMIN_PASSWORD) {
-            document.getElementById('loginScreen').style.display = 'none';
-            document.getElementById('mainApp').style.display = 'block';
-            document.getElementById('monthPicker').value = moment().format('YYYY-MM');
-            forceRefresh(); 
-            setInterval(fetchLiveDashboard, 10000); 
+            sessionStorage.setItem('isAdminLoggedIn', 'true'); // S-03: persist session
+            unlockDashboard();
         } else {
             Swal.fire({ icon: 'error', title: 'รหัสผ่านผิด', confirmButtonColor: '#0f172a', customClass: { popup: 'rounded-4' } });
             document.getElementById('adminPassword').value = '';
         }
     }
+
+    function unlockDashboard() {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'block';
+        document.getElementById('monthPicker').value = moment().format('YYYY-MM');
+        forceRefresh();
+        // A-05: ป้องกัน interval ซ้อน ถ้า login หลายครั้งหรือ refresh แล้ว auto-login
+        if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+        autoRefreshInterval = setInterval(fetchLiveDashboard, 10000);
+    }
+
+    // S-03: ตรวจสอบ session เมื่อโหลดหน้าใหม่ (ป้องกัน logout เมื่อ refresh)
+    window.onload = function() {
+        if (sessionStorage.getItem('isAdminLoggedIn') === 'true') {
+            unlockDashboard();
+        }
+    };
 
     function switchTab(tabId) {
         document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
@@ -304,6 +318,8 @@
     let currentFilteredData = []; 
     const TOTAL_CARDS = 30;
     let deptChartInstance = null, reasonChartInstance = null;
+    let autoRefreshInterval = null;  // ป้องกัน interval ซ้อนกัน (A-05)
+    let searchDebounceTimer = null;  // debounce สำหรับ search (P-07)
 
     // ================= 3. DATA FETCHING =================
     async function forceRefresh() {
@@ -319,7 +335,11 @@
             dashboardData = data;
             renderDashboard(); updateCharts();
             document.getElementById('lastUpdate').innerHTML = `<i class="bi bi-clock-history"></i> อัปเดตล่าสุด: ${moment().format('HH:mm:ss')}`;
-        } catch (err) { console.error(err); }
+        } catch (err) {
+            console.error(err);
+            // U-03: แสดงสัญญาณเตือนเมื่อ auto-refresh ล้มเหลว แทน silent fail
+            document.getElementById('lastUpdate').innerHTML = `<i class="bi bi-exclamation-triangle-fill text-danger me-1"></i>อัปเดตล้มเหลว: ${moment().format('HH:mm:ss')}`;
+        }
     }
 
     async function loadHistoryData() {
@@ -425,9 +445,13 @@
     }
 
     function filterHistoryTable() {
-        const input = document.getElementById('searchInput').value.toLowerCase();
-        currentFilteredData = historyDataList.filter(r => r.fullname.toLowerCase().includes(input) || r.emp_id.toLowerCase().includes(input));
-        renderHistoryTable(currentFilteredData);
+        // P-07: debounce ป้องกัน filter ทุก keystroke
+        clearTimeout(searchDebounceTimer);
+        searchDebounceTimer = setTimeout(function() {
+            const input = document.getElementById('searchInput').value.toLowerCase();
+            currentFilteredData = historyDataList.filter(r => r.fullname.toLowerCase().includes(input) || r.emp_id.toLowerCase().includes(input));
+            renderHistoryTable(currentFilteredData);
+        }, 300);
     }
 
     // ================= 6. MAINTENANCE ACTIONS (ไอเดีย 1) =================

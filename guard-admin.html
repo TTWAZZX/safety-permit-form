@@ -721,6 +721,7 @@ async function unlockDashboard() {
         document.getElementById('loadingScreen').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
     } catch (err) {
+        document.getElementById('loadingScreen').style.display = 'none';
         Swal.fire('ข้อผิดพลาด', 'โหลดข้อมูลไม่สำเร็จ', 'error');
     }
 }
@@ -945,8 +946,8 @@ async function loadAttendance() {
     const switches = document.querySelectorAll('[id^="colSwitch_"]');
     switches.forEach((sw, idx) => toggleColumn(idx, sw.checked));
 
-    updateKPIs(attendanceData.length, attendanceData.filter(r => r.shift.includes('เช้า')).length, 
-               attendanceData.filter(r => r.shift.includes('ดึก')).length, attendanceData.filter(r => r.remark_type !== 'ปกติ').length);
+    updateKPIs(attendanceData.length, attendanceData.filter(r => r.shift?.includes('เช้า')).length,
+               attendanceData.filter(r => r.shift?.includes('ดึก')).length, attendanceData.filter(r => r.remark_type !== 'ปกติ').length);
 
     if (sortableInstance) sortableInstance.destroy();
     sortableInstance = new Sortable(tbody, {
@@ -1190,7 +1191,7 @@ async function openRecordModal(rowId = null) {
                 loadAttendance(); 
             }
         } else {
-            const { error } = await db.from('guard_attendance').insert([{ ...formValues, updated_by: 'Admin' }]);
+            const { error } = await db.from('guard_attendance').insert([{ ...formValues, status: 'Active', updated_by: 'Admin' }]);
             if (error) {
                 Swal.fire('Error', error.message, 'error'); 
             } else { 

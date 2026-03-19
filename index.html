@@ -874,18 +874,37 @@ function previewImage(event) {
     const imagePreview = document.getElementById('imagePreview');
     const pdfPreview = document.getElementById('pdfPreview');
 
-    if (file) {
-        previewContainer.style.display = 'block';
-        if (file.type.startsWith('image/')) {
-            imagePreview.src = URL.createObjectURL(file);
-            imagePreview.style.display = 'inline-block';
-            pdfPreview.style.display = 'none';
-        } else if (file.type === 'application/pdf') {
-            imagePreview.style.display = 'none';
-            pdfPreview.style.display = 'block';
-        }
-    } else {
+    if (!file) {
         previewContainer.style.display = 'none';
+        return;
+    }
+
+    // FS-01: ตรวจสอบประเภทไฟล์ที่อนุญาต
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
+    if (!allowedTypes.includes(file.type)) {
+        Swal.fire('ไฟล์ไม่รองรับ', 'กรุณาอัปโหลดเฉพาะไฟล์รูปภาพ (JPG, PNG) หรือ PDF เท่านั้น', 'error');
+        event.target.value = '';
+        previewContainer.style.display = 'none';
+        return;
+    }
+
+    // FS-02: ตรวจสอบขนาดไฟล์ไม่เกิน 10 MB
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+        Swal.fire('ไฟล์ใหญ่เกินไป', 'ขนาดไฟล์ต้องไม่เกิน 10 MB กรุณาลดขนาดไฟล์ก่อนอัปโหลด', 'warning');
+        event.target.value = '';
+        previewContainer.style.display = 'none';
+        return;
+    }
+
+    previewContainer.style.display = 'block';
+    if (file.type.startsWith('image/')) {
+        imagePreview.src = URL.createObjectURL(file);
+        imagePreview.style.display = 'inline-block';
+        pdfPreview.style.display = 'none';
+    } else if (file.type === 'application/pdf') {
+        imagePreview.style.display = 'none';
+        pdfPreview.style.display = 'block';
     }
 }
 
@@ -957,7 +976,8 @@ document.getElementById('slipperForm').addEventListener('submit', async (e) => {
 
         // 👇👇👇 เริ่มแทรกโค้ด Blacklist ตรงนี้ 👇👇👇
         const currentEmpId = document.getElementById('empId').value;
-        const { data: blacklisted } = await db.from('slipper_blacklist').select('*').eq('emp_id', currentEmpId);
+        // F-05: ใช้ ilike เพื่อ case-insensitive match (ป้องกัน bypass ด้วยตัวพิมพ์เล็ก/ใหญ่)
+        const { data: blacklisted } = await db.from('slipper_blacklist').select('*').ilike('emp_id', currentEmpId);
         
         if (blacklisted && blacklisted.length > 0) {
             Swal.fire({
@@ -1001,7 +1021,17 @@ document.getElementById('slipperForm').addEventListener('submit', async (e) => {
     const isLongTerm = document.getElementById('modeLong').checked;
     const endDateVal = isLongTerm ? document.getElementById('endDate').value : null;
     const fileInput = document.getElementById('medicalCertFile');
-    
+
+    // F-03: ตรวจสอบ end_date ต้องไม่น้อยกว่า request_date
+    if (isLongTerm) {
+        const reqDate = document.getElementById('requestDate').value;
+        if (!endDateVal || endDateVal < reqDate) {
+            Swal.fire('วันที่ไม่ถูกต้อง', 'วันสิ้นสุดต้องไม่น้อยกว่าวันที่ขอ', 'warning');
+            btn.disabled = false; btn.innerHTML = originalText;
+            return;
+        }
+    }
+
     const displayData = {
         fullname: document.getElementById('fullname').value,
         emp_id: document.getElementById('empId').value,
