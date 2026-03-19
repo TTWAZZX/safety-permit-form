@@ -365,6 +365,7 @@
             <ul class="nav nav-pills" id="pills-tab" role="tablist">
                 <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-attendance"><i class="bi bi-grid me-2"></i> แดชบอร์ด & ลงเวลา</button></li>
                 <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-master"><i class="bi bi-people me-2"></i> จัดการพนักงาน</button></li>
+                <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-logs" onclick="loadAdminLogs()"><i class="bi bi-journal-text me-2"></i> Admin Log</button></li>
             </ul>
         </div>
 
@@ -587,6 +588,56 @@
                 </div>
             </div>
 
+            <div class="tab-pane fade" id="tab-logs">
+                <div class="admin-card">
+                    <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom flex-wrap gap-2">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="bg-danger bg-opacity-10 text-danger rounded-3 d-flex justify-content-center align-items-center" style="width:40px; height:40px;">
+                                <i class="bi bi-journal-text fs-5"></i>
+                            </div>
+                            <div>
+                                <h5 class="fw-bold mb-0">Admin Activity Log</h5>
+                                <small class="text-muted">บันทึกการแก้ไขข้อมูลโดยแอดมิน</small>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2 align-items-center flex-wrap">
+                            <select id="logFilterAction" class="form-select form-select-sm" style="width: auto;">
+                                <option value="ALL">ทุก Action</option>
+                                <option value="INSERT">เพิ่ม (INSERT)</option>
+                                <option value="UPDATE">แก้ไข (UPDATE)</option>
+                                <option value="DELETE">ลบ (DELETE)</option>
+                            </select>
+                            <input type="month" id="logFilterMonth" class="form-control form-control-sm" style="width: auto;">
+                            <button onclick="loadAdminLogs()" class="btn btn-sm btn-primary fw-bold"><i class="bi bi-search me-1"></i> ค้นหา</button>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th style="width:160px;">เวลา</th>
+                                    <th style="width:100px;" class="text-center">Action</th>
+                                    <th>รายละเอียด</th>
+                                    <th class="text-center" style="width:80px;">ข้อมูลเดิม</th>
+                                </tr>
+                            </thead>
+                            <tbody id="logTbody">
+                                <tr><td colspan="4" class="text-center text-muted py-5"><i class="bi bi-journal-x fs-3 d-block mb-2"></i>ยังไม่มีข้อมูล Log</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="logPagination" class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                        <small class="text-muted" id="logCountLabel">-</small>
+                        <div class="d-flex gap-2">
+                            <button id="btnLogPrev" class="btn btn-sm btn-light border" onclick="changeLogPage(-1)" disabled><i class="bi bi-chevron-left"></i></button>
+                            <span class="btn btn-sm btn-light border disabled" id="logPageLabel">หน้า 1</span>
+                            <button id="btnLogNext" class="btn btn-sm btn-light border" onclick="changeLogPage(1)" disabled><i class="bi bi-chevron-right"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 </div>
@@ -710,7 +761,9 @@ async function unlockDashboard() {
     document.getElementById('loadingScreen').style.display = 'flex';
     
     const today = new Date();
-    document.getElementById('filterMonth').value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+    const currentMonthVal = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+    document.getElementById('filterMonth').value = currentMonthVal;
+    document.getElementById('logFilterMonth').value = currentMonthVal;
     
     try {
         await loadFilterNames(); 
@@ -1168,10 +1221,13 @@ async function openRecordModal(rowId = null) {
         .then(async (result) => {
             if (result.isConfirmed) {
                 Swal.fire({ title: 'กำลังลบข้อมูล...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+                const deletedRow = window.currentAttendanceData?.find(r => String(r.id) === String(rowId));
                 await db.from('guard_attendance').delete().eq('id', rowId);
-                
-                // 🟢 เพิ่ม await เพื่อบังคับให้โชว์เครื่องหมายถูก 1 วินาทีก่อนโหลดตาราง
-                await Swal.fire({ icon: 'success', title: 'ลบเรียบร้อย', timer: 1000, showConfirmButton: false }); 
+                await writeLog('DELETE', rowId,
+                    `ลบรายการ: ${deletedRow?.fullname || '-'} วันที่ ${deletedRow?.work_date || '-'} กะ${deletedRow?.shift || '-'}`,
+                    deletedRow || null, null
+                );
+                await Swal.fire({ icon: 'success', title: 'ลบเรียบร้อย', timer: 1000, showConfirmButton: false });
                 loadAttendance();
             }
         });
@@ -1182,22 +1238,29 @@ async function openRecordModal(rowId = null) {
         Swal.fire({ title: 'กำลังบันทึกข้อมูล...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
         
         if (isEdit) {
+            const beforeRow = window.currentAttendanceData?.find(r => String(r.id) === String(rowId));
             const { error } = await db.from('guard_attendance').update({ ...formValues, updated_at: new Date(), updated_by: 'Admin' }).eq('id', rowId);
             if (error) {
-                Swal.fire('Error', error.message, 'error'); 
-            } else { 
-                // 🟢 เพิ่ม await
-                await Swal.fire({ icon: 'success', title: 'อัปเดตเรียบร้อย', timer: 1000, showConfirmButton: false }); 
-                loadAttendance(); 
+                Swal.fire('Error', error.message, 'error');
+            } else {
+                await writeLog('UPDATE', rowId,
+                    `แก้ไข: ${formValues.fullname} วันที่ ${formValues.work_date} กะ${formValues.shift}`,
+                    beforeRow || null, formValues
+                );
+                await Swal.fire({ icon: 'success', title: 'อัปเดตเรียบร้อย', timer: 1000, showConfirmButton: false });
+                loadAttendance();
             }
         } else {
             const { error } = await db.from('guard_attendance').insert([{ ...formValues, status: 'Active', updated_by: 'Admin' }]);
             if (error) {
-                Swal.fire('Error', error.message, 'error'); 
-            } else { 
-                // 🟢 เพิ่ม await
-                await Swal.fire({ icon: 'success', title: 'เพิ่มข้อมูลเรียบร้อย', timer: 1000, showConfirmButton: false }); 
-                loadAttendance(); 
+                Swal.fire('Error', error.message, 'error');
+            } else {
+                await writeLog('INSERT', 'new',
+                    `เพิ่ม: ${formValues.fullname} วันที่ ${formValues.work_date} กะ${formValues.shift}`,
+                    null, formValues
+                );
+                await Swal.fire({ icon: 'success', title: 'เพิ่มข้อมูลเรียบร้อย', timer: 1000, showConfirmButton: false });
+                loadAttendance();
             }
         }
     }
@@ -1253,6 +1316,101 @@ async function delMaster(type, id, name) {
             Toast.fire({ icon: 'success', title: 'ลบข้อมูลเรียบร้อย' });
             loadMasterTables(); loadFilterNames();
         }
+    });
+}
+
+// ================= 📋 ADMIN LOG =================
+let logCurrentPage = 1;
+const LOG_PAGE_SIZE = 20;
+
+async function writeLog(action, recordId, detail, beforeData = null, afterData = null) {
+    try {
+        await db.from('guardadmin_logs').insert([{
+            action,
+            table_name: 'guard_attendance',
+            record_id: String(recordId),
+            detail,
+            before_data: beforeData,
+            after_data: afterData
+        }]);
+    } catch (err) {
+        console.warn('Log write failed:', err);
+    }
+}
+
+async function loadAdminLogs() {
+    const tbody = document.getElementById('logTbody');
+    tbody.innerHTML = `<tr><td colspan="4" class="text-center py-4"><span class="spinner-border spinner-border-sm text-primary me-2"></span>กำลังโหลด...</td></tr>`;
+
+    const filterAction = document.getElementById('logFilterAction').value;
+    const filterMonth = document.getElementById('logFilterMonth').value;
+
+    let query = db.from('guardadmin_logs').select('*', { count: 'exact' }).order('created_at', { ascending: false });
+
+    if (filterAction !== 'ALL') query = query.eq('action', filterAction);
+    if (filterMonth) {
+        const [y, m] = filterMonth.split('-');
+        const lastDay = new Date(y, m, 0).getDate();
+        query = query.gte('created_at', `${filterMonth}-01`).lte('created_at', `${filterMonth}-${lastDay}T23:59:59`);
+    }
+
+    const from = (logCurrentPage - 1) * LOG_PAGE_SIZE;
+    query = query.range(from, from + LOG_PAGE_SIZE - 1);
+
+    const { data, error, count } = await query;
+    if (error) { tbody.innerHTML = `<tr><td colspan="4" class="text-center text-danger py-4">โหลดข้อมูลไม่สำเร็จ</td></tr>`; return; }
+
+    const totalPages = Math.ceil(count / LOG_PAGE_SIZE);
+    document.getElementById('logCountLabel').innerText = `รายการทั้งหมด: ${count} รายการ`;
+    document.getElementById('logPageLabel').innerText = `หน้า ${logCurrentPage} / ${totalPages || 1}`;
+    document.getElementById('btnLogPrev').disabled = logCurrentPage <= 1;
+    document.getElementById('btnLogNext').disabled = logCurrentPage >= totalPages;
+
+    if (!data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-5"><i class="bi bi-journal-x fs-3 d-block mb-2"></i>ไม่พบข้อมูล Log</td></tr>`;
+        return;
+    }
+
+    const actionBadge = { INSERT: 'bg-success', UPDATE: 'bg-warning text-dark', DELETE: 'bg-danger' };
+    const actionLabel = { INSERT: 'เพิ่ม', UPDATE: 'แก้ไข', DELETE: 'ลบ' };
+
+    tbody.innerHTML = data.map(row => {
+        const dt = new Date(row.created_at);
+        const dateStr = dt.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+        const timeStr = dt.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const badge = actionBadge[row.action] || 'bg-secondary';
+        const label = actionLabel[row.action] || row.action;
+        const hasBefore = row.before_data && Object.keys(row.before_data).length > 0;
+        const beforeBtn = hasBefore
+            ? `<button class="btn btn-sm btn-light border rounded-pill px-2" onclick='showLogDetail(${JSON.stringify(row.before_data)}, ${JSON.stringify(row.after_data)})'><i class="bi bi-eye"></i></button>`
+            : `<span class="text-muted">-</span>`;
+
+        return `<tr>
+            <td><div class="fw-bold small">${dateStr}</div><div class="text-muted small">${timeStr}</div></td>
+            <td class="text-center"><span class="badge ${badge} rounded-pill px-3">${label}</span></td>
+            <td class="small">${row.detail || '-'}</td>
+            <td class="text-center">${beforeBtn}</td>
+        </tr>`;
+    }).join('');
+}
+
+function changeLogPage(dir) {
+    logCurrentPage += dir;
+    loadAdminLogs();
+}
+
+function showLogDetail(before, after) {
+    const fmt = obj => obj ? `<pre class="text-start small mb-0" style="white-space:pre-wrap;">${JSON.stringify(obj, null, 2)}</pre>` : '<span class="text-muted">-</span>';
+    Swal.fire({
+        title: 'รายละเอียดการเปลี่ยนแปลง',
+        html: `<div class="row text-start g-3">
+            <div class="col-6"><div class="fw-bold text-danger mb-2"><i class="bi bi-dash-circle me-1"></i>ก่อนแก้ไข</div><div class="bg-light rounded p-2">${fmt(before)}</div></div>
+            <div class="col-6"><div class="fw-bold text-success mb-2"><i class="bi bi-plus-circle me-1"></i>หลังแก้ไข</div><div class="bg-light rounded p-2">${fmt(after)}</div></div>
+        </div>`,
+        width: 700,
+        confirmButtonText: 'ปิด',
+        customClass: { confirmButton: 'btn btn-secondary px-4' },
+        buttonsStyling: false
     });
 }
 
