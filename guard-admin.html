@@ -1123,8 +1123,8 @@ async function openRecordModal(rowId = null) {
             <div class="col-6"><label class="small fw-bold text-muted">วันที่</label><input id="m-date" type="date" class="form-control" value="${rowData.work_date}"></div>
             <div class="col-6"><label class="small fw-bold text-muted">กะการทำงาน</label>
                 <select id="m-shift" class="form-select">
-                    <option value="เช้า" ${rowData.shift?.includes('เช้า') ? 'selected':''}>กะเช้า</option>
-                    <option value="ดึก" ${rowData.shift?.includes('ดึก') ? 'selected':''}>กะดึก</option>
+                    <option value="กะเช้า (06:00 - 18:00)" ${rowData.shift?.includes('เช้า') ? 'selected':''}>กะเช้า (06:00 - 18:00)</option>
+                    <option value="กะดึก (18:00 - 06:00)" ${rowData.shift?.includes('ดึก') ? 'selected':''}>กะดึก (18:00 - 06:00)</option>
                 </select>
             </div>
             <div class="col-12 mt-2"><label class="small fw-bold text-muted">ชื่อพนักงาน</label>
