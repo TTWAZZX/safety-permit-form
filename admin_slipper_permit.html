@@ -421,8 +421,8 @@
                 if (req.status === 'Approved' && req.approved_at) {
                     const now = moment();
 
-                    if (req.expected_return_date) {
-                        const expected = moment(req.expected_return_date);
+                    if (req.end_date) {
+                        const expected = moment(req.end_date);
 
                         if (now.isAfter(expected)) {
                             isOverdue = true; // ดองจริง
@@ -474,8 +474,8 @@
                 let countdownHtml = '';
                 let mobileHint = '';
 
-                if (req.expected_return_date) {
-                    const expected = moment(req.expected_return_date);
+                if (req.end_date) {
+                    const expected = moment(req.end_date);
                     const now = moment();
 
                     const hoursLeft = expected.diff(now, 'hours');
@@ -484,17 +484,12 @@
                     if (hoursLeft > 0) {
                         returnText = `จะคืนวันที่ ${expected.format('D MMM')} (อีก ${daysLeft} วัน)`;
 
-                        // 🔥 ใกล้ deadline มาก (<= 3 ชม.)
                         if (hoursLeft <= 3) {
                             statusClass = 'slot-warning';
                             countdownHtml = `<div class="small text-danger fw-bold">⏳ เหลือ ${hoursLeft} ชม.</div>`;
-                        }
-                        // ⚠️ ใกล้ deadline (<= 24 ชม.)
-                        else if (hoursLeft <= 24) {
+                        } else if (hoursLeft <= 24) {
                             countdownHtml = `<div class="small text-warning fw-bold">⏳ เหลือ ${hoursLeft} ชม.</div>`;
-                        }
-                        // 🟢 ปกติ
-                        else {
+                        } else {
                             countdownHtml = `<div class="small text-primary">เหลือ ${daysLeft} วัน</div>`;
                         }
 
@@ -521,8 +516,8 @@
                     <div class="slot-dept">${req.emp_id}</div>
 
                     ${durationText ? `<div class="small ${durationClass}">${durationText}</div>` : ''}
-                    ${countdownHtml}
                     ${mobileHint}
+                    ${countdownHtml}
                     ${badgeHtml}
                 </div>`;
             }
@@ -623,17 +618,18 @@
         if (req.status === 'Approved') {
             const now = moment();
 
-            if (req.expected_return_date) {
-                const expected = moment(req.expected_return_date);
+            if (req.end_date) {
+                const end = moment(req.end_date);
 
-                if (now.isAfter(expected)) {
-                    const daysOver = Math.ceil(now.diff(expected, 'hours') / 24);
+                if (now.isAfter(end)) {
+                    const daysOver = Math.ceil(now.diff(end, 'hours') / 24);
 
                     overdueAlert = `
                     <div class="alert alert-danger text-center fw-bold rounded-4 py-2">
                         ⚠️ เกินกำหนดคืนแล้ว ${daysOver} วัน
                     </div>`;
                 }
+
             } else if (req.approved_at) {
                 const hoursPassed = now.diff(moment(req.approved_at), 'hours');
 
