@@ -369,6 +369,7 @@
     moment.locale('th'); 
     
     let dashboardData = []; 
+    let dashboardMonthlyData = [];
     let historyDataList = []; 
     let currentFilteredData = []; 
     const TOTAL_CARDS = 30;
@@ -385,9 +386,25 @@
     async function fetchLiveDashboard() {
         try {
             const firstDayOfMonth = moment().startOf('month').format('YYYY-MM-DD');
-            const { data, error } = await db.from('slipper_requests').select('*').gte('request_date', firstDayOfMonth).order('created_at', { ascending: false });
-            if (error) throw error;
-            dashboardData = data;
+            const [
+                { data: activeData, error: activeError },
+                { data: monthlyData, error: monthlyError }
+            ] = await Promise.all([
+                db.from('slipper_requests')
+                    .select('*')
+                    .in('status', ['Pending', 'Approved', 'Returning'])
+                    .order('created_at', { ascending: false }),
+                db.from('slipper_requests')
+                    .select('*')
+                    .gte('request_date', firstDayOfMonth)
+                    .order('created_at', { ascending: false })
+            ]);
+
+            if (activeError) throw activeError;
+            if (monthlyError) throw monthlyError;
+
+            dashboardData = activeData || [];
+            dashboardMonthlyData = monthlyData || [];
             renderDashboard(); updateCharts();
             document.getElementById('lastUpdate').innerHTML = `<i class="bi bi-clock-history"></i> อัปเดตล่าสุด: ${moment().format('HH:mm:ss')}`;
         } catch (err) {
@@ -647,7 +664,7 @@
 
     // ================= 7. BLACKLIST & MODALS (ไอเดีย 2) =================
     function showUserActionModal(req) {
-        const countMonth = dashboardData.filter(r => r.emp_id === req.emp_id).length;
+        const countMonth = dashboardMonthlyData.filter(r => r.emp_id === req.emp_id).length;
         
         // เช็คว่าเกินกำหนดหรือยัง
         let overdueAlert = '';
@@ -875,7 +892,7 @@
     }
 
     function updateCharts() {
-        const validReqs = dashboardData.filter(r => r.status !== 'Cancelled' && r.emp_id !== 'SYS-MAINT');
+        const validReqs = dashboardMonthlyData.filter(r => r.status !== 'Cancelled' && r.emp_id !== 'SYS-MAINT');
         const deptCount = {}; validReqs.forEach(r => { deptCount[r.section] = (deptCount[r.section] || 0) + 1; });
         if(deptChartInstance) deptChartInstance.destroy(); deptChartInstance = new Chart(document.getElementById('deptChart'), { type: 'doughnut', data: { labels: Object.keys(deptCount), datasets: [{ data: Object.values(deptCount), backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { family: 'Sarabun' } } } }, cutout: '60%' } });
         const reasonCount = {}; validReqs.forEach(r => { reasonCount[r.reason] = (reasonCount[r.reason] || 0) + 1; });
