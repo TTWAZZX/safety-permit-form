@@ -152,6 +152,17 @@
         .table-custom tbody tr:hover { transform: scale(1.01); box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
 
         .chart-container { position: relative; height: 260px; width: 100%; }
+        .filter-bar { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; }
+        .filter-group { min-width: 180px; flex: 1 1 180px; }
+        .analytics-kpi { border-left: 6px solid #cbd5e1; min-height: 108px; }
+        .analytics-kpi .kpi-label { font-size: 0.82rem; color: #64748b; font-weight: 700; }
+        .analytics-kpi .kpi-value { font-size: 2rem; font-weight: 800; color: #0f172a; line-height: 1.1; }
+        .analytics-kpi .kpi-sub { font-size: 0.78rem; color: #94a3b8; font-weight: 600; }
+        .border-accent-blue { border-left-color: #3b82f6; }
+        .border-accent-green { border-left-color: #10b981; }
+        .border-accent-orange { border-left-color: #f59e0b; }
+        .border-accent-red { border-left-color: #ef4444; }
+        .border-accent-slate { border-left-color: #64748b; }
         .view-section { display: none; animation: fadeIn 0.4s ease; }
         .view-section.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -256,9 +267,59 @@
                     </div>
                 </div>
 
+                <div class="premium-card mb-4">
+                    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+                        <div>
+                            <h5 class="fw-bold text-primary mb-1"><i class="bi bi-graph-up-arrow me-2"></i>Yearly Analytics</h5>
+                            <div class="small text-muted">สรุปข้อมูลการยืมรองเท้าแตะรายปี พร้อมกรองตามปี แผนก และสถานะ</div>
+                        </div>
+                        <div class="small fw-bold text-muted" id="analyticsResultText">กำลังโหลดข้อมูล...</div>
+                    </div>
+                    <div class="filter-bar">
+                        <div class="filter-group">
+                            <label class="form-label fw-bold small text-secondary mb-1">ปี</label>
+                            <select id="analyticsYear" class="form-select fw-bold border-secondary" onchange="forceRefresh()"></select>
+                        </div>
+                        <div class="filter-group">
+                            <label class="form-label fw-bold small text-secondary mb-1">แผนก</label>
+                            <select id="analyticsDept" class="form-select border-secondary" onchange="applyAnalyticsFilters()">
+                                <option value="ALL">ทุกแผนก</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label class="form-label fw-bold small text-secondary mb-1">สถานะ</label>
+                            <select id="analyticsStatus" class="form-select border-secondary" onchange="applyAnalyticsFilters()">
+                                <option value="ALL">ทุกสถานะ</option>
+                                <option value="Pending">Pending</option>
+                                <option value="Approved">Approved</option>
+                                <option value="Returning">Returning</option>
+                                <option value="Completed">Completed</option>
+                                <option value="Rejected">Rejected</option>
+                                <option value="Cancelled">Cancelled</option>
+                            </select>
+                        </div>
+                        <div class="d-flex gap-2 ms-auto">
+                            <button class="btn btn-outline-primary fw-bold px-3" onclick="setAnalyticsYearToCurrent()"><i class="bi bi-calendar-check me-1"></i>ปีนี้</button>
+                            <button class="btn btn-outline-secondary fw-bold px-3" onclick="resetAnalyticsFilters()"><i class="bi bi-arrow-counterclockwise me-1"></i>รีเซ็ต</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6 col-xl"><div class="premium-card analytics-kpi border-accent-blue"><div class="kpi-label">คำขอทั้งหมด</div><div class="kpi-value" id="yearlyTotalRequests">-</div><div class="kpi-sub">รายการในปี/ตัวกรองที่เลือก</div></div></div>
+                    <div class="col-md-6 col-xl"><div class="premium-card analytics-kpi border-accent-green"><div class="kpi-label">อนุมัติแล้ว</div><div class="kpi-value" id="yearlyApprovedCount">-</div><div class="kpi-sub">Approved และ Returning</div></div></div>
+                    <div class="col-md-6 col-xl"><div class="premium-card analytics-kpi border-accent-orange"><div class="kpi-label">คืนสำเร็จ</div><div class="kpi-value" id="yearlyCompletedCount">-</div><div class="kpi-sub">Completed</div></div></div>
+                    <div class="col-md-6 col-xl"><div class="premium-card analytics-kpi border-accent-red"><div class="kpi-label">ปิดรายการแล้ว</div><div class="kpi-value" id="yearlyClosedCount">-</div><div class="kpi-sub">Rejected และ Cancelled</div></div></div>
+                    <div class="col-md-6 col-xl"><div class="premium-card analytics-kpi border-accent-slate"><div class="kpi-label">Active ในปีนี้</div><div class="kpi-value" id="yearlyActiveCount">-</div><div class="kpi-sub">Pending, Approved, Returning</div></div></div>
+                </div>
+
                 <div class="row g-4">
-                    <div class="col-lg-6"><div class="premium-card"><h6 class="fw-bold text-dark mb-3"><i class="bi bi-pie-chart-fill text-primary me-2"></i>แผนกที่ยืมสูงสุด (เดือนนี้)</h6><div class="chart-container"><canvas id="deptChart"></canvas></div></div></div>
-                    <div class="col-lg-6"><div class="premium-card"><h6 class="fw-bold text-dark mb-3"><i class="bi bi-bar-chart-fill text-danger me-2"></i>สาเหตุการขอยืม (เดือนนี้)</h6><div class="chart-container"><canvas id="reasonChart"></canvas></div></div></div>
+                    <div class="col-lg-6"><div class="premium-card"><h6 class="fw-bold text-dark mb-3"><i class="bi bi-pie-chart-fill text-primary me-2"></i>แผนกที่ยืมสูงสุด (รายปี)</h6><div class="chart-container"><canvas id="deptChart"></canvas></div></div></div>
+                    <div class="col-lg-6"><div class="premium-card"><h6 class="fw-bold text-dark mb-3"><i class="bi bi-bar-chart-fill text-danger me-2"></i>สาเหตุการขอยืม (รายปี)</h6><div class="chart-container"><canvas id="reasonChart"></canvas></div></div></div>
+                </div>
+                <div class="row g-4 mt-1">
+                    <div class="col-lg-6"><div class="premium-card"><h6 class="fw-bold text-dark mb-3"><i class="bi bi-bar-chart-line-fill text-primary me-2"></i>แนวโน้มรายเดือน</h6><div class="chart-container"><canvas id="monthTrendChart"></canvas></div></div></div>
+                    <div class="col-lg-6"><div class="premium-card"><h6 class="fw-bold text-dark mb-3"><i class="bi bi-pie-chart-fill text-secondary me-2"></i>สัดส่วนสถานะ</h6><div class="chart-container"><canvas id="statusChart"></canvas></div></div></div>
                 </div>
             </div>
 
@@ -340,6 +401,7 @@
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
         document.getElementById('monthPicker').value = moment().format('YYYY-MM');
+        initializeAnalyticsYearOptions();
         forceRefresh();
         // A-05: ป้องกัน interval ซ้อน ถ้า login หลายครั้งหรือ refresh แล้ว auto-login
         if (autoRefreshInterval) clearInterval(autoRefreshInterval);
@@ -369,11 +431,11 @@
     moment.locale('th'); 
     
     let dashboardData = []; 
-    let dashboardMonthlyData = [];
+    let dashboardAnalyticsData = [];
     let historyDataList = []; 
     let currentFilteredData = []; 
     const TOTAL_CARDS = 30;
-    let deptChartInstance = null, reasonChartInstance = null;
+    let monthTrendChartInstance = null, deptChartInstance = null, reasonChartInstance = null, statusChartInstance = null;
     let autoRefreshInterval = null;  // ป้องกัน interval ซ้อนกัน (A-05)
     let searchDebounceTimer = null;  // debounce สำหรับ search (P-07)
 
@@ -385,10 +447,12 @@
 
     async function fetchLiveDashboard() {
         try {
-            const firstDayOfMonth = moment().startOf('month').format('YYYY-MM-DD');
+            const selectedYear = document.getElementById('analyticsYear')?.value || moment().format('YYYY');
+            const startOfYear = `${selectedYear}-01-01`;
+            const endOfYear = `${selectedYear}-12-31`;
             const [
                 { data: activeData, error: activeError },
-                { data: monthlyData, error: monthlyError }
+                { data: analyticsData, error: analyticsError }
             ] = await Promise.all([
                 db.from('slipper_requests')
                     .select('*')
@@ -396,16 +460,19 @@
                     .order('created_at', { ascending: false }),
                 db.from('slipper_requests')
                     .select('*')
-                    .gte('request_date', firstDayOfMonth)
+                    .gte('request_date', startOfYear)
+                    .lte('request_date', endOfYear)
                     .order('created_at', { ascending: false })
             ]);
 
             if (activeError) throw activeError;
-            if (monthlyError) throw monthlyError;
+            if (analyticsError) throw analyticsError;
 
             dashboardData = activeData || [];
-            dashboardMonthlyData = monthlyData || [];
-            renderDashboard(); updateCharts();
+            dashboardAnalyticsData = analyticsData || [];
+            renderDashboard();
+            refreshAnalyticsFilterOptions();
+            applyAnalyticsFilters();
             document.getElementById('lastUpdate').innerHTML = `<i class="bi bi-clock-history"></i> อัปเดตล่าสุด: ${moment().format('HH:mm:ss')}`;
         } catch (err) {
             console.error(err);
@@ -664,7 +731,7 @@
 
     // ================= 7. BLACKLIST & MODALS (ไอเดีย 2) =================
     function showUserActionModal(req) {
-        const countMonth = dashboardMonthlyData.filter(r => r.emp_id === req.emp_id).length;
+        const countMonth = dashboardAnalyticsData.filter(r => r.emp_id === req.emp_id).length;
         
         // เช็คว่าเกินกำหนดหรือยัง
         let overdueAlert = '';
@@ -891,12 +958,160 @@
         XLSX.utils.book_append_sheet(wb, ws, "Slipper History"); XLSX.writeFile(wb, `Slipper_Report_${monthVal}.xlsx`);
     }
 
-    function updateCharts() {
-        const validReqs = dashboardMonthlyData.filter(r => r.status !== 'Cancelled' && r.emp_id !== 'SYS-MAINT');
-        const deptCount = {}; validReqs.forEach(r => { deptCount[r.section] = (deptCount[r.section] || 0) + 1; });
-        if(deptChartInstance) deptChartInstance.destroy(); deptChartInstance = new Chart(document.getElementById('deptChart'), { type: 'doughnut', data: { labels: Object.keys(deptCount), datasets: [{ data: Object.values(deptCount), backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { family: 'Sarabun' } } } }, cutout: '60%' } });
-        const reasonCount = {}; validReqs.forEach(r => { reasonCount[r.reason] = (reasonCount[r.reason] || 0) + 1; });
-        if(reasonChartInstance) reasonChartInstance.destroy(); reasonChartInstance = new Chart(document.getElementById('reasonChart'), { type: 'bar', data: { labels: Object.keys(reasonCount), datasets: [{ data: Object.values(reasonCount), backgroundColor: '#3b82f6', borderRadius: 8 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } }, x: { grid: { display: false } } }, plugins: { legend: { display: false } } } });
+    function initializeAnalyticsYearOptions() {
+        const yearSelect = document.getElementById('analyticsYear');
+        if (!yearSelect || yearSelect.options.length > 0) return;
+        const currentYear = moment().year();
+        for (let year = currentYear; year >= currentYear - 5; year--) {
+            yearSelect.innerHTML += `<option value="${year}">${year}</option>`;
+        }
+        yearSelect.value = String(currentYear);
+    }
+
+    function refreshAnalyticsFilterOptions() {
+        const deptSelect = document.getElementById('analyticsDept');
+        if (!deptSelect) return;
+
+        const previousValue = deptSelect.value || 'ALL';
+        const deptOptions = [...new Set(
+            dashboardAnalyticsData
+                .filter(r => r.emp_id !== 'SYS-MAINT' && r.section)
+                .map(r => r.section)
+        )].sort((a, b) => a.localeCompare(b));
+
+        deptSelect.innerHTML = '<option value="ALL">ทุกแผนก</option>';
+        deptOptions.forEach(section => {
+            deptSelect.innerHTML += `<option value="${section}">${section}</option>`;
+        });
+        deptSelect.value = deptOptions.includes(previousValue) ? previousValue : 'ALL';
+    }
+
+    function getFilteredAnalyticsData() {
+        const dept = document.getElementById('analyticsDept')?.value || 'ALL';
+        const status = document.getElementById('analyticsStatus')?.value || 'ALL';
+
+        return dashboardAnalyticsData.filter(r => {
+            if (r.emp_id === 'SYS-MAINT') return false;
+            if (dept !== 'ALL' && r.section !== dept) return false;
+            if (status !== 'ALL' && r.status !== status) return false;
+            return true;
+        });
+    }
+
+    function applyAnalyticsFilters() {
+        const filteredData = getFilteredAnalyticsData();
+        renderAnalyticsSummary(filteredData);
+        updateCharts(filteredData);
+    }
+
+    function renderAnalyticsSummary(data) {
+        const selectedYear = document.getElementById('analyticsYear')?.value || moment().format('YYYY');
+        const dept = document.getElementById('analyticsDept')?.value || 'ALL';
+        const status = document.getElementById('analyticsStatus')?.value || 'ALL';
+
+        animateValue('yearlyTotalRequests', data.length);
+        animateValue('yearlyApprovedCount', data.filter(r => ['Approved', 'Returning'].includes(r.status)).length);
+        animateValue('yearlyCompletedCount', data.filter(r => r.status === 'Completed').length);
+        animateValue('yearlyClosedCount', data.filter(r => ['Rejected', 'Cancelled'].includes(r.status)).length);
+        animateValue('yearlyActiveCount', data.filter(r => ['Pending', 'Approved', 'Returning'].includes(r.status)).length);
+
+        const deptText = dept === 'ALL' ? 'ทุกแผนก' : dept;
+        const statusText = status === 'ALL' ? 'ทุกสถานะ' : status;
+        document.getElementById('analyticsResultText').innerHTML = `ปี ${selectedYear} | ${deptText} | ${statusText} | ${data.length} รายการ`;
+    }
+
+    function setAnalyticsYearToCurrent() {
+        document.getElementById('analyticsYear').value = String(moment().year());
+        forceRefresh();
+    }
+
+    function resetAnalyticsFilters() {
+        document.getElementById('analyticsYear').value = String(moment().year());
+        document.getElementById('analyticsDept').value = 'ALL';
+        document.getElementById('analyticsStatus').value = 'ALL';
+        forceRefresh();
+    }
+
+    function updateCharts(filteredData) {
+        const monthlyBuckets = Array(12).fill(0);
+        filteredData.forEach(r => {
+            const monthIndex = moment(r.request_date).month();
+            if (monthIndex >= 0) monthlyBuckets[monthIndex]++;
+        });
+
+        if (monthTrendChartInstance) monthTrendChartInstance.destroy();
+        monthTrendChartInstance = new Chart(document.getElementById('monthTrendChart'), {
+            type: 'bar',
+            data: {
+                labels: moment.monthsShort(),
+                datasets: [{ data: monthlyBuckets, backgroundColor: '#3b82f6', borderRadius: 10 }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } }, x: { grid: { display: false } } },
+                plugins: { legend: { display: false } }
+            }
+        });
+
+        const palette = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#84cc16', '#f97316'];
+        const deptCount = {};
+        filteredData.forEach(r => { deptCount[r.section] = (deptCount[r.section] || 0) + 1; });
+        const topDeptEntries = Object.entries(deptCount).sort((a, b) => b[1] - a[1]).slice(0, 6);
+
+        if (deptChartInstance) deptChartInstance.destroy();
+        deptChartInstance = new Chart(document.getElementById('deptChart'), {
+            type: 'doughnut',
+            data: {
+                labels: topDeptEntries.map(([label]) => label),
+                datasets: [{ data: topDeptEntries.map(([, value]) => value), backgroundColor: palette }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { family: 'Sarabun' } } } },
+                cutout: '58%'
+            }
+        });
+
+        const reasonCount = {};
+        filteredData.forEach(r => { reasonCount[r.reason] = (reasonCount[r.reason] || 0) + 1; });
+        const topReasonEntries = Object.entries(reasonCount).sort((a, b) => b[1] - a[1]).slice(0, 7);
+
+        if (reasonChartInstance) reasonChartInstance.destroy();
+        reasonChartInstance = new Chart(document.getElementById('reasonChart'), {
+            type: 'bar',
+            data: {
+                labels: topReasonEntries.map(([label]) => label),
+                datasets: [{ data: topReasonEntries.map(([, value]) => value), backgroundColor: '#ef4444', borderRadius: 8 }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } }, x: { grid: { display: false } } },
+                plugins: { legend: { display: false } }
+            }
+        });
+
+        const statusOrder = ['Pending', 'Approved', 'Returning', 'Completed', 'Rejected', 'Cancelled'];
+        const statusCount = {};
+        statusOrder.forEach(status => { statusCount[status] = 0; });
+        filteredData.forEach(r => { statusCount[r.status] = (statusCount[r.status] || 0) + 1; });
+
+        if (statusChartInstance) statusChartInstance.destroy();
+        statusChartInstance = new Chart(document.getElementById('statusChart'), {
+            type: 'doughnut',
+            data: {
+                labels: statusOrder,
+                datasets: [{ data: statusOrder.map(status => statusCount[status] || 0), backgroundColor: ['#f59e0b', '#ef4444', '#0ea5e9', '#10b981', '#64748b', '#94a3b8'] }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { family: 'Sarabun' } } } },
+                cutout: '55%'
+            }
+        });
     }
 
     function animateValue(id, end) { const obj = document.getElementById(id); if (obj.innerText == end) return; obj.style.opacity = 0; setTimeout(() => { obj.innerText = end; obj.style.opacity = 1; }, 200); }
