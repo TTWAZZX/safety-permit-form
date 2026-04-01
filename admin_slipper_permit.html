@@ -168,6 +168,87 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .swal2-popup { border-radius: 28px !important; }
 
+        /* ── Stat card left-border accent colors ── */
+        .stat-total    { border-left-color: var(--success); }
+        .stat-pending  { border-left-color: var(--warning); }
+        .stat-active   { border-left-color: var(--danger); }
+        .stat-returning { border-left-color: var(--info); }
+
+        /* ── Quieter legend badges ── */
+        .slot-legend .badge {
+            font-size: 0.62rem;
+            padding: 2px 7px;
+            font-weight: 600;
+            opacity: 0.88;
+        }
+
+        /* ── Standalone KPI box (inside analytics card, no card-in-card shadow) ── */
+        .kpi-item {
+            border-left: 5px solid #cbd5e1;
+            background: #f8fafc;
+            border-radius: 14px;
+            padding: 14px 18px;
+            min-height: 90px;
+        }
+        .kpi-item .kpi-label { font-size: 0.8rem; color: #64748b; font-weight: 700; }
+        .kpi-item .kpi-value { font-size: 1.85rem; font-weight: 800; color: #0f172a; line-height: 1.1; }
+        .kpi-item .kpi-sub   { font-size: 0.72rem; color: #94a3b8; font-weight: 600; }
+        .kpi-item.border-accent-blue   { border-left-color: #3b82f6; }
+        .kpi-item.border-accent-green  { border-left-color: #10b981; }
+        .kpi-item.border-accent-orange { border-left-color: #f59e0b; }
+        .kpi-item.border-accent-red    { border-left-color: #ef4444; }
+        .kpi-item.border-accent-slate  { border-left-color: #64748b; }
+
+        /* ── Section labels ── */
+        .section-label {
+            font-size: 0.68rem;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: #94a3b8;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .section-label::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(to right, #e2e8f0, transparent);
+        }
+
+        /* ── Legend divider ── */
+        .legend-divider {
+            width: 1px;
+            height: 14px;
+            background: #cbd5e1;
+            display: inline-block;
+            vertical-align: middle;
+            margin: 0 4px;
+            flex-shrink: 0;
+        }
+
+        /* ── Filter focus feedback ── */
+        .filter-bar .form-select {
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .filter-bar .form-select:focus {
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+        }
+        .filter-bar .btn {
+            transition: all 0.2s;
+        }
+
+        /* ── Responsive tweaks ── */
+        @media (max-width: 767px) {
+            .analytics-kpi .kpi-value { font-size: 1.5rem; }
+            .filter-group { min-width: 140px; }
+            .grid-container { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+            .admin-navbar { flex-wrap: wrap; gap: 8px; padding: 12px 16px; }
+        }
+
         /* ================= 🖨️ PRINT STYLES (PDF EXPORT) ================= */
         #printArea { display: none; }
         @media print {
@@ -231,33 +312,38 @@
         <div class="container-fluid px-4 pb-5 mt-4">
             
             <div id="view-dashboard" class="view-section active">
+                <div class="section-label"><i class="bi bi-activity me-1"></i>ภาพรวมสถานะ</div>
                 <div class="row g-4 mb-4">
-                    <div class="col-md-3"><div class="premium-card stat-card stat-total"><div class="text-success small fw-bold mb-1"><i class="bi bi-check-circle-fill me-1"></i>บัตรว่าง (Ready)</div><h2 class="fw-bold text-dark mb-0"><span id="statAvailable">-</span> <span class="fs-6 text-muted fw-normal">ใบ</span></h2></div></div>
-                    <div class="col-md-3"><div class="premium-card stat-card stat-pending"><div class="text-warning small fw-bold mb-1"><i class="bi bi-hourglass-split me-1"></i>รออนุมัติ (Pending)</div><h2 class="fw-bold text-dark mb-0"><span id="statPending">-</span> <span class="fs-6 text-muted fw-normal">รายการ</span></h2></div></div>
-                    <div class="col-md-3"><div class="premium-card stat-card stat-active"><div class="text-danger small fw-bold mb-1"><i class="bi bi-person-walking me-1"></i>ถูกยืมใช้งาน (In Use)</div><h2 class="fw-bold text-dark mb-0"><span id="statActive">-</span> <span class="fs-6 text-muted fw-normal">รายการ</span></h2></div></div>
-                    <div class="col-md-3"><div class="premium-card stat-card stat-returning"><div class="text-info small fw-bold mb-1"><i class="bi bi-wrench-adjustable me-1"></i>แจ้งซ่อม/สูญหาย</div><h2 class="fw-bold text-dark mb-0"><span id="statMaintenance">-</span> <span class="fs-6 text-muted fw-normal">รายการ</span></h2></div></div>
+                    <div class="col-6 col-md-3"><div class="premium-card stat-card stat-total"><div class="text-success small fw-bold mb-1"><i class="bi bi-check-circle-fill me-1"></i>บัตรว่าง (Ready)</div><h2 class="fw-bold text-dark mb-0"><span id="statAvailable">-</span> <span class="fs-6 text-muted fw-normal">ใบ</span></h2></div></div>
+                    <div class="col-6 col-md-3"><div class="premium-card stat-card stat-pending"><div class="text-warning small fw-bold mb-1"><i class="bi bi-hourglass-split me-1"></i>รออนุมัติ (Pending)</div><h2 class="fw-bold text-dark mb-0"><span id="statPending">-</span> <span class="fs-6 text-muted fw-normal">รายการ</span></h2></div></div>
+                    <div class="col-6 col-md-3"><div class="premium-card stat-card stat-active"><div class="text-danger small fw-bold mb-1"><i class="bi bi-person-walking me-1"></i>ถูกยืมใช้งาน (In Use)</div><h2 class="fw-bold text-dark mb-0"><span id="statActive">-</span> <span class="fs-6 text-muted fw-normal">รายการ</span></h2></div></div>
+                    <div class="col-6 col-md-3"><div class="premium-card stat-card stat-returning"><div class="text-info small fw-bold mb-1"><i class="bi bi-wrench-adjustable me-1"></i>แจ้งซ่อม/สูญหาย</div><h2 class="fw-bold text-dark mb-0"><span id="statMaintenance">-</span> <span class="fs-6 text-muted fw-normal">รายการ</span></h2></div></div>
                 </div>
 
+                <div class="section-label"><i class="bi bi-display me-1"></i>Live Slipper Grid</div>
                 <div class="row g-4 mb-4">
-                    <div class="col-lg-8">
+                    <div class="col-lg-7">
                         <div class="premium-card h-100">
-                            <div class="d-flex justify-content-between align-items-end mb-4 border-bottom pb-3">
-                                <h5 class="fw-bold text-primary mb-0"><i class="bi bi-aspect-ratio-fill me-2"></i>Live Slipper Status (30 Slots)</h5>
-                                <div class="small fw-bold">
+                            <div class="mb-4 border-bottom pb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h5 class="fw-bold text-primary mb-0"><i class="bi bi-aspect-ratio-fill me-2"></i>Live Slipper Status (30 Slots)</h5>
+                                </div>
+                                <div class="slot-legend d-flex flex-wrap gap-1 align-items-center">
                                     <span class="badge bg-success">ว่าง</span>
-                                    <span class="badge bg-warning text-dark">รออนุมัติ</span>
                                     <span class="badge bg-danger">กำลังยืม</span>
                                     <span class="badge bg-primary">ยืมตามแผน</span>
-                                    <span class="badge bg-warning text-dark">ใกล้ครบกำหนด</span>
-                                    <span class="badge" style="background:#7f1d1d;">ดอง</span>
                                     <span class="badge bg-secondary">ซ่อม</span>
+                                    <span class="legend-divider"></span>
+                                    <span class="badge bg-warning text-dark">รออนุมัติ</span>
+                                    <span class="badge bg-warning text-dark" style="outline: 1px dashed #d97706; outline-offset: 2px;">ใกล้ครบกำหนด</span>
+                                    <span class="badge" style="background:#7f1d1d;">ดอง</span>
                                 </div>
                             </div>
                             <div class="grid-container pb-2" id="cardGrid"></div>
-                            <div class="small text-muted mt-3"><i class="bi bi-info-circle"></i> <b>เคล็ดลับ:</b> คลิกที่ "บัตรว่าง" เพื่อตั้งสถานะแจ้งซ่อม/ระงับการใช้งานชั่วคราว</div>
+                            <div class="small text-muted mt-3 px-3 py-2 bg-light rounded-3"><i class="bi bi-info-circle text-primary me-1"></i> <b>เคล็ดลับ:</b> คลิกที่ "บัตรว่าง" เพื่อตั้งสถานะแจ้งซ่อม/ระงับการใช้งานชั่วคราว</div>
                         </div>
                     </div>
-                    <div class="col-lg-4">
+                    <div class="col-lg-5">
                         <div class="premium-card h-100 d-flex flex-column">
                             <h5 class="fw-bold text-dark mb-3"><i class="bi bi-bell-fill text-warning me-2"></i>รออนุมัติด่วน</h5>
                             <div class="flex-grow-1" style="max-height: 500px; overflow-y: auto;">
@@ -267,13 +353,15 @@
                     </div>
                 </div>
 
+                <div class="section-label mt-2"><i class="bi bi-graph-up-arrow me-1"></i>Analytics</div>
                 <div class="premium-card mb-4">
-                    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+
+                    <!-- Filters sub-section -->
+                    <div class="d-flex align-items-start justify-content-between mb-3">
                         <div>
-                            <h5 class="fw-bold text-primary mb-1"><i class="bi bi-graph-up-arrow me-2"></i>Yearly Analytics</h5>
+                            <div class="fw-bold text-dark mb-1" style="font-size:0.85rem; text-transform:uppercase; letter-spacing:0.8px; color:#64748b !important;">ตัวกรอง</div>
                             <div class="small text-muted">สรุปข้อมูลการยืมรองเท้าแตะรายปี พร้อมกรองตามปี แผนก และสถานะ</div>
                         </div>
-                        <div class="small fw-bold text-muted" id="analyticsResultText">กำลังโหลดข้อมูล...</div>
                     </div>
                     <div class="filter-bar">
                         <div class="filter-group">
@@ -303,21 +391,27 @@
                             <button class="btn btn-outline-secondary fw-bold px-3" onclick="resetAnalyticsFilters()"><i class="bi bi-arrow-counterclockwise me-1"></i>รีเซ็ต</button>
                         </div>
                     </div>
+                    <div class="small fw-bold text-muted text-end mt-2" id="analyticsResultText">กำลังโหลดข้อมูล...</div>
+
+                    <hr class="my-4" style="opacity:0.12;">
+
+                    <!-- Summary KPIs sub-section -->
+                    <div class="fw-bold mb-3" style="font-size:0.85rem; text-transform:uppercase; letter-spacing:0.8px; color:#64748b;">สรุปผล</div>
+                    <div class="row g-3">
+                        <div class="col-6 col-md-6 col-xl"><div class="kpi-item border-accent-blue"><div class="kpi-label">คำขอทั้งหมด</div><div class="kpi-value" id="yearlyTotalRequests">-</div><div class="kpi-sub">รายการในปี/ตัวกรองที่เลือก</div></div></div>
+                        <div class="col-6 col-md-6 col-xl"><div class="kpi-item border-accent-green"><div class="kpi-label">อนุมัติแล้ว</div><div class="kpi-value" id="yearlyApprovedCount">-</div><div class="kpi-sub">Approved และ Returning</div></div></div>
+                        <div class="col-6 col-md-6 col-xl"><div class="kpi-item border-accent-orange"><div class="kpi-label">คืนสำเร็จ</div><div class="kpi-value" id="yearlyCompletedCount">-</div><div class="kpi-sub">Completed</div></div></div>
+                        <div class="col-6 col-md-6 col-xl"><div class="kpi-item border-accent-red"><div class="kpi-label">ปิดรายการแล้ว</div><div class="kpi-value" id="yearlyClosedCount">-</div><div class="kpi-sub">Rejected และ Cancelled</div></div></div>
+                        <div class="col-6 col-md-6 col-xl"><div class="kpi-item border-accent-slate"><div class="kpi-label">Active ในปีนี้</div><div class="kpi-value" id="yearlyActiveCount">-</div><div class="kpi-sub">Pending, Approved, Returning</div></div></div>
+                    </div>
                 </div>
 
+                <div class="section-label mt-2"><i class="bi bi-bar-chart-fill me-1"></i>Data Visualization</div>
                 <div class="row g-4 mb-4">
-                    <div class="col-md-6 col-xl"><div class="premium-card analytics-kpi border-accent-blue"><div class="kpi-label">คำขอทั้งหมด</div><div class="kpi-value" id="yearlyTotalRequests">-</div><div class="kpi-sub">รายการในปี/ตัวกรองที่เลือก</div></div></div>
-                    <div class="col-md-6 col-xl"><div class="premium-card analytics-kpi border-accent-green"><div class="kpi-label">อนุมัติแล้ว</div><div class="kpi-value" id="yearlyApprovedCount">-</div><div class="kpi-sub">Approved และ Returning</div></div></div>
-                    <div class="col-md-6 col-xl"><div class="premium-card analytics-kpi border-accent-orange"><div class="kpi-label">คืนสำเร็จ</div><div class="kpi-value" id="yearlyCompletedCount">-</div><div class="kpi-sub">Completed</div></div></div>
-                    <div class="col-md-6 col-xl"><div class="premium-card analytics-kpi border-accent-red"><div class="kpi-label">ปิดรายการแล้ว</div><div class="kpi-value" id="yearlyClosedCount">-</div><div class="kpi-sub">Rejected และ Cancelled</div></div></div>
-                    <div class="col-md-6 col-xl"><div class="premium-card analytics-kpi border-accent-slate"><div class="kpi-label">Active ในปีนี้</div><div class="kpi-value" id="yearlyActiveCount">-</div><div class="kpi-sub">Pending, Approved, Returning</div></div></div>
-                </div>
-
-                <div class="row g-4">
                     <div class="col-lg-6"><div class="premium-card"><h6 class="fw-bold text-dark mb-3"><i class="bi bi-pie-chart-fill text-primary me-2"></i>แผนกที่ยืมสูงสุด (รายปี)</h6><div class="chart-container"><canvas id="deptChart"></canvas></div></div></div>
                     <div class="col-lg-6"><div class="premium-card"><h6 class="fw-bold text-dark mb-3"><i class="bi bi-bar-chart-fill text-danger me-2"></i>สาเหตุการขอยืม (รายปี)</h6><div class="chart-container"><canvas id="reasonChart"></canvas></div></div></div>
                 </div>
-                <div class="row g-4 mt-1">
+                <div class="row g-4">
                     <div class="col-lg-6"><div class="premium-card"><h6 class="fw-bold text-dark mb-3"><i class="bi bi-bar-chart-line-fill text-primary me-2"></i>แนวโน้มรายเดือน</h6><div class="chart-container"><canvas id="monthTrendChart"></canvas></div></div></div>
                     <div class="col-lg-6"><div class="premium-card"><h6 class="fw-bold text-dark mb-3"><i class="bi bi-pie-chart-fill text-secondary me-2"></i>สัดส่วนสถานะ</h6><div class="chart-container"><canvas id="statusChart"></canvas></div></div></div>
                 </div>
@@ -499,12 +593,18 @@
 
     // ================= 4. DASHBOARD RENDER & OVERDUE =================
     function renderDashboard() {
-        const activeRequests = dashboardData.filter(r => ['Pending', 'Approved', 'Returning'].includes(r.status));
-        const cardMap = {}; 
+        const activeRequests = dashboardData
+            .filter(r => r != null)
+            .map(r => { const s = normalizeStatus(r.status); return s !== r.status ? { ...r, status: s } : r; })
+            .filter(r => ['Pending', 'Approved', 'Returning'].includes(r.status));
+        const cardMap = {};
         let countPending = 0, countActive = 0, countReturning = 0, countMaintenance = 0;
 
         activeRequests.forEach(r => {
-            cardMap[r.card_no] = r;
+            const normalizedKey = normalizeCardNo(r.card_no);
+            // First-seen wins: query is ORDER BY created_at DESC, so the first record
+            // encountered for a given slot is always the most recent one.
+            if (normalizedKey && !(normalizedKey in cardMap)) cardMap[normalizedKey] = r;
             if (r.emp_id === 'SYS-MAINT') countMaintenance++;
             else if (r.status === 'Pending') countPending++;
             else if (r.status === 'Approved') countActive++;
@@ -606,6 +706,7 @@
 
                         if (hoursLeft <= 3) {
                             statusClass = 'slot-warning';
+                            badgeHtml = `<span class="slot-badge bg-warning text-dark">ใกล้ครบกำหนด</span>`;
                             countdownHtml = `<div class="small text-danger fw-bold">⏳ เหลือ ${hoursLeft} ชม.</div>`;
                         } else if (hoursLeft <= 24) {
                             countdownHtml = `<div class="small text-warning fw-bold">⏳ เหลือ ${hoursLeft} ชม.</div>`;
@@ -635,7 +736,7 @@
 
                     <div class="slot-number">${cardName}</div>
 
-                    <div class="slot-name">${req.fullname.split(' ')[0]}</div>
+                    <div class="slot-name">${(req.fullname || '').split(' ')[0] || '—'}</div>
 
                     ${countdownHtml}
 
@@ -650,7 +751,7 @@
         if (pendingList.length === 0) list.innerHTML = `<tr><td class="text-center text-muted py-5 border-0"><i class="bi bi-shield-check fs-1 opacity-50 d-block mb-2"></i>ไม่มีรายการค้างอนุมัติ</td></tr>`;
         else pendingList.forEach(req => {
             const img = req.user_picture_url || "https://cdn-icons-png.flaticon.com/512/847/847969.png";
-            list.innerHTML += `<tr><td class="ps-3"><div class="d-flex align-items-center"><img src="${img}" class="rounded-circle me-3 border shadow-sm" width="45" height="45" style="object-fit:cover;"><div><h6 class="mb-0 fw-bold text-dark fs-6">${req.fullname.split(' ')[0]}</h6><div class="small mt-1"><span class="badge bg-primary rounded-pill me-1">${req.card_no}</span><span class="text-muted" style="font-size:11px;">${req.section}</span></div></div></div></td><td class="text-end pe-3"><button class="btn btn-sm btn-success rounded-circle me-1 shadow-sm" onclick="updateStatus('${req.id}', 'Approved')" title="อนุมัติ"><i class="bi bi-check-lg"></i></button><button class="btn btn-sm btn-danger rounded-circle shadow-sm" onclick="updateStatus('${req.id}', 'Rejected')" title="ไม่อนุมัติ"><i class="bi bi-x-lg"></i></button></td></tr>`;
+            list.innerHTML += `<tr><td class="ps-3"><div class="d-flex align-items-center"><img src="${img}" class="rounded-circle me-3 border shadow-sm" width="45" height="45" style="object-fit:cover;"><div><h6 class="mb-0 fw-bold text-dark fs-6">${(req.fullname || '').split(' ')[0] || '—'}</h6><div class="small mt-1"><span class="badge bg-primary rounded-pill me-1">${req.card_no}</span><span class="text-muted" style="font-size:11px;">${req.section}</span></div></div></div></td><td class="text-end pe-3"><button class="btn btn-sm btn-success rounded-circle me-1 shadow-sm" onclick="updateStatus('${req.id}', 'Approved')" title="อนุมัติ"><i class="bi bi-check-lg"></i></button><button class="btn btn-sm btn-danger rounded-circle shadow-sm" onclick="updateStatus('${req.id}', 'Rejected')" title="ไม่อนุมัติ"><i class="bi bi-x-lg"></i></button></td></tr>`;
         });
     }
 
@@ -1115,6 +1216,31 @@
     }
 
     function animateValue(id, end) { const obj = document.getElementById(id); if (obj.innerText == end) return; obj.style.opacity = 0; setTimeout(() => { obj.innerText = end; obj.style.opacity = 1; }, 200); }
+
+    // Normalize any card_no variant from DB → canonical "No.X" used by the grid loop.
+    // Returns null for anything that can't be mapped to a valid slot number (1–TOTAL_CARDS).
+    function normalizeCardNo(raw) {
+        if (raw == null) return null;
+        const s = String(raw).trim();
+        if (!s) return null;
+        const m = s.match(/\d+/);
+        if (!m) return null;                      // no digit found → unresolvable, skip
+        const n = parseInt(m[0], 10);
+        if (n < 1 || n > TOTAL_CARDS) return null; // out of valid slot range
+        return `No.${n}`;
+    }
+
+    // Normalize status strings to their canonical casing before any comparisons.
+    // Guards against DB values like "pending", "APPROVED", or leading/trailing whitespace.
+    const _STATUS_CANONICAL = {
+        'pending': 'Pending', 'approved': 'Approved', 'returning': 'Returning',
+        'completed': 'Completed', 'rejected': 'Rejected', 'cancelled': 'Cancelled'
+    };
+    function normalizeStatus(raw) {
+        if (raw == null) return '';
+        const key = String(raw).trim().toLowerCase();
+        return _STATUS_CANONICAL[key] || String(raw).trim();
+    }
 </script>
 </body>
 </html>
