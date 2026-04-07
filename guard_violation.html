@@ -200,6 +200,19 @@
         .insight-card { border-radius: 8px; border: 1px solid var(--line); padding: 12px; background: #fff; }
         .insight-card.warning { background: var(--warning-soft); border-color: #fdba74; color: #7c2d12; }
         .insight-card.danger { background: var(--danger-soft); border-color: #fca5a5; color: #7f1d1d; }
+        .risk-alert {
+            display: none;
+            margin-top: 10px;
+            border-radius: 8px;
+            border: 1px solid var(--line);
+            padding: 11px 12px;
+            font-weight: 800;
+            font-size: 0.9rem;
+        }
+        .risk-alert.show { display: block; }
+        .risk-alert.safe { background: var(--success-soft); color: #065f46; border-color: #86efac; }
+        .risk-alert.warning { background: var(--warning-soft); color: #7c2d12; border-color: #fdba74; }
+        .risk-alert.danger { background: var(--danger-soft); color: #7f1d1d; border-color: #fca5a5; }
 
         .btn-submit {
             background: var(--danger);
@@ -217,6 +230,70 @@
         .btn-submit:active { transform: scale(0.99); }
 
         .mobile-progress-card, .mobile-action-bar { display: none; }
+
+        .app-tabs {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 6px;
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+        }
+        .app-tab {
+            flex: 1;
+            border: 0;
+            border-radius: 8px;
+            background: transparent;
+            color: var(--muted);
+            font-weight: 800;
+            padding: 10px 12px;
+        }
+        .app-tab.active { background: var(--ink); color: #fff; }
+        .app-view { display: none; }
+        .app-view.active.app-grid { display: grid; }
+        .app-view.active:not(.app-grid) { display: block; }
+        .history-view {
+            margin-top: 14px;
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 14px;
+            box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06);
+        }
+        .history-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 12px 0; }
+        .history-stat { border: 1px solid var(--line); border-radius: 8px; padding: 12px; background: var(--surface-2); }
+        .history-stat-value { font-size: 1.35rem; font-weight: 900; }
+        .history-card {
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 12px;
+            background: #fff;
+            display: grid;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .history-card-head { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; }
+        .history-meta { color: var(--muted); font-size: 0.82rem; }
+        .history-pill { border-radius: 999px; padding: 5px 9px; font-weight: 800; font-size: 0.75rem; background: var(--surface-2); color: var(--muted); border: 1px solid var(--line); }
+        .history-pill.danger { background: var(--danger-soft); color: #7f1d1d; border-color: #fca5a5; }
+        .history-pill.warning { background: var(--warning-soft); color: #7c2d12; border-color: #fdba74; }
+        .sync-history-list { display: grid; gap: 8px; }
+        .sync-item { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; background: #fff; }
+        .sync-item.success { border-color: #86efac; background: var(--success-soft); }
+        .sync-item.warning { border-color: #fdba74; background: var(--warning-soft); }
+        .sync-item.danger { border-color: #fca5a5; background: var(--danger-soft); }
+        .skeleton-card {
+            min-height: 86px;
+            border-radius: 8px;
+            background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 37%, #f1f5f9 63%);
+            background-size: 400% 100%;
+            animation: skeletonShimmer 1.2s ease-in-out infinite;
+            border: 1px solid var(--line);
+            margin-bottom: 10px;
+        }
+        @keyframes skeletonShimmer { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
 
         .mobile-progress-card {
             background: var(--surface);
@@ -281,6 +358,7 @@
             .summary-value { max-width: 60%; overflow-wrap: anywhere; }
             .mobile-progress-card, .mobile-action-bar { display: flex; }
             .mobile-progress-card { display: block; }
+            .app-tabs { position: sticky; top: 6px; z-index: 25; }
             body.mobile-step-mode .form-section { display: none; }
             body.mobile-step-mode .form-section.active-step { display: block; }
             body.mobile-step-mode .quick-panel,
@@ -300,6 +378,10 @@
             body.mobile-step-mode[data-current-step="4"] .mobile-action-bar {
                 bottom: calc(78px + env(safe-area-inset-bottom));
             }
+            body.history-mode .mobile-progress-card,
+            body.history-mode .mobile-action-bar { display: none !important; }
+            .history-stats { grid-template-columns: 1fr; }
+            .history-card-head { flex-direction: column; }
         }
     </style>
 </head>
@@ -331,7 +413,16 @@
             <div class="progress-track"><div class="progress-fill" id="mobileProgressFill"></div></div>
         </section>
 
-        <div class="app-grid">
+        <nav class="app-tabs" aria-label="Guard app tabs">
+            <button type="button" class="app-tab active" id="tabReport" onclick="switchGuardView('report')">
+                <i class="bi bi-pencil-square me-1"></i>บันทึกใหม่
+            </button>
+            <button type="button" class="app-tab" id="tabHistory" onclick="switchGuardView('history')">
+                <i class="bi bi-clock-history me-1"></i>ประวัติ
+            </button>
+        </nav>
+
+        <div class="app-grid app-view active" id="reportView">
             <section class="workspace">
                 <div id="queueStatus" class="status-strip"></div>
 
@@ -347,6 +438,10 @@
                         <label class="form-label"><i class="bi bi-search me-1 text-warning"></i> ค้นหาพนักงาน</label>
                         <select id="empSearch" placeholder="พิมพ์เพื่อค้นหาพนักงาน..." autocomplete="off"></select>
                         <div class="form-text small mt-1">พิมพ์รหัสหรือชื่ออย่างน้อย 2 ตัวอักษร</div>
+                        <button type="button" class="btn-secondary-action mt-2" onclick="openMissingEmployeeReason()">
+                            <i class="bi bi-person-plus me-1"></i>ไม่พบรายชื่อ
+                        </button>
+                        <div id="employeeRiskAlert" class="risk-alert" aria-live="polite"></div>
                     </section>
 
                     <section class="form-section" data-step="2">
@@ -398,6 +493,10 @@
                         </div>
                         <div class="enterprise-panel">
                             <label class="form-label"><i class="bi bi-camera-fill me-1 text-info"></i> รูปหลักฐาน</label>
+                            <div class="insight-card warning mb-2">
+                                <i class="bi bi-shield-check me-1"></i>
+                                รูปนี้ใช้เพื่อความปลอดภัยและการตรวจสอบภายในเท่านั้น
+                            </div>
                             <input type="file" id="evidencePhoto" class="form-control mb-2" accept="image/*" capture="environment">
                             <img id="evidencePreview" class="evidence-preview" alt="Evidence preview">
                             <button type="button" id="btnLocation" class="btn-secondary-action mt-3" onclick="captureLocation()">
@@ -507,6 +606,49 @@
             </aside>
         </div>
 
+        <section class="history-view app-view" id="historyView">
+            <div class="section-head">
+                <div>
+                    <h2 class="section-title"><i class="bi bi-clock-history text-info me-1"></i>ประวัติการบันทึก</h2>
+                    <div class="section-kicker">ดูเคสล่าสุด ค้นหาพนักงาน และตรวจจำนวนความผิดซ้ำก่อนบันทึกเคสใหม่</div>
+                </div>
+                <button type="button" class="btn btn-outline-dark fw-bold" onclick="loadGuardHistory()">
+                    <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                </button>
+            </div>
+
+            <div class="row g-2 align-items-end">
+                <div class="col-md-9">
+                    <label class="form-label">ค้นหาประวัติ</label>
+                    <input type="search" id="historySearch" class="form-control" placeholder="พิมพ์รหัส 000000 / AP0000 / SP0000 หรือชื่อ / แผนก">
+                </div>
+                <div class="col-md-3">
+                    <button type="button" class="btn btn-danger fw-bold w-100" onclick="loadGuardHistory()">
+                        <i class="bi bi-search me-1"></i>ค้นหา
+                    </button>
+                </div>
+            </div>
+
+            <div class="history-stats">
+                <div class="history-stat">
+                    <div class="summary-label">รายการที่แสดง</div>
+                    <div class="history-stat-value" id="historyShownCount">0</div>
+                </div>
+                <div class="history-stat">
+                    <div class="summary-label">ของรหัสนี้ทั้งหมด</div>
+                    <div class="history-stat-value" id="historyEmployeeTotal">-</div>
+                </div>
+                <div class="history-stat">
+                    <div class="summary-label">ใน 30 วัน</div>
+                    <div class="history-stat-value text-danger" id="historyEmployee30d">-</div>
+                </div>
+            </div>
+
+            <div id="historyStatus" class="form-text mb-3">แสดงเคสล่าสุด 50 รายการ หรือค้นหาด้วยรหัส/ชื่อพนักงาน</div>
+            <div id="historyList"></div>
+
+        </section>
+
         <nav class="mobile-action-bar" aria-label="Mobile step navigation">
             <button type="button" class="btn btn-outline-dark" id="btnPrevStep" onclick="prevMobileStep()">
                 <i class="bi bi-chevron-left me-1"></i>ย้อนกลับ
@@ -525,14 +667,28 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxc2Zpb2lxd3h1eHB1Y3d3aHN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1OTk1NjUsImV4cCI6MjA4NDE3NTU2NX0.L_u0Ff3uHofxiimEs6ySFB4TPNtOWiKeSu3KFoVcA1U';
         const db = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
         const OFFLINE_QUEUE_KEY = 'tsh_violation_report_queue_v1';
+        const SYNC_HISTORY_KEY = 'tsh_violation_sync_history_v1';
+        const DEVICE_ID_KEY = 'tsh_violation_device_id_v1';
         const EVIDENCE_BUCKET = 'violation-evidence';
         const WORKFLOW_PENDING = 'Pending Safety Review';
         const WORKFLOW_REPEAT = 'Repeat Offender Review';
         const REVIEW_SAFETY_OFFICER = 'Safety Officer';
         const REVIEW_SAFETY_MANAGER = 'Safety Manager';
+        const EMPLOYEE_SEARCH_LIMIT = 50;
+        const EVENT_CREATED = 'case_created';
+        const ACTOR_GUARD = 'Guard';
+        const HISTORY_LIMIT = 50;
+        const SYNC_HISTORY_LIMIT = 12;
+        const IMAGE_MAX_WIDTH = 1600;
+        const IMAGE_MAX_HEIGHT = 1600;
+        const IMAGE_QUALITY = 0.72;
 
         let tomSelectInstance;
         let currentMobileStep = 1;
+        let guardHistoryLoaded = false;
+        let employeeRiskTimer = null;
+        let latestEmployeeRiskKey = '';
+        const employeeSearchCache = new Map();
         const MOBILE_STEP_COUNT = 4;
         const mobileStepMeta = {
             1: { title: 'ระบุตัวตน', hint: 'ค้นหาพนักงานหรือกรอกเอง' },
@@ -562,8 +718,8 @@
             }[char]));
         }
 
-        function buildEmployeeOptions(data) {
-            if (!Array.isArray(data) || data.length === 0) return fallbackEmployeeOptions;
+        function buildEmployeeOptions(data, emptyFallback = fallbackEmployeeOptions) {
+            if (!Array.isArray(data) || data.length === 0) return emptyFallback;
 
             return data.map(emp => {
                 const empId = safeText(emp.emp_id, 'UNKNOWN');
@@ -575,6 +731,49 @@
                     text: `${empId} - ${fullname} (${section})`
                 };
             });
+        }
+
+        function sanitizeEmployeeSearchTerm(value) {
+            return safeText(value, '')
+                .replace(/[%,()]/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        async function fetchEmployeeOptions(searchTerm = '') {
+            if (!db) return fallbackEmployeeOptions;
+
+            const term = sanitizeEmployeeSearchTerm(searchTerm);
+            const cacheKey = term.toLowerCase();
+            if (employeeSearchCache.has(cacheKey)) return employeeSearchCache.get(cacheKey);
+
+            let query = db
+                .from('employees_list')
+                .select('emp_id, fullname, section')
+                .order('emp_id', { ascending: true })
+                .limit(EMPLOYEE_SEARCH_LIMIT);
+
+            if (term) {
+                const pattern = `%${term}%`;
+                query = query.or(`emp_id.ilike.${pattern},fullname.ilike.${pattern},section.ilike.${pattern}`);
+            }
+
+            const { data, error } = await query;
+            if (error) throw error;
+
+            const options = buildEmployeeOptions(data, term ? [] : fallbackEmployeeOptions);
+            employeeSearchCache.set(cacheKey, options);
+            return options;
+        }
+
+        function getDeviceId() {
+            let deviceId = localStorage.getItem(DEVICE_ID_KEY);
+            if (!deviceId) {
+                const randomPart = Math.random().toString(36).slice(2, 10).toUpperCase();
+                deviceId = `GUARD-${Date.now().toString(36).toUpperCase()}-${randomPart}`;
+                localStorage.setItem(DEVICE_ID_KEY, deviceId);
+            }
+            return deviceId;
         }
 
         function parseEmployeeSelection(rawValue) {
@@ -594,6 +793,365 @@
                 fullname: raw,
                 section: 'ไม่ระบุ'
             };
+        }
+
+        function normalizeEmployeeCode(value) {
+            return safeText(value, '').toUpperCase();
+        }
+
+        function isEmployeeCode(value) {
+            return /^(\d{6}|AP\d{4}|SP\d{4})$/i.test(safeText(value, ''));
+        }
+
+        function getReportDate(report) {
+            return report.client_reported_at || report.created_at;
+        }
+
+        function formatThaiDate(value) {
+            if (!value) return '-';
+            return new Date(value).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' });
+        }
+
+        function getStatusClass(status) {
+            if (status === WORKFLOW_REPEAT) return 'danger';
+            if (status === WORKFLOW_PENDING) return 'warning';
+            if (status === 'Closed') return '';
+            return '';
+        }
+
+        function setEmployeeRiskAlert(type, html) {
+            const alert = document.getElementById('employeeRiskAlert');
+            if (!alert) return;
+
+            alert.className = `risk-alert ${type || ''} ${html ? 'show' : ''}`;
+            alert.innerHTML = html || '';
+        }
+
+        function handleEmployeeSelectionChange() {
+            updateLiveSummary();
+            scheduleEmployeeRiskCheck();
+        }
+
+        function scheduleEmployeeRiskCheck() {
+            clearTimeout(employeeRiskTimer);
+            employeeRiskTimer = setTimeout(checkSelectedEmployeeRisk, 250);
+        }
+
+        async function checkSelectedEmployeeRisk() {
+            const rawEmpData = safeText(document.getElementById('empSearch')?.value, '');
+            if (!rawEmpData) {
+                latestEmployeeRiskKey = '';
+                setEmployeeRiskAlert('', '');
+                return;
+            }
+
+            const employee = parseEmployeeSelection(rawEmpData);
+            if (!employee.emp_id || employee.emp_id === 'VISITOR' || employee.emp_id.startsWith('MANUAL')) {
+                latestEmployeeRiskKey = '';
+                setEmployeeRiskAlert('warning', '<i class="bi bi-info-circle-fill me-1"></i> รายการนี้เป็นการกรอกเอง ระบบจะไม่ตรวจ Repeat Offender จากรหัสพนักงาน');
+                return;
+            }
+
+            const riskKey = `${employee.emp_id}|${rawEmpData}`;
+            latestEmployeeRiskKey = riskKey;
+            setEmployeeRiskAlert('warning', `<i class="bi bi-hourglass-split me-1"></i> กำลังตรวจประวัติ 30 วันของ ${escapeHtml(employee.fullname)}...`);
+
+            const recentCount = await getRecentViolationCount(employee.emp_id);
+            if (latestEmployeeRiskKey !== riskKey) return;
+
+            const projectedCount = recentCount + 1;
+            if (recentCount <= 0) {
+                setEmployeeRiskAlert('safe', `<i class="bi bi-check-circle-fill me-1"></i> ยังไม่พบประวัติใน 30 วัน ถ้าบันทึกครั้งนี้จะเป็นครั้งที่ 1`);
+                return;
+            }
+
+            if (projectedCount === 2) {
+                setEmployeeRiskAlert('danger', `<i class="bi bi-exclamation-triangle-fill me-1"></i> แจ้งเตือน: ${escapeHtml(employee.fullname)} มีประวัติแล้ว 1 ครั้งใน 30 วัน ถ้าบันทึกครั้งนี้จะเป็นครั้งที่ 2 และถูกส่งเป็น Repeat Offender Review`);
+                return;
+            }
+
+            setEmployeeRiskAlert('danger', `<i class="bi bi-exclamation-octagon-fill me-1"></i> Repeat Offender: ${escapeHtml(employee.fullname)} มีประวัติแล้ว ${recentCount} ครั้งใน 30 วัน ถ้าบันทึกครั้งนี้จะเป็นครั้งที่ ${projectedCount}`);
+        }
+
+        function switchGuardView(view) {
+            const isHistory = view === 'history';
+            document.body.classList.toggle('history-mode', isHistory);
+            document.getElementById('reportView').classList.toggle('active', !isHistory);
+            document.getElementById('historyView').classList.toggle('active', isHistory);
+            document.getElementById('tabReport').classList.toggle('active', !isHistory);
+            document.getElementById('tabHistory').classList.toggle('active', isHistory);
+
+            if (isHistory && !guardHistoryLoaded) loadGuardHistory();
+            if (!isHistory) updateMobileStepper();
+        }
+
+        async function countEmployeeViolations(empId) {
+            if (!db || !empId) return { total: '-', recent: '-' };
+
+            const sinceDate = new Date(Date.now() - (30 * 24 * 60 * 60 * 1000)).toISOString();
+            const [totalResult, recentResult] = await Promise.all([
+                db.from('violation_reports').select('id', { count: 'exact', head: true }).eq('emp_id', empId),
+                db.from('violation_reports').select('id', { count: 'exact', head: true }).eq('emp_id', empId).gte('created_at', sinceDate)
+            ]);
+
+            if (totalResult.error || recentResult.error) {
+                console.warn('History count skipped:', totalResult.error || recentResult.error);
+                return { total: '-', recent: '-' };
+            }
+
+            return { total: totalResult.count || 0, recent: recentResult.count || 0 };
+        }
+
+        function encodeHistoryEmployee(report) {
+            return encodeURIComponent(JSON.stringify({
+                emp_id: safeText(report.emp_id, 'UNKNOWN'),
+                fullname: safeText(report.fullname),
+                section: safeText(report.section)
+            }));
+        }
+
+        function useHistoryEmployee(encodedEmployee) {
+            let employee;
+            try {
+                employee = JSON.parse(decodeURIComponent(encodedEmployee));
+            } catch (err) {
+                console.error('History employee parse error:', err);
+                Swal.fire('เลือกพนักงานไม่สำเร็จ', 'ข้อมูลพนักงานจากประวัติไม่ถูกต้อง', 'warning');
+                return;
+            }
+
+            const empId = safeText(employee.emp_id, 'UNKNOWN');
+            const fullname = safeText(employee.fullname);
+            const section = safeText(employee.section);
+            const value = `${empId} | ${fullname} | ${section}`;
+            const option = {
+                value,
+                text: `${empId} - ${fullname} (${section})`
+            };
+
+            switchGuardView('report');
+
+            if (tomSelectInstance) {
+                if (tomSelectInstance.options[value]) {
+                    tomSelectInstance.updateOption(value, option);
+                } else {
+                    tomSelectInstance.addOption(option);
+                }
+                tomSelectInstance.setValue(value, true);
+                tomSelectInstance.close();
+            } else {
+                const select = document.getElementById('empSearch');
+                if (select) select.value = value;
+            }
+
+            handleEmployeeSelectionChange();
+            goToMobileStep(2);
+            Swal.fire({
+                toast: true,
+                position: 'top',
+                icon: 'success',
+                title: `เลือก ${fullname} แล้ว`,
+                timer: 1400,
+                showConfirmButton: false
+            });
+        }
+
+        async function openMissingEmployeeReason() {
+            const { value: reason } = await Swal.fire({
+                title: 'ไม่พบรายชื่อ',
+                input: 'select',
+                inputOptions: {
+                    CONTRACTOR: 'ผู้รับเหมา',
+                    VISITOR: 'Visitor',
+                    SUPPLIER: 'Supplier',
+                    UNSYNC: 'ข้อมูลพนักงานยังไม่ Sync'
+                },
+                inputPlaceholder: 'เลือกเหตุผล',
+                showCancelButton: true,
+                confirmButtonText: 'ใช้เหตุผลนี้',
+                cancelButtonText: 'ยกเลิก',
+                confirmButtonColor: '#0f172a',
+                inputValidator: (value) => value ? undefined : 'กรุณาเลือกเหตุผล'
+            });
+
+            if (!reason) return;
+
+            let formResult;
+            if (reason === 'UNSYNC') {
+                formResult = await Swal.fire({
+                    title: 'กรอกข้อมูลพนักงาน',
+                    html: `<div class="text-start">
+                        <label class="form-label fw-bold">รหัสพนักงาน</label>
+                        <input id="missingEmpId" class="form-control mb-3" placeholder="000000 หรือ AP0000 หรือ SP0000">
+                        <label class="form-label fw-bold">ชื่อ-สกุล</label>
+                        <input id="missingFullname" class="form-control mb-3" placeholder="ชื่อ-สกุล">
+                        <label class="form-label fw-bold">ส่วนงาน / แผนก</label>
+                        <input id="missingSection" class="form-control" placeholder="ส่วนงาน / แผนก">
+                    </div>`,
+                    showCancelButton: true,
+                    confirmButtonText: 'ใช้ข้อมูลนี้',
+                    cancelButtonText: 'ยกเลิก',
+                    confirmButtonColor: '#0f172a',
+                    focusConfirm: false,
+                    preConfirm: () => {
+                        const empId = normalizeEmployeeCode(document.getElementById('missingEmpId').value);
+                        const fullname = safeText(document.getElementById('missingFullname').value, '');
+                        const section = safeText(document.getElementById('missingSection').value, '');
+
+                        if (!isEmployeeCode(empId)) {
+                            Swal.showValidationMessage('รหัสต้องเป็น 000000 หรือ AP0000 หรือ SP0000');
+                            return false;
+                        }
+                        if (!fullname) {
+                            Swal.showValidationMessage('กรุณากรอกชื่อ-สกุล');
+                            return false;
+                        }
+                        if (!section) {
+                            Swal.showValidationMessage('กรุณากรอกส่วนงาน / แผนก');
+                            return false;
+                        }
+                        return { empId, fullname, section };
+                    }
+                });
+            } else {
+                const reasonLabels = {
+                    CONTRACTOR: 'ผู้รับเหมา',
+                    VISITOR: 'Visitor',
+                    SUPPLIER: 'Supplier'
+                };
+                formResult = await Swal.fire({
+                    title: `กรอกชื่อ${reasonLabels[reason] || 'บุคคลภายนอก'}`,
+                    html: `<div class="text-start">
+                        <label class="form-label fw-bold">ชื่อเต็ม</label>
+                        <input id="missingFullname" class="form-control" placeholder="ชื่อเต็ม">
+                    </div>`,
+                    showCancelButton: true,
+                    confirmButtonText: 'ใช้ชื่อนี้',
+                    cancelButtonText: 'ยกเลิก',
+                    confirmButtonColor: '#0f172a',
+                    focusConfirm: false,
+                    preConfirm: () => {
+                        const fullname = safeText(document.getElementById('missingFullname').value, '');
+                        if (!fullname) {
+                            Swal.showValidationMessage('กรุณากรอกชื่อเต็ม');
+                            return false;
+                        }
+                        return {
+                            empId: reason,
+                            fullname,
+                            section: reasonLabels[reason] || 'ไม่ระบุ'
+                        };
+                    }
+                });
+            }
+
+            if (!formResult?.value) return;
+
+            const { empId, fullname, section } = formResult.value;
+            const value = `${empId} | ${fullname} | ${section}`;
+            const option = { value, text: `${empId} - ${fullname} (${section})` };
+
+            if (tomSelectInstance) {
+                tomSelectInstance.addOption(option);
+                tomSelectInstance.setValue(value, true);
+            } else {
+                const select = document.getElementById('empSearch');
+                if (select) select.value = value;
+            }
+
+            handleEmployeeSelectionChange();
+            goToMobileStep(2);
+        }
+
+        async function loadGuardHistory() {
+            const status = document.getElementById('historyStatus');
+            const list = document.getElementById('historyList');
+            const shownCount = document.getElementById('historyShownCount');
+            const totalCount = document.getElementById('historyEmployeeTotal');
+            const recentCount = document.getElementById('historyEmployee30d');
+            if (!status || !list) return;
+
+            if (!db) {
+                status.innerText = 'ยังเชื่อมต่อฐานข้อมูลไม่ได้';
+                list.innerHTML = '<div class="insight-card warning">โหลด Supabase client ไม่สำเร็จ</div>';
+                return;
+            }
+
+            const rawSearch = safeText(document.getElementById('historySearch')?.value, '');
+            const search = sanitizeEmployeeSearchTerm(rawSearch);
+            const employeeCode = isEmployeeCode(search) ? normalizeEmployeeCode(search) : '';
+            status.innerText = 'กำลังโหลดประวัติ...';
+            list.innerHTML = '';
+            shownCount.innerText = '0';
+            totalCount.innerText = employeeCode ? '...' : '-';
+            recentCount.innerText = employeeCode ? '...' : '-';
+
+            try {
+                list.innerHTML = '<div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div>';
+
+                let query = db
+                    .from('violation_reports')
+                    .select('id, case_id, created_at, client_reported_at, emp_id, fullname, section, violation_type, location_ref, workflow_status, severity_level, repeat_offender, recent_violation_count_30d')
+                    .order('created_at', { ascending: false })
+                    .limit(HISTORY_LIMIT);
+
+                if (employeeCode) {
+                    query = query.eq('emp_id', employeeCode);
+                } else if (search.length >= 2) {
+                    const pattern = `%${search}%`;
+                    query = query.or(`emp_id.ilike.${pattern},fullname.ilike.${pattern},section.ilike.${pattern},violation_type.ilike.${pattern}`);
+                }
+
+                const { data, error } = await query;
+                if (error) throw error;
+
+                const reports = data || [];
+                guardHistoryLoaded = true;
+                shownCount.innerText = String(reports.length);
+
+                if (employeeCode) {
+                    const counts = await countEmployeeViolations(employeeCode);
+                    totalCount.innerText = String(counts.total);
+                    recentCount.innerText = String(counts.recent);
+                }
+
+                status.innerText = employeeCode
+                    ? `ประวัติของรหัส ${employeeCode}`
+                    : (search ? `ผลค้นหา "${search}"` : `เคสล่าสุด ${HISTORY_LIMIT} รายการ`);
+
+                if (reports.length === 0) {
+                    list.innerHTML = '<div class="insight-card">ยังไม่พบประวัติตามเงื่อนไขนี้</div>';
+                    return;
+                }
+
+                list.innerHTML = reports.map(report => {
+                    const repeat = Boolean(report.repeat_offender) || Number(report.recent_violation_count_30d || 0) >= 2;
+                    const statusClass = getStatusClass(report.workflow_status || WORKFLOW_PENDING);
+                    const employeeArg = encodeHistoryEmployee(report);
+                    return `<article class="history-card">
+                        <div class="history-card-head">
+                            <div>
+                                <div class="fw-bold">${escapeHtml(report.fullname)} <span class="history-meta">(${escapeHtml(report.emp_id)})</span></div>
+                                <div class="history-meta">${escapeHtml(report.section || '-')} | ${formatThaiDate(getReportDate(report))}</div>
+                            </div>
+                            <div class="d-flex flex-wrap gap-1">
+                                <span class="history-pill ${statusClass}">${escapeHtml(report.workflow_status || WORKFLOW_PENDING)}</span>
+                                ${repeat ? '<span class="history-pill danger">Repeat Offender</span>' : ''}
+                            </div>
+                        </div>
+                        <div><b>ข้อหา:</b> ${escapeHtml(report.violation_type || '-')}</div>
+                        <div class="history-meta"><b>จุดเกิดเหตุ:</b> ${escapeHtml(report.location_ref || '-')}</div>
+                        <div class="history-meta">Case: ${escapeHtml(report.case_id || `#${report.id}`)} | 30 วัน: ${escapeHtml(report.recent_violation_count_30d || 1)} ครั้ง</div>
+                        <button type="button" class="btn btn-sm btn-outline-danger fw-bold" onclick="useHistoryEmployee('${employeeArg}')">
+                            <i class="bi bi-person-check me-1"></i>ใช้คนนี้บันทึกเคสใหม่
+                        </button>
+                    </article>`;
+                }).join('');
+            } catch (err) {
+                console.error('History load error:', err);
+                status.innerText = 'โหลดประวัติไม่สำเร็จ';
+                list.innerHTML = `<div class="insight-card warning">${escapeHtml(err.message)}</div>`;
+            }
         }
 
         function getSelectedViolationText() {
@@ -686,7 +1244,7 @@
             document.getElementById('mobileProgressFill').style.width = `${(currentMobileStep / MOBILE_STEP_COUNT) * 100}%`;
             document.getElementById('btnPrevStep').disabled = currentMobileStep === 1;
             document.getElementById('btnNextStep').innerHTML = currentMobileStep === MOBILE_STEP_COUNT
-                ? 'ตรวจสรุป<i class="bi bi-check2-circle ms-1"></i>'
+                ? 'ไปส่งรายงาน<i class="bi bi-arrow-down-circle ms-1"></i>'
                 : 'ถัดไป<i class="bi bi-chevron-right ms-1"></i>';
         }
 
@@ -752,16 +1310,99 @@
         async function insertViolationReport(payload) {
             if (!db) throw new Error('ไม่สามารถเชื่อมต่อฐานข้อมูลได้');
 
-            const { error } = await db.from('violation_reports').insert([payload]);
-            if (!error) return { usedFallback: false };
+            const { data, error } = await db.from('violation_reports').insert([payload]).select('id, case_id').single();
+            if (!error) return { usedFallback: false, report: data };
 
-            const { error: fallbackError } = await db.from('violation_reports').insert([getBasePayload(payload)]);
+            const { data: fallbackData, error: fallbackError } = await db.from('violation_reports').insert([getBasePayload(payload)]).select('id, case_id').single();
             if (fallbackError) throw error;
-            return { usedFallback: true, originalError: error };
+            return { usedFallback: true, originalError: error, report: fallbackData };
+        }
+
+        async function addCaseTimelineEvent(event) {
+            if (!db || !event.case_id) return;
+
+            const { error } = await db.from('violation_case_timeline').insert([{
+                case_id: event.case_id,
+                report_id: event.report_id || null,
+                event_type: event.event_type,
+                from_status: event.from_status || null,
+                to_status: event.to_status || null,
+                actor_role: event.actor_role || ACTOR_GUARD,
+                actor_name: event.actor_name || 'Guard Patrol',
+                note: event.note || null,
+                event_payload: event.event_payload || {}
+            }]);
+
+            if (error) console.warn('Timeline event skipped:', error.message);
+        }
+
+        async function recordCaseCreatedTimeline(payload, report) {
+            await addCaseTimelineEvent({
+                case_id: payload.case_id,
+                report_id: report?.id || null,
+                event_type: EVENT_CREATED,
+                to_status: payload.workflow_status,
+                actor_role: ACTOR_GUARD,
+                actor_name: payload.reported_by,
+                note: payload.repeat_offender
+                    ? `Repeat Offender ${payload.recent_violation_count_30d} ครั้งใน 30 วัน`
+                    : 'สร้างรายงานจาก Guard SuperApp',
+                event_payload: {
+                    emp_id: payload.emp_id,
+                    fullname: payload.fullname,
+                    violation_type: payload.violation_type,
+                    severity_level: payload.severity_level,
+                    sync_status: payload.sync_status
+                }
+            });
+        }
+
+        async function queueCriticalNotification(payload, report) {
+            if (!db || !payload || !report?.id) return;
+            if (payload.workflow_status !== WORKFLOW_REPEAT && payload.severity_level !== 'Critical') return;
+
+            const { error } = await db.from('violation_notification_queue').insert([{
+                case_id: payload.case_id,
+                report_id: report.id,
+                channel: 'LINE',
+                notification_type: payload.workflow_status === WORKFLOW_REPEAT ? 'Repeat Offender Review' : 'Critical',
+                title: `${payload.workflow_status === WORKFLOW_REPEAT ? 'Repeat Offender' : 'Critical'}: ${payload.fullname}`,
+                message: `${payload.emp_id} | ${payload.violation_type} | ${payload.location_ref}`,
+                status: 'pending',
+                event_payload: {
+                    emp_id: payload.emp_id,
+                    fullname: payload.fullname,
+                    severity_level: payload.severity_level,
+                    workflow_status: payload.workflow_status,
+                    device_id: payload.device_id
+                }
+            }]);
+
+            if (error) console.warn('Notification queue skipped:', error.message);
+        }
+
+        async function checkDuplicateReport(empId, violation, locationRef) {
+            if (!db || !empId || !violation || !locationRef) return false;
+
+            const sinceDate = new Date(Date.now() - (5 * 60 * 1000)).toISOString();
+            const { count, error } = await db
+                .from('violation_reports')
+                .select('id', { count: 'exact', head: true })
+                .eq('emp_id', empId)
+                .eq('violation_type', violation)
+                .eq('location_ref', locationRef)
+                .gte('created_at', sinceDate);
+
+            if (error) {
+                console.warn('Duplicate check skipped:', error.message);
+                return false;
+            }
+
+            return (count || 0) > 0;
         }
 
         async function getRecentViolationCount(empId) {
-            if (!db || !empId || empId === 'MANUAL' || empId === 'VISITOR') return 0;
+            if (!db || !empId || empId === 'VISITOR' || empId.startsWith('MANUAL')) return 0;
 
             const sinceDate = new Date(Date.now() - (30 * 24 * 60 * 60 * 1000)).toISOString();
             const { count, error } = await db
@@ -787,6 +1428,47 @@
             }
         }
 
+        function getSyncHistory() {
+            try {
+                return JSON.parse(localStorage.getItem(SYNC_HISTORY_KEY) || '[]');
+            } catch (err) {
+                console.error('Sync history parse error:', err);
+                return [];
+            }
+        }
+
+        function addSyncHistory(entry) {
+            const history = getSyncHistory();
+            history.unshift({
+                case_id: entry.case_id || '-',
+                fullname: entry.fullname || '-',
+                emp_id: entry.emp_id || '-',
+                status: entry.status || 'info',
+                message: entry.message || '',
+                at: new Date().toISOString()
+            });
+            localStorage.setItem(SYNC_HISTORY_KEY, JSON.stringify(history.slice(0, SYNC_HISTORY_LIMIT)));
+            renderSyncHistory();
+        }
+
+        function renderSyncHistory() {
+            const target = document.getElementById('syncHistoryList');
+            if (!target) return;
+
+            const history = getSyncHistory();
+            if (history.length === 0) {
+                target.innerHTML = '<div class="history-meta">ยังไม่มีประวัติ Sync จากเครื่องนี้</div>';
+                return;
+            }
+
+            target.innerHTML = history.map(item => `
+                <div class="sync-item ${escapeHtml(item.status)}">
+                    <div class="fw-bold">${escapeHtml(item.case_id)} | ${escapeHtml(item.fullname)} (${escapeHtml(item.emp_id)})</div>
+                    <div class="history-meta">${escapeHtml(item.message)} | ${formatThaiDate(item.at)}</div>
+                </div>
+            `).join('');
+        }
+
         function saveOfflineQueue(queue) {
             localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue));
             updateQueueStatus();
@@ -807,6 +1489,13 @@
                 queued_at: new Date().toISOString()
             });
             saveOfflineQueue(queue);
+            addSyncHistory({
+                case_id: payload.case_id,
+                fullname: payload.fullname,
+                emp_id: payload.emp_id,
+                status: 'warning',
+                message: 'Queued: รอ Sync เมื่อออนไลน์'
+            });
         }
 
         function updateQueueStatus() {
@@ -836,14 +1525,33 @@
 
             for (const item of queue) {
                 try {
-                    await insertViolationReport({
+                    const syncedPayload = {
                         ...item.payload,
                         sync_status: 'Synced',
                         synced_at: new Date().toISOString()
+                    };
+                    const insertResult = await insertViolationReport(syncedPayload);
+                    if (!insertResult.usedFallback) {
+                        await recordCaseCreatedTimeline(syncedPayload, insertResult.report);
+                        await queueCriticalNotification(syncedPayload, insertResult.report);
+                    }
+                    addSyncHistory({
+                        case_id: syncedPayload.case_id,
+                        fullname: syncedPayload.fullname,
+                        emp_id: syncedPayload.emp_id,
+                        status: 'success',
+                        message: 'Synced: ส่งเข้า Admin แล้ว'
                     });
                     syncedCount++;
                 } catch (err) {
                     console.error('Queue sync error:', err);
+                    addSyncHistory({
+                        case_id: item.payload?.case_id,
+                        fullname: item.payload?.fullname,
+                        emp_id: item.payload?.emp_id,
+                        status: 'danger',
+                        message: `Failed: ${err.message}`
+                    });
                     remaining.push(item);
                 }
             }
@@ -867,18 +1575,69 @@
             if (!file) return { evidence_url: null, evidence_file_name: null, evidence_file_size: null, evidence_file_type: null };
             if (!db) throw new Error('ไม่สามารถอัปโหลดรูปหลักฐานได้ เพราะยังไม่เชื่อมต่อฐานข้อมูล');
 
-            const safeFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+            const uploadFile = await compressImageFile(file);
+            const safeFileName = uploadFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
             const filePath = `${caseId}/${Date.now()}-${safeFileName}`;
-            const { error } = await db.storage.from(EVIDENCE_BUCKET).upload(filePath, file, { upsert: false });
-            if (error) throw error;
+            await uploadStorageWithRetry(filePath, uploadFile);
 
             const { data } = db.storage.from(EVIDENCE_BUCKET).getPublicUrl(filePath);
             return {
                 evidence_url: data?.publicUrl || filePath,
-                evidence_file_name: file.name,
-                evidence_file_size: file.size,
-                evidence_file_type: file.type
+                evidence_file_name: uploadFile.name,
+                evidence_file_size: uploadFile.size,
+                evidence_file_type: uploadFile.type
             };
+        }
+
+        function compressImageFile(file) {
+            if (!file.type.startsWith('image/') || file.type === 'image/gif') return Promise.resolve(file);
+
+            return new Promise((resolve) => {
+                const image = new Image();
+                const objectUrl = URL.createObjectURL(file);
+
+                image.onload = () => {
+                    URL.revokeObjectURL(objectUrl);
+                    const scale = Math.min(1, IMAGE_MAX_WIDTH / image.width, IMAGE_MAX_HEIGHT / image.height);
+                    if (scale >= 1 && file.size <= 1200000) {
+                        resolve(file);
+                        return;
+                    }
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width = Math.round(image.width * scale);
+                    canvas.height = Math.round(image.height * scale);
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+                    canvas.toBlob((blob) => {
+                        if (!blob) {
+                            resolve(file);
+                            return;
+                        }
+                        const compressedName = file.name.replace(/\.[^.]+$/, '') + '.jpg';
+                        resolve(new File([blob], compressedName, { type: 'image/jpeg', lastModified: Date.now() }));
+                    }, 'image/jpeg', IMAGE_QUALITY);
+                };
+
+                image.onerror = () => {
+                    URL.revokeObjectURL(objectUrl);
+                    resolve(file);
+                };
+
+                image.src = objectUrl;
+            });
+        }
+
+        async function uploadStorageWithRetry(filePath, file, maxAttempts = 3) {
+            let lastError;
+            for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+                const { error } = await db.storage.from(EVIDENCE_BUCKET).upload(filePath, file, { upsert: false });
+                if (!error) return;
+                lastError = error;
+                await new Promise(resolve => setTimeout(resolve, attempt * 600));
+            }
+            throw lastError;
         }
 
         function captureLocation() {
@@ -954,14 +1713,8 @@
             let options = fallbackEmployeeOptions;
 
             try {
-                // ดึงข้อมูลพนักงานจากตาราง employees_list (ถ้าคุณพี่ยังไม่สร้าง ระบบจะใช้ Mock Data ด้านล่างแทนก่อน)
                 if (!db) throw new Error('Supabase client is not available');
-
-                const { data, error } = await db.from('employees_list').select('emp_id, fullname, section').limit(2000);
-
-                if (!error && data && data.length > 0) {
-                    options = buildEmployeeOptions(data);
-                }
+                options = await fetchEmployeeOptions('');
             } catch (err) {
                 console.error("Load EMP error:", err);
             }
@@ -981,9 +1734,23 @@
                     },
                     createFilter: function(input) { return safeText(input, '').length >= 2; },
                     persist: false,
-                    onChange: updateLiveSummary,
+                    maxOptions: EMPLOYEE_SEARCH_LIMIT,
+                    loadThrottle: 300,
+                    shouldLoad: function(query) {
+                        return sanitizeEmployeeSearchTerm(query).length >= 2;
+                    },
+                    load: async function(query, callback) {
+                        try {
+                            const remoteOptions = await fetchEmployeeOptions(query);
+                            callback(remoteOptions);
+                        } catch (err) {
+                            console.error("Employee search error:", err);
+                            callback([]);
+                        }
+                    },
+                    onChange: handleEmployeeSelectionChange,
                     sortField: { field: "text", direction: "asc" },
-                    placeholder: "พิมพ์ รหัส หรือ ชื่อพนักงาน..."
+                    placeholder: "พิมพ์รหัส 000000 / AP0000 / SP0000 หรือชื่อพนักงาน..."
                 });
             } catch (err) {
                 console.error("Tom Select init error:", err);
@@ -996,8 +1763,15 @@
             updateMobileStepper();
             initEvidencePreview();
             updateQueueStatus();
+            renderSyncHistory();
             updateLiveSummary();
             loadEmployees();
+            document.getElementById('historySearch')?.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    loadGuardHistory();
+                }
+            });
             if (navigator.onLine) syncOfflineQueue();
         };
 
@@ -1070,6 +1844,20 @@
                 insightPanel.innerHTML = `<b>Repeat Offender</b><br>${escapeHtml(fullname)} มีประวัติรวม ${projectedViolationCount} ครั้งใน 30 วัน`;
             }
 
+            const isDuplicate = await checkDuplicateReport(emp_id, violation, locationCctv);
+            if (isDuplicate) {
+                const duplicateDecision = await Swal.fire({
+                    icon: 'warning',
+                    title: 'อาจเป็นรายการซ้ำ',
+                    text: 'พบคนเดิม + ข้อหาเดิม + จุดเกิดเหตุเดิม ภายใน 5 นาที ต้องการบันทึกต่อหรือไม่?',
+                    showCancelButton: true,
+                    confirmButtonText: 'บันทึกต่อ',
+                    cancelButtonText: 'กลับไปตรวจสอบ',
+                    confirmButtonColor: '#dc2626'
+                });
+                if (!duplicateDecision.isConfirmed) return;
+            }
+
             // เด้ง Popup ยืนยันข้อมูลก่อนส่ง
             Swal.fire({
                 title: 'ยืนยันการบันทึก?',
@@ -1115,6 +1903,8 @@
                         client_reported_at: new Date().toISOString(),
                         source_page: 'guard_violation.html',
                         device_user_agent: navigator.userAgent,
+                        device_id: getDeviceId(),
+                        device_label: safeText(localStorage.getItem('tsh_guard_device_label'), 'Guard Mobile'),
                         gps_latitude: gpsLatitude || null,
                         gps_longitude: gpsLongitude || null,
                         gps_accuracy_meter: gpsAccuracy || null,
@@ -1148,11 +1938,22 @@
 
                         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> กำลังบันทึก...';
                         const insertResult = await insertViolationReport(payload);
+                        if (!insertResult.usedFallback) {
+                            await recordCaseCreatedTimeline(payload, insertResult.report);
+                            await queueCriticalNotification(payload, insertResult.report);
+                        }
+                        addSyncHistory({
+                            case_id: payload.case_id,
+                            fullname: payload.fullname,
+                            emp_id: payload.emp_id,
+                            status: 'success',
+                            message: 'Online: ส่งเข้า Admin แล้ว'
+                        });
 
                         Swal.fire({
                             icon: insertResult.usedFallback ? 'warning' : 'success',
-                            title: insertResult.usedFallback ? 'บันทึกสำเร็จด้วยโหมดพื้นฐาน' : 'บันทึกสำเร็จ!',
-                            text: insertResult.usedFallback ? 'ข้อมูลหลักถูกบันทึกแล้ว แต่ฐานข้อมูลยังไม่รองรับคอลัมน์ Enterprise ทั้งหมด' : 'ส่งรายงานใบสั่งความปลอดภัยเข้าระบบเรียบร้อยแล้ว',
+                            title: insertResult.usedFallback ? 'บันทึกสำเร็จด้วยโหมดพื้นฐาน' : 'ส่งเข้า Admin แล้ว',
+                            text: insertResult.usedFallback ? 'ข้อมูลหลักถูกบันทึกแล้ว แต่ฐานข้อมูลยังไม่รองรับคอลัมน์ Enterprise ทั้งหมด' : `Case ${caseId} พร้อมให้แอดมินตรวจสอบใน Dashboard`,
                             timer: 2600,
                             showConfirmButton: false
                         }).then(() => {
