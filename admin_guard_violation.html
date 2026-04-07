@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Guard Violation Admin</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <style>
+        :root {
+            --bg: #f1f5f9;
+            --surface: #ffffff;
+            --text: #0f172a;
+            --muted: #64748b;
+            --border: #dbe4ef;
+            --danger: #dc2626;
+            --warning: #d97706;
+            --success: #059669;
+            --info: #0284c7;
+        }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        button, input, select { font: inherit; }
+        .btn, .form-control, .form-select { min-height: 44px; font-size: 16px; }
+
+        #loginScreen {
+            position: fixed;
+            inset: 0;
+            background: #0f172a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            padding: 20px;
+        }
+
+        .login-box, .panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+        }
+
+        .login-box {
+            width: 100%;
+            max-width: 420px;
+            padding: 32px;
+        }
+
+        #mainApp { display: none; }
+
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.95);
+            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(10px);
+        }
+
+        .panel { padding: 18px; }
+        .btn, .form-control, .form-select, .badge { border-radius: 8px; }
+        .kpi-value { font-size: 2rem; font-weight: 800; line-height: 1; }
+        .kpi-label { color: var(--muted); font-weight: 700; font-size: 0.85rem; }
+        .table thead th { color: var(--muted); font-size: 0.78rem; text-transform: uppercase; }
+        .table td, .table th { vertical-align: middle; }
+        .repeat-row { background: #fff7ed; }
+        .case-link { color: var(--danger); font-weight: 800; text-decoration: none; }
+        .evidence-thumb { width: 64px; height: 48px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); }
+        .chart-box { height: 260px; }
+        .small-muted { color: var(--muted); font-size: 0.82rem; }
+
+        .table-card-label { display: none; color: var(--muted); font-size: 0.72rem; font-weight: 800; text-transform: uppercase; }
+
+        @media (max-width: 760px) {
+            body { padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
+            #loginScreen { padding: max(14px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left)); }
+            .login-box { padding: 22px; }
+            .topbar { position: static; }
+            .container-fluid { padding-left: 10px !important; padding-right: 10px !important; }
+            .topbar .container-fluid, .panel .d-flex { align-items: stretch !important; }
+            .topbar .container-fluid > .d-flex, .panel .d-flex.flex-wrap { width: 100%; }
+            .topbar .btn, .panel label.btn, .panel button.btn { flex: 1 1 auto; }
+            .panel { padding: 12px; }
+            .kpi-value { font-size: 1.55rem; }
+            .chart-box { height: 220px; }
+            .table-responsive { overflow: visible; }
+            .table { border-collapse: separate; border-spacing: 0 10px; }
+            .table thead { display: none; }
+            .table tbody tr {
+                display: block;
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                background: #fff;
+                padding: 10px;
+                box-shadow: 0 6px 14px rgba(15, 23, 42, 0.06);
+            }
+            .table tbody tr.repeat-row { background: #fff7ed; }
+            .table tbody td {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                gap: 12px;
+                border: 0;
+                padding: 8px 0;
+                text-align: right;
+            }
+            .table tbody td:last-child { justify-content: flex-end; }
+            .table-card-label { display: block; min-width: 88px; text-align: left; }
+            .evidence-thumb { width: 82px; height: 58px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="loginScreen">
+        <div class="login-box">
+            <div class="text-center mb-4">
+                <div class="d-inline-flex align-items-center justify-content-center bg-danger bg-opacity-10 text-danger rounded-circle mb-3" style="width:64px;height:64px;">
+                    <i class="bi bi-shield-exclamation fs-2"></i>
+                </div>
+                <h4 class="fw-bold mb-1">Guard Violation Admin</h4>
+                <div class="small-muted">TSH Safety Management</div>
+            </div>
+            <input type="password" id="adminPassword" class="form-control form-control-lg text-center mb-3" placeholder="Admin Password" onkeypress="if(event.key === 'Enter') checkLogin()">
+            <button class="btn btn-dark w-100 fw-bold py-3" onclick="checkLogin()">เข้าสู่ระบบ</button>
+        </div>
+    </div>
+
+    <div id="mainApp">
+        <div class="topbar">
+            <div class="container-fluid px-4 py-3 d-flex flex-wrap gap-3 align-items-center justify-content-between">
+                <div>
+                    <h4 class="fw-bold mb-0"><i class="bi bi-clipboard-pulse text-danger me-2"></i>Guard Violation Admin</h4>
+                    <div class="small-muted" id="lastUpdated">กำลังโหลดข้อมูล...</div>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-secondary fw-bold" id="btnRefresh" onclick="fetchReports()"><i class="bi bi-arrow-clockwise me-1"></i>Refresh</button>
+                    <button class="btn btn-success fw-bold" onclick="exportToExcel()"><i class="bi bi-file-earmark-excel-fill me-1"></i>Excel</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="container-fluid px-4 py-4">
+            <div class="row g-3 mb-3">
+                <div class="col-md-3"><div class="panel"><div class="kpi-label">เคสทั้งหมด</div><div class="kpi-value" id="kpiTotal">0</div></div></div>
+                <div class="col-md-3"><div class="panel"><div class="kpi-label">รอปิดเคส</div><div class="kpi-value text-warning" id="kpiOpen">0</div></div></div>
+                <div class="col-md-3"><div class="panel"><div class="kpi-label">Repeat Offender</div><div class="kpi-value text-danger" id="kpiRepeat">0</div></div></div>
+                <div class="col-md-3"><div class="panel"><div class="kpi-label">Critical / High</div><div class="kpi-value text-info" id="kpiUrgent">0</div></div></div>
+            </div>
+
+            <div class="panel mb-3">
+                <div class="d-flex flex-wrap gap-3 justify-content-between align-items-start">
+                    <div>
+                        <h5 class="fw-bold mb-1"><i class="bi bi-people-fill text-primary me-2"></i>นำเข้ารายชื่อพนักงาน</h5>
+                        <div class="small-muted">รองรับ Excel/CSV โดยใช้คอลัมน์ รหัสพนักงาน, ชื่อ-สกุล, แผนก หรือ emp_id, fullname, section</div>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button class="btn btn-outline-primary fw-bold" onclick="downloadEmployeeTemplate()">
+                            <i class="bi bi-download me-1"></i>Template
+                        </button>
+                        <label class="btn btn-dark fw-bold mb-0">
+                            <i class="bi bi-file-earmark-spreadsheet-fill me-1"></i>เลือกไฟล์ Excel
+                            <input type="file" id="employeeExcelInput" class="d-none" accept=".xlsx,.xls,.csv" onchange="handleEmployeeExcel(event)">
+                        </label>
+                    </div>
+                </div>
+                <div id="employeeImportPreview" class="small-muted mt-3">ยังไม่ได้เลือกไฟล์</div>
+            </div>
+
+            <div class="panel mb-3">
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold small">วันที่เริ่ม</label>
+                        <input type="date" id="filterFrom" class="form-control" onchange="applyFilters()">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold small">วันที่สิ้นสุด</label>
+                        <input type="date" id="filterTo" class="form-control" onchange="applyFilters()">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold small">สถานะ</label>
+                        <select id="filterStatus" class="form-select" onchange="applyFilters()">
+                            <option value="ALL">ทั้งหมด</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold small">ความเร่งด่วน</label>
+                        <select id="filterSeverity" class="form-select" onchange="applyFilters()">
+                            <option value="ALL">ทั้งหมด</option>
+                            <option value="Critical">Critical</option>
+                            <option value="High">High</option>
+                            <option value="Medium">Medium</option>
+                            <option value="Low">Low</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold small">Repeat</label>
+                        <select id="filterRepeat" class="form-select" onchange="applyFilters()">
+                            <option value="ALL">ทั้งหมด</option>
+                            <option value="YES">Repeat Offender</option>
+                            <option value="NO">ไม่ซ้ำ</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold small">ค้นหา</label>
+                        <input type="search" id="filterSearch" class="form-control" placeholder="ชื่อ/รหัส/ข้อหา" oninput="applyFilters()">
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+                <div class="col-lg-8">
+                    <div class="panel">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="fw-bold mb-0">รายการเคส</h5>
+                            <span class="small-muted" id="resultText">0 รายการ</span>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Case</th>
+                                        <th>ผู้กระทำผิด</th>
+                                        <th>ข้อหา</th>
+                                        <th>ระดับ</th>
+                                        <th>สถานะ</th>
+                                        <th>หลักฐาน</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="reportTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="panel mb-3">
+                        <h6 class="fw-bold mb-3">สรุปตามข้อหา</h6>
+                        <div class="chart-box"><canvas id="violationChart"></canvas></div>
+                    </div>
+                    <div class="panel">
+                        <h6 class="fw-bold mb-3">ทำซ้ำใน 30 วัน</h6>
+                        <div id="repeatList" class="d-grid gap-2"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+const SUPABASE_URL = 'https://dqsfioiqwxuxpucwwhsv.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxc2Zpb2lxd3h1eHB1Y3d3aHN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1OTk1NjUsImV4cCI6MjA4NDE3NTU2NX0.L_u0Ff3uHofxiimEs6ySFB4TPNtOWiKeSu3KFoVcA1U';
+const db = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+const ADMIN_PASSWORD = 'securitytsh12345';
+const WORKFLOW_PENDING = 'Pending Safety Review';
+const WORKFLOW_REPEAT = 'Repeat Offender Review';
+const WORKFLOW_UNDER_REVIEW = 'Under Review';
+const WORKFLOW_CLOSED = 'Closed';
+const WORKFLOW_REJECTED = 'Rejected';
+const REVIEW_SAFETY_OFFICER = 'Safety Officer';
+const REVIEW_SAFETY_MANAGER = 'Safety Manager';
+const OPEN_STATUSES = [WORKFLOW_PENDING, WORKFLOW_REPEAT, WORKFLOW_UNDER_REVIEW];
+
+let allReports = [];
+let filteredReports = [];
+let repeatCounts = {};
+let violationChart = null;
+
+function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    }[char]));
+}
+
+function formatDate(value) {
+    if (!value) return '-';
+    return new Date(value).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' });
+}
+
+function getReportDate(report) {
+    return report.client_reported_at || report.created_at;
+}
+
+function normalizeHeader(value) {
+    return String(value ?? '')
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, '')
+        .replace(/[_-]/g, '');
+}
+
+function pickExcelValue(row, aliases) {
+    const normalizedAliases = aliases.map(normalizeHeader);
+    const matchedKey = Object.keys(row).find(key => normalizedAliases.includes(normalizeHeader(key)));
+    return matchedKey ? String(row[matchedKey] ?? '').trim() : '';
+}
+
+function parseEmployeeRows(rows) {
+    const seen = new Set();
+    const employees = [];
+    const skippedRows = [];
+
+    rows.forEach((row, index) => {
+        const empId = pickExcelValue(row, ['emp_id', 'employee_id', 'employeeid', 'รหัส', 'รหัสพนักงาน', 'เลขพนักงาน', 'id']);
+        const fullname = pickExcelValue(row, ['fullname', 'full_name', 'name', 'ชื่อ', 'ชื่อสกุล', 'ชื่อ-สกุล', 'ชื่อ นามสกุล']);
+        const section = pickExcelValue(row, ['section', 'department', 'dept', 'แผนก', 'ฝ่าย', 'หน่วยงาน']);
+
+        if (!empId || !fullname) {
+            skippedRows.push(index + 2);
+            return;
+        }
+
+        if (seen.has(empId)) return;
+        seen.add(empId);
+        employees.push({
+            emp_id: empId,
+            fullname: fullname,
+            section: section || 'ไม่ระบุ',
+            updated_at: new Date().toISOString()
+        });
+    });
+
+    return { employees, skippedRows };
+}
+
+function downloadEmployeeTemplate() {
+    const templateRows = [
+        { emp_id: '123456', fullname: 'สมชาย ใจดี', section: 'PRODUCTION 1' },
+        { emp_id: '987654', fullname: 'สมหญิง รักงาน', section: 'ACCOUNTING' }
+    ];
+    const ws = XLSX.utils.json_to_sheet(templateRows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'employees_list');
+    XLSX.writeFile(wb, 'employees_list_template.xlsx');
+}
+
+async function handleEmployeeExcel(event) {
+    const input = event.target;
+    const file = input.files?.[0];
+    const preview = document.getElementById('employeeImportPreview');
+    if (!file) return;
+
+    if (!db) {
+        Swal.fire('เชื่อมต่อไม่ได้', 'โหลด Supabase client ไม่สำเร็จ', 'error');
+        input.value = '';
+        return;
+    }
+
+    try {
+        preview.innerText = `กำลังอ่านไฟล์ ${file.name}...`;
+        const buffer = await file.arrayBuffer();
+        const workbook = XLSX.read(buffer, { type: 'array' });
+        const firstSheetName = workbook.SheetNames[0];
+        const rows = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName], { defval: '' });
+        const { employees, skippedRows } = parseEmployeeRows(rows);
+
+        if (employees.length === 0) {
+            preview.innerText = 'ไม่พบข้อมูลที่นำเข้าได้';
+            Swal.fire('นำเข้าไม่ได้', 'กรุณาตรวจสอบว่ามีคอลัมน์ emp_id/fullname/section หรือ รหัสพนักงาน/ชื่อ-สกุล/แผนก', 'warning');
+            return;
+        }
+
+        const sampleHtml = employees.slice(0, 5).map(emp => `
+            <tr>
+                <td>${escapeHtml(emp.emp_id)}</td>
+                <td>${escapeHtml(emp.fullname)}</td>
+                <td>${escapeHtml(emp.section)}</td>
+            </tr>
+        `).join('');
+
+        const result = await Swal.fire({
+            title: 'ยืนยันนำเข้ารายชื่อ?',
+            html: `<div class="text-start">
+                <div class="mb-2">ไฟล์: <b>${escapeHtml(file.name)}</b></div>
+                <div class="mb-2">พร้อมนำเข้า/อัปเดต: <b>${employees.length}</b> รายการ</div>
+                <div class="mb-2">ข้ามแถวที่ข้อมูลไม่ครบ: <b>${skippedRows.length}</b> แถว</div>
+                <div class="table-responsive border rounded mt-3">
+                    <table class="table table-sm mb-0">
+                        <thead><tr><th>รหัส</th><th>ชื่อ</th><th>แผนก</th></tr></thead>
+                        <tbody>${sampleHtml}</tbody>
+                    </table>
+                </div>
+            </div>`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'นำเข้าเลย',
+            cancelButtonText: 'ยกเลิก',
+            confirmButtonColor: '#0f172a'
+        });
+
+        if (!result.isConfirmed) {
+            preview.innerText = 'ยกเลิกการนำเข้า';
+            return;
+        }
+
+        preview.innerText = `กำลังนำเข้า ${employees.length} รายการ...`;
+        const { error } = await db
+            .from('employees_list')
+            .upsert(employees, { onConflict: 'emp_id' });
+
+        if (error) throw error;
+
+        preview.innerText = `นำเข้าล่าสุด: ${employees.length} รายการ (${new Date().toLocaleString('th-TH')})`;
+        Swal.fire('นำเข้าสำเร็จ', `เพิ่ม/อัปเดตรายชื่อพนักงาน ${employees.length} รายการแล้ว`, 'success');
+    } catch (err) {
+        console.error('Employee import error:', err);
+        preview.innerText = 'นำเข้าไม่สำเร็จ';
+        Swal.fire('นำเข้าไม่สำเร็จ', err.message, 'error');
+    } finally {
+        input.value = '';
+    }
+}
+
+function checkLogin() {
+    const passwordInput = document.getElementById('adminPassword');
+    const password = passwordInput.value;
+    if (password !== ADMIN_PASSWORD) {
+        Swal.fire('รหัสผ่านไม่ถูกต้อง', 'กรุณาตรวจสอบอีกครั้ง', 'error');
+        return;
+    }
+
+    passwordInput.blur();
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'block';
+    document.getElementById('btnRefresh').focus();
+    fetchReports();
+}
+
+async function fetchReports() {
+    if (!db) {
+        Swal.fire('เชื่อมต่อไม่ได้', 'โหลด Supabase client ไม่สำเร็จ', 'error');
+        return;
+    }
+
+    document.getElementById('lastUpdated').innerText = 'กำลังโหลดข้อมูล...';
+    const { data, error } = await db
+        .from('violation_reports')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(1000);
+
+    if (error) {
+        Swal.fire('โหลดข้อมูลไม่สำเร็จ', error.message, 'error');
+        return;
+    }
+
+    allReports = data || [];
+    computeRepeatCounts();
+    hydrateFilterOptions();
+    applyFilters();
+    document.getElementById('lastUpdated').innerText = `อัปเดตล่าสุด ${new Date().toLocaleString('th-TH')}`;
+}
+
+function computeRepeatCounts() {
+    const since = Date.now() - (30 * 24 * 60 * 60 * 1000);
+    repeatCounts = {};
+
+    allReports.forEach(report => {
+        const empId = report.emp_id;
+        const dateValue = new Date(getReportDate(report)).getTime();
+        if (!empId || empId === 'MANUAL' || empId === 'VISITOR' || Number.isNaN(dateValue) || dateValue < since) return;
+        repeatCounts[empId] = (repeatCounts[empId] || 0) + 1;
+    });
+}
+
+function isRepeatReport(report) {
+    return Boolean(report.repeat_offender) || (repeatCounts[report.emp_id] || 0) >= 2;
+}
+
+function hydrateFilterOptions() {
+    const statusSelect = document.getElementById('filterStatus');
+    const currentValue = statusSelect.value || 'ALL';
+    const statuses = [...new Set(allReports.map(r => r.workflow_status || WORKFLOW_PENDING))].sort();
+    statusSelect.innerHTML = '<option value="ALL">ทั้งหมด</option>';
+    statuses.forEach(status => {
+        statusSelect.innerHTML += `<option value="${escapeHtml(status)}">${escapeHtml(status)}</option>`;
+    });
+    statusSelect.value = statuses.includes(currentValue) ? currentValue : 'ALL';
+}
+
+function applyFilters() {
+    const from = document.getElementById('filterFrom').value;
+    const to = document.getElementById('filterTo').value;
+    const status = document.getElementById('filterStatus').value;
+    const severity = document.getElementById('filterSeverity').value;
+    const repeat = document.getElementById('filterRepeat').value;
+    const search = document.getElementById('filterSearch').value.trim().toLowerCase();
+
+    filteredReports = allReports.filter(report => {
+        const dateText = getReportDate(report)?.slice(0, 10) || '';
+        const reportStatus = report.workflow_status || WORKFLOW_PENDING;
+        const reportSeverity = report.severity_level || 'Medium';
+        const repeatReport = isRepeatReport(report);
+        const haystack = `${report.emp_id || ''} ${report.fullname || ''} ${report.section || ''} ${report.violation_type || ''} ${report.location_ref || ''} ${report.case_id || ''}`.toLowerCase();
+
+        if (from && dateText < from) return false;
+        if (to && dateText > to) return false;
+        if (status !== 'ALL' && reportStatus !== status) return false;
+        if (severity !== 'ALL' && reportSeverity !== severity) return false;
+        if (repeat === 'YES' && !repeatReport) return false;
+        if (repeat === 'NO' && repeatReport) return false;
+        if (search && !haystack.includes(search)) return false;
+        return true;
+    });
+
+    renderSummary();
+    renderTable();
+    renderRepeatList();
+    renderViolationChart();
+}
+
+function renderSummary() {
+    document.getElementById('kpiTotal').innerText = filteredReports.length;
+    document.getElementById('kpiOpen').innerText = filteredReports.filter(r => OPEN_STATUSES.includes(r.workflow_status || WORKFLOW_PENDING)).length;
+    document.getElementById('kpiRepeat').innerText = filteredReports.filter(isRepeatReport).length;
+    document.getElementById('kpiUrgent').innerText = filteredReports.filter(r => ['Critical', 'High'].includes(r.severity_level)).length;
+    document.getElementById('resultText').innerText = `${filteredReports.length} รายการ`;
+}
+
+function renderTable() {
+    const tbody = document.getElementById('reportTableBody');
+    tbody.innerHTML = '';
+
+    if (filteredReports.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">ไม่พบข้อมูล</td></tr>';
+        return;
+    }
+
+    filteredReports.forEach(report => {
+        const repeatBadge = isRepeatReport(report) ? `<span class="badge bg-danger ms-1">Repeat Offender</span>` : '';
+        const evidence = report.evidence_url ? `<a href="${escapeHtml(report.evidence_url)}" target="_blank"><img src="${escapeHtml(report.evidence_url)}" class="evidence-thumb" alt="Evidence"></a>` : '<span class="text-muted">-</span>';
+        const severityClass = report.severity_level === 'Critical' ? 'danger' : (report.severity_level === 'High' ? 'warning' : (report.severity_level === 'Low' ? 'secondary' : 'info'));
+
+        tbody.innerHTML += `
+            <tr class="${isRepeatReport(report) ? 'repeat-row' : ''}">
+                <td>
+                    <span class="table-card-label">Case</span>
+                    <div>
+                    <a href="#" class="case-link" onclick="viewReport(${report.id}); return false;">${escapeHtml(report.case_id || `#${report.id}`)}</a>
+                    <div class="small-muted">${formatDate(getReportDate(report))}</div>
+                    </div>
+                </td>
+                <td>
+                    <span class="table-card-label">ผู้กระทำผิด</span>
+                    <div>
+                    <div class="fw-bold">${escapeHtml(report.fullname)}</div>
+                    <div class="small-muted">${escapeHtml(report.emp_id)} | ${escapeHtml(report.section || '-')}</div>
+                    ${repeatBadge}
+                    </div>
+                </td>
+                <td><span class="table-card-label">ข้อหา</span><span>${escapeHtml(report.violation_type)}</span></td>
+                <td><span class="table-card-label">ระดับ</span><span class="badge bg-${severityClass}">${escapeHtml(report.severity_level || 'Medium')}</span></td>
+                <td><span class="table-card-label">สถานะ</span><span class="badge bg-light text-dark border">${escapeHtml(report.workflow_status || WORKFLOW_PENDING)}</span></td>
+                <td><span class="table-card-label">หลักฐาน</span>${evidence}</td>
+                <td class="text-end">
+                    <button class="btn btn-sm btn-outline-primary" onclick="viewReport(${report.id})">เปิด</button>
+                </td>
+            </tr>
+        `;
+    });
+}
+
+function renderRepeatList() {
+    const target = document.getElementById('repeatList');
+    const repeatEntries = Object.entries(repeatCounts)
+        .filter(([, count]) => count >= 2)
+        .sort((a, b) => b[1] - a[1]);
+
+    if (repeatEntries.length === 0) {
+        target.innerHTML = '<div class="text-muted">ยังไม่พบผู้กระทำซ้ำ 2 ครั้งใน 30 วัน</div>';
+        return;
+    }
+
+    target.innerHTML = repeatEntries.map(([empId, count]) => {
+        const latest = allReports.find(r => r.emp_id === empId);
+        return `<div class="d-flex justify-content-between align-items-center border rounded p-2">
+            <div><div class="fw-bold">${escapeHtml(latest?.fullname || empId)}</div><div class="small-muted">${escapeHtml(empId)}</div></div>
+            <span class="badge bg-danger">${count} ครั้ง</span>
+        </div>`;
+    }).join('');
+}
+
+function renderViolationChart() {
+    const counts = {};
+    filteredReports.forEach(report => {
+        const key = report.violation_type || 'ไม่ระบุ';
+        counts[key] = (counts[key] || 0) + 1;
+    });
+
+    const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 6);
+    if (violationChart) violationChart.destroy();
+    violationChart = new Chart(document.getElementById('violationChart'), {
+        type: 'bar',
+        data: {
+            labels: entries.map(([label]) => label),
+            datasets: [{ data: entries.map(([, value]) => value), backgroundColor: '#dc2626', borderRadius: 8 }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } }, x: { ticks: { font: { family: 'Sarabun' } } } }
+        }
+    });
+}
+
+function viewReport(id) {
+    const report = allReports.find(r => r.id === id);
+    if (!report) return;
+
+    const gpsLink = report.gps_latitude && report.gps_longitude
+        ? `<a href="https://www.google.com/maps?q=${report.gps_latitude},${report.gps_longitude}" target="_blank">เปิด Google Maps</a>`
+        : '-';
+    const evidenceLink = report.evidence_url
+        ? `<a href="${escapeHtml(report.evidence_url)}" target="_blank">เปิดรูปหลักฐาน</a>`
+        : '-';
+
+    Swal.fire({
+        title: report.case_id || `Case #${report.id}`,
+        width: 720,
+        html: `<div class="text-start">
+            <div class="mb-2"><b>ผู้กระทำผิด:</b> ${escapeHtml(report.fullname)} (${escapeHtml(report.emp_id)}) ${isRepeatReport(report) ? '<span class="badge bg-danger ms-1">Repeat Offender</span>' : ''}</div>
+            <div class="mb-2"><b>แผนก:</b> ${escapeHtml(report.section || '-')}</div>
+            <div class="mb-2"><b>ข้อหา:</b> ${escapeHtml(report.violation_type)}</div>
+            <div class="mb-2"><b>จุดเกิดเหตุ:</b> ${escapeHtml(report.location_ref)}</div>
+            <div class="mb-2"><b>การดำเนินการ:</b> ${escapeHtml(report.action_taken)}</div>
+            <div class="mb-2"><b>ระดับ:</b> ${escapeHtml(report.severity_level || 'Medium')}</div>
+            <div class="mb-2"><b>สถานะ:</b> ${escapeHtml(report.workflow_status || WORKFLOW_PENDING)}</div>
+            <div class="mb-2"><b>ผู้รับผิดชอบ:</b> ${escapeHtml(report.review_owner || '-')}</div>
+            <div class="mb-2"><b>พิกัด:</b> ${gpsLink}</div>
+            <div class="mb-3"><b>หลักฐาน:</b> ${evidenceLink}</div>
+            <div class="d-flex flex-wrap gap-2">
+                <button class="btn btn-outline-primary" onclick="updateStatus(${report.id}, '${WORKFLOW_UNDER_REVIEW}')">Under Review</button>
+                <button class="btn btn-outline-danger" onclick="updateStatus(${report.id}, '${WORKFLOW_REPEAT}')">Repeat Review</button>
+                <button class="btn btn-outline-success" onclick="updateStatus(${report.id}, '${WORKFLOW_CLOSED}')">Closed</button>
+                <button class="btn btn-outline-secondary" onclick="updateStatus(${report.id}, '${WORKFLOW_REJECTED}')">Rejected</button>
+            </div>
+        </div>`,
+        showConfirmButton: false,
+        showCloseButton: true
+    });
+}
+
+async function updateStatus(id, status) {
+    const updateData = {
+        workflow_status: status,
+        review_owner: status === WORKFLOW_REPEAT ? REVIEW_SAFETY_MANAGER : REVIEW_SAFETY_OFFICER,
+        synced_at: new Date().toISOString()
+    };
+
+    const { error } = await db.from('violation_reports').update(updateData).eq('id', id);
+    if (error) {
+        Swal.fire('อัปเดตไม่สำเร็จ', error.message, 'error');
+        return;
+    }
+
+    await Swal.fire({ icon: 'success', title: 'อัปเดตสถานะแล้ว', timer: 1200, showConfirmButton: false });
+    await fetchReports();
+}
+
+function exportToExcel() {
+    if (filteredReports.length === 0) {
+        Swal.fire('ไม่มีข้อมูล', 'ไม่มีรายการสำหรับ export', 'warning');
+        return;
+    }
+
+    const exportData = filteredReports.map(report => ({
+        Case: report.case_id || report.id,
+        Date: formatDate(getReportDate(report)),
+        EmpID: report.emp_id,
+        Fullname: report.fullname,
+        Section: report.section,
+        Violation: report.violation_type,
+        Location: report.location_ref,
+        Action: report.action_taken,
+        Severity: report.severity_level,
+        Status: report.workflow_status,
+        RepeatOffender: isRepeatReport(report) ? 'Yes' : 'No',
+        Recent30Days: repeatCounts[report.emp_id] || report.recent_violation_count_30d || 1,
+        Evidence: report.evidence_url || '',
+        GPS: report.gps_latitude && report.gps_longitude ? `${report.gps_latitude},${report.gps_longitude}` : ''
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Violation Reports');
+    XLSX.writeFile(wb, `Violation_Report_${new Date().toISOString().slice(0, 10)}.xlsx`);
+}
+</script>
+</body>
+</html>

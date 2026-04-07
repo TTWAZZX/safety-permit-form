@@ -92,6 +92,7 @@
         /* Colors for different modules */
         .module-slipper .icon-box { background: #eff6ff; color: #3b82f6; } /* ฟ้า */
         .module-guard .icon-box { background: #fef2f2; color: #ef4444; } /* แดง */
+        .module-violation .icon-box { background: #fff7ed; color: #dc2626; } /* ส้มแดง */
         .module-gatepass .icon-box { background: #f0fdf4; color: #10b981; } /* เขียว */
         .module-ppe .icon-box { background: #fffbeb; color: #f59e0b; } /* ส้ม */
         .module-spot .icon-box { background: #f3e8ff; color: #a855f7; } /* ม่วง */
@@ -167,6 +168,20 @@
                     <h3 class="card-title">SecurityPass Admin</h3>
                     <p class="card-desc">ระบบสำหรับ รปภ. ในการจัดการเข้า-ออก และตรวจสอบสิทธิ์พนักงาน (Guard Panel)</p>
                     <a href="guard-admin.html" class="btn-enter" target="_blank">
+                        เข้าสู่ระบบ <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-lg-4">
+                <div class="system-card module-violation">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="icon-box"><i class="bi bi-clipboard-pulse-fill"></i></div>
+                        <span class="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-3 py-1">Active</span>
+                    </div>
+                    <h3 class="card-title">Violation Report</h3>
+                    <p class="card-desc">ระบบติดตามรายงานผิดระเบียบ ตรวจผู้กระทำซ้ำ และปิดเคสตาม Workflow ของ จป.</p>
+                    <a href="admin_guard_violation.html" class="btn-enter" target="_blank">
                         เข้าสู่ระบบ <i class="bi bi-arrow-right ms-1"></i>
                     </a>
                 </div>

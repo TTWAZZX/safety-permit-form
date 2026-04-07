@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Violation Report - TSH Safety</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        :root {
+            --app-bg: #e5e7eb;
+            --surface: #ffffff;
+            --surface-2: #f1f5f9;
+            --ink: #0f172a;
+            --muted: #64748b;
+            --line: #cbd5e1;
+            --danger: #dc2626;
+            --danger-soft: #fee2e2;
+            --warning: #d97706;
+            --warning-soft: #ffedd5;
+            --success: #059669;
+            --success-soft: #d1fae5;
+            --info: #0284c7;
+            --info-soft: #e0f2fe;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background: var(--app-bg);
+            color: var(--ink);
+            min-height: 100vh;
+            padding-bottom: calc(24px + env(safe-area-inset-bottom));
+        }
+
+        button, input, select, textarea { font: inherit; }
+        button, .btn, .btn-violation, .quick-action { min-height: 44px; touch-action: manipulation; }
+
+        .app-shell {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: max(14px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) 14px max(14px, env(safe-area-inset-left));
+        }
+
+        .topbar {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 14px;
+            display: flex;
+            gap: 14px;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
+            position: sticky;
+            top: 8px;
+            z-index: 20;
+        }
+
+        .brand-mark {
+            width: 44px;
+            height: 44px;
+            border-radius: 8px;
+            background: var(--danger);
+            color: #fff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.35rem;
+            flex: 0 0 auto;
+        }
+
+        .topbar-title { font-size: 1.08rem; font-weight: 800; margin: 0; }
+        .topbar-subtitle { color: var(--muted); font-size: 0.82rem; }
+        .live-pill { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; background: var(--surface-2); color: var(--muted); font-weight: 700; font-size: 0.82rem; }
+        .live-pill.online { background: var(--success-soft); color: #065f46; border-color: #86efac; }
+        .live-pill.offline { background: var(--warning-soft); color: #7c2d12; border-color: #fdba74; }
+
+        .app-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 14px; margin-top: 14px; }
+        .workspace, .side-panel, .quick-panel, .form-section {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06);
+        }
+
+        .workspace { padding: 14px; }
+        .side-panel, .quick-panel { padding: 14px; }
+        .quick-panel { margin-bottom: 14px; }
+        .form-section { padding: 16px; margin-bottom: 14px; box-shadow: none; }
+
+        .section-head { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; margin-bottom: 12px; }
+        .section-title { font-weight: 800; margin: 0; font-size: 1rem; }
+        .section-kicker { color: var(--muted); font-size: 0.82rem; margin-top: 2px; }
+        .section-index { background: var(--ink); color: #fff; border-radius: 8px; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; font-weight: 800; flex: 0 0 auto; }
+
+        .form-label { font-weight: 700; color: #334155; font-size: 0.92rem; margin-bottom: 8px; }
+        .form-text { color: var(--muted) !important; }
+        .form-control, .form-select {
+            background: #fff;
+            border: 1px solid var(--line);
+            color: var(--ink);
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 16px;
+        }
+        .form-control:focus, .form-select:focus { border-color: var(--danger); box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.14); }
+
+        .ts-wrapper.single .ts-control, .ts-control {
+            background: #fff;
+            border: 1px solid var(--line);
+            color: var(--ink);
+            border-radius: 8px;
+            padding: 12px;
+        }
+        .ts-control input { color: var(--ink); }
+        .ts-dropdown { background: #fff; border: 1px solid var(--line); color: var(--ink); border-radius: 8px; }
+        .ts-dropdown .option { padding: 10px; }
+        .ts-dropdown .option:hover, .ts-dropdown .active { background: var(--surface-2); color: var(--ink); }
+
+        .violation-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+        .btn-check:checked + .btn-violation {
+            background: var(--danger-soft);
+            border-color: var(--danger);
+            color: #7f1d1d;
+            box-shadow: inset 0 0 0 1px var(--danger);
+        }
+        .btn-violation {
+            border: 1px solid var(--line);
+            background: #fff;
+            color: #334155;
+            text-align: left;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.94rem;
+            transition: 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            min-height: 58px;
+        }
+        .btn-violation:hover { background: var(--surface-2); border-color: #94a3b8; }
+        .btn-violation i { font-size: 1.2rem; }
+
+        .enterprise-panel {
+            background: var(--surface-2);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 14px;
+        }
+
+        .quick-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .quick-action, .btn-secondary-action {
+            background: #fff;
+            color: var(--ink);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 11px;
+            width: 100%;
+            font-weight: 800;
+            text-align: left;
+        }
+        .quick-action:hover, .btn-secondary-action:hover { border-color: var(--danger); color: var(--danger); }
+        .btn-secondary-action:disabled { opacity: 0.65; }
+
+        .status-strip {
+            display: none;
+            background: var(--warning-soft);
+            border: 1px solid #fdba74;
+            border-radius: 8px;
+            color: #7c2d12;
+            padding: 10px 12px;
+            margin-bottom: 14px;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+        .status-strip.show { display: block; }
+
+        .evidence-preview { display: none; width: 100%; max-height: 220px; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); margin-top: 10px; }
+        .step-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+        .step-item { display: flex; gap: 10px; align-items: center; color: var(--muted); font-weight: 700; }
+        .step-dot { width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--line); display: inline-flex; align-items: center; justify-content: center; background: #fff; color: var(--muted); }
+        .step-item.done { color: var(--success); }
+        .step-item.done .step-dot { background: var(--success-soft); border-color: #86efac; color: #065f46; }
+
+        .summary-line { display: flex; justify-content: space-between; gap: 10px; border-bottom: 1px solid var(--line); padding: 10px 0; }
+        .summary-line:last-child { border-bottom: 0; }
+        .summary-label { color: var(--muted); font-size: 0.82rem; }
+        .summary-value { font-weight: 800; text-align: right; }
+        .insight-card { border-radius: 8px; border: 1px solid var(--line); padding: 12px; background: #fff; }
+        .insight-card.warning { background: var(--warning-soft); border-color: #fdba74; color: #7c2d12; }
+        .insight-card.danger { background: var(--danger-soft); border-color: #fca5a5; color: #7f1d1d; }
+
+        .btn-submit {
+            background: var(--danger);
+            color: white;
+            width: 100%;
+            border-radius: 8px;
+            padding: 16px;
+            border: none;
+            font-weight: 800;
+            font-size: 1.05rem;
+            margin-top: 4px;
+            box-shadow: 0 10px 18px rgba(220, 38, 38, 0.22);
+            transition: transform 0.1s;
+        }
+        .btn-submit:active { transform: scale(0.99); }
+
+        #otherInputArea { display: none; margin-top: 10px; animation: fadeIn 0.2s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+
+        @media (max-width: 960px) {
+            .app-grid { grid-template-columns: 1fr; }
+            aside { order: -1; }
+        }
+
+        @media (max-width: 620px) {
+            body { padding-bottom: calc(92px + env(safe-area-inset-bottom)); }
+            .topbar { position: static; align-items: flex-start; padding: 12px; }
+            .topbar, .section-head { flex-direction: column; }
+            .violation-grid, .quick-grid { grid-template-columns: 1fr; }
+            .app-shell { padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) 10px max(10px, env(safe-area-inset-left)); }
+            .workspace, .side-panel, .quick-panel, .form-section { box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06); }
+            .workspace, .side-panel, .quick-panel, .form-section { padding: 12px; }
+            .brand-mark { width: 40px; height: 40px; }
+            .topbar-title { font-size: 1rem; }
+            .topbar-subtitle, .section-kicker { font-size: 0.78rem; }
+            .summary-value { max-width: 60%; overflow-wrap: anywhere; }
+            .btn-submit {
+                position: fixed;
+                left: max(10px, env(safe-area-inset-left));
+                right: max(10px, env(safe-area-inset-right));
+                bottom: max(10px, env(safe-area-inset-bottom));
+                width: auto;
+                z-index: 30;
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <main class="app-shell">
+        <header class="topbar">
+            <div class="d-flex align-items-center gap-3">
+                <div class="brand-mark"><i class="bi bi-shield-exclamation"></i></div>
+                <div>
+                    <h1 class="topbar-title">Guard Violation SuperApp</h1>
+                    <div class="topbar-subtitle">บันทึก ตรวจซ้ำ แนบหลักฐาน และส่งต่อ จป. ใน flow เดียว</div>
+                </div>
+            </div>
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <span id="connectionStatus" class="live-pill">กำลังตรวจสอบ</span>
+                <a href="admin_guard_violation.html" target="_blank" class="btn btn-outline-dark fw-bold"><i class="bi bi-speedometer2 me-1"></i>Admin</a>
+            </div>
+        </header>
+
+        <div class="app-grid">
+            <section class="workspace">
+                <div id="queueStatus" class="status-strip"></div>
+
+                <form id="violationForm">
+                    <section class="form-section">
+                        <div class="section-head">
+                            <div>
+                                <h2 class="section-title">ระบุตัวตนผู้เกี่ยวข้อง</h2>
+                                <div class="section-kicker">ค้นหาจากฐานข้อมูล หรือกรอกเองสำหรับผู้รับเหมาและ Visitor</div>
+                            </div>
+                            <span class="section-index">1</span>
+                        </div>
+                        <label class="form-label"><i class="bi bi-search me-1 text-warning"></i> ค้นหาพนักงาน</label>
+                        <select id="empSearch" placeholder="พิมพ์เพื่อค้นหาพนักงาน..." autocomplete="off"></select>
+                        <div class="form-text small mt-1">พิมพ์รหัสหรือชื่ออย่างน้อย 2 ตัวอักษร</div>
+                    </section>
+
+                    <section class="form-section">
+                        <div class="section-head">
+                            <div>
+                                <h2 class="section-title">เลือกประเภทความผิด</h2>
+                                <div class="section-kicker">ระบบจะตรวจประวัติซ้ำ 30 วันก่อนส่งรายงาน</div>
+                            </div>
+                            <span class="section-index">2</span>
+                        </div>
+                        <div class="violation-grid">
+                            <input type="radio" class="btn-check" name="violationType" id="v1" value="ไม่พก/ไม่ห้อยบัตรพนักงาน" required onchange="toggleOther(false); updateLiveSummary();">
+                            <label class="btn-violation" for="v1"><i class="bi bi-person-badge text-info"></i> ไม่พก/ไม่ห้อยบัตรพนักงาน</label>
+
+                            <input type="radio" class="btn-check" name="violationType" id="v2" value="ไม่ใส่อุปกรณ์ PPE" onchange="toggleOther(false); updateLiveSummary();">
+                            <label class="btn-violation" for="v2"><i class="bi bi-person-fill-exclamation text-warning"></i> ไม่ใส่อุปกรณ์ PPE</label>
+
+                            <input type="radio" class="btn-check" name="violationType" id="v3" value="สูบบุหรี่นอกพื้นที่จัดให้" onchange="toggleOther(false); updateLiveSummary();">
+                            <label class="btn-violation" for="v3"><i class="bi bi-fire text-danger"></i> สูบบุหรี่นอกพื้นที่จัดให้</label>
+
+                            <input type="radio" class="btn-check" name="violationType" id="v4" value="จอดรถผิดที่ / ขับรถเร็ว" onchange="toggleOther(false); updateLiveSummary();">
+                            <label class="btn-violation" for="v4"><i class="bi bi-cone-striped text-warning"></i> จอดรถผิดที่ / ขับรถเร็ว</label>
+
+                            <input type="radio" class="btn-check" name="violationType" id="v5" value="แต่งกายผิดระเบียบ / ใส่รองเท้าแตะ" onchange="toggleOther(false); updateLiveSummary();">
+                            <label class="btn-violation" for="v5"><i class="bi bi-universal-access text-info"></i> แต่งกายผิดระเบียบ</label>
+
+                            <input type="radio" class="btn-check" name="violationType" id="v6" value="ให้รถมาส่งที่หน้าบริษัท" onchange="toggleOther(false); updateLiveSummary();">
+                            <label class="btn-violation" for="v6"><i class="bi bi-car-front-fill text-primary"></i> รถมาส่งหน้าบริษัท</label>
+
+                            <input type="radio" class="btn-check" name="violationType" id="v7" value="OTHER" onchange="toggleOther(true); updateLiveSummary();">
+                            <label class="btn-violation" for="v7"><i class="bi bi-three-dots text-secondary"></i> อื่นๆ</label>
+                        </div>
+                        <div id="otherInputArea">
+                            <input type="text" id="otherViolation" class="form-control" placeholder="ระบุข้อหาความผิดที่นี่..." oninput="updateLiveSummary()">
+                        </div>
+                    </section>
+
+                    <section class="form-section">
+                        <div class="section-head">
+                            <div>
+                                <h2 class="section-title">หลักฐานและตำแหน่ง</h2>
+                                <div class="section-kicker">แนบรูปและพิกัดเพื่อช่วยให้ตรวจสอบย้อนหลังได้เร็วขึ้น</div>
+                            </div>
+                            <span class="section-index">3</span>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label"><i class="bi bi-geo-alt-fill me-1 text-info"></i> จุดเกิดเหตุ / หลักฐานอ้างอิง <span class="text-danger">*</span></label>
+                            <input type="text" id="locationData" class="form-control" placeholder="เช่น หน้าป้อม 1, กล้อง CCTV เบอร์ 4" required oninput="updateLiveSummary()">
+                        </div>
+                        <div class="enterprise-panel">
+                            <label class="form-label"><i class="bi bi-camera-fill me-1 text-info"></i> รูปหลักฐาน</label>
+                            <input type="file" id="evidencePhoto" class="form-control mb-2" accept="image/*" capture="environment">
+                            <img id="evidencePreview" class="evidence-preview" alt="Evidence preview">
+                            <button type="button" id="btnLocation" class="btn-secondary-action mt-3" onclick="captureLocation()">
+                                <i class="bi bi-crosshair me-1"></i> บันทึกพิกัด GPS
+                            </button>
+                            <input type="hidden" id="gpsLatitude">
+                            <input type="hidden" id="gpsLongitude">
+                            <input type="hidden" id="gpsAccuracy">
+                            <div id="gpsStatus" class="form-text small mt-2">ยังไม่ได้บันทึกพิกัด</div>
+                        </div>
+                    </section>
+
+                    <section class="form-section">
+                        <div class="section-head">
+                            <div>
+                                <h2 class="section-title">การดำเนินการและส่งต่อ</h2>
+                                <div class="section-kicker">ตั้งระดับความเร่งด่วนและเจ้าของรายงาน</div>
+                            </div>
+                            <span class="section-index">4</span>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label"><i class="bi bi-shield-exclamation me-1 text-warning"></i> การดำเนินการของ รปภ. <span class="text-danger">*</span></label>
+                                <select id="actionTaken" class="form-select" required onchange="updateLiveSummary()">
+                                    <option value="ตักเตือนด้วยวาจา">ตักเตือนด้วยวาจา</option>
+                                    <option value="ยึดบัตรส่งให้ จป.">ยึดบัตร / ส่งเรื่องให้ จป.</option>
+                                    <option value="ห้ามเข้าพื้นที่">ไม่อนุญาตให้เข้าพื้นที่</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label"><i class="bi bi-activity me-1 text-warning"></i> ระดับความเร่งด่วน</label>
+                                <select id="severityLevel" class="form-select" onchange="updateLiveSummary()">
+                                    <option value="Medium">ปกติ - ส่งให้ จป. ตรวจสอบ</option>
+                                    <option value="High">เร่งด่วน - ต้องติดตามภายในวันนี้</option>
+                                    <option value="Critical">วิกฤต - แจ้งหัวหน้างานทันที</option>
+                                    <option value="Low">ต่ำ - บันทึกเป็นสถิติ</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label"><i class="bi bi-person-vcard me-1 text-info"></i> ผู้รายงาน</label>
+                                <input type="text" id="reportedBy" class="form-control" placeholder="ชื่อ รปภ. หรือรหัสผู้รายงาน" value="Guard Patrol" oninput="updateLiveSummary()">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label"><i class="bi bi-clock-history me-1 text-info"></i> กะงาน</label>
+                                <select id="guardShift" class="form-select" onchange="updateLiveSummary()">
+                                    <option value="Day">กะกลางวัน</option>
+                                    <option value="Night">กะกลางคืน</option>
+                                    <option value="Other">กะอื่นๆ</option>
+                                </select>
+                            </div>
+                        </div>
+                    </section>
+
+                    <button type="submit" id="btnSubmit" class="btn-submit">
+                        ส่งรายงานเข้าระบบ <i class="bi bi-send-fill ms-2"></i>
+                    </button>
+                </form>
+            </section>
+
+            <aside>
+                <section class="quick-panel">
+                    <div class="section-head">
+                        <div>
+                            <h2 class="section-title">ทางลัดหน้างาน</h2>
+                            <div class="section-kicker">เลือกสถานการณ์ที่พบบ่อย</div>
+                        </div>
+                    </div>
+                    <div class="quick-grid">
+                        <button type="button" class="quick-action" onclick="selectViolation('v1')"><i class="bi bi-person-badge me-1 text-info"></i> ลืมบัตร</button>
+                        <button type="button" class="quick-action" onclick="selectViolation('v2')"><i class="bi bi-person-fill-exclamation me-1 text-warning"></i> PPE</button>
+                        <button type="button" class="quick-action" onclick="setSeverity('High')"><i class="bi bi-lightning-charge me-1 text-warning"></i> High</button>
+                        <button type="button" class="quick-action" onclick="setSeverity('Critical')"><i class="bi bi-exclamation-octagon me-1 text-danger"></i> Critical</button>
+                    </div>
+                </section>
+
+                <section class="side-panel mb-3">
+                    <div class="section-head">
+                        <div>
+                            <h2 class="section-title">ความพร้อมรายงาน</h2>
+                            <div class="section-kicker">เช็กก่อนส่งให้ครบในรอบเดียว</div>
+                        </div>
+                    </div>
+                    <ul class="step-list">
+                        <li class="step-item" id="stepEmp"><span class="step-dot">1</span> เลือกพนักงาน</li>
+                        <li class="step-item" id="stepViolation"><span class="step-dot">2</span> เลือกข้อหา</li>
+                        <li class="step-item" id="stepLocation"><span class="step-dot">3</span> ระบุจุดเกิดเหตุ</li>
+                        <li class="step-item" id="stepEvidence"><span class="step-dot">4</span> แนบรูปหรือพิกัด</li>
+                    </ul>
+                </section>
+
+                <section class="side-panel">
+                    <div class="section-head">
+                        <div>
+                            <h2 class="section-title">สรุปก่อนส่ง</h2>
+                            <div class="section-kicker">ข้อมูลจะถูกสร้างเป็นเคสใหม่ในระบบ</div>
+                        </div>
+                    </div>
+                    <div class="summary-line"><span class="summary-label">พนักงาน</span><span class="summary-value" id="summaryEmployee">-</span></div>
+                    <div class="summary-line"><span class="summary-label">ข้อหา</span><span class="summary-value" id="summaryViolation">-</span></div>
+                    <div class="summary-line"><span class="summary-label">จุดเกิดเหตุ</span><span class="summary-value" id="summaryLocation">-</span></div>
+                    <div class="summary-line"><span class="summary-label">ระดับ</span><span class="summary-value" id="summarySeverity">Medium</span></div>
+                    <div class="summary-line"><span class="summary-label">กะงาน</span><span class="summary-value" id="summaryShift">Day</span></div>
+                    <div id="insightPanel" class="insight-card warning mt-3">
+                        ระบบจะตรวจผู้กระทำซ้ำ 2 ครั้งใน 30 วันตอนกดส่งรายงาน
+                    </div>
+                </section>
+            </aside>
+        </div>
+    </main>
+
+    <script>
+        // ==========================================
+        // CONFIG SUPABASE
+        // ==========================================
+        const SUPABASE_URL = 'https://dqsfioiqwxuxpucwwhsv.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxc2Zpb2lxd3h1eHB1Y3d3aHN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1OTk1NjUsImV4cCI6MjA4NDE3NTU2NX0.L_u0Ff3uHofxiimEs6ySFB4TPNtOWiKeSu3KFoVcA1U';
+        const db = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+        const OFFLINE_QUEUE_KEY = 'tsh_violation_report_queue_v1';
+        const EVIDENCE_BUCKET = 'violation-evidence';
+        const WORKFLOW_PENDING = 'Pending Safety Review';
+        const WORKFLOW_REPEAT = 'Repeat Offender Review';
+        const REVIEW_SAFETY_OFFICER = 'Safety Officer';
+        const REVIEW_SAFETY_MANAGER = 'Safety Manager';
+
+        let tomSelectInstance;
+
+        const fallbackEmployeeOptions = [
+            { value: "123456 | สมชาย ใจดี | PRODUCTION 1", text: "123456 - สมชาย ใจดี (PRODUCTION 1)" },
+            { value: "987654 | สมหญิง รักงาน | ACCOUNTING", text: "987654 - สมหญิง รักงาน (ACCOUNTING)" },
+            { value: "VISITOR | บุคคลภายนอก | ไม่ระบุ", text: "VISITOR - บุคคลภายนอก / ไม่ทราบชื่อ" }
+        ];
+
+        function safeText(value, fallback = 'ไม่ระบุ') {
+            const text = String(value ?? '').trim();
+            return text || fallback;
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            }[char]));
+        }
+
+        function buildEmployeeOptions(data) {
+            if (!Array.isArray(data) || data.length === 0) return fallbackEmployeeOptions;
+
+            return data.map(emp => {
+                const empId = safeText(emp.emp_id, 'UNKNOWN');
+                const fullname = safeText(emp.fullname);
+                const section = safeText(emp.section);
+
+                return {
+                    value: `${empId} | ${fullname} | ${section}`,
+                    text: `${empId} - ${fullname} (${section})`
+                };
+            });
+        }
+
+        function parseEmployeeSelection(rawValue) {
+            const raw = safeText(rawValue, '');
+            const empParts = raw.split(' | ').map(part => part.trim());
+
+            if (empParts.length >= 3) {
+                return {
+                    emp_id: safeText(empParts[0], 'UNKNOWN'),
+                    fullname: safeText(empParts[1]),
+                    section: safeText(empParts[2])
+                };
+            }
+
+            return {
+                emp_id: 'MANUAL',
+                fullname: raw,
+                section: 'ไม่ระบุ'
+            };
+        }
+
+        function getSelectedViolationText() {
+            const selected = document.querySelector('input[name="violationType"]:checked');
+            if (!selected) return '';
+            if (selected.value === 'OTHER') return safeText(document.getElementById('otherViolation').value, '');
+            return selected.value;
+        }
+
+        function setStepDone(id, isDone) {
+            const step = document.getElementById(id);
+            if (!step) return;
+            step.classList.toggle('done', Boolean(isDone));
+        }
+
+        function updateConnectionStatus() {
+            const status = document.getElementById('connectionStatus');
+            if (!status) return;
+            const online = navigator.onLine;
+            status.classList.toggle('online', online);
+            status.classList.toggle('offline', !online);
+            status.innerHTML = online
+                ? '<i class="bi bi-wifi me-1"></i>Online'
+                : '<i class="bi bi-cloud-slash me-1"></i>Offline queue';
+        }
+
+        function updateLiveSummary() {
+            const rawEmpData = safeText(document.getElementById('empSearch')?.value, '');
+            const employee = rawEmpData ? parseEmployeeSelection(rawEmpData) : null;
+            const violation = getSelectedViolationText();
+            const location = safeText(document.getElementById('locationData')?.value, '');
+            const severity = document.getElementById('severityLevel')?.value || 'Medium';
+            const shift = document.getElementById('guardShift')?.value || 'Day';
+            const hasEvidence = Boolean(document.getElementById('evidencePhoto')?.files?.[0]);
+            const hasGps = Boolean(document.getElementById('gpsLatitude')?.value && document.getElementById('gpsLongitude')?.value);
+
+            document.getElementById('summaryEmployee').innerText = employee ? `${employee.fullname} (${employee.emp_id})` : '-';
+            document.getElementById('summaryViolation').innerText = violation || '-';
+            document.getElementById('summaryLocation').innerText = location || '-';
+            document.getElementById('summarySeverity').innerText = severity;
+            document.getElementById('summaryShift').innerText = shift;
+
+            setStepDone('stepEmp', Boolean(employee));
+            setStepDone('stepViolation', Boolean(violation));
+            setStepDone('stepLocation', Boolean(location));
+            setStepDone('stepEvidence', hasEvidence || hasGps);
+        }
+
+        function selectViolation(id) {
+            const input = document.getElementById(id);
+            if (!input) return;
+            input.checked = true;
+            toggleOther(input.value === 'OTHER');
+            updateLiveSummary();
+            document.getElementById('locationData')?.focus();
+        }
+
+        function setSeverity(value) {
+            const select = document.getElementById('severityLevel');
+            if (!select) return;
+            select.value = value;
+            updateLiveSummary();
+        }
+
+        function buildCaseId() {
+            const date = new Date();
+            const stamp = date.toISOString().replace(/[-:.TZ]/g, '').slice(0, 14);
+            return `VR-${stamp}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
+        }
+
+        function getBasePayload(payload) {
+            return {
+                emp_id: payload.emp_id,
+                fullname: payload.fullname,
+                section: payload.section,
+                violation_type: payload.violation_type,
+                location_ref: payload.location_ref,
+                action_taken: payload.action_taken,
+                reported_by: payload.reported_by
+            };
+        }
+
+        async function insertViolationReport(payload) {
+            if (!db) throw new Error('ไม่สามารถเชื่อมต่อฐานข้อมูลได้');
+
+            const { error } = await db.from('violation_reports').insert([payload]);
+            if (!error) return { usedFallback: false };
+
+            const { error: fallbackError } = await db.from('violation_reports').insert([getBasePayload(payload)]);
+            if (fallbackError) throw error;
+            return { usedFallback: true, originalError: error };
+        }
+
+        async function getRecentViolationCount(empId) {
+            if (!db || !empId || empId === 'MANUAL' || empId === 'VISITOR') return 0;
+
+            const sinceDate = new Date(Date.now() - (30 * 24 * 60 * 60 * 1000)).toISOString();
+            const { count, error } = await db
+                .from('violation_reports')
+                .select('id', { count: 'exact', head: true })
+                .eq('emp_id', empId)
+                .gte('created_at', sinceDate);
+
+            if (error) {
+                console.warn('Repeat offender check error:', error);
+                return 0;
+            }
+
+            return count || 0;
+        }
+
+        function getOfflineQueue() {
+            try {
+                return JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]');
+            } catch (err) {
+                console.error('Queue parse error:', err);
+                return [];
+            }
+        }
+
+        function saveOfflineQueue(queue) {
+            localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue));
+            updateQueueStatus();
+        }
+
+        function enqueueOfflineReport(payload) {
+            const queue = getOfflineQueue();
+            queue.push({
+                id: payload.case_id,
+                payload: {
+                    ...payload,
+                    evidence_file_name: null,
+                    evidence_file_size: null,
+                    evidence_file_type: null,
+                    evidence_url: null,
+                    sync_status: 'Queued'
+                },
+                queued_at: new Date().toISOString()
+            });
+            saveOfflineQueue(queue);
+        }
+
+        function updateQueueStatus() {
+            const queueStatus = document.getElementById('queueStatus');
+            const queueCount = getOfflineQueue().length;
+            if (!queueStatus) return;
+
+            if (queueCount === 0) {
+                queueStatus.classList.remove('show');
+                queueStatus.innerHTML = '';
+                return;
+            }
+
+            queueStatus.classList.add('show');
+            queueStatus.innerHTML = `<i class="bi bi-cloud-arrow-up-fill me-1"></i> มีรายงานรอ Sync ${queueCount} รายการ <button type="button" class="btn btn-sm btn-outline-dark ms-2 py-0" onclick="syncOfflineQueue()">Sync ตอนนี้</button>`;
+        }
+
+        async function syncOfflineQueue() {
+            const queue = getOfflineQueue();
+            if (!db || queue.length === 0) {
+                updateQueueStatus();
+                return;
+            }
+
+            const remaining = [];
+            let syncedCount = 0;
+
+            for (const item of queue) {
+                try {
+                    await insertViolationReport({
+                        ...item.payload,
+                        sync_status: 'Synced',
+                        synced_at: new Date().toISOString()
+                    });
+                    syncedCount++;
+                } catch (err) {
+                    console.error('Queue sync error:', err);
+                    remaining.push(item);
+                }
+            }
+
+            saveOfflineQueue(remaining);
+
+            if (syncedCount > 0) {
+                Swal.fire({
+                    icon: remaining.length === 0 ? 'success' : 'warning',
+                    title: remaining.length === 0 ? 'Sync สำเร็จ' : 'Sync ได้บางส่วน',
+                    text: `ส่งรายงานค้างระบบแล้ว ${syncedCount} รายการ${remaining.length ? `, เหลือ ${remaining.length} รายการ` : ''}`,
+                    timer: 2200,
+                    showConfirmButton: false
+                });
+            }
+        }
+
+        async function uploadEvidenceFile(caseId) {
+            const evidenceInput = document.getElementById('evidencePhoto');
+            const file = evidenceInput?.files?.[0];
+            if (!file) return { evidence_url: null, evidence_file_name: null, evidence_file_size: null, evidence_file_type: null };
+            if (!db) throw new Error('ไม่สามารถอัปโหลดรูปหลักฐานได้ เพราะยังไม่เชื่อมต่อฐานข้อมูล');
+
+            const safeFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+            const filePath = `${caseId}/${Date.now()}-${safeFileName}`;
+            const { error } = await db.storage.from(EVIDENCE_BUCKET).upload(filePath, file, { upsert: false });
+            if (error) throw error;
+
+            const { data } = db.storage.from(EVIDENCE_BUCKET).getPublicUrl(filePath);
+            return {
+                evidence_url: data?.publicUrl || filePath,
+                evidence_file_name: file.name,
+                evidence_file_size: file.size,
+                evidence_file_type: file.type
+            };
+        }
+
+        function captureLocation() {
+            const btn = document.getElementById('btnLocation');
+            const status = document.getElementById('gpsStatus');
+
+            if (!navigator.geolocation) {
+                status.innerText = 'อุปกรณ์นี้ไม่รองรับ GPS';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> กำลังอ่านพิกัด...';
+            status.innerText = 'กำลังขอพิกัดจากอุปกรณ์';
+
+            navigator.geolocation.getCurrentPosition((position) => {
+                const { latitude, longitude, accuracy } = position.coords;
+                document.getElementById('gpsLatitude').value = latitude.toFixed(7);
+                document.getElementById('gpsLongitude').value = longitude.toFixed(7);
+                document.getElementById('gpsAccuracy').value = Math.round(accuracy);
+                status.innerText = `บันทึกพิกัดแล้ว: ${latitude.toFixed(5)}, ${longitude.toFixed(5)} (±${Math.round(accuracy)} ม.)`;
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> อัปเดตพิกัด GPS';
+                updateLiveSummary();
+            }, (err) => {
+                status.innerText = `อ่านพิกัดไม่สำเร็จ: ${err.message}`;
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-crosshair me-1"></i> บันทึกพิกัด GPS';
+                updateLiveSummary();
+            }, {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 30000
+            });
+        }
+
+        function initEvidencePreview() {
+            const input = document.getElementById('evidencePhoto');
+            const preview = document.getElementById('evidencePreview');
+            if (!input || !preview) return;
+
+            input.addEventListener('change', () => {
+                const file = input.files?.[0];
+                if (!file) {
+                    preview.style.display = 'none';
+                    preview.removeAttribute('src');
+                    return;
+                }
+
+                preview.src = URL.createObjectURL(file);
+                preview.style.display = 'block';
+                updateLiveSummary();
+            });
+        }
+
+        // เปิด/ปิด ช่องพิมพ์ข้อหาอื่นๆ
+        function toggleOther(show) {
+            const area = document.getElementById('otherInputArea');
+            const input = document.getElementById('otherViolation');
+            if (show) {
+                area.style.display = 'block';
+                input.required = true;
+                setTimeout(() => input.focus(), 100);
+            } else {
+                area.style.display = 'none';
+                input.required = false;
+                input.value = '';
+            }
+        }
+
+        // โหลดรายชื่อพนักงานจาก Supabase
+        async function loadEmployees() {
+            let options = fallbackEmployeeOptions;
+
+            try {
+                // ดึงข้อมูลพนักงานจากตาราง employees_list (ถ้าคุณพี่ยังไม่สร้าง ระบบจะใช้ Mock Data ด้านล่างแทนก่อน)
+                if (!db) throw new Error('Supabase client is not available');
+
+                const { data, error } = await db.from('employees_list').select('emp_id, fullname, section').limit(2000);
+
+                if (!error && data && data.length > 0) {
+                    options = buildEmployeeOptions(data);
+                }
+            } catch (err) {
+                console.error("Load EMP error:", err);
+            }
+
+            try {
+                if (!window.TomSelect) throw new Error('Tom Select is not available');
+
+                if (tomSelectInstance) tomSelectInstance.destroy();
+                tomSelectInstance = new TomSelect("#empSearch", {
+                    options: options,
+                    create: function(input) {
+                        const fullname = safeText(input, '');
+                        return {
+                            value: `MANUAL | ${fullname} | ไม่ระบุ`,
+                            text: `${fullname} (กรอกเอง)`
+                        };
+                    },
+                    createFilter: function(input) { return safeText(input, '').length >= 2; },
+                    persist: false,
+                    onChange: updateLiveSummary,
+                    sortField: { field: "text", direction: "asc" },
+                    placeholder: "พิมพ์ รหัส หรือ ชื่อพนักงาน..."
+                });
+            } catch (err) {
+                console.error("Tom Select init error:", err);
+                Swal.fire('แจ้งเตือน', 'โหลดช่องค้นหาพนักงานไม่สำเร็จ กรุณารีเฟรชหน้าอีกครั้ง', 'warning');
+            }
+        }
+
+        window.onload = () => {
+            updateConnectionStatus();
+            initEvidencePreview();
+            updateQueueStatus();
+            updateLiveSummary();
+            loadEmployees();
+            if (navigator.onLine) syncOfflineQueue();
+        };
+
+        window.addEventListener('online', () => {
+            updateConnectionStatus();
+            syncOfflineQueue();
+        });
+        window.addEventListener('offline', updateConnectionStatus);
+
+        // จัดการตอนกดปุ่ม Submit
+        document.getElementById('violationForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const btn = document.getElementById('btnSubmit');
+            const originalText = btn.innerHTML;
+
+            const rawEmpData = safeText(document.getElementById('empSearch').value, '');
+            if(!rawEmpData) {
+                Swal.fire('แจ้งเตือน', 'กรุณาค้นหาและเลือกพนักงานก่อนครับ', 'warning');
+                return;
+            }
+
+            // แยกข้อมูล (รหัส | ชื่อ | แผนก)
+            const { emp_id, fullname, section } = parseEmployeeSelection(rawEmpData);
+
+            // ดึงข้อหา
+            const selectedViolation = document.querySelector('input[name="violationType"]:checked');
+            if (!selectedViolation) {
+                Swal.fire('แจ้งเตือน', 'กรุณาเลือกข้อหา / ความผิดก่อนครับ', 'warning');
+                return;
+            }
+
+            let violation = selectedViolation.value;
+            if (violation === 'OTHER') {
+                violation = safeText(document.getElementById('otherViolation').value, '');
+                if (!violation) {
+                    Swal.fire('แจ้งเตือน', 'กรุณาระบุข้อหาอื่นๆ ก่อนครับ', 'warning');
+                    return;
+                }
+            }
+
+            const locationCctv = safeText(document.getElementById('locationData').value, '');
+            if (!locationCctv) {
+                Swal.fire('แจ้งเตือน', 'กรุณาระบุจุดเกิดเหตุ / หลักฐานอ้างอิงก่อนครับ', 'warning');
+                return;
+            }
+
+            const actionTaken = document.getElementById('actionTaken').value;
+            const severityLevel = document.getElementById('severityLevel').value;
+            const reportedBy = safeText(document.getElementById('reportedBy').value, 'Guard Patrol');
+            const guardShift = document.getElementById('guardShift').value;
+            const gpsLatitude = safeText(document.getElementById('gpsLatitude').value, '');
+            const gpsLongitude = safeText(document.getElementById('gpsLongitude').value, '');
+            const gpsAccuracy = safeText(document.getElementById('gpsAccuracy').value, '');
+            const caseId = buildCaseId();
+            const recentViolationCount = await getRecentViolationCount(emp_id);
+            const projectedViolationCount = recentViolationCount + 1;
+            const isRepeatOffender = projectedViolationCount >= 2;
+            const finalSeverityLevel = isRepeatOffender && severityLevel === 'Medium' ? 'High' : severityLevel;
+
+            if (isRepeatOffender && severityLevel === 'Medium') {
+                document.getElementById('severityLevel').value = 'High';
+                updateLiveSummary();
+            }
+
+            const insightPanel = document.getElementById('insightPanel');
+            if (insightPanel && isRepeatOffender) {
+                insightPanel.className = 'insight-card danger mt-3';
+                insightPanel.innerHTML = `<b>Repeat Offender</b><br>${escapeHtml(fullname)} มีประวัติรวม ${projectedViolationCount} ครั้งใน 30 วัน`;
+            }
+
+            // เด้ง Popup ยืนยันข้อมูลก่อนส่ง
+            Swal.fire({
+                title: 'ยืนยันการบันทึก?',
+                html: `<div class="text-start p-3 bg-dark bg-opacity-10 rounded border border-secondary mt-2" style="color: #334155;">
+                    <div class="mb-1"><b>Case:</b> ${escapeHtml(caseId)}</div>
+                    <div class="mb-1"><b>ชื่อ:</b> ${escapeHtml(fullname)} (${escapeHtml(emp_id)})</div>
+                    <div class="mb-1"><b>ข้อหา:</b> <span class="text-danger fw-bold">${escapeHtml(violation)}</span></div>
+                    <div class="mb-1"><b>หลักฐาน:</b> ${escapeHtml(locationCctv)}</div>
+                    <div class="mb-0"><b>การดำเนินการ:</b> ${escapeHtml(actionTaken)}</div>
+                    <div class="mb-0"><b>ความเร่งด่วน:</b> ${escapeHtml(finalSeverityLevel)}</div>
+                    <div class="mb-0"><b>ทำซ้ำ 30 วัน:</b> ${isRepeatOffender ? `<span class="text-danger fw-bold">Repeat Offender (${projectedViolationCount} ครั้ง)</span>` : `${projectedViolationCount} ครั้ง`}</div>
+                    <div class="mb-0"><b>พิกัด:</b> ${gpsLatitude && gpsLongitude ? `${escapeHtml(gpsLatitude)}, ${escapeHtml(gpsLongitude)}` : 'ยังไม่ได้บันทึก'}</div>
+                </div>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'ใช่, บันทึกเลย',
+                cancelButtonText: 'แก้ไข',
+                reverseButtons: true
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> กำลังเตรียมรายงาน...';
+
+                    // 🛑 ข้อมูลสำหรับส่งขึ้น Supabase (ตาราง violation_reports)
+                    const payload = {
+                        case_id: caseId,
+                        emp_id: emp_id,
+                        fullname: fullname,
+                        section: section,
+                        violation_type: violation,
+                        location_ref: locationCctv,
+                        action_taken: actionTaken,
+                        reported_by: reportedBy,
+                        guard_shift: guardShift,
+                        severity_level: finalSeverityLevel,
+                        workflow_status: isRepeatOffender ? WORKFLOW_REPEAT : WORKFLOW_PENDING,
+                        review_owner: isRepeatOffender ? REVIEW_SAFETY_MANAGER : REVIEW_SAFETY_OFFICER,
+                        repeat_offender: isRepeatOffender,
+                        recent_violation_count_30d: projectedViolationCount,
+                        repeat_window_days: 30,
+                        client_reported_at: new Date().toISOString(),
+                        source_page: 'guard_violation.html',
+                        device_user_agent: navigator.userAgent,
+                        gps_latitude: gpsLatitude || null,
+                        gps_longitude: gpsLongitude || null,
+                        gps_accuracy_meter: gpsAccuracy || null,
+                        sync_status: 'Online',
+                        offline_created: !navigator.onLine
+                    };
+
+                    try {
+                        if (!db || !navigator.onLine) {
+                            enqueueOfflineReport(payload);
+                            Swal.fire({
+                                icon: 'info',
+                                title: 'บันทึกไว้รอ Sync',
+                                text: 'ระบบเก็บรายงานไว้ในเครื่องแล้ว เมื่อออนไลน์จะส่งเข้าฐานข้อมูลให้อัตโนมัติ',
+                                timer: 2500,
+                                showConfirmButton: false
+                            }).then(() => {
+                                window.location.reload();
+                            });
+                            return;
+                        }
+
+                        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> กำลังอัปโหลดหลักฐาน...';
+                        try {
+                            Object.assign(payload, await uploadEvidenceFile(caseId));
+                        } catch (uploadErr) {
+                            console.warn('Evidence upload error:', uploadErr);
+                            payload.evidence_upload_error = uploadErr.message;
+                            payload.evidence_url = null;
+                        }
+
+                        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> กำลังบันทึก...';
+                        const insertResult = await insertViolationReport(payload);
+
+                        Swal.fire({
+                            icon: insertResult.usedFallback ? 'warning' : 'success',
+                            title: insertResult.usedFallback ? 'บันทึกสำเร็จด้วยโหมดพื้นฐาน' : 'บันทึกสำเร็จ!',
+                            text: insertResult.usedFallback ? 'ข้อมูลหลักถูกบันทึกแล้ว แต่ฐานข้อมูลยังไม่รองรับคอลัมน์ Enterprise ทั้งหมด' : 'ส่งรายงานใบสั่งความปลอดภัยเข้าระบบเรียบร้อยแล้ว',
+                            timer: 2600,
+                            showConfirmButton: false
+                        }).then(() => {
+                            window.location.reload(); // รีเฟรชหน้าเตรียมรับเคสต่อไป
+                        });
+
+                    } catch (err) {
+                        console.error('Submit error:', err);
+                        enqueueOfflineReport(payload);
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'ส่งไม่สำเร็จ แต่เก็บไว้รอ Sync แล้ว',
+                            text: `ระบบจะลองส่งใหม่เมื่อออนไลน์: ${err.message}`,
+                            confirmButtonText: 'รับทราบ'
+                        }).then(() => {
+                            btn.disabled = false;
+                            btn.innerHTML = originalText;
+                        });
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
