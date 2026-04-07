@@ -216,6 +216,49 @@
         }
         .btn-submit:active { transform: scale(0.99); }
 
+        .mobile-progress-card, .mobile-action-bar { display: none; }
+
+        .mobile-progress-card {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 10px;
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+        }
+
+        .progress-track {
+            height: 8px;
+            background: var(--surface-2);
+            border-radius: 999px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-fill {
+            width: 25%;
+            height: 100%;
+            background: var(--danger);
+            border-radius: 999px;
+            transition: width 0.2s ease;
+        }
+
+        .mobile-action-bar {
+            position: fixed;
+            left: max(10px, env(safe-area-inset-left));
+            right: max(10px, env(safe-area-inset-right));
+            bottom: max(10px, env(safe-area-inset-bottom));
+            z-index: 40;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.96);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 8px;
+            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.18);
+        }
+
+        .mobile-action-bar .btn { flex: 1; font-weight: 800; }
+
         #otherInputArea { display: none; margin-top: 10px; animation: fadeIn 0.2s; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -236,14 +279,26 @@
             .topbar-title { font-size: 1rem; }
             .topbar-subtitle, .section-kicker { font-size: 0.78rem; }
             .summary-value { max-width: 60%; overflow-wrap: anywhere; }
-            .btn-submit {
+            .mobile-progress-card, .mobile-action-bar { display: flex; }
+            .mobile-progress-card { display: block; }
+            body.mobile-step-mode .form-section { display: none; }
+            body.mobile-step-mode .form-section.active-step { display: block; }
+            body.mobile-step-mode .quick-panel,
+            body.mobile-step-mode .side-panel { display: none; }
+            body.mobile-step-mode .workspace { padding: 0; background: transparent; border: 0; box-shadow: none; }
+            body.mobile-step-mode .btn-submit { display: none; }
+            body.mobile-step-mode[data-current-step="4"] .btn-submit {
+                display: block;
                 position: fixed;
                 left: max(10px, env(safe-area-inset-left));
                 right: max(10px, env(safe-area-inset-right));
                 bottom: max(10px, env(safe-area-inset-bottom));
                 width: auto;
-                z-index: 30;
+                z-index: 41;
                 margin: 0;
+            }
+            body.mobile-step-mode[data-current-step="4"] .mobile-action-bar {
+                bottom: calc(78px + env(safe-area-inset-bottom));
             }
         }
     </style>
@@ -265,12 +320,23 @@
             </div>
         </header>
 
+        <section class="mobile-progress-card" aria-live="polite">
+            <div class="d-flex justify-content-between align-items-center gap-2">
+                <div>
+                    <div class="section-title" id="mobileStepTitle">ระบุตัวตน</div>
+                    <div class="section-kicker" id="mobileStepHint">ค้นหาพนักงานหรือกรอกเอง</div>
+                </div>
+                <span class="live-pill" id="mobileStepCounter">1/4</span>
+            </div>
+            <div class="progress-track"><div class="progress-fill" id="mobileProgressFill"></div></div>
+        </section>
+
         <div class="app-grid">
             <section class="workspace">
                 <div id="queueStatus" class="status-strip"></div>
 
                 <form id="violationForm">
-                    <section class="form-section">
+                    <section class="form-section active-step" data-step="1">
                         <div class="section-head">
                             <div>
                                 <h2 class="section-title">ระบุตัวตนผู้เกี่ยวข้อง</h2>
@@ -283,7 +349,7 @@
                         <div class="form-text small mt-1">พิมพ์รหัสหรือชื่ออย่างน้อย 2 ตัวอักษร</div>
                     </section>
 
-                    <section class="form-section">
+                    <section class="form-section" data-step="2">
                         <div class="section-head">
                             <div>
                                 <h2 class="section-title">เลือกประเภทความผิด</h2>
@@ -318,7 +384,7 @@
                         </div>
                     </section>
 
-                    <section class="form-section">
+                    <section class="form-section" data-step="3">
                         <div class="section-head">
                             <div>
                                 <h2 class="section-title">หลักฐานและตำแหน่ง</h2>
@@ -344,7 +410,7 @@
                         </div>
                     </section>
 
-                    <section class="form-section">
+                    <section class="form-section" data-step="4">
                         <div class="section-head">
                             <div>
                                 <h2 class="section-title">การดำเนินการและส่งต่อ</h2>
@@ -440,6 +506,15 @@
                 </section>
             </aside>
         </div>
+
+        <nav class="mobile-action-bar" aria-label="Mobile step navigation">
+            <button type="button" class="btn btn-outline-dark" id="btnPrevStep" onclick="prevMobileStep()">
+                <i class="bi bi-chevron-left me-1"></i>ย้อนกลับ
+            </button>
+            <button type="button" class="btn btn-danger" id="btnNextStep" onclick="nextMobileStep()">
+                ถัดไป<i class="bi bi-chevron-right ms-1"></i>
+            </button>
+        </nav>
     </main>
 
     <script>
@@ -457,6 +532,14 @@
         const REVIEW_SAFETY_MANAGER = 'Safety Manager';
 
         let tomSelectInstance;
+        let currentMobileStep = 1;
+        const MOBILE_STEP_COUNT = 4;
+        const mobileStepMeta = {
+            1: { title: 'ระบุตัวตน', hint: 'ค้นหาพนักงานหรือกรอกเอง' },
+            2: { title: 'เลือกข้อหา', hint: 'แตะเลือกประเภทความผิด' },
+            3: { title: 'หลักฐาน', hint: 'ระบุจุดเกิดเหตุ แนบรูปหรือ GPS' },
+            4: { title: 'ส่งต่อ', hint: 'ตั้งระดับและกดส่งรายงาน' }
+        };
 
         const fallbackEmployeeOptions = [
             { value: "123456 | สมชาย ใจดี | PRODUCTION 1", text: "123456 - สมชาย ใจดี (PRODUCTION 1)" },
@@ -565,7 +648,12 @@
             input.checked = true;
             toggleOther(input.value === 'OTHER');
             updateLiveSummary();
-            document.getElementById('locationData')?.focus();
+            if (isMobileStepperEnabled()) {
+                goToMobileStep(3);
+                setTimeout(() => document.getElementById('locationData')?.focus(), 250);
+            } else {
+                document.getElementById('locationData')?.focus();
+            }
         }
 
         function setSeverity(value) {
@@ -573,6 +661,74 @@
             if (!select) return;
             select.value = value;
             updateLiveSummary();
+        }
+
+        function isMobileStepperEnabled() {
+            return window.matchMedia('(max-width: 620px)').matches;
+        }
+
+        function updateMobileStepper() {
+            const enabled = isMobileStepperEnabled();
+            document.body.classList.toggle('mobile-step-mode', enabled);
+            if (!enabled) return;
+
+            currentMobileStep = Math.min(Math.max(currentMobileStep, 1), MOBILE_STEP_COUNT);
+            document.body.dataset.currentStep = String(currentMobileStep);
+
+            document.querySelectorAll('.form-section[data-step]').forEach(section => {
+                section.classList.toggle('active-step', Number(section.dataset.step) === currentMobileStep);
+            });
+
+            const meta = mobileStepMeta[currentMobileStep];
+            document.getElementById('mobileStepTitle').innerText = meta.title;
+            document.getElementById('mobileStepHint').innerText = meta.hint;
+            document.getElementById('mobileStepCounter').innerText = `${currentMobileStep}/${MOBILE_STEP_COUNT}`;
+            document.getElementById('mobileProgressFill').style.width = `${(currentMobileStep / MOBILE_STEP_COUNT) * 100}%`;
+            document.getElementById('btnPrevStep').disabled = currentMobileStep === 1;
+            document.getElementById('btnNextStep').innerHTML = currentMobileStep === MOBILE_STEP_COUNT
+                ? 'ตรวจสรุป<i class="bi bi-check2-circle ms-1"></i>'
+                : 'ถัดไป<i class="bi bi-chevron-right ms-1"></i>';
+        }
+
+        function goToMobileStep(step) {
+            currentMobileStep = Math.min(Math.max(step, 1), MOBILE_STEP_COUNT);
+            updateMobileStepper();
+            if (isMobileStepperEnabled()) {
+                document.querySelector('.mobile-progress-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+
+        function validateMobileStep(step) {
+            if (step === 1 && !safeText(document.getElementById('empSearch')?.value, '')) {
+                Swal.fire('เลือกพนักงานก่อน', 'ค้นหาพนักงาน หรือพิมพ์ชื่อผู้รับเหมา/Visitor ก่อนครับ', 'warning');
+                return false;
+            }
+
+            if (step === 2 && !getSelectedViolationText()) {
+                Swal.fire('เลือกข้อหาก่อน', 'แตะเลือกประเภทความผิด หรือเลือกอื่นๆ แล้วระบุรายละเอียดครับ', 'warning');
+                return false;
+            }
+
+            if (step === 3 && !safeText(document.getElementById('locationData')?.value, '')) {
+                Swal.fire('ระบุจุดเกิดเหตุก่อน', 'เช่น หน้าป้อม 1, ลานจอดรถ, หรือเลขกล้อง CCTV', 'warning');
+                return false;
+            }
+
+            return true;
+        }
+
+        function nextMobileStep() {
+            if (currentMobileStep >= MOBILE_STEP_COUNT) {
+                document.getElementById('btnSubmit')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+            }
+
+            if (!validateMobileStep(currentMobileStep)) return;
+            goToMobileStep(currentMobileStep + 1);
+        }
+
+        function prevMobileStep() {
+            goToMobileStep(currentMobileStep - 1);
         }
 
         function buildCaseId() {
@@ -837,6 +993,7 @@
 
         window.onload = () => {
             updateConnectionStatus();
+            updateMobileStepper();
             initEvidencePreview();
             updateQueueStatus();
             updateLiveSummary();
@@ -849,6 +1006,7 @@
             syncOfflineQueue();
         });
         window.addEventListener('offline', updateConnectionStatus);
+        window.addEventListener('resize', updateMobileStepper);
 
         // จัดการตอนกดปุ่ม Submit
         document.getElementById('violationForm').addEventListener('submit', async (e) => {
