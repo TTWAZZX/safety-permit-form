@@ -1357,30 +1357,6 @@
             });
         }
 
-        async function queueCriticalNotification(payload, report) {
-            if (!db || !payload || !report?.id) return;
-            if (payload.workflow_status !== WORKFLOW_REPEAT && payload.severity_level !== 'Critical') return;
-
-            const { error } = await db.from('violation_notification_queue').insert([{
-                case_id: payload.case_id,
-                report_id: report.id,
-                channel: 'LINE',
-                notification_type: payload.workflow_status === WORKFLOW_REPEAT ? 'Repeat Offender Review' : 'Critical',
-                title: `${payload.workflow_status === WORKFLOW_REPEAT ? 'Repeat Offender' : 'Critical'}: ${payload.fullname}`,
-                message: `${payload.emp_id} | ${payload.violation_type} | ${payload.location_ref}`,
-                status: 'pending',
-                event_payload: {
-                    emp_id: payload.emp_id,
-                    fullname: payload.fullname,
-                    severity_level: payload.severity_level,
-                    workflow_status: payload.workflow_status,
-                    device_id: payload.device_id
-                }
-            }]);
-
-            if (error) console.warn('Notification queue skipped:', error.message);
-        }
-
         async function checkDuplicateReport(empId, violation, locationRef) {
             if (!db || !empId || !violation || !locationRef) return false;
 
@@ -1533,7 +1509,6 @@
                     const insertResult = await insertViolationReport(syncedPayload);
                     if (!insertResult.usedFallback) {
                         await recordCaseCreatedTimeline(syncedPayload, insertResult.report);
-                        await queueCriticalNotification(syncedPayload, insertResult.report);
                     }
                     addSyncHistory({
                         case_id: syncedPayload.case_id,
@@ -1940,7 +1915,6 @@
                         const insertResult = await insertViolationReport(payload);
                         if (!insertResult.usedFallback) {
                             await recordCaseCreatedTimeline(payload, insertResult.report);
-                            await queueCriticalNotification(payload, insertResult.report);
                         }
                         addSyncHistory({
                             case_id: payload.case_id,

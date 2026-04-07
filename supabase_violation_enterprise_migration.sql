@@ -35,21 +35,6 @@ create table if not exists public.violation_case_timeline (
     event_payload jsonb not null default '{}'::jsonb
 );
 
-create table if not exists public.violation_notification_queue (
-    id bigint generated always as identity primary key,
-    created_at timestamptz not null default now(),
-    processed_at timestamptz,
-    case_id text not null,
-    report_id bigint references public.violation_reports(id) on delete cascade,
-    channel text not null default 'LINE',
-    notification_type text not null,
-    title text not null,
-    message text not null,
-    status text not null default 'pending',
-    error_message text,
-    event_payload jsonb not null default '{}'::jsonb
-);
-
 alter table public.violation_reports
     add column if not exists case_id text,
     add column if not exists guard_shift text,
@@ -134,12 +119,6 @@ create index if not exists violation_reports_evidence_retention_until_idx
     on public.violation_reports(evidence_retention_until)
     where evidence_url is not null;
 
-create index if not exists violation_notification_queue_status_idx
-    on public.violation_notification_queue(status, created_at);
-
-create index if not exists violation_notification_queue_case_id_idx
-    on public.violation_notification_queue(case_id);
-
 create or replace function public.apply_violation_repeat_offender()
 returns trigger
 language plpgsql
@@ -186,10 +165,16 @@ before insert on public.violation_reports
 for each row
 execute function public.apply_violation_repeat_offender();
 
+drop trigger if exists violation_line_notification_after_insert
+    on public.violation_reports;
+
+drop function if exists public.enqueue_violation_line_notification();
+
+drop table if exists public.violation_notification_queue;
+
 alter table public.violation_reports enable row level security;
 alter table public.employees_list enable row level security;
 alter table public.violation_case_timeline enable row level security;
-alter table public.violation_notification_queue enable row level security;
 
 do $$
 begin
@@ -239,6 +224,19 @@ begin
         to anon, authenticated
         using (true)
         with check (true);
+    end if;
+
+    if not exists (
+        select 1 from pg_policies
+        where schemaname = 'public'
+          and tablename = 'violation_reports'
+          and policyname = 'guard violation admin delete'
+    ) then
+        create policy "guard violation admin delete"
+        on public.violation_reports
+        for delete
+        to anon, authenticated
+        using (true);
     end if;
 
     if not exists (
@@ -307,37 +305,11 @@ begin
         with check (true);
     end if;
 
-    if not exists (
-        select 1 from pg_policies
-        where schemaname = 'public'
-          and tablename = 'violation_notification_queue'
-          and policyname = 'violation notification public insert'
-    ) then
-        create policy "violation notification public insert"
-        on public.violation_notification_queue
-        for insert
-        to anon, authenticated
-        with check (true);
-    end if;
-
-    if not exists (
-        select 1 from pg_policies
-        where schemaname = 'public'
-          and tablename = 'violation_notification_queue'
-          and policyname = 'violation notification admin read'
-    ) then
-        create policy "violation notification admin read"
-        on public.violation_notification_queue
-        for select
-        to anon, authenticated
-        using (true);
-    end if;
 end $$;
 
 -- Enterprise hardening notes:
 -- 1) Supabase Auth/LINE LIFF: Replace broad anon policies with role-based policies for Guard/Admin/HR before public rollout.
--- 2) LINE/Push: Process public.violation_notification_queue from an Edge Function or backend only. Do not put LINE tokens in frontend HTML.
--- 3) Retention: evidence_retention_until defaults to 365 days. Use a scheduled backend job to delete expired storage objects and mask old rows if required by company policy.
+-- 2) Retention: evidence_retention_until defaults to 365 days. Use a scheduled backend job to delete expired storage objects and mask old rows if required by company policy.
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values (

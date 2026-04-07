@@ -108,6 +108,28 @@
             border-color: var(--text);
             color: #fff;
         }
+        .lang-toggle {
+            display: inline-flex;
+            gap: 4px;
+            padding: 4px;
+            background: #e2e8f0;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        .lang-btn {
+            min-height: 36px;
+            border: 0;
+            border-radius: 8px;
+            background: transparent;
+            color: var(--muted);
+            font-weight: 800;
+            padding: 6px 12px;
+        }
+        .lang-btn.active {
+            background: #fff;
+            color: var(--text);
+            box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
+        }
         .employee-card {
             border: 1px solid var(--border);
             border-radius: 8px;
@@ -179,11 +201,21 @@
                 <div class="d-inline-flex align-items-center justify-content-center bg-danger bg-opacity-10 text-danger rounded-circle mb-3" style="width:64px;height:64px;">
                     <i class="bi bi-shield-exclamation fs-2"></i>
                 </div>
-                <h4 class="fw-bold mb-1">Guard Violation Admin</h4>
+                <h4 class="fw-bold mb-1" data-i18n="appTitle">Guard Violation Admin</h4>
                 <div class="small-muted">TSH Safety Management</div>
             </div>
-            <input type="password" id="adminPassword" class="form-control form-control-lg text-center mb-3" placeholder="Admin Password" onkeypress="if(event.key === 'Enter') checkLogin()">
-            <button class="btn btn-dark w-100 fw-bold py-3" onclick="checkLogin()">เข้าสู่ระบบ</button>
+            <div class="d-flex justify-content-center mb-3">
+                <div class="lang-toggle" aria-label="Language">
+                    <button type="button" class="lang-btn" data-lang-btn="th" onclick="setLanguage('th')">TH</button>
+                    <button type="button" class="lang-btn" data-lang-btn="en" onclick="setLanguage('en')">EN</button>
+                </div>
+            </div>
+            <input type="password" id="adminPassword" class="form-control form-control-lg text-center mb-3" placeholder="Admin Password" data-i18n-placeholder="adminPasswordPlaceholder" onkeypress="if(event.key === 'Enter') checkLogin()">
+            <label class="d-flex align-items-center gap-2 small-muted mb-3">
+                <input type="checkbox" id="rememberAdminLogin" class="form-check-input m-0">
+                <span data-i18n="rememberAdmin">จดจำการเข้าสู่ระบบ 8 ชั่วโมง</span>
+            </label>
+            <button class="btn btn-dark w-100 fw-bold py-3" onclick="checkLogin()" data-i18n="loginButton">เข้าสู่ระบบ</button>
         </div>
     </div>
 
@@ -191,12 +223,16 @@
         <div class="topbar">
             <div class="container-fluid px-4 py-3 d-flex flex-wrap gap-3 align-items-center justify-content-between">
                 <div>
-                    <h4 class="fw-bold mb-0"><i class="bi bi-clipboard-pulse text-danger me-2"></i>Guard Violation Admin</h4>
-                    <div class="small-muted" id="lastUpdated">กำลังโหลดข้อมูล...</div>
+                    <h4 class="fw-bold mb-0"><i class="bi bi-clipboard-pulse text-danger me-2"></i><span data-i18n="appTitle">Guard Violation Admin</span></h4>
+                    <div class="small-muted" id="lastUpdated" data-i18n="loadingData">กำลังโหลดข้อมูล...</div>
                 </div>
-                <div class="d-flex gap-2">
-                    <button class="btn btn-outline-secondary fw-bold" id="btnRefresh" onclick="fetchReports()"><i class="bi bi-arrow-clockwise me-1"></i>Refresh</button>
-                    <button class="btn btn-success fw-bold" onclick="exportToExcel()"><i class="bi bi-file-earmark-excel-fill me-1"></i>Excel</button>
+                <div class="d-flex flex-wrap gap-2 align-items-center">
+                    <div class="lang-toggle" aria-label="Language">
+                        <button type="button" class="lang-btn" data-lang-btn="th" onclick="setLanguage('th')">TH</button>
+                        <button type="button" class="lang-btn" data-lang-btn="en" onclick="setLanguage('en')">EN</button>
+                    </div>
+                    <button class="btn btn-outline-secondary fw-bold" id="btnRefresh" onclick="fetchReports()"><i class="bi bi-arrow-clockwise me-1"></i><span data-i18n="refresh">Refresh</span></button>
+                    <button class="btn btn-success fw-bold" onclick="exportToExcel()"><i class="bi bi-file-earmark-excel-fill me-1"></i><span data-i18n="excel">Excel</span></button>
                 </div>
             </div>
         </div>
@@ -204,17 +240,17 @@
         <div class="container-fluid px-4 py-4">
             <div class="d-flex flex-wrap gap-2 mb-3">
                 <button class="admin-tab active" id="tabReports" onclick="switchAdminView('reports')">
-                    <i class="bi bi-clipboard-data me-1"></i>รายงาน
+                    <i class="bi bi-clipboard-data me-1"></i><span data-i18n="reportsTab">รายงาน</span>
                 </button>
                 <button class="admin-tab" id="tabEmployees" onclick="switchAdminView('employees')">
-                    <i class="bi bi-people-fill me-1"></i>พนักงาน
+                    <i class="bi bi-people-fill me-1"></i><span data-i18n="employeesTab">พนักงาน</span>
                 </button>
             </div>
 
             <section id="viewReports" class="view-section active">
             <div class="row g-3 mb-3">
-                <div class="col-md-3"><div class="panel"><div class="kpi-label">เคสทั้งหมด</div><div class="kpi-value" id="kpiTotal">0</div></div></div>
-                <div class="col-md-3"><div class="panel"><div class="kpi-label">รอปิดเคส</div><div class="kpi-value text-warning" id="kpiOpen">0</div></div></div>
+                <div class="col-md-3"><div class="panel"><div class="kpi-label" data-i18n="totalCases">เคสทั้งหมด</div><div class="kpi-value" id="kpiTotal">0</div></div></div>
+                <div class="col-md-3"><div class="panel"><div class="kpi-label" data-i18n="openCases">รอปิดเคส</div><div class="kpi-value text-warning" id="kpiOpen">0</div></div></div>
                 <div class="col-md-3"><div class="panel"><div class="kpi-label">Repeat Offender</div><div class="kpi-value text-danger" id="kpiRepeat">0</div></div></div>
                 <div class="col-md-3"><div class="panel"><div class="kpi-label">Critical / High</div><div class="kpi-value text-info" id="kpiUrgent">0</div></div></div>
             </div>
@@ -222,23 +258,23 @@
             <div class="panel mb-3">
                 <div class="row g-2 align-items-end">
                     <div class="col-md-2">
-                        <label class="form-label fw-bold small">วันที่เริ่ม</label>
+                        <label class="form-label fw-bold small" data-i18n="fromDate">วันที่เริ่ม</label>
                         <input type="date" id="filterFrom" class="form-control" onchange="applyFilters()">
                     </div>
                     <div class="col-md-2">
-                        <label class="form-label fw-bold small">วันที่สิ้นสุด</label>
+                        <label class="form-label fw-bold small" data-i18n="toDate">วันที่สิ้นสุด</label>
                         <input type="date" id="filterTo" class="form-control" onchange="applyFilters()">
                     </div>
                     <div class="col-md-2">
-                        <label class="form-label fw-bold small">สถานะ</label>
+                        <label class="form-label fw-bold small" data-i18n="status">สถานะ</label>
                         <select id="filterStatus" class="form-select" onchange="applyFilters()">
-                            <option value="ALL">ทั้งหมด</option>
+                            <option value="ALL" data-i18n="all">ทั้งหมด</option>
                         </select>
                     </div>
                     <div class="col-md-2">
-                        <label class="form-label fw-bold small">ความเร่งด่วน</label>
+                        <label class="form-label fw-bold small" data-i18n="severity">ความเร่งด่วน</label>
                         <select id="filterSeverity" class="form-select" onchange="applyFilters()">
-                            <option value="ALL">ทั้งหมด</option>
+                            <option value="ALL" data-i18n="all">ทั้งหมด</option>
                             <option value="Critical">Critical</option>
                             <option value="High">High</option>
                             <option value="Medium">Medium</option>
@@ -248,14 +284,14 @@
                     <div class="col-md-2">
                         <label class="form-label fw-bold small">Repeat</label>
                         <select id="filterRepeat" class="form-select" onchange="applyFilters()">
-                            <option value="ALL">ทั้งหมด</option>
+                            <option value="ALL" data-i18n="all">ทั้งหมด</option>
                             <option value="YES">Repeat Offender</option>
-                            <option value="NO">ไม่ซ้ำ</option>
+                            <option value="NO" data-i18n="notRepeat">ไม่ซ้ำ</option>
                         </select>
                     </div>
                     <div class="col-md-2">
-                        <label class="form-label fw-bold small">ค้นหา</label>
-                        <input type="search" id="filterSearch" class="form-control" placeholder="ชื่อ/รหัส/ข้อหา" oninput="applyFilters()">
+                        <label class="form-label fw-bold small" data-i18n="search">ค้นหา</label>
+                        <input type="search" id="filterSearch" class="form-control" placeholder="ชื่อ/รหัส/ข้อหา" data-i18n-placeholder="reportSearchPlaceholder" oninput="applyFilters()">
                     </div>
                 </div>
             </div>
@@ -265,20 +301,25 @@
             <div class="row g-3 mb-3">
                 <div class="col-lg-8">
                     <div class="panel">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="fw-bold mb-0">รายการเคส</h5>
-                            <span class="small-muted" id="resultText">0 รายการ</span>
+                        <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-3">
+                            <div>
+                                <h5 class="fw-bold mb-0" data-i18n="caseList">รายการเคส</h5>
+                                <span class="small-muted" id="resultText">0 รายการ</span>
+                            </div>
+                            <button class="btn btn-danger fw-bold" onclick="openReportModal()">
+                                <i class="bi bi-plus-circle me-1"></i><span data-i18n="addCase">เพิ่มเคส</span>
+                            </button>
                         </div>
                         <div class="table-responsive">
                             <table class="table table-hover align-middle">
                                 <thead>
                                     <tr>
                                         <th>Case</th>
-                                        <th>ผู้กระทำผิด</th>
-                                        <th>ข้อหา</th>
-                                        <th>ระดับ</th>
-                                        <th>สถานะ</th>
-                                        <th>หลักฐาน</th>
+                                        <th data-i18n="offender">ผู้กระทำผิด</th>
+                                        <th data-i18n="violation">ข้อหา</th>
+                                        <th data-i18n="level">ระดับ</th>
+                                        <th data-i18n="status">สถานะ</th>
+                                        <th data-i18n="evidence">หลักฐาน</th>
                                         <th></th>
                                     </tr>
                                 </thead>
@@ -289,11 +330,11 @@
                 </div>
                 <div class="col-lg-4">
                     <div class="panel mb-3">
-                        <h6 class="fw-bold mb-3">สรุปตามข้อหา</h6>
+                        <h6 class="fw-bold mb-3" data-i18n="violationSummary">สรุปตามข้อหา</h6>
                         <div class="chart-box"><canvas id="violationChart"></canvas></div>
                     </div>
                     <div class="panel">
-                        <h6 class="fw-bold mb-3">ทำซ้ำใน 30 วัน</h6>
+                        <h6 class="fw-bold mb-3" data-i18n="repeat30">ทำซ้ำใน 30 วัน</h6>
                         <div id="repeatList" class="d-grid gap-2"></div>
                     </div>
                 </div>
@@ -304,30 +345,30 @@
                 <div class="row g-3">
                     <div class="col-lg-5">
                         <div class="panel mb-3">
-                            <h5 class="fw-bold mb-1"><i class="bi bi-person-plus-fill text-success me-2"></i>เพิ่มพนักงานรายคน</h5>
-                            <div class="small-muted mb-3">รองรับรหัส 6 หลัก เช่น 000000 และรูปแบบ AP0000 / SP0000</div>
+                            <h5 class="fw-bold mb-1"><i class="bi bi-person-plus-fill text-success me-2"></i><span data-i18n="addSingleEmployee">เพิ่มพนักงานรายคน</span></h5>
+                            <div class="small-muted mb-3" data-i18n="employeeIdHelp">รองรับรหัส 6 หลัก เช่น 000000 และรูปแบบ AP0000 / SP0000</div>
                             <button class="btn btn-success fw-bold w-100" onclick="openAddEmployeeModal()">
-                                <i class="bi bi-plus-circle me-1"></i>เพิ่มพนักงาน
+                                <i class="bi bi-plus-circle me-1"></i><span data-i18n="addEmployee">เพิ่มพนักงาน</span>
                             </button>
                         </div>
 
                         <div class="panel">
                             <div class="d-flex flex-wrap gap-3 justify-content-between align-items-start">
                                 <div>
-                                    <h5 class="fw-bold mb-1"><i class="bi bi-file-earmark-spreadsheet-fill text-primary me-2"></i>นำเข้ารายชื่อจาก Excel</h5>
-                                    <div class="small-muted">ใช้คอลัมน์ รหัสพนักงาน, ชื่อ-สกุล, แผนก หรือ emp_id, fullname, section</div>
+                                    <h5 class="fw-bold mb-1"><i class="bi bi-file-earmark-spreadsheet-fill text-primary me-2"></i><span data-i18n="importExcelTitle">นำเข้ารายชื่อจาก Excel</span></h5>
+                                    <div class="small-muted" data-i18n="importExcelHelp">ใช้คอลัมน์ รหัสพนักงาน, ชื่อ-สกุล, แผนก หรือ emp_id, fullname, section</div>
                                 </div>
                                 <div class="d-flex flex-wrap gap-2">
                                     <button class="btn btn-outline-primary fw-bold" onclick="downloadEmployeeTemplate()">
                                         <i class="bi bi-download me-1"></i>Template
                                     </button>
                                     <label class="btn btn-dark fw-bold mb-0">
-                                        <i class="bi bi-upload me-1"></i>เลือกไฟล์
+                                        <i class="bi bi-upload me-1"></i><span data-i18n="chooseFile">เลือกไฟล์</span>
                                         <input type="file" id="employeeExcelInput" class="d-none" accept=".xlsx,.xls,.csv" onchange="handleEmployeeExcel(event)">
                                     </label>
                                 </div>
                             </div>
-                            <div id="employeeImportPreview" class="small-muted mt-3">ยังไม่ได้เลือกไฟล์</div>
+                            <div id="employeeImportPreview" class="small-muted mt-3" data-i18n="noFileSelected">ยังไม่ได้เลือกไฟล์</div>
                         </div>
                     </div>
 
@@ -335,14 +376,14 @@
                         <div class="panel">
                             <div class="d-flex flex-wrap gap-3 justify-content-between align-items-start mb-3">
                                 <div>
-                                    <h5 class="fw-bold mb-1"><i class="bi bi-list-ol text-primary me-2"></i>รายชื่อพนักงานทั้งหมด</h5>
+                                    <h5 class="fw-bold mb-1"><i class="bi bi-list-ol text-primary me-2"></i><span data-i18n="allEmployees">รายชื่อพนักงานทั้งหมด</span></h5>
                                     <div class="small-muted" id="employeeResultText">0 รายการ</div>
                                 </div>
                                 <button class="btn btn-outline-secondary fw-bold" onclick="fetchEmployees()">
                                     <i class="bi bi-arrow-clockwise me-1"></i>Refresh
                                 </button>
                             </div>
-                            <input type="search" id="employeeSearch" class="form-control mb-3" placeholder="ค้นหารหัส / ชื่อ / แผนก" oninput="renderEmployees()">
+                            <input type="search" id="employeeSearch" class="form-control mb-3" placeholder="ค้นหารหัส / ชื่อ / แผนก" data-i18n-placeholder="employeeSearchPlaceholder" oninput="renderEmployees()">
                             <div id="employeeList" class="d-grid gap-2"></div>
                         </div>
                     </div>
@@ -369,6 +410,9 @@ const REPORT_PAGE_SIZE = 1000;
 const ADMIN_ACTOR = 'Violation Admin';
 const EVENT_VIEWED = 'case_viewed';
 const EVENT_STATUS_CHANGED = 'status_changed';
+const ADMIN_SESSION_KEY = 'guardViolationAdminSession';
+const ADMIN_REMEMBER_KEY = 'guardViolationAdminRemember';
+const ADMIN_SESSION_HOURS = 8;
 
 let allReports = [];
 let filteredReports = [];
@@ -377,6 +421,351 @@ let repeatCounts = {};
 let violationChart = null;
 let reportAutoRefreshTimer = null;
 let reportRealtimeChannel = null;
+let currentLang = localStorage.getItem('guardViolationAdminLang') || 'th';
+let activeReportId = null;
+
+const I18N = {
+    th: {
+        appTitle: 'Guard Violation Admin',
+        adminPasswordPlaceholder: 'รหัสผ่าน Admin',
+        loginButton: 'เข้าสู่ระบบ',
+        rememberAdmin: 'จดจำการเข้าสู่ระบบ 8 ชั่วโมง',
+        loadingData: 'กำลังโหลดข้อมูล...',
+        loadingDataWithCount: (count) => `กำลังโหลดข้อมูล... ${count} รายการ`,
+        loadingEmployees: 'กำลังโหลดรายชื่อ...',
+        loadingEmployeesWithCount: (count) => `กำลังโหลดรายชื่อ... ${count} รายการ`,
+        updatedLatest: (date) => `อัปเดตล่าสุด ${date}`,
+        realtimeReady: 'Realtime พร้อมใช้งาน',
+        refresh: 'Refresh',
+        excel: 'Excel',
+        reportsTab: 'รายงาน',
+        employeesTab: 'พนักงาน',
+        totalCases: 'เคสทั้งหมด',
+        openCases: 'รอปิดเคส',
+        fromDate: 'วันที่เริ่ม',
+        toDate: 'วันที่สิ้นสุด',
+        status: 'สถานะ',
+        all: 'ทั้งหมด',
+        severity: 'ความเร่งด่วน',
+        notRepeat: 'ไม่ซ้ำ',
+        search: 'ค้นหา',
+        reportSearchPlaceholder: 'ชื่อ/รหัส/ข้อหา',
+        caseList: 'รายการเคส',
+        offender: 'ผู้กระทำผิด',
+        violation: 'ข้อหา',
+        level: 'ระดับ',
+        evidence: 'หลักฐาน',
+        violationSummary: 'สรุปตามข้อหา',
+        repeat30: 'ทำซ้ำใน 30 วัน',
+        addSingleEmployee: 'เพิ่มพนักงานรายคน',
+        employeeIdHelp: 'รองรับรหัส 6 หลัก เช่น 000000 และรูปแบบ AP0000 / SP0000',
+        addEmployee: 'เพิ่มพนักงาน',
+        importExcelTitle: 'นำเข้ารายชื่อจาก Excel',
+        importExcelHelp: 'ใช้คอลัมน์ รหัสพนักงาน, ชื่อ-สกุล, แผนก หรือ emp_id, fullname, section',
+        chooseFile: 'เลือกไฟล์',
+        noFileSelected: 'ยังไม่ได้เลือกไฟล์',
+        allEmployees: 'รายชื่อพนักงานทั้งหมด',
+        employeeSearchPlaceholder: 'ค้นหารหัส / ชื่อ / แผนก',
+        records: 'รายการ',
+        times: 'ครั้ง',
+        unspecified: 'ไม่ระบุ',
+        edit: 'แก้ไข',
+        open: 'เปิด',
+        noEmployeeFound: 'ยังไม่พบรายชื่อพนักงาน',
+        connectionFailed: 'เชื่อมต่อไม่ได้',
+        supabaseLoadFailed: 'โหลด Supabase client ไม่สำเร็จ',
+        loadEmployeeFailedTitle: 'โหลดรายชื่อไม่สำเร็จ',
+        loadDataFailedTitle: 'โหลดข้อมูลไม่สำเร็จ',
+        saveFailedTitle: 'บันทึกไม่สำเร็จ',
+        successTitle: 'สำเร็จ',
+        addedText: 'เพิ่ม',
+        editedText: 'แก้ไข',
+        employeeSaved: (mode, name) => `${mode} ${name} แล้ว`,
+        editEmployeeTitle: 'แก้ไขพนักงาน',
+        addEmployeeTitle: 'เพิ่มพนักงานรายคน',
+        employeeIdLabel: 'เลขบัตร / รหัสพนักงาน',
+        employeeNameLabel: 'ชื่อ-สกุล',
+        sectionLabel: 'แผนก',
+        employeeIdPlaceholder: '000000 หรือ AP0000 หรือ SP0000',
+        employeeNamePlaceholder: 'ชื่อ-สกุล',
+        sectionPlaceholder: 'แผนก',
+        supportedIdFormats: 'รูปแบบรหัสที่รองรับ: 000000, AP0000, SP0000',
+        saveEdit: 'บันทึกการแก้ไข',
+        cancel: 'ยกเลิก',
+        invalidEmployeeId: 'รหัสต้องเป็น 6 หลัก หรือ AP0000 หรือ SP0000',
+        nameRequired: 'กรุณากรอกชื่อ-สกุล',
+        readingFile: (name) => `กำลังอ่านไฟล์ ${name}...`,
+        noImportableData: 'ไม่พบข้อมูลที่นำเข้าได้',
+        importUnavailableTitle: 'นำเข้าไม่ได้',
+        importColumnHelp: 'กรุณาตรวจสอบว่ามีคอลัมน์ emp_id/fullname/section หรือ รหัสพนักงาน/ชื่อ-สกุล/แผนก',
+        confirmImportTitle: 'ยืนยันนำเข้ารายชื่อ?',
+        file: 'ไฟล์',
+        readyToImport: 'พร้อมนำเข้า/อัปเดต',
+        skippedRows: 'ข้ามแถวที่ข้อมูลไม่ครบ',
+        rows: 'แถว',
+        id: 'รหัส',
+        name: 'ชื่อ',
+        importNow: 'นำเข้าเลย',
+        importCancelled: 'ยกเลิกการนำเข้า',
+        importing: (count) => `กำลังนำเข้า ${count} รายการ...`,
+        latestImport: (count, date) => `นำเข้าล่าสุด: ${count} รายการ (${date})`,
+        importSuccessTitle: 'นำเข้าสำเร็จ',
+        importSuccessText: (count) => `เพิ่ม/อัปเดตรายชื่อพนักงาน ${count} รายการแล้ว`,
+        importFailedTitle: 'นำเข้าไม่สำเร็จ',
+        wrongPasswordTitle: 'รหัสผ่านไม่ถูกต้อง',
+        wrongPasswordText: 'กรุณาตรวจสอบอีกครั้ง',
+        newCaseToast: 'มีเคสใหม่เข้า Admin',
+        updatedCaseToast: 'มีการอัปเดตเคส',
+        noData: 'ไม่พบข้อมูล',
+        noRepeat: 'ยังไม่พบผู้กระทำซ้ำ 2 ครั้งใน 30 วัน',
+        openGoogleMaps: 'เปิด Google Maps',
+        openEvidence: 'เปิดรูปหลักฐาน',
+        caseDetailHelp: 'หน้า Detail เคสแบบเต็ม สำหรับ audit, หลักฐาน และ workflow',
+        closeDetail: 'ปิดรายละเอียด',
+        location: 'จุดเกิดเหตุ',
+        actionTaken: 'การดำเนินการ',
+        owner: 'ผู้รับผิดชอบ',
+        adminRemark: 'หมายเหตุ Admin',
+        closeReason: 'เหตุผลปิด/ไม่รับ',
+        lastStatusChangedBy: 'ผู้เปลี่ยนสถานะล่าสุด',
+        gps: 'พิกัด',
+        updateTo: (status) => `อัปเดตเป็น ${status}`,
+        timelineRemark: 'หมายเหตุสำหรับ Timeline',
+        statusRemarkPlaceholder: 'เช่น แจ้งหัวหน้างานแล้ว / ข้อมูลซ้ำ / ระบุตัวผิด',
+        timelineSaveHelp: 'ระบบจะบันทึกประวัติการเปลี่ยนสถานะไว้ใน Case Timeline',
+        saveStatus: 'บันทึกสถานะ',
+        closeReasonRequired: 'กรุณากรอกเหตุผลก่อนปิดเคสหรือ Rejected',
+        noMoreActions: 'ไม่มี action ถัดไปสำหรับสถานะนี้',
+        addCase: 'เพิ่มเคส',
+        editCase: 'แก้ไขเคส',
+        deleteCase: 'ลบ',
+        savePdf: 'บันทึก PDF',
+        reportModalTitleAdd: 'เพิ่มเคสรายงาน',
+        reportModalTitleEdit: 'แก้ไขเคสรายงาน',
+        empIdRequired: 'กรุณากรอกรหัสพนักงาน',
+        violationRequired: 'กรุณากรอกข้อหา',
+        locationRequired: 'กรุณากรอกจุดเกิดเหตุ',
+        saveCase: 'บันทึกเคส',
+        reportSavedTitle: 'บันทึกเคสแล้ว',
+        reportDeletedTitle: 'ลบเคสแล้ว',
+        deleteCaseTitle: 'ยืนยันลบเคส?',
+        deleteCaseText: 'การลบเคสจะลบข้อมูลรายงานนี้ออกจากระบบ',
+        deleteConfirm: 'ลบเคส',
+        deleteFailedTitle: 'ลบไม่สำเร็จ',
+        pdfButton: 'บันทึก PDF',
+        officialReportTitle: 'รายงานการกระทำผิดระเบียบความปลอดภัย',
+        officialReportSubtitle: 'เอกสารสำหรับแจ้งส่วนงานที่เกี่ยวข้องรับทราบและดำเนินการต่อ',
+        officialReportBy: 'รายงานโดย ส่วนความปลอดภัย อาชีวอนามัยและสิ่งแวดล้อม บริษัทไทยซัมมิท ฮาร์เนส จำกัด (มหาชน)',
+        preparedBy: 'จัดทำโดย',
+        preparedAt: 'วันที่จัดทำ',
+        cumulativeViolations: 'จำนวนครั้งสะสมในการกระทำผิด',
+        violationsIn30Days: 'จำนวนครั้งใน 30 วัน',
+        recommendation: 'ข้อเสนอแนะ / การดำเนินการต่อ',
+        recommendationText: 'โปรดแจ้งหัวหน้างาน/ส่วนงานที่เกี่ยวข้องเพื่อรับทราบ ตรวจสอบข้อเท็จจริง และดำเนินการตามระเบียบของบริษัท',
+        signatureGuard: 'ผู้รายงาน',
+        signatureSafety: 'ผู้ตรวจสอบ',
+        signatureDept: 'หัวหน้าส่วนงาน',
+        workflowUnderReview: 'รับเข้าตรวจสอบ',
+        workflowRepeat: 'ตรวจเคสซ้ำ',
+        workflowClosed: 'ปิดเคส',
+        workflowRejected: 'ไม่รับเคส',
+        updateFailedTitle: 'อัปเดตไม่สำเร็จ',
+        statusUpdatedTitle: 'อัปเดตสถานะแล้ว',
+        changedStatusTo: (status) => `เปลี่ยนสถานะเป็น ${status}`,
+        noExportDataTitle: 'ไม่มีข้อมูล',
+        noExportDataText: 'ไม่มีรายการสำหรับ export',
+        caseViewedNote: 'Admin เปิดดูเคสครั้งแรก',
+        noTimeline: 'ยังไม่มี Timeline เพิ่มเติม'
+    },
+    en: {
+        appTitle: 'Guard Violation Admin',
+        adminPasswordPlaceholder: 'Admin Password',
+        loginButton: 'Sign In',
+        rememberAdmin: 'Remember admin login for 8 hours',
+        loadingData: 'Loading data...',
+        loadingDataWithCount: (count) => `Loading data... ${count} records`,
+        loadingEmployees: 'Loading employees...',
+        loadingEmployeesWithCount: (count) => `Loading employees... ${count} records`,
+        updatedLatest: (date) => `Last updated ${date}`,
+        realtimeReady: 'Realtime is ready',
+        refresh: 'Refresh',
+        excel: 'Excel',
+        reportsTab: 'Reports',
+        employeesTab: 'Employees',
+        totalCases: 'Total Cases',
+        openCases: 'Open Cases',
+        fromDate: 'From Date',
+        toDate: 'To Date',
+        status: 'Status',
+        all: 'All',
+        severity: 'Severity',
+        notRepeat: 'Not Repeat',
+        search: 'Search',
+        reportSearchPlaceholder: 'Name / ID / Violation',
+        caseList: 'Case List',
+        offender: 'Offender',
+        violation: 'Violation',
+        level: 'Level',
+        evidence: 'Evidence',
+        violationSummary: 'Violation Summary',
+        repeat30: 'Repeat in 30 Days',
+        addSingleEmployee: 'Add Single Employee',
+        employeeIdHelp: 'Supports 6-digit IDs such as 000000 and AP0000 / SP0000 formats',
+        addEmployee: 'Add Employee',
+        importExcelTitle: 'Import Employees from Excel',
+        importExcelHelp: 'Use columns Employee ID, Full Name, Section or emp_id, fullname, section',
+        chooseFile: 'Choose File',
+        noFileSelected: 'No file selected',
+        allEmployees: 'All Employees',
+        employeeSearchPlaceholder: 'Search ID / Name / Section',
+        records: 'records',
+        times: 'times',
+        unspecified: 'Unspecified',
+        edit: 'Edit',
+        open: 'Open',
+        noEmployeeFound: 'No employee records found',
+        connectionFailed: 'Connection failed',
+        supabaseLoadFailed: 'Supabase client failed to load',
+        loadEmployeeFailedTitle: 'Failed to load employees',
+        loadDataFailedTitle: 'Failed to load data',
+        saveFailedTitle: 'Save failed',
+        successTitle: 'Success',
+        addedText: 'Added',
+        editedText: 'Edited',
+        employeeSaved: (mode, name) => `${mode} ${name}`,
+        editEmployeeTitle: 'Edit Employee',
+        addEmployeeTitle: 'Add Single Employee',
+        employeeIdLabel: 'Card No. / Employee ID',
+        employeeNameLabel: 'Full Name',
+        sectionLabel: 'Section',
+        employeeIdPlaceholder: '000000 or AP0000 or SP0000',
+        employeeNamePlaceholder: 'Full Name',
+        sectionPlaceholder: 'Section',
+        supportedIdFormats: 'Supported ID formats: 000000, AP0000, SP0000',
+        saveEdit: 'Save Changes',
+        cancel: 'Cancel',
+        invalidEmployeeId: 'ID must be 6 digits, AP0000, or SP0000',
+        nameRequired: 'Please enter the full name',
+        readingFile: (name) => `Reading ${name}...`,
+        noImportableData: 'No importable data found',
+        importUnavailableTitle: 'Import unavailable',
+        importColumnHelp: 'Please check for emp_id/fullname/section or Employee ID/Full Name/Section columns',
+        confirmImportTitle: 'Confirm employee import?',
+        file: 'File',
+        readyToImport: 'Ready to import/update',
+        skippedRows: 'Skipped incomplete rows',
+        rows: 'rows',
+        id: 'ID',
+        name: 'Name',
+        importNow: 'Import Now',
+        importCancelled: 'Import cancelled',
+        importing: (count) => `Importing ${count} records...`,
+        latestImport: (count, date) => `Latest import: ${count} records (${date})`,
+        importSuccessTitle: 'Import complete',
+        importSuccessText: (count) => `Added/updated ${count} employee records`,
+        importFailedTitle: 'Import failed',
+        wrongPasswordTitle: 'Incorrect password',
+        wrongPasswordText: 'Please check and try again',
+        newCaseToast: 'New case received in Admin',
+        updatedCaseToast: 'Case updated',
+        noData: 'No data found',
+        noRepeat: 'No repeat offenders found with 2 cases in 30 days',
+        openGoogleMaps: 'Open Google Maps',
+        openEvidence: 'Open Evidence Image',
+        caseDetailHelp: 'Full case detail page for audit, evidence, and workflow',
+        closeDetail: 'Close Detail',
+        location: 'Location',
+        actionTaken: 'Action Taken',
+        owner: 'Owner',
+        adminRemark: 'Admin Remark',
+        closeReason: 'Close/Reject Reason',
+        lastStatusChangedBy: 'Last Status Changed By',
+        gps: 'GPS',
+        updateTo: (status) => `Update to ${status}`,
+        timelineRemark: 'Timeline Remark',
+        statusRemarkPlaceholder: 'Example: Supervisor informed / Duplicate record / Wrong person',
+        timelineSaveHelp: 'The system will save this status change in the Case Timeline',
+        saveStatus: 'Save Status',
+        closeReasonRequired: 'Please enter a reason before closing or rejecting this case',
+        noMoreActions: 'No next actions available for this status',
+        addCase: 'Add Case',
+        editCase: 'Edit Case',
+        deleteCase: 'Delete',
+        savePdf: 'Save PDF',
+        reportModalTitleAdd: 'Add Report Case',
+        reportModalTitleEdit: 'Edit Report Case',
+        empIdRequired: 'Please enter employee ID',
+        violationRequired: 'Please enter violation',
+        locationRequired: 'Please enter location',
+        saveCase: 'Save Case',
+        reportSavedTitle: 'Case saved',
+        reportDeletedTitle: 'Case deleted',
+        deleteCaseTitle: 'Delete this case?',
+        deleteCaseText: 'This will remove this report case from the system',
+        deleteConfirm: 'Delete Case',
+        deleteFailedTitle: 'Delete failed',
+        pdfButton: 'Save PDF',
+        officialReportTitle: 'Safety Rule Violation Report',
+        officialReportSubtitle: 'Formal document for the responsible department to acknowledge and take further action',
+        officialReportBy: 'Reported by Safety, Occupational Health and Environment Department, Thai Summit Harness Public Company Limited',
+        preparedBy: 'Prepared by',
+        preparedAt: 'Prepared at',
+        cumulativeViolations: 'Cumulative Violations',
+        violationsIn30Days: 'Violations in 30 Days',
+        recommendation: 'Recommendation / Next Action',
+        recommendationText: 'Please notify the supervisor or responsible department to acknowledge, verify the facts, and proceed according to company policy.',
+        signatureGuard: 'Reporter',
+        signatureSafety: 'Safety Reviewer',
+        signatureDept: 'Department Head',
+        workflowUnderReview: 'Under Review',
+        workflowRepeat: 'Repeat Review',
+        workflowClosed: 'Closed',
+        workflowRejected: 'Rejected',
+        updateFailedTitle: 'Update failed',
+        statusUpdatedTitle: 'Status updated',
+        changedStatusTo: (status) => `Changed status to ${status}`,
+        noExportDataTitle: 'No data',
+        noExportDataText: 'No records available for export',
+        caseViewedNote: 'Admin opened this case for the first time',
+        noTimeline: 'No additional timeline events yet'
+    }
+};
+
+function t(key, ...args) {
+    const value = I18N[currentLang]?.[key] ?? I18N.th[key] ?? key;
+    return typeof value === 'function' ? value(...args) : value;
+}
+
+function formatLocale() {
+    return currentLang === 'th' ? 'th-TH' : 'en-US';
+}
+
+function applyLanguage() {
+    document.documentElement.lang = currentLang;
+    localStorage.setItem('guardViolationAdminLang', currentLang);
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        el.textContent = t(el.dataset.i18n);
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        el.setAttribute('placeholder', t(el.dataset.i18nPlaceholder));
+    });
+    document.querySelectorAll('[data-lang-btn]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.langBtn === currentLang);
+    });
+}
+
+function setLanguage(lang) {
+    currentLang = lang === 'en' ? 'en' : 'th';
+    applyLanguage();
+    hydrateFilterOptions();
+    if (allEmployees.length) renderEmployees();
+    if (allReports.length) applyFilters();
+    if (!allReports.length) document.getElementById('resultText').innerText = `0 ${t('records')}`;
+    if (!allEmployees.length) document.getElementById('employeeResultText').innerText = `0 ${t('records')}`;
+    if (activeReportId && document.getElementById('caseDetailPanel')?.classList.contains('show')) {
+        viewReport(activeReportId);
+    }
+}
 
 function escapeHtml(value) {
     return String(value ?? '').replace(/[&<>"']/g, (char) => ({
@@ -390,7 +779,7 @@ function escapeHtml(value) {
 
 function formatDate(value) {
     if (!value) return '-';
-    return new Date(value).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' });
+    return new Date(value).toLocaleString(formatLocale(), { dateStyle: 'medium', timeStyle: 'short' });
 }
 
 function getReportDate(report) {
@@ -411,9 +800,17 @@ function getStatusBadgeClass(status) {
     return 'warning';
 }
 
+function getWorkflowLabel(status) {
+    if (status === WORKFLOW_UNDER_REVIEW) return t('workflowUnderReview');
+    if (status === WORKFLOW_REPEAT) return t('workflowRepeat');
+    if (status === WORKFLOW_CLOSED) return t('workflowClosed');
+    if (status === WORKFLOW_REJECTED) return t('workflowRejected');
+    return status || WORKFLOW_PENDING;
+}
+
 function renderTimeline(events) {
     if (!events || events.length === 0) {
-        return '<div class="text-muted border rounded p-3">ยังไม่มี Timeline เพิ่มเติม</div>';
+        return `<div class="text-muted border rounded p-3">${t('noTimeline')}</div>`;
     }
 
     return `<div class="case-timeline">${events.map(event => `
@@ -486,7 +883,7 @@ async function markReportViewed(report) {
         report_id: report.id,
         event_type: EVENT_VIEWED,
         to_status: report.workflow_status || WORKFLOW_PENDING,
-        note: 'Admin เปิดดูเคสครั้งแรก'
+        note: t('caseViewedNote')
     });
 }
 
@@ -546,7 +943,7 @@ async function fetchAllEmployeeRows() {
         rows.push(...pageRows);
 
         const resultText = document.getElementById('employeeResultText');
-        if (resultText) resultText.innerText = `กำลังโหลดรายชื่อ... ${rows.length} รายการ`;
+        if (resultText) resultText.innerText = t('loadingEmployeesWithCount', rows.length);
 
         if (pageRows.length < EMPLOYEE_PAGE_SIZE) break;
         from += EMPLOYEE_PAGE_SIZE;
@@ -557,20 +954,20 @@ async function fetchAllEmployeeRows() {
 
 async function fetchEmployees() {
     if (!db) {
-        Swal.fire('เชื่อมต่อไม่ได้', 'โหลด Supabase client ไม่สำเร็จ', 'error');
+        Swal.fire(t('connectionFailed'), t('supabaseLoadFailed'), 'error');
         return;
     }
 
     const resultText = document.getElementById('employeeResultText');
-    if (resultText) resultText.innerText = 'กำลังโหลดรายชื่อ...';
+    if (resultText) resultText.innerText = t('loadingEmployees');
 
     try {
         const data = await fetchAllEmployeeRows();
         allEmployees = data.sort(compareEmployeeId);
         renderEmployees();
     } catch (error) {
-        Swal.fire('โหลดรายชื่อไม่สำเร็จ', error.message, 'error');
-        if (resultText) resultText.innerText = 'โหลดรายชื่อไม่สำเร็จ';
+        Swal.fire(t('loadEmployeeFailedTitle'), error.message, 'error');
+        if (resultText) resultText.innerText = t('loadEmployeeFailedTitle');
     }
 }
 
@@ -590,7 +987,7 @@ async function fetchAllReportRows() {
 
         const pageRows = data || [];
         rows.push(...pageRows);
-        document.getElementById('lastUpdated').innerText = `กำลังโหลดข้อมูล... ${rows.length} รายการ`;
+        document.getElementById('lastUpdated').innerText = t('loadingDataWithCount', rows.length);
 
         if (pageRows.length < REPORT_PAGE_SIZE) break;
         from += REPORT_PAGE_SIZE;
@@ -610,10 +1007,10 @@ function renderEmployees() {
         return !search || haystack.includes(search);
     });
 
-    if (resultText) resultText.innerText = `${employees.length} / ${allEmployees.length} รายการ`;
+    if (resultText) resultText.innerText = `${employees.length} / ${allEmployees.length} ${t('records')}`;
 
     if (employees.length === 0) {
-        list.innerHTML = '<div class="text-muted border rounded p-3 text-center">ยังไม่พบรายชื่อพนักงาน</div>';
+        list.innerHTML = `<div class="text-muted border rounded p-3 text-center">${t('noEmployeeFound')}</div>`;
         return;
     }
 
@@ -623,11 +1020,11 @@ function renderEmployees() {
                 <div class="employee-id-pill">${escapeHtml(emp.emp_id)}</div>
                 <div>
                     <div class="fw-bold">${escapeHtml(emp.fullname)}</div>
-                    <div class="small-muted">${escapeHtml(emp.section || 'ไม่ระบุ')}</div>
+                    <div class="small-muted">${escapeHtml(emp.section || t('unspecified'))}</div>
                 </div>
             </div>
             <button class="btn btn-sm btn-outline-primary fw-bold" onclick="openAddEmployeeModal('${escapeHtml(emp.emp_id)}')">
-                แก้ไข
+                ${t('edit')}
             </button>
         </div>
     `).join('');
@@ -636,32 +1033,32 @@ function renderEmployees() {
 async function openAddEmployeeModal(empId = '') {
     const existing = empId ? allEmployees.find(emp => emp.emp_id === empId) : null;
     const { value: formValues } = await Swal.fire({
-        title: existing ? 'แก้ไขพนักงาน' : 'เพิ่มพนักงานรายคน',
+        title: existing ? t('editEmployeeTitle') : t('addEmployeeTitle'),
         html: `<div class="text-start">
-            <label class="form-label fw-bold small">เลขบัตร / รหัสพนักงาน</label>
-            <input id="employeeModalId" class="form-control mb-3" placeholder="000000 หรือ AP0000 หรือ SP0000" value="${escapeHtml(existing?.emp_id || empId)}" ${existing ? 'readonly' : ''}>
-            <label class="form-label fw-bold small">ชื่อ-สกุล</label>
-            <input id="employeeModalName" class="form-control mb-3" placeholder="ชื่อ-สกุล" value="${escapeHtml(existing?.fullname || '')}">
-            <label class="form-label fw-bold small">แผนก</label>
-            <input id="employeeModalSection" class="form-control" placeholder="แผนก" value="${escapeHtml(existing?.section || '')}">
-            <div class="small text-muted mt-2">รูปแบบรหัสที่รองรับ: 000000, AP0000, SP0000</div>
+            <label class="form-label fw-bold small">${t('employeeIdLabel')}</label>
+            <input id="employeeModalId" class="form-control mb-3" placeholder="${t('employeeIdPlaceholder')}" value="${escapeHtml(existing?.emp_id || empId)}" ${existing ? 'readonly' : ''}>
+            <label class="form-label fw-bold small">${t('employeeNameLabel')}</label>
+            <input id="employeeModalName" class="form-control mb-3" placeholder="${t('employeeNamePlaceholder')}" value="${escapeHtml(existing?.fullname || '')}">
+            <label class="form-label fw-bold small">${t('sectionLabel')}</label>
+            <input id="employeeModalSection" class="form-control" placeholder="${t('sectionPlaceholder')}" value="${escapeHtml(existing?.section || '')}">
+            <div class="small text-muted mt-2">${t('supportedIdFormats')}</div>
         </div>`,
         focusConfirm: false,
         showCancelButton: true,
-        confirmButtonText: existing ? 'บันทึกการแก้ไข' : 'เพิ่มพนักงาน',
-        cancelButtonText: 'ยกเลิก',
+        confirmButtonText: existing ? t('saveEdit') : t('addEmployee'),
+        cancelButtonText: t('cancel'),
         confirmButtonColor: '#0f172a',
         preConfirm: () => {
             const employeeId = normalizeEmployeeId(document.getElementById('employeeModalId').value);
             const fullname = document.getElementById('employeeModalName').value.trim();
-            const section = document.getElementById('employeeModalSection').value.trim() || 'ไม่ระบุ';
+            const section = document.getElementById('employeeModalSection').value.trim() || t('unspecified');
 
             if (!isValidEmployeeId(employeeId)) {
-                Swal.showValidationMessage('รหัสต้องเป็น 6 หลัก หรือ AP0000 หรือ SP0000');
+                Swal.showValidationMessage(t('invalidEmployeeId'));
                 return false;
             }
             if (!fullname) {
-                Swal.showValidationMessage('กรุณากรอกชื่อ-สกุล');
+                Swal.showValidationMessage(t('nameRequired'));
                 return false;
             }
 
@@ -674,10 +1071,10 @@ async function openAddEmployeeModal(empId = '') {
     try {
         const { error } = await db.from('employees_list').upsert([formValues], { onConflict: 'emp_id' });
         if (error) throw error;
-        await Swal.fire('สำเร็จ', `${existing ? 'แก้ไข' : 'เพิ่ม'} ${formValues.fullname} แล้ว`, 'success');
+        await Swal.fire(t('successTitle'), t('employeeSaved', existing ? t('editedText') : t('addedText'), formValues.fullname), 'success');
         await fetchEmployees();
     } catch (err) {
-        Swal.fire('บันทึกไม่สำเร็จ', err.message, 'error');
+        Swal.fire(t('saveFailedTitle'), err.message, 'error');
     }
 }
 
@@ -715,7 +1112,7 @@ function parseEmployeeRows(rows) {
         employees.push({
             emp_id: empId,
             fullname: fullname,
-            section: section || 'ไม่ระบุ',
+            section: section || t('unspecified'),
             updated_at: new Date().toISOString()
         });
     });
@@ -736,93 +1133,43 @@ function downloadEmployeeTemplate() {
     XLSX.writeFile(wb, 'employees_list_template.xlsx');
 }
 
-async function handleEmployeeExcel(event) {
-    const input = event.target;
-    const file = input.files?.[0];
-    const preview = document.getElementById('employeeImportPreview');
-    if (!file) return;
+function getSessionStorage(remember = false) {
+    return remember ? localStorage : sessionStorage;
+}
 
-    if (!db) {
-        Swal.fire('เชื่อมต่อไม่ได้', 'โหลด Supabase client ไม่สำเร็จ', 'error');
-        input.value = '';
-        return;
-    }
+function saveAdminSession(remember) {
+    const expiresAt = Date.now() + (ADMIN_SESSION_HOURS * 60 * 60 * 1000);
+    const payload = JSON.stringify({ expiresAt, remember: Boolean(remember) });
+    getSessionStorage(remember).setItem(ADMIN_SESSION_KEY, payload);
+    getSessionStorage(!remember).removeItem(ADMIN_SESSION_KEY);
+    localStorage.setItem(ADMIN_REMEMBER_KEY, remember ? '1' : '0');
+}
+
+function readAdminSession() {
+    const localSession = localStorage.getItem(ADMIN_SESSION_KEY);
+    const tabSession = sessionStorage.getItem(ADMIN_SESSION_KEY);
+    const raw = localSession || tabSession;
+    if (!raw) return null;
 
     try {
-        preview.innerText = `กำลังอ่านไฟล์ ${file.name}...`;
-        const buffer = await file.arrayBuffer();
-        const workbook = XLSX.read(buffer, { type: 'array' });
-        const firstSheetName = workbook.SheetNames[0];
-        const rows = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName], { defval: '' });
-        const { employees, skippedRows } = parseEmployeeRows(rows);
-
-        if (employees.length === 0) {
-            preview.innerText = 'ไม่พบข้อมูลที่นำเข้าได้';
-            Swal.fire('นำเข้าไม่ได้', 'กรุณาตรวจสอบว่ามีคอลัมน์ emp_id/fullname/section หรือ รหัสพนักงาน/ชื่อ-สกุล/แผนก', 'warning');
-            return;
+        const session = JSON.parse(raw);
+        if (!session.expiresAt || Date.now() > session.expiresAt) {
+            clearAdminSession();
+            return null;
         }
-
-        const sampleHtml = employees.slice(0, 5).map(emp => `
-            <tr>
-                <td>${escapeHtml(emp.emp_id)}</td>
-                <td>${escapeHtml(emp.fullname)}</td>
-                <td>${escapeHtml(emp.section)}</td>
-            </tr>
-        `).join('');
-
-        const result = await Swal.fire({
-            title: 'ยืนยันนำเข้ารายชื่อ?',
-            html: `<div class="text-start">
-                <div class="mb-2">ไฟล์: <b>${escapeHtml(file.name)}</b></div>
-                <div class="mb-2">พร้อมนำเข้า/อัปเดต: <b>${employees.length}</b> รายการ</div>
-                <div class="mb-2">ข้ามแถวที่ข้อมูลไม่ครบ: <b>${skippedRows.length}</b> แถว</div>
-                <div class="table-responsive border rounded mt-3">
-                    <table class="table table-sm mb-0">
-                        <thead><tr><th>รหัส</th><th>ชื่อ</th><th>แผนก</th></tr></thead>
-                        <tbody>${sampleHtml}</tbody>
-                    </table>
-                </div>
-            </div>`,
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: 'นำเข้าเลย',
-            cancelButtonText: 'ยกเลิก',
-            confirmButtonColor: '#0f172a'
-        });
-
-        if (!result.isConfirmed) {
-            preview.innerText = 'ยกเลิกการนำเข้า';
-            return;
-        }
-
-        preview.innerText = `กำลังนำเข้า ${employees.length} รายการ...`;
-        const { error } = await db
-            .from('employees_list')
-            .upsert(employees, { onConflict: 'emp_id' });
-
-        if (error) throw error;
-
-        preview.innerText = `นำเข้าล่าสุด: ${employees.length} รายการ (${new Date().toLocaleString('th-TH')})`;
-        await fetchEmployees();
-        Swal.fire('นำเข้าสำเร็จ', `เพิ่ม/อัปเดตรายชื่อพนักงาน ${employees.length} รายการแล้ว`, 'success');
+        return session;
     } catch (err) {
-        console.error('Employee import error:', err);
-        preview.innerText = 'นำเข้าไม่สำเร็จ';
-        Swal.fire('นำเข้าไม่สำเร็จ', err.message, 'error');
-    } finally {
-        input.value = '';
+        clearAdminSession();
+        return null;
     }
 }
 
-function checkLogin() {
-    const passwordInput = document.getElementById('adminPassword');
-    const password = passwordInput.value;
-    if (password !== ADMIN_PASSWORD) {
-        Swal.fire('รหัสผ่านไม่ถูกต้อง', 'กรุณาตรวจสอบอีกครั้ง', 'error');
-        return;
-    }
+function clearAdminSession() {
+    localStorage.removeItem(ADMIN_SESSION_KEY);
+    sessionStorage.removeItem(ADMIN_SESSION_KEY);
+}
 
-    passwordInput.blur();
+function startAdminApp() {
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('mainApp').style.display = 'block';
     document.getElementById('btnRefresh').focus();
@@ -838,6 +1185,105 @@ function checkLogin() {
     }
 }
 
+function restoreAdminSession() {
+    const rememberCheckbox = document.getElementById('rememberAdminLogin');
+    if (rememberCheckbox) rememberCheckbox.checked = localStorage.getItem(ADMIN_REMEMBER_KEY) === '1';
+
+    const session = readAdminSession();
+    if (session) startAdminApp();
+}
+
+async function handleEmployeeExcel(event) {
+    const input = event.target;
+    const file = input.files?.[0];
+    const preview = document.getElementById('employeeImportPreview');
+    if (!file) return;
+
+    if (!db) {
+        Swal.fire(t('connectionFailed'), t('supabaseLoadFailed'), 'error');
+        input.value = '';
+        return;
+    }
+
+    try {
+        preview.innerText = t('readingFile', file.name);
+        const buffer = await file.arrayBuffer();
+        const workbook = XLSX.read(buffer, { type: 'array' });
+        const firstSheetName = workbook.SheetNames[0];
+        const rows = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName], { defval: '' });
+        const { employees, skippedRows } = parseEmployeeRows(rows);
+
+        if (employees.length === 0) {
+            preview.innerText = t('noImportableData');
+            Swal.fire(t('importUnavailableTitle'), t('importColumnHelp'), 'warning');
+            return;
+        }
+
+        const sampleHtml = employees.slice(0, 5).map(emp => `
+            <tr>
+                <td>${escapeHtml(emp.emp_id)}</td>
+                <td>${escapeHtml(emp.fullname)}</td>
+                <td>${escapeHtml(emp.section)}</td>
+            </tr>
+        `).join('');
+
+        const result = await Swal.fire({
+            title: t('confirmImportTitle'),
+            html: `<div class="text-start">
+                <div class="mb-2">${t('file')}: <b>${escapeHtml(file.name)}</b></div>
+                <div class="mb-2">${t('readyToImport')}: <b>${employees.length}</b> ${t('records')}</div>
+                <div class="mb-2">${t('skippedRows')}: <b>${skippedRows.length}</b> ${t('rows')}</div>
+                <div class="table-responsive border rounded mt-3">
+                    <table class="table table-sm mb-0">
+                        <thead><tr><th>${t('id')}</th><th>${t('name')}</th><th>${t('sectionLabel')}</th></tr></thead>
+                        <tbody>${sampleHtml}</tbody>
+                    </table>
+                </div>
+            </div>`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: t('importNow'),
+            cancelButtonText: t('cancel'),
+            confirmButtonColor: '#0f172a'
+        });
+
+        if (!result.isConfirmed) {
+            preview.innerText = t('importCancelled');
+            return;
+        }
+
+        preview.innerText = t('importing', employees.length);
+        const { error } = await db
+            .from('employees_list')
+            .upsert(employees, { onConflict: 'emp_id' });
+
+        if (error) throw error;
+
+        preview.innerText = t('latestImport', employees.length, new Date().toLocaleString(formatLocale()));
+        await fetchEmployees();
+        Swal.fire(t('importSuccessTitle'), t('importSuccessText', employees.length), 'success');
+    } catch (err) {
+        console.error('Employee import error:', err);
+        preview.innerText = t('importFailedTitle');
+        Swal.fire(t('importFailedTitle'), err.message, 'error');
+    } finally {
+        input.value = '';
+    }
+}
+
+function checkLogin() {
+    const passwordInput = document.getElementById('adminPassword');
+    const password = passwordInput.value;
+    if (password !== ADMIN_PASSWORD) {
+        Swal.fire(t('wrongPasswordTitle'), t('wrongPasswordText'), 'error');
+        return;
+    }
+
+    passwordInput.blur();
+    saveAdminSession(document.getElementById('rememberAdminLogin')?.checked);
+    startAdminApp();
+}
+
 function setupRealtimeReports() {
     if (!db || reportRealtimeChannel) return;
 
@@ -851,7 +1297,7 @@ function setupRealtimeReports() {
                         toast: true,
                         position: 'top-end',
                         icon: eventType === 'INSERT' ? 'info' : 'success',
-                        title: eventType === 'INSERT' ? 'มีเคสใหม่เข้า Admin' : 'มีการอัปเดตเคส',
+                        title: eventType === 'INSERT' ? t('newCaseToast') : t('updatedCaseToast'),
                         timer: 1800,
                         showConfirmButton: false
                     });
@@ -860,7 +1306,7 @@ function setupRealtimeReports() {
             })
             .subscribe((status) => {
                 if (status === 'SUBSCRIBED') {
-                    document.getElementById('lastUpdated').innerText = 'Realtime พร้อมใช้งาน';
+                    document.getElementById('lastUpdated').innerText = t('realtimeReady');
                 }
             });
     } catch (err) {
@@ -870,23 +1316,23 @@ function setupRealtimeReports() {
 
 async function fetchReports() {
     if (!db) {
-        Swal.fire('เชื่อมต่อไม่ได้', 'โหลด Supabase client ไม่สำเร็จ', 'error');
+        Swal.fire(t('connectionFailed'), t('supabaseLoadFailed'), 'error');
         return;
     }
 
-    document.getElementById('lastUpdated').innerText = 'กำลังโหลดข้อมูล...';
+    document.getElementById('lastUpdated').innerText = t('loadingData');
 
     try {
         allReports = await fetchAllReportRows();
     } catch (error) {
-        Swal.fire('โหลดข้อมูลไม่สำเร็จ', error.message, 'error');
+        Swal.fire(t('loadDataFailedTitle'), error.message, 'error');
         return;
     }
 
     computeRepeatCounts();
     hydrateFilterOptions();
     applyFilters();
-    document.getElementById('lastUpdated').innerText = `อัปเดตล่าสุด ${new Date().toLocaleString('th-TH')}`;
+    document.getElementById('lastUpdated').innerText = t('updatedLatest', new Date().toLocaleString(formatLocale()));
 }
 
 function computeRepeatCounts() {
@@ -909,7 +1355,7 @@ function hydrateFilterOptions() {
     const statusSelect = document.getElementById('filterStatus');
     const currentValue = statusSelect.value || 'ALL';
     const statuses = [...new Set(allReports.map(r => r.workflow_status || WORKFLOW_PENDING))].sort();
-    statusSelect.innerHTML = '<option value="ALL">ทั้งหมด</option>';
+    statusSelect.innerHTML = `<option value="ALL">${t('all')}</option>`;
     statuses.forEach(status => {
         statusSelect.innerHTML += `<option value="${escapeHtml(status)}">${escapeHtml(status)}</option>`;
     });
@@ -952,7 +1398,7 @@ function renderSummary() {
     document.getElementById('kpiOpen').innerText = filteredReports.filter(r => OPEN_STATUSES.includes(r.workflow_status || WORKFLOW_PENDING)).length;
     document.getElementById('kpiRepeat').innerText = filteredReports.filter(isRepeatReport).length;
     document.getElementById('kpiUrgent').innerText = filteredReports.filter(r => ['Critical', 'High'].includes(r.severity_level)).length;
-    document.getElementById('resultText').innerText = `${filteredReports.length} รายการ`;
+    document.getElementById('resultText').innerText = `${filteredReports.length} ${t('records')}`;
 }
 
 function renderTable() {
@@ -960,7 +1406,7 @@ function renderTable() {
     tbody.innerHTML = '';
 
     if (filteredReports.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">ไม่พบข้อมูล</td></tr>';
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted py-4">${t('noData')}</td></tr>`;
         return;
     }
 
@@ -977,25 +1423,29 @@ function renderTable() {
                 <td>
                     <span class="table-card-label">Case</span>
                     <div>
-                    <a href="#" class="case-link" onclick="viewReport(${report.id}); return false;">${escapeHtml(report.case_id || `#${report.id}`)}</a>
+                    <a href="#" class="case-link" onclick="viewReport(${report.id}); return false;">${escapeHtml(report.case_id || ('#' + report.id))}</a>
                     ${newBadge}
                     <div class="small-muted">${formatDate(getReportDate(report))}</div>
                     </div>
                 </td>
                 <td>
-                    <span class="table-card-label">ผู้กระทำผิด</span>
+                    <span class="table-card-label">${t('offender')}</span>
                     <div>
                     <div class="fw-bold">${escapeHtml(report.fullname)}</div>
                     <div class="small-muted">${escapeHtml(report.emp_id)} | ${escapeHtml(report.section || '-')}</div>
                     ${repeatBadge}
                     </div>
                 </td>
-                <td><span class="table-card-label">ข้อหา</span><span>${escapeHtml(report.violation_type)}</span></td>
-                <td><span class="table-card-label">ระดับ</span><span class="badge bg-${severityClass}">${escapeHtml(report.severity_level || 'Medium')}</span></td>
-                <td><span class="table-card-label">สถานะ</span><span class="badge bg-${statusClass}">${escapeHtml(status)}</span></td>
-                <td><span class="table-card-label">หลักฐาน</span>${evidence}</td>
+                <td><span class="table-card-label">${t('violation')}</span><span>${escapeHtml(report.violation_type)}</span></td>
+                <td><span class="table-card-label">${t('level')}</span><span class="badge bg-${severityClass}">${escapeHtml(report.severity_level || 'Medium')}</span></td>
+                <td><span class="table-card-label">${t('status')}</span><span class="badge bg-${statusClass}">${escapeHtml(status)}</span></td>
+                <td><span class="table-card-label">${t('evidence')}</span>${evidence}</td>
                 <td class="text-end">
-                    <button class="btn btn-sm btn-outline-primary" onclick="viewReport(${report.id})">เปิด</button>
+                    <div class="d-flex flex-wrap gap-1 justify-content-end">
+                        <button class="btn btn-sm btn-outline-primary" onclick="viewReport(${report.id})">${t('open')}</button>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="openReportModal(${report.id})">${t('edit')}</button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteReport(${report.id})">${t('deleteCase')}</button>
+                    </div>
                 </td>
             </tr>
         `;
@@ -1009,7 +1459,7 @@ function renderRepeatList() {
         .sort((a, b) => b[1] - a[1]);
 
     if (repeatEntries.length === 0) {
-        target.innerHTML = '<div class="text-muted">ยังไม่พบผู้กระทำซ้ำ 2 ครั้งใน 30 วัน</div>';
+        target.innerHTML = `<div class="text-muted">${t('noRepeat')}</div>`;
         return;
     }
 
@@ -1017,7 +1467,7 @@ function renderRepeatList() {
         const latest = allReports.find(r => r.emp_id === empId);
         return `<div class="d-flex justify-content-between align-items-center border rounded p-2">
             <div><div class="fw-bold">${escapeHtml(latest?.fullname || empId)}</div><div class="small-muted">${escapeHtml(empId)}</div></div>
-            <span class="badge bg-danger">${count} ครั้ง</span>
+            <span class="badge bg-danger">${count} ${t('times')}</span>
         </div>`;
     }).join('');
 }
@@ -1025,7 +1475,7 @@ function renderRepeatList() {
 function renderViolationChart() {
     const counts = {};
     filteredReports.forEach(report => {
-        const key = report.violation_type || 'ไม่ระบุ';
+        const key = report.violation_type || t('unspecified');
         counts[key] = (counts[key] || 0) + 1;
     });
 
@@ -1046,17 +1496,368 @@ function renderViolationChart() {
     });
 }
 
+function makeAdminCaseId() {
+    const now = new Date();
+    const stamp = now.toISOString().replace(/\D/g, '').slice(0, 14);
+    return `VR-${stamp}-ADM`;
+}
+
+async function openReportModal(reportId = null) {
+    if (!db) {
+        Swal.fire(t('connectionFailed'), t('supabaseLoadFailed'), 'error');
+        return;
+    }
+
+    const existing = reportId ? allReports.find(report => report.id === reportId) : null;
+    const selectedStatus = existing?.workflow_status || WORKFLOW_PENDING;
+    const selectedSeverity = existing?.severity_level || 'Medium';
+    const { value: values } = await Swal.fire({
+        title: existing ? t('reportModalTitleEdit') : t('reportModalTitleAdd'),
+        width: 720,
+        html: `<div class="text-start">
+            <div class="row g-2">
+                <div class="col-md-4">
+                    <label class="form-label fw-bold small">${t('employeeIdLabel')} *</label>
+                    <input id="reportEmpId" class="form-control" value="${escapeHtml(existing?.emp_id || '')}" placeholder="000000 / AP0000 / SP0000">
+                </div>
+                <div class="col-md-8">
+                    <label class="form-label fw-bold small">${t('employeeNameLabel')}</label>
+                    <input id="reportFullname" class="form-control" value="${escapeHtml(existing?.fullname || '')}" placeholder="${t('employeeNamePlaceholder')}">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold small">${t('sectionLabel')}</label>
+                    <input id="reportSection" class="form-control" value="${escapeHtml(existing?.section || '')}" placeholder="${t('sectionPlaceholder')}">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold small">${t('level')}</label>
+                    <select id="reportSeverity" class="form-select">
+                        ${['Low', 'Medium', 'High', 'Critical'].map(level => `<option value="${level}" ${selectedSeverity === level ? 'selected' : ''}>${level}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="col-md-12">
+                    <label class="form-label fw-bold small">${t('violation')} *</label>
+                    <input id="reportViolation" class="form-control" value="${escapeHtml(existing?.violation_type || '')}" placeholder="${t('violation')}">
+                </div>
+                <div class="col-md-12">
+                    <label class="form-label fw-bold small">${t('location')} *</label>
+                    <input id="reportLocation" class="form-control" value="${escapeHtml(existing?.location_ref || '')}" placeholder="${t('location')}">
+                </div>
+                <div class="col-md-12">
+                    <label class="form-label fw-bold small">${t('actionTaken')}</label>
+                    <input id="reportAction" class="form-control" value="${escapeHtml(existing?.action_taken || '')}" placeholder="${t('actionTaken')}">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold small">${t('status')}</label>
+                    <select id="reportStatus" class="form-select">
+                        ${[WORKFLOW_PENDING, WORKFLOW_REPEAT, WORKFLOW_UNDER_REVIEW, WORKFLOW_CLOSED, WORKFLOW_REJECTED].map(status => `<option value="${status}" ${selectedStatus === status ? 'selected' : ''}>${escapeHtml(status)}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold small">${t('owner')}</label>
+                    <input id="reportOwner" class="form-control" value="${escapeHtml(existing?.review_owner || getStatusOwner(selectedStatus))}">
+                </div>
+                <div class="col-md-12">
+                    <label class="form-label fw-bold small">${t('adminRemark')}</label>
+                    <textarea id="reportAdminRemark" class="form-control" rows="3">${escapeHtml(existing?.admin_remark || '')}</textarea>
+                </div>
+            </div>
+        </div>`,
+        showCancelButton: true,
+        confirmButtonText: t('saveCase'),
+        cancelButtonText: t('cancel'),
+        confirmButtonColor: '#0f172a',
+        didOpen: () => {
+            document.getElementById('reportStatus').addEventListener('change', (event) => {
+                document.getElementById('reportOwner').value = getStatusOwner(event.target.value);
+            });
+        },
+        preConfirm: () => {
+            const empId = document.getElementById('reportEmpId').value.trim();
+            const fullname = document.getElementById('reportFullname').value.trim() || empId;
+            const section = document.getElementById('reportSection').value.trim() || t('unspecified');
+            const violation = document.getElementById('reportViolation').value.trim();
+            const location = document.getElementById('reportLocation').value.trim();
+            const actionTaken = document.getElementById('reportAction').value.trim() || '-';
+            const status = document.getElementById('reportStatus').value;
+            const severity = document.getElementById('reportSeverity').value;
+            const reviewOwner = document.getElementById('reportOwner').value.trim() || getStatusOwner(status);
+            const adminRemark = document.getElementById('reportAdminRemark').value.trim();
+
+            if (!empId) {
+                Swal.showValidationMessage(t('empIdRequired'));
+                return false;
+            }
+            if (!violation) {
+                Swal.showValidationMessage(t('violationRequired'));
+                return false;
+            }
+            if (!location) {
+                Swal.showValidationMessage(t('locationRequired'));
+                return false;
+            }
+
+            return { empId, fullname, section, violation, location, actionTaken, status, severity, reviewOwner, adminRemark };
+        }
+    });
+
+    if (!values) return;
+
+    const now = new Date().toISOString();
+    const payload = {
+        emp_id: values.empId,
+        fullname: values.fullname,
+        section: values.section,
+        violation_type: values.violation,
+        location_ref: values.location,
+        action_taken: values.actionTaken,
+        severity_level: values.severity,
+        workflow_status: values.status,
+        review_owner: values.reviewOwner,
+        admin_remark: values.adminRemark || null,
+        last_status_changed_at: now,
+        last_status_changed_by: ADMIN_ACTOR,
+        synced_at: now
+    };
+
+    if (!existing) {
+        payload.case_id = makeAdminCaseId();
+        payload.reported_by = ADMIN_ACTOR;
+        payload.client_reported_at = now;
+        payload.source_page = 'admin_guard_violation.html';
+        payload.sync_status = 'Admin Created';
+    }
+
+    try {
+        let result;
+        if (existing) {
+            result = await db.from('violation_reports').update(payload).eq('id', existing.id);
+        } else {
+            result = await db.from('violation_reports').insert([payload]);
+        }
+        if (result.error) throw result.error;
+
+        await Swal.fire({ icon: 'success', title: t('reportSavedTitle'), timer: 1200, showConfirmButton: false });
+        await fetchReports();
+        if (existing) viewReport(existing.id);
+    } catch (err) {
+        Swal.fire(t('saveFailedTitle'), err.message, 'error');
+    }
+}
+
+async function deleteReport(id) {
+    if (!db) {
+        Swal.fire(t('connectionFailed'), t('supabaseLoadFailed'), 'error');
+        return;
+    }
+
+    const report = allReports.find(item => item.id === id);
+    if (!report) return;
+
+    const result = await Swal.fire({
+        icon: 'warning',
+        title: t('deleteCaseTitle'),
+        text: `${t('deleteCaseText')} (${report.case_id || ('#' + report.id)})`,
+        showCancelButton: true,
+        confirmButtonText: t('deleteConfirm'),
+        cancelButtonText: t('cancel'),
+        confirmButtonColor: '#dc2626'
+    });
+
+    if (!result.isConfirmed) return;
+
+    const { error } = await db.from('violation_reports').delete().eq('id', id);
+    if (error) {
+        Swal.fire(t('deleteFailedTitle'), error.message, 'error');
+        return;
+    }
+
+    if (activeReportId === id) {
+        activeReportId = null;
+        document.getElementById('caseDetailPanel').classList.remove('show');
+    }
+    await Swal.fire({ icon: 'success', title: t('reportDeletedTitle'), timer: 1200, showConfirmButton: false });
+    await fetchReports();
+}
+
+function getWorkflowActions(report) {
+    const status = report.workflow_status || WORKFLOW_PENDING;
+    if (status === WORKFLOW_CLOSED || status === WORKFLOW_REJECTED) return [];
+
+    const actions = [];
+    if (status === WORKFLOW_PENDING) {
+        actions.push({ status: WORKFLOW_UNDER_REVIEW, label: getWorkflowLabel(WORKFLOW_UNDER_REVIEW), className: 'btn-outline-primary' });
+        if (isRepeatReport(report)) {
+            actions.push({ status: WORKFLOW_REPEAT, label: getWorkflowLabel(WORKFLOW_REPEAT), className: 'btn-outline-danger' });
+        }
+        actions.push({ status: WORKFLOW_REJECTED, label: getWorkflowLabel(WORKFLOW_REJECTED), className: 'btn-outline-secondary' });
+        return actions;
+    }
+
+    if (status === WORKFLOW_REPEAT) {
+        actions.push({ status: WORKFLOW_UNDER_REVIEW, label: getWorkflowLabel(WORKFLOW_UNDER_REVIEW), className: 'btn-outline-primary' });
+        actions.push({ status: WORKFLOW_CLOSED, label: getWorkflowLabel(WORKFLOW_CLOSED), className: 'btn-outline-success' });
+        actions.push({ status: WORKFLOW_REJECTED, label: getWorkflowLabel(WORKFLOW_REJECTED), className: 'btn-outline-secondary' });
+        return actions;
+    }
+
+    if (status === WORKFLOW_UNDER_REVIEW) {
+        if (isRepeatReport(report)) {
+            actions.push({ status: WORKFLOW_REPEAT, label: getWorkflowLabel(WORKFLOW_REPEAT), className: 'btn-outline-danger' });
+        }
+        actions.push({ status: WORKFLOW_CLOSED, label: getWorkflowLabel(WORKFLOW_CLOSED), className: 'btn-outline-success' });
+        actions.push({ status: WORKFLOW_REJECTED, label: getWorkflowLabel(WORKFLOW_REJECTED), className: 'btn-outline-secondary' });
+        return actions;
+    }
+
+    actions.push({ status: WORKFLOW_UNDER_REVIEW, label: getWorkflowLabel(WORKFLOW_UNDER_REVIEW), className: 'btn-outline-primary' });
+    actions.push({ status: WORKFLOW_CLOSED, label: getWorkflowLabel(WORKFLOW_CLOSED), className: 'btn-outline-success' });
+    actions.push({ status: WORKFLOW_REJECTED, label: getWorkflowLabel(WORKFLOW_REJECTED), className: 'btn-outline-secondary' });
+    return actions.filter(action => action.status !== status);
+}
+
+function renderWorkflowActions(report) {
+    const actions = getWorkflowActions(report);
+    if (actions.length === 0) {
+        return `<div class="text-muted small border rounded p-3 mt-3">${t('noMoreActions')}</div>`;
+    }
+
+    return `<div class="d-flex flex-wrap gap-2 mt-3">${actions.map(action => `
+        <button class="btn ${action.className}" onclick="updateStatus(${report.id}, '${action.status}')">${action.label}</button>
+    `).join('')}</div>`;
+}
+
+async function printCasePdf(id) {
+    const report = allReports.find(r => r.id === id);
+    if (!report) return;
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const doc = printWindow.document;
+    const timeline = await fetchCaseTimeline(report);
+    const repeatText = isRepeatReport(report) ? 'Repeat Offender' : '-';
+    const totalViolationCount = allReports.filter(item => item.emp_id && item.emp_id === report.emp_id).length || 1;
+    const recentViolationCount = repeatCounts[report.emp_id] || report.recent_violation_count_30d || 1;
+    const gpsText = report.gps_latitude && report.gps_longitude
+        ? `${report.gps_latitude}, ${report.gps_longitude}`
+        : '-';
+
+    const pdfStyles = [
+        '@page { size: A4; margin: 16mm; }',
+        'body { font-family: Arial, "Sarabun", sans-serif; color: #111827; line-height: 1.5; }',
+        'button { padding: 10px 14px; margin-bottom: 12px; }',
+        '.header { border-bottom: 3px solid #111827; padding-bottom: 12px; margin-bottom: 18px; }',
+        'h1 { font-size: 22px; margin: 0 0 4px; }',
+        '.muted { color: #4b5563; font-size: 12px; }',
+        '.case-id { font-weight: 700; border: 1px solid #111827; padding: 6px 10px; display: inline-block; margin-top: 10px; }',
+        'table { width: 100%; border-collapse: collapse; margin: 14px 0; }',
+        'th, td { border: 1px solid #d1d5db; padding: 8px 10px; vertical-align: top; font-size: 13px; }',
+        'th { width: 28%; background: #f3f4f6; text-align: left; }',
+        '.section-title { font-weight: 700; margin-top: 18px; font-size: 15px; }',
+        '.signatures { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 44px; }',
+        '.signature { text-align: center; border-top: 1px solid #111827; padding-top: 8px; font-size: 13px; }',
+        '@media print { .no-print { display: none; } a { color: #111827; text-decoration: none; } }'
+    ].join('\n');
+
+    doc.open();
+    doc.close();
+    doc.documentElement.lang = currentLang;
+    doc.title = `${t('officialReportTitle')} - ${report.case_id || report.id}`;
+
+    const style = doc.createElement('style');
+    style.textContent = pdfStyles;
+    doc.head.appendChild(style);
+
+    const addEl = (parent, tagName, text = '', className = '') => {
+        const el = doc.createElement(tagName);
+        if (className) el.className = className;
+        if (text) el.textContent = text;
+        parent.appendChild(el);
+        return el;
+    };
+
+    const addPdfRow = (table, label, value, valueNode = null) => {
+        const row = doc.createElement('tr');
+        addEl(row, 'th', label);
+        const cell = doc.createElement('td');
+        if (valueNode) {
+            cell.appendChild(valueNode);
+        } else {
+            cell.textContent = value || '-';
+        }
+        row.appendChild(cell);
+        table.appendChild(row);
+    };
+
+    doc.body.textContent = '';
+    const printButton = addEl(doc.body, 'button', t('savePdf'), 'no-print');
+    printButton.addEventListener('click', () => printWindow.print());
+
+    const header = addEl(doc.body, 'div', '', 'header');
+    addEl(header, 'h1', t('officialReportTitle'));
+    addEl(header, 'div', t('officialReportSubtitle'), 'muted');
+    addEl(header, 'div', t('officialReportBy'), 'muted');
+    addEl(header, 'div', `Case: ${report.case_id || ('#' + report.id)}`, 'case-id');
+
+    const table = addEl(doc.body, 'table');
+    addPdfRow(table, t('preparedAt'), new Date().toLocaleString(formatLocale()));
+    addPdfRow(table, t('preparedBy'), ADMIN_ACTOR);
+    addPdfRow(table, t('offender'), `${report.fullname || '-'} (${report.emp_id || '-'})`);
+    addPdfRow(table, t('sectionLabel'), report.section || '-');
+    addPdfRow(table, t('violation'), report.violation_type || '-');
+    addPdfRow(table, t('location'), report.location_ref || '-');
+    addPdfRow(table, t('actionTaken'), report.action_taken || '-');
+    addPdfRow(table, t('level'), report.severity_level || '-');
+    addPdfRow(table, t('status'), report.workflow_status || WORKFLOW_PENDING);
+    addPdfRow(table, t('owner'), report.review_owner || '-');
+    addPdfRow(table, t('cumulativeViolations'), `${totalViolationCount} ${t('times')}`);
+    addPdfRow(table, t('violationsIn30Days'), `${recentViolationCount} ${t('times')}`);
+    addPdfRow(table, 'Repeat Offender', repeatText);
+    addPdfRow(table, t('adminRemark'), report.admin_remark || '-');
+    addPdfRow(table, t('closeReason'), report.closed_reason || '-');
+    addPdfRow(table, t('gps'), gpsText);
+    if (report.evidence_url) {
+        const link = doc.createElement('a');
+        link.href = report.evidence_url;
+        link.textContent = report.evidence_url;
+        addPdfRow(table, t('evidence'), '', link);
+    } else {
+        addPdfRow(table, t('evidence'), '-');
+    }
+
+    addEl(doc.body, 'div', t('recommendation'), 'section-title');
+    addEl(doc.body, 'p', t('recommendationText'));
+    addEl(doc.body, 'div', 'Case Timeline', 'section-title');
+    const list = addEl(doc.body, 'ol');
+    if (timeline.length) {
+        timeline.forEach(event => {
+            addEl(list, 'li', `${formatDate(event.created_at)} - ${event.event_type || '-'} | ${event.from_status || '-'} -> ${event.to_status || '-'} ${event.note || ''}`);
+        });
+    } else {
+        addEl(list, 'li', t('noTimeline'));
+    }
+
+    const signatures = addEl(doc.body, 'div', '', 'signatures');
+    addEl(signatures, 'div', t('signatureGuard'), 'signature');
+    addEl(signatures, 'div', t('signatureSafety'), 'signature');
+    addEl(signatures, 'div', t('signatureDept'), 'signature');
+
+    printWindow.focus();
+    setTimeout(() => printWindow.print(), 300);
+}
+
 async function viewReport(id) {
+    activeReportId = id;
     const report = allReports.find(r => r.id === id);
     if (!report) return;
     await markReportViewed(report);
     const timeline = await fetchCaseTimeline(report);
 
     const gpsLink = report.gps_latitude && report.gps_longitude
-        ? `<a href="https://www.google.com/maps?q=${report.gps_latitude},${report.gps_longitude}" target="_blank">เปิด Google Maps</a>`
+        ? `<a href="https://www.google.com/maps?q=${report.gps_latitude},${report.gps_longitude}" target="_blank">${t('openGoogleMaps')}</a>`
         : '-';
     const evidenceLink = report.evidence_url
-        ? `<a href="${escapeHtml(report.evidence_url)}" target="_blank">เปิดรูปหลักฐาน</a>`
+        ? `<a href="${escapeHtml(report.evidence_url)}" target="_blank">${t('openEvidence')}</a>`
         : '-';
 
     const panel = document.getElementById('caseDetailPanel');
@@ -1064,45 +1865,48 @@ async function viewReport(id) {
     panel.innerHTML = `
         <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
             <div>
-                <h5 class="fw-bold mb-1">${escapeHtml(report.case_id || `Case #${report.id}`)}</h5>
-                <div class="small-muted">หน้า Detail เคสแบบเต็ม สำหรับ audit, หลักฐาน และ workflow</div>
+                <h5 class="fw-bold mb-1">${escapeHtml(report.case_id || ('Case #' + report.id))}</h5>
+                <div class="small-muted">${t('caseDetailHelp')}</div>
             </div>
-            <button class="btn btn-sm btn-outline-secondary fw-bold" onclick="document.getElementById('caseDetailPanel').classList.remove('show')">
-                ปิดรายละเอียด
-            </button>
+            <div class="d-flex flex-wrap gap-2">
+                <button class="btn btn-sm btn-outline-success fw-bold" onclick="printCasePdf(${report.id})">
+                    <i class="bi bi-file-earmark-pdf me-1"></i>${t('savePdf')}
+                </button>
+                <button class="btn btn-sm btn-outline-primary fw-bold" onclick="openReportModal(${report.id})">
+                    ${t('editCase')}
+                </button>
+                <button class="btn btn-sm btn-outline-secondary fw-bold" onclick="document.getElementById('caseDetailPanel').classList.remove('show')">
+                    ${t('closeDetail')}
+                </button>
+            </div>
         </div>
         <div class="detail-grid mb-3">
             <div class="detail-item">
-            <div class="mb-2"><b>ผู้กระทำผิด:</b> ${escapeHtml(report.fullname)} (${escapeHtml(report.emp_id)}) ${isRepeatReport(report) ? '<span class="badge bg-danger ms-1">Repeat Offender</span>' : ''}</div>
-            <div class="mb-2"><b>แผนก:</b> ${escapeHtml(report.section || '-')}</div>
-            <div class="mb-2"><b>ข้อหา:</b> ${escapeHtml(report.violation_type)}</div>
-            <div class="mb-2"><b>จุดเกิดเหตุ:</b> ${escapeHtml(report.location_ref)}</div>
+            <div class="mb-2"><b>${t('offender')}:</b> ${escapeHtml(report.fullname)} (${escapeHtml(report.emp_id)}) ${isRepeatReport(report) ? '<span class="badge bg-danger ms-1">Repeat Offender</span>' : ''}</div>
+            <div class="mb-2"><b>${t('sectionLabel')}:</b> ${escapeHtml(report.section || '-')}</div>
+            <div class="mb-2"><b>${t('violation')}:</b> ${escapeHtml(report.violation_type)}</div>
+            <div class="mb-2"><b>${t('location')}:</b> ${escapeHtml(report.location_ref)}</div>
             </div>
             <div class="detail-item">
-            <div class="mb-2"><b>การดำเนินการ:</b> ${escapeHtml(report.action_taken)}</div>
-            <div class="mb-2"><b>ระดับ:</b> ${escapeHtml(report.severity_level || 'Medium')}</div>
-            <div class="mb-2"><b>สถานะ:</b> ${escapeHtml(report.workflow_status || WORKFLOW_PENDING)}</div>
-            <div class="mb-2"><b>ผู้รับผิดชอบ:</b> ${escapeHtml(report.review_owner || '-')}</div>
+            <div class="mb-2"><b>${t('actionTaken')}:</b> ${escapeHtml(report.action_taken)}</div>
+            <div class="mb-2"><b>${t('level')}:</b> ${escapeHtml(report.severity_level || 'Medium')}</div>
+            <div class="mb-2"><b>${t('status')}:</b> ${escapeHtml(report.workflow_status || WORKFLOW_PENDING)}</div>
+            <div class="mb-2"><b>${t('owner')}:</b> ${escapeHtml(report.review_owner || '-')}</div>
             </div>
             <div class="detail-item">
-            <div class="mb-2"><b>หมายเหตุ Admin:</b> ${escapeHtml(report.admin_remark || '-')}</div>
-            <div class="mb-2"><b>เหตุผลปิด/ไม่รับ:</b> ${escapeHtml(report.closed_reason || '-')}</div>
-            <div class="mb-2"><b>ผู้เปลี่ยนสถานะล่าสุด:</b> ${escapeHtml(report.last_status_changed_by || '-')}</div>
+            <div class="mb-2"><b>${t('adminRemark')}:</b> ${escapeHtml(report.admin_remark || '-')}</div>
+            <div class="mb-2"><b>${t('closeReason')}:</b> ${escapeHtml(report.closed_reason || '-')}</div>
+            <div class="mb-2"><b>${t('lastStatusChangedBy')}:</b> ${escapeHtml(report.last_status_changed_by || '-')}</div>
             </div>
             <div class="detail-item">
-            <div class="mb-2"><b>พิกัด:</b> ${gpsLink}</div>
-            <div class="mb-3"><b>หลักฐาน:</b> ${evidenceLink}</div>
+            <div class="mb-2"><b>${t('gps')}:</b> ${gpsLink}</div>
+            <div class="mb-3"><b>${t('evidence')}:</b> ${evidenceLink}</div>
             <div class="mb-2"><b>Device:</b> ${escapeHtml(report.device_id || '-')}</div>
             </div>
         </div>
             <h6 class="fw-bold mt-3">Case Timeline</h6>
             ${renderTimeline(timeline)}
-            <div class="d-flex flex-wrap gap-2 mt-3">
-                <button class="btn btn-outline-primary" onclick="updateStatus(${report.id}, '${WORKFLOW_UNDER_REVIEW}')">Under Review</button>
-                <button class="btn btn-outline-danger" onclick="updateStatus(${report.id}, '${WORKFLOW_REPEAT}')">Repeat Review</button>
-                <button class="btn btn-outline-success" onclick="updateStatus(${report.id}, '${WORKFLOW_CLOSED}')">Closed</button>
-                <button class="btn btn-outline-secondary" onclick="updateStatus(${report.id}, '${WORKFLOW_REJECTED}')">Rejected</button>
-            </div>
+            ${renderWorkflowActions(report)}
         `;
     panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -1113,20 +1917,20 @@ async function updateStatus(id, status) {
 
     const requiresReason = [WORKFLOW_CLOSED, WORKFLOW_REJECTED].includes(status);
     const { value: statusForm } = await Swal.fire({
-        title: `อัปเดตเป็น ${status}`,
+        title: t('updateTo', status),
         html: `<div class="text-start">
-            <label class="form-label fw-bold">หมายเหตุสำหรับ Timeline${requiresReason ? ' *' : ''}</label>
-            <textarea id="statusRemark" class="form-control" rows="4" placeholder="เช่น แจ้งหัวหน้างานแล้ว / ข้อมูลซ้ำ / ระบุตัวผิด"></textarea>
-            <div class="small text-muted mt-2">ระบบจะบันทึกประวัติการเปลี่ยนสถานะไว้ใน Case Timeline</div>
+            <label class="form-label fw-bold">${t('timelineRemark')}${requiresReason ? ' *' : ''}</label>
+            <textarea id="statusRemark" class="form-control" rows="4" placeholder="${t('statusRemarkPlaceholder')}"></textarea>
+            <div class="small text-muted mt-2">${t('timelineSaveHelp')}</div>
         </div>`,
         showCancelButton: true,
-        confirmButtonText: 'บันทึกสถานะ',
-        cancelButtonText: 'ยกเลิก',
+        confirmButtonText: t('saveStatus'),
+        cancelButtonText: t('cancel'),
         confirmButtonColor: '#0f172a',
         preConfirm: () => {
             const remark = document.getElementById('statusRemark').value.trim();
             if (requiresReason && !remark) {
-                Swal.showValidationMessage('กรุณากรอกเหตุผลก่อนปิดเคสหรือ Rejected');
+                Swal.showValidationMessage(t('closeReasonRequired'));
                 return false;
             }
             return { remark };
@@ -1162,7 +1966,7 @@ async function updateStatus(id, status) {
     }
 
     if (error) {
-        Swal.fire('อัปเดตไม่สำเร็จ', error.message, 'error');
+        Swal.fire(t('updateFailedTitle'), error.message, 'error');
         return;
     }
 
@@ -1172,14 +1976,14 @@ async function updateStatus(id, status) {
         event_type: EVENT_STATUS_CHANGED,
         from_status: previousStatus,
         to_status: status,
-        note: statusForm.remark || `เปลี่ยนสถานะเป็น ${status}`,
+        note: statusForm.remark || t('changedStatusTo', status),
         event_payload: {
             review_owner: getStatusOwner(status),
             closed_reason: requiresReason ? statusForm.remark : null
         }
     });
 
-    await Swal.fire({ icon: 'success', title: 'อัปเดตสถานะแล้ว', timer: 1200, showConfirmButton: false });
+    await Swal.fire({ icon: 'success', title: t('statusUpdatedTitle'), timer: 1200, showConfirmButton: false });
     await fetchReports();
 }
 
@@ -1206,7 +2010,7 @@ async function fetchTimelineSummaryMap(reports) {
 
 async function exportToExcel() {
     if (filteredReports.length === 0) {
-        Swal.fire('ไม่มีข้อมูล', 'ไม่มีรายการสำหรับ export', 'warning');
+        Swal.fire(t('noExportDataTitle'), t('noExportDataText'), 'warning');
         return;
     }
 
@@ -1242,6 +2046,9 @@ async function exportToExcel() {
     XLSX.utils.book_append_sheet(wb, ws, 'Violation Reports');
     XLSX.writeFile(wb, `Violation_Report_${new Date().toISOString().slice(0, 10)}.xlsx`);
 }
+
+applyLanguage();
+restoreAdminSession();
 </script>
 </body>
 </html>
