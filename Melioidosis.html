@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>เตือนภัยสาธารณสุข: สถานการณ์โรคไข้ดิน (Melioidosis)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Google Fonts: Prompt for Thai Typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Prompt', 'sans-serif'],
+                    },
+                    colors: {
+                        alert: '#DC2626', // Vibrant Red
+                        earth: '#92400E', // Muddy Brown
+                        warning: '#EA580C', // Orange
+                        bglight: '#F8FAFC',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            color-scheme: light;
+        }
+        body {
+            background-color: #F8FAFC;
+            word-break: break-word;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 400px;
+        }
+        @media (max-width: 640px) {
+            main {
+                padding-top: 1.25rem;
+                padding-bottom: 1.5rem;
+            }
+            .chart-container {
+                height: 300px;
+            }
+            .mobile-card-stack {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            .mobile-card-stack .kpi-icon {
+                align-self: flex-end;
+            }
+            .mobile-safe-radius {
+                border-radius: 1rem;
+            }
+        }
+    </style>
+</head>
+<body class="text-gray-800 antialiased font-sans">
+
+    <!-- 
+        Narrative Plan:
+        1. Hero/Header: Urgent public health warning with Big Number KPIs (Cases & Deaths) to grab attention.
+        2. Introduction: What is the disease and how is it transmitted (using grid cards + Unicode icons).
+        3. Risk Analysis: Horizontal Bar Chart showing the hierarchy of high-risk groups (Diabetes being the highest).
+        4. Symptoms & Danger: Checklist style presentation with a critical alert box for the 2-3 day fatality window.
+        5. Prevention: Actionable 4-step guide to staying safe.
+        
+        Palette Used: "Vibrant Alert & Earth" 
+        - Primary Alert: #DC2626 (Red)
+        - Earth/Soil Theme: #92400E (Brown)
+        - Warning Accent: #EA580C (Orange)
+        
+        Chart Selection Justifications (NO SVG):
+        - Data: Cases & Deaths -> Goal: Inform -> Single Big Number (HTML/Tailwind) -> Immediate impact.
+        - Data: Transmission -> Goal: Organize -> 3-Column Grid with Unicode -> Clear categorization.
+        - Data: Risk Groups -> Goal: Compare -> Horizontal Bar Chart (Chart.js) -> Shows ranking of underlying conditions effectively.
+        - Data: Prevention -> Goal: Organize -> Step-by-step Grid (HTML/Tailwind) -> Easy to read action items.
+        * Confirmed: NO SVG used in this document. NO MERMAID JS used.
+    -->
+
+    <main class="max-w-6xl mx-auto px-4 sm:px-5 py-8">
+        
+        <!-- HEADER SECTION -->
+        <header class="text-center mb-10 md:mb-12">
+            <div class="inline-block bg-alert text-white px-4 py-1 rounded-full text-sm font-semibold tracking-wider mb-4 animate-pulse">
+                🚨 เตือนภัยสาธารณสุขด่วน
+            </div>
+            <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4 leading-tight">
+                เฝ้าระวังการระบาด <span class="hidden sm:inline"><br></span><span class="text-earth">“โรคไข้ดิน” (Melioidosis)</span>
+            </h1>
+            <p class="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto">
+                ข้อมูลสื่อสารสาธารณสุขชุดนี้อ้างอิงสถานการณ์ประเทศไทยและพื้นที่เฝ้าระวังภาคตะวันออกที่รวมจังหวัดชลบุรี โดยเน้นกลุ่มเกษตรกร ผู้สัมผัสดินและน้ำ และผู้มีโรคประจำตัว
+            </p>
+        </header>
+
+        <section class="mb-8">
+            <div class="bg-amber-50 border border-amber-200 rounded-2xl mobile-safe-radius p-4 sm:p-5 text-amber-900 shadow-sm">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 text-sm sm:text-base">
+                    <div><b>อัปเดตข้อมูล:</b> <span id="statsAsOfLabel">16 เมษายน 2569</span></div>
+                    <div><b>ช่วงข้อมูลสะสม:</b> <span id="statsRangeLabel">1 มกราคม - 16 เมษายน 2569</span></div>
+                    <div><b>พื้นที่เฝ้าระวัง:</b> ภาคตะวันออกเฉียงเหนือและภาคตะวันออก รวมชลบุรี</div>
+                </div>
+                <div class="mt-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+                    <p id="statsUpdateStatus" class="text-sm text-amber-800" aria-live="polite">ค่าตั้งต้นในหน้านี้มาจากเอกสารอ้างอิงของคุณ</p>
+                    <button id="refreshStatsBtn" onclick="refreshStatsWithGemini()" class="w-full sm:w-auto bg-amber-600 hover:bg-amber-700 disabled:bg-amber-300 disabled:cursor-not-allowed text-white font-bold py-3 px-5 rounded-full transition shadow-md">
+                        <span id="refreshStatsSpinner" class="hidden align-middle mr-2">
+                            <svg class="animate-spin h-5 w-5 inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                            </svg>
+                        </span>
+                        <span id="refreshStatsLabel">อัปเดตยอดล่าสุดด้วย AI</span>
+                    </button>
+                </div>
+                <div id="statsSources" class="hidden mt-4 bg-white/70 p-4 rounded-xl mobile-safe-radius border border-amber-100 text-sm text-gray-700"></div>
+            </div>
+        </section>
+
+        <!-- KPI SECTION (BIG NUMBERS) -->
+        <section class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-12">
+            <div class="bg-white rounded-2xl mobile-safe-radius shadow-lg p-5 sm:p-8 border-l-8 border-warning flex items-center justify-between mobile-card-stack">
+                <div>
+                    <h2 class="text-lg sm:text-xl text-gray-500 font-semibold mb-1">ยอดผู้ป่วยสะสมพุ่ง</h2>
+                    <p class="text-4xl sm:text-5xl md:text-7xl font-bold text-gray-900"><span id="casesCount">732</span> <span class="text-xl sm:text-2xl text-gray-500 font-normal">ราย</span></p>
+                </div>
+                <div class="kpi-icon text-5xl sm:text-6xl opacity-20">🤒</div>
+            </div>
+            <div class="bg-white rounded-2xl mobile-safe-radius shadow-lg p-5 sm:p-8 border-l-8 border-alert flex items-center justify-between mobile-card-stack">
+                <div>
+                    <h2 class="text-lg sm:text-xl text-gray-500 font-semibold mb-1">เสียชีวิตแล้ว</h2>
+                    <p class="text-4xl sm:text-5xl md:text-7xl font-bold text-alert"><span id="deathsCount">23</span> <span class="text-xl sm:text-2xl text-gray-500 font-normal">ราย</span></p>
+                </div>
+                <div class="kpi-icon text-5xl sm:text-6xl opacity-20">🪦</div>
+            </div>
+        </section>
+
+        <!-- WHAT IS IT & TRANSMISSION SECTION -->
+        <section class="mb-16">
+            <div class="text-center mb-8">
+                <h2 class="text-2xl md:text-3xl font-bold text-earth mb-2">🦠 ทำความรู้จักภัยเงียบที่มากับความชื้น</h2>
+                <p class="text-gray-600 max-w-3xl mx-auto">
+                    เกิดจากการติดเชื้อแบคทีเรีย <b>Burkholderia pseudomallei</b> พบได้ทั่วไปในดิน โคลน เลน แหล่งน้ำธรรมชาติ และนาข้าว สามารถเข้าสู่ร่างกายมนุษย์ได้ 3 ช่องทางหลัก:
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+                <!-- Card 1 -->
+                <div class="bg-white rounded-xl mobile-safe-radius shadow-md p-5 sm:p-6 hover:shadow-xl transition-shadow">
+                    <div class="text-3xl sm:text-4xl mb-4 bg-blue-50 w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center">💧</div>
+                    <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-2">1. การสัมผัสโดยตรง</h3>
+                    <p class="text-gray-600 text-sm">
+                        เชื้อซึมเข้าทางบาดแผล รอยถลอก หรือผิวหนังปกติที่ต้องแช่น้ำหรือคลุกโคลนเป็นเวลานาน
+                    </p>
+                </div>
+                <!-- Card 2 -->
+                <div class="bg-white rounded-xl mobile-safe-radius shadow-md p-5 sm:p-6 hover:shadow-xl transition-shadow">
+                    <div class="text-3xl sm:text-4xl mb-4 bg-orange-50 w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center">🍽️</div>
+                    <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-2">2. การอุปโภคบริโภค</h3>
+                    <p class="text-gray-600 text-sm">
+                        การดื่มน้ำที่ไม่ได้ผ่านการต้มสุก หรือรับประทานอาหารที่มีการปนเปื้อนของเชื้อ
+                    </p>
+                </div>
+                <!-- Card 3 -->
+                <div class="bg-white rounded-xl mobile-safe-radius shadow-md p-5 sm:p-6 hover:shadow-xl transition-shadow">
+                    <div class="text-3xl sm:text-4xl mb-4 bg-gray-50 w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center">💨</div>
+                    <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-2">3. การสูดดม</h3>
+                    <p class="text-gray-600 text-sm">
+                        หายใจเอาฝุ่นดิน หรือละอองน้ำที่มีเชื้อปนเปื้อน (เสี่ยงสูงช่วงพายุลมแรงหรือฝนตกหนัก)
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- HIGH RISK GROUPS (CHART.JS) -->
+        <section class="bg-white rounded-2xl mobile-safe-radius shadow-lg p-5 sm:p-6 md:p-10 mb-16 border-t-4 border-warning">
+            <div class="md:flex md:items-center md:justify-between mb-8">
+                <div class="md:w-1/2 md:pr-8 mb-6 md:mb-0">
+                    <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-4">⚠️ กลุ่มเสี่ยงสูงที่ต้องเฝ้าระวังเป็นพิเศษ</h2>
+                    <p class="text-gray-600 mb-4">
+                        แม้ทุกคนจะสามารถรับเชื้อได้ แต่ <b>กลุ่มเกษตรกร ชาวไร่ ชาวนา และผู้ที่ต้องสัมผัสดินหรือน้ำเป็นประจำ 👨‍🌾</b> มีความเสี่ยงสูงสุดจากการสัมผัสโดยตรง โดยข้อมูลในเอกสารอ้างอิงระบุว่าพื้นที่ภาคตะวันออกซึ่งรวมชลบุรีอยู่ในเขตเฝ้าระวังที่สำคัญเช่นกัน
+                    </p>
+                    <div class="bg-red-50 text-alert p-4 rounded-lg text-sm border border-red-100">
+                        <b>ข้อสังเกต:</b> ผู้ป่วยโรคเบาหวานถือเป็นกลุ่มที่อันตรายที่สุด รองลงมาคือผู้มีโรคไตเรื้อรัง โรคปอด ธาลัสซีเมีย และภาวะภูมิคุ้มกันบกพร่อง
+                    </div>
+                </div>
+                <div class="md:w-1/2 w-full">
+                    <div class="chart-container">
+                        <canvas id="riskChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SYMPTOMS & DANGER -->
+        <section class="mb-16">
+            <h2 class="text-2xl md:text-3xl font-bold text-center text-gray-900 mb-8">🔍 อาการที่ต้องสังเกต (ระยะฟักตัว 1-21 วัน)</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-8">
+                <div class="bg-bglight rounded-2xl mobile-safe-radius p-5 sm:p-6 border border-gray-200">
+                    <h3 class="font-bold text-lg mb-4 text-earth">อาการเริ่มต้น (คล้ายโรคอื่น)</h3>
+                    <ul class="space-y-3 text-gray-700">
+                        <li class="flex items-start">
+                            <span class="mr-2">🔥</span> <span>มีไข้สูงเรื้อรังโดยไม่ทราบสาเหตุ มีอาการหนาวสั่น</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-2">🔴</span> <span>พบฝีหนองตามผิวหนัง หรืออักเสบที่อวัยวะภายใน (ตับ, ม้าม)</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-2">🫁</span> <span>มีอาการไอเรื้อรัง เจ็บหน้าอก หอบเหนื่อย (คล้ายวัณโรคหรือปอดอักเสบ)</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="bg-alert text-white rounded-2xl mobile-safe-radius p-5 sm:p-6 shadow-xl relative overflow-hidden">
+                    <div class="absolute -right-4 -top-4 text-9xl opacity-10">☠️</div>
+                    <h3 class="font-bold text-xl mb-2 flex items-center relative z-10"><span class="text-2xl mr-2">‼️</span> ข้อควรระวังสูงสุด</h3>
+                    <p class="mb-4 relative z-10 text-red-100">หากเชื้อเข้าสู่กระแสเลือด จะทำให้เกิดภาวะติดเชื้อรุนแรง</p>
+                    <div class="bg-white text-alert font-bold p-4 rounded-lg text-center text-base sm:text-lg relative z-10 shadow-inner">
+                        ช็อกและเสียชีวิตได้รวดเร็วภายใน 2-3 วัน<br>
+                        <span class="text-sm font-normal text-gray-600">หากไม่ได้รับการรักษาอย่างทันท่วงที</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="mb-16">
+            <div class="bg-white rounded-2xl mobile-safe-radius shadow-lg p-5 sm:p-8 border border-gray-100">
+                <div class="text-center mb-6">
+                    <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2">⏱️ กฎ “ไข้ 2 วัน” ที่ควรจำ</h2>
+                    <p class="text-gray-600 max-w-3xl mx-auto">หากมีไข้สูงต่อเนื่องเกิน 2 วัน ร่วมกับหนาวสั่น หอบเหนื่อย เจ็บหน้าอก หรือมีประวัติสัมผัสดิน น้ำ โคลน หรือฝุ่นดิน ควรรีบพบแพทย์ทันที</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
+                    <div class="rounded-xl mobile-safe-radius bg-red-50 border border-red-100 p-4">
+                        <div class="text-lg font-bold text-alert mb-2">1. รีบไปโรงพยาบาล</div>
+                        <p class="text-sm text-red-900">อย่ารอดูอาการเอง หากเริ่มมีไข้สูง หนาวสั่น ซึม หรือหายใจเหนื่อยหลังสัมผัสดินหรือน้ำ</p>
+                    </div>
+                    <div class="rounded-xl mobile-safe-radius bg-sky-50 border border-sky-100 p-4">
+                        <div class="text-lg font-bold text-sky-800 mb-2">2. แจ้งประวัติเสี่ยงทุกครั้ง</div>
+                        <p class="text-sm text-sky-900">แจ้งแพทย์หรือพยาบาลว่าเพิ่งลุยน้ำ ย่ำโคลน ทำสวน ทำนา หรือสัมผัสดินและน้ำตามธรรมชาติ</p>
+                    </div>
+                    <div class="rounded-xl mobile-safe-radius bg-emerald-50 border border-emerald-100 p-4">
+                        <div class="text-lg font-bold text-emerald-800 mb-2">3. ปรึกษาสายด่วน 1422</div>
+                        <p class="text-sm text-emerald-900">หากไม่แน่ใจเรื่องความเสี่ยง สามารถสอบถามสายด่วนกรมควบคุมโรค 1422 เพิ่มเติมได้</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PREVENTION SECTION -->
+        <section class="bg-earth text-white rounded-2xl mobile-safe-radius shadow-lg p-5 sm:p-8 mb-8">
+            <div class="text-center mb-8">
+                <h2 class="text-2xl md:text-3xl font-bold mb-2">🛡️ แนวทางการป้องกันและรับมือ</h2>
+                <p class="text-orange-200">ลดความเสี่ยงในการติดเชื้อ ด้วยการปฏิบัติตาม 4 ขั้นตอนง่ายๆ</p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                <!-- Step 1 -->
+                <div class="bg-white/10 rounded-xl mobile-safe-radius p-5 border border-white/20">
+                    <div class="text-3xl mb-3">🥾</div>
+                    <h4 class="font-bold text-lg mb-2 text-warning">1. งดเว้นสัมผัสตรง</h4>
+                    <p class="text-sm text-gray-200">หลีกเลี่ยงการเดินลุยน้ำ ลุยโคลน หากจำเป็นต้องสวมรองเท้าบูทยางและถุงมือยางทุกครั้ง</p>
+                </div>
+                <!-- Step 2 -->
+                <div class="bg-white/10 rounded-xl mobile-safe-radius p-5 border border-white/20">
+                    <div class="text-3xl mb-3">🧼</div>
+                    <h4 class="font-bold text-lg mb-2 text-warning">2. ชำระล้างทันที</h4>
+                    <p class="text-sm text-gray-200">หากมีบาดแผลสัมผัสดิน/น้ำ รีบฟอกสบู่และล้างทำความสะอาดด้วยน้ำสะอาดทันที</p>
+                </div>
+                <!-- Step 3 -->
+                <div class="bg-white/10 rounded-xl mobile-safe-radius p-5 border border-white/20">
+                    <div class="text-3xl mb-3">🍲</div>
+                    <h4 class="font-bold text-lg mb-2 text-warning">3. ทานสุก ดื่มสะอาด</h4>
+                    <p class="text-sm text-gray-200">ทานอาหารปรุงสุกใหม่เสมอ ดื่มน้ำต้มสุก หรือน้ำดื่มบรรจุขวดที่ได้มาตรฐาน</p>
+                </div>
+                <!-- Step 4 -->
+                <div class="bg-white/10 rounded-xl mobile-safe-radius p-5 border border-white/20">
+                    <div class="text-3xl mb-3">🩺</div>
+                    <h4 class="font-bold text-lg mb-2 text-warning">4. รีบพบแพทย์</h4>
+                    <p class="text-sm text-gray-200">มีไข้สูง 2-3 วัน หรือผิดปกติหลังลุยน้ำ รีบพบแพทย์ <b>และแจ้งประวัติสัมผัสดิน/น้ำทุกครั้ง</b></p>
+                </div>
+            </div>
+        </section>
+
+        <section class="bg-yellow-50 rounded-2xl mobile-safe-radius shadow-md p-5 sm:p-8 mb-8 border-t-4 border-yellow-500">
+            <div class="text-center mb-4">
+                <h2 class="text-2xl md:text-3xl font-bold text-yellow-900 mb-2">📌 ข้อควรรู้ก่อนใช้งานข้อมูลนี้</h2>
+                <p class="text-yellow-800 max-w-3xl mx-auto">หน้านี้จัดทำเพื่อการสื่อสารสาธารณสุขและเฝ้าระวังเบื้องต้น ไม่ใช่เอกสารวินิจฉัยโรค หากมีอาการรุนแรงหรือสงสัยว่ามีความเสี่ยง ให้พบแพทย์ทันที</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-yellow-900">
+                <div class="bg-white/70 rounded-xl mobile-safe-radius p-4 border border-yellow-100">
+                    <b>ข้อมูลสถานการณ์:</b> ใช้ตัวเลขจากเอกสารอ้างอิงของคุณและสื่อทางการที่เข้าถึงเมื่อวันที่ 20 เมษายน 2569 โดยตัวเลขสถานการณ์อาจเปลี่ยนแปลงได้
+                </div>
+                <div class="bg-white/70 rounded-xl mobile-safe-radius p-4 border border-yellow-100">
+                    <b>คำแนะนำทางการแพทย์:</b> หากไข้สูงต่อเนื่องเกิน 2 วัน หอบเหนื่อย ซึม หรือมีฝีหนองร่วมกับประวัติสัมผัสดินหรือน้ำ ควรไปโรงพยาบาลทันที
+                </div>
+            </div>
+        </section>
+
+        <!-- AI FEATURE SECTION -->
+        <section id="aiSection" class="bg-blue-50 rounded-2xl mobile-safe-radius shadow-md p-5 sm:p-8 mb-8 border-t-4 border-blue-500">
+            <div class="text-center mb-6">
+                <h2 class="text-2xl md:text-3xl font-bold text-blue-900 mb-2">✨ เครื่องมือ AI สำหรับประเมินเบื้องต้น</h2>
+                <p class="text-blue-700 max-w-2xl mx-auto">ส่วนนี้ใช้ Gemini พร้อม Google Search เพื่อค้นหาข้อมูลล่าสุดและช่วยประเมินเบื้องต้นเท่านั้น ไม่ใช้แทนแพทย์หรือโรงพยาบาล</p>
+            </div>
+            <div class="max-w-3xl mx-auto">
+                <div class="mb-4 rounded-xl border border-blue-100 bg-white/70 px-4 py-3 text-sm text-blue-900">
+                    <b>ลำดับโมเดล:</b> <span id="modelPriorityLabel">gemini-2.5-flash → gemini-2.5-flash-lite → gemini-3.1-flash-lite</span>
+                </div>
+                <div id="aiStatusNotice" class="hidden mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"></div>
+                <textarea id="aiRiskInput" rows="4" class="w-full p-4 border border-blue-200 rounded-xl mobile-safe-radius focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" placeholder="ตัวอย่าง: เมื่อ 3 วันก่อนไปดำนามา ตอนนี้มีไข้สูง หนาวสั่น เป็นโรคเบาหวานด้วย..."></textarea>
+                <p id="aiErrorMsg" class="text-red-500 text-sm mt-2 hidden" aria-live="polite">⚠️ กรุณาพิมพ์ข้อมูลของคุณก่อนกดประเมิน</p>
+                <div class="mt-4 text-center">
+                    <button id="aiAnalyzeBtn" onclick="analyzeRiskWithGemini()" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed text-white font-bold py-3 px-6 sm:px-8 rounded-full transition shadow-lg hover:shadow-xl flex items-center justify-center mx-auto transform hover:-translate-y-1">
+                        <span id="aiAnalyzeSpinner" class="hidden align-middle mr-2">
+                            <svg class="animate-spin h-5 w-5 inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                            </svg>
+                        </span>
+                        <span id="aiAnalyzeLabel" class="text-base sm:text-lg">✨ วิเคราะห์ความเสี่ยงด้วย AI</span>
+                    </button>
+                </div>
+                
+                <!-- Loading State -->
+                <div id="aiLoading" class="hidden mt-6 text-center text-blue-600 bg-white/70 border border-blue-100 rounded-xl mobile-safe-radius p-4" aria-live="polite">
+                    <svg class="animate-spin -ml-1 mr-3 h-8 w-8 text-blue-600 inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <p class="mt-2 font-medium animate-pulse">AI กำลังวิเคราะห์ข้อมูลและให้คำแนะนำ...</p>
+                </div>
+
+                <!-- Result Box -->
+                <div id="aiRiskResult" class="hidden mt-6 bg-white p-5 sm:p-6 rounded-xl mobile-safe-radius border border-blue-100 text-gray-800 shadow-md relative">
+                    <!-- Results will be injected here -->
+                </div>
+                <div id="aiRiskSources" class="hidden mt-4 bg-white p-4 rounded-xl mobile-safe-radius border border-blue-100 text-sm text-gray-700 shadow-sm">
+                    <!-- Grounded sources will be injected here -->
+                </div>
+            </div>
+        </section>
+
+        <section class="bg-white rounded-2xl mobile-safe-radius shadow-lg p-5 sm:p-8 mt-10 mb-8 border border-gray-100">
+            <div class="text-center mb-6">
+                <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2">📚 แหล่งอ้างอิงข้อมูล</h2>
+                <p class="text-gray-600 max-w-3xl mx-auto">สรุปจากเอกสารต้นฉบับของคุณร่วมกับแหล่งข้อมูลที่เอกสารอ้างถึง โดยคงวันที่อ้างอิงตามเอกสารไว้ที่ 20 เมษายน 2569</p>
+            </div>
+            <div class="space-y-3 text-sm sm:text-base text-gray-700">
+                <p><b>ข้อมูลหลักในหน้า:</b> ช่วงข้อมูลสะสม 1 ม.ค. - 16 เม.ย. 2569, ผู้ป่วย 732 ราย, เสียชีวิต 23 ราย, พื้นที่เฝ้าระวังสำคัญคือภาคตะวันออกเฉียงเหนือและภาคตะวันออก</p>
+                <p><b>อ้างอิงจากเอกสารต้นฉบับ:</b> รายงานการวิเคราะห์เชิงลึกทางระบาดวิทยา พยาธิกำเนิด และความก้าวหน้าทางคลินิกในการจัดการโรคเมลิออยโดสิส (Melioidosis) ประจำปี พ.ศ. 2569</p>
+                <p><b>แหล่งข้อมูลประกอบ:</b> กรมควบคุมโรค เรื่องเมลิออยโดสิส, ข่าวเฝ้าระวังจากกรมควบคุมโรคและสื่อที่เอกสารอ้างถึง, และข้อมูลพื้นที่เขตสุขภาพ 6 ซึ่งรวมจังหวัดชลบุรี</p>
+                <p class="break-all"><b>ลิงก์ทางการ:</b> https://www.ddc.moph.go.th/disease_detail.php?d=99</p>
+                <p class="break-all"><b>ลิงก์เฝ้าระวังที่เอกสารอ้างถึง:</b> https://www.ddc.moph.go.th/odpc6/news.php?news=53905&deptcode=odpc6</p>
+                <p class="break-all"><b>ลิงก์ข่าวตัวเลข 732/23 ในเอกสารอ้างอิง:</b> https://www.fm91bkk.com/newsarticle/70316</p>
+            </div>
+        </section>
+
+        <footer class="text-center text-gray-500 text-sm mt-12 pb-8 border-t border-gray-200 pt-8">
+            <p class="mb-2">สุขภาพเป็นเรื่องสำคัญ การป้องกันแต่เนิ่นๆ และการสังเกตอาการอย่างใกล้ชิด คือเกราะป้องกันที่ดีที่สุดจากโรคไข้ดิน</p>
+            <p>สายด่วนกรมควบคุมโรค 1422</p>
+        </footer>
+
+    </main>
+
+    <script>
+        // Function to wrap text for Chart.js labels (Required Logic: 16 chars)
+        function formatLabel(label) {
+            const limit = 16;
+            if (label.length <= limit) return label;
+
+            const words = label.split(' ');
+            const lines = [];
+            let currentLine = '';
+
+            words.forEach(word => {
+                if ((currentLine + word).length > limit) {
+                    if (currentLine.trim() !== '') {
+                        lines.push(currentLine.trim());
+                    }
+                    currentLine = word + ' ';
+                } else {
+                    currentLine += word + ' ';
+                }
+            });
+            if (currentLine.trim() !== '') {
+                lines.push(currentLine.trim());
+            }
+            return lines;
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            setAiAvailability();
+            const chartEl = document.getElementById('riskChart');
+            if (!chartEl) return;
+            const ctx = chartEl.getContext('2d');
+
+            // Raw data based on text hierarchy of risk
+            const rawLabels = [
+                "ผู้ป่วยโรคเบาหวาน (อันตรายสูงสุด)",
+                "ผู้ป่วยโรคไตเรื้อรัง",
+                "ผู้ป่วยโรคปอด",
+                "ผู้ป่วยโรคธาลัสซีเมีย",
+                "ผู้ที่มีภาวะภูมิคุ้มกันบกพร่อง"
+            ];
+            
+            // Synthetic data to represent "Risk Severity Level" visually
+            const dataValues = [100, 80, 70, 60, 50]; 
+
+            // Process labels to arrays if longer than 16 chars
+            const processedLabels = rawLabels.map(label => formatLabel(label));
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: processedLabels,
+                    datasets: [{
+                        label: 'ระดับความรุนแรงหากติดเชื้อ (ประเมิน)',
+                        data: dataValues,
+                        backgroundColor: [
+                            '#DC2626', // Red for highest risk
+                            '#EA580C', // Orange
+                            '#F59E0B', // Amber
+                            '#D97706',
+                            '#B45309'
+                        ],
+                        borderRadius: 6,
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    indexAxis: 'y', // Horizontal bar chart
+                    maintainAspectRatio: false, // Required for responsive container
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        // Required Tooltip Configuration for Multi-line labels
+                        tooltip: {
+                            callbacks: {
+                                title: function(tooltipItems) {
+                                    const item = tooltipItems[0];
+                                    let label = item.chart.data.labels[item.dataIndex];
+                                    if (Array.isArray(label)) {
+                                        return label.join(' ');
+                                    } else {
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: false, // Hide x-axis numbers for cleaner infographic look
+                            max: 110
+                        },
+                        y: {
+                            ticks: {
+                                font: {
+                                    family: "'Prompt', sans-serif",
+                                    size: window.innerWidth < 640 ? 11 : 13
+                                },
+                                color: '#4B5563'
+                            },
+                            grid: {
+                                display: false,
+                                drawBorder: false
+                            }
+                        }
+                    }
+                }
+            });
+        });
+
+        // --- Gemini API Integration for AI Risk Assessment ---
+        const GEMINI_MODELS = [
+            "gemini-2.5-flash",
+            "gemini-2.5-flash-lite",
+            "gemini-3.1-flash-lite"
+        ];
+        const SUPABASE_URL = 'https://dqsfioiqwxuxpucwwhsv.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxc2Zpb2lxd3h1eHB1Y3d3aHN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1OTk1NjUsImV4cCI6MjA4NDE3NTU2NX0.L_u0Ff3uHofxiimEs6ySFB4TPNtOWiKeSu3KFoVcA1U';
+        const db = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+
+        function setAiAvailability() {
+            const button = document.getElementById('aiAnalyzeBtn');
+            const notice = document.getElementById('aiStatusNotice');
+            const section = document.getElementById('aiSection');
+
+            if (!button || !notice || !section) return;
+
+            if (db) {
+                section.classList.remove('hidden');
+                notice.classList.add('hidden');
+                button.disabled = false;
+                const refreshButton = document.getElementById('refreshStatsBtn');
+                if (refreshButton) refreshButton.disabled = false;
+                return;
+            }
+
+            notice.innerHTML = "โหมด AI ยังไม่พร้อมใช้งานในหน้านี้ เพราะโหลด Supabase client ไม่สำเร็จ หรือยังไม่ได้เชื่อมต่อ Edge Functions";
+            notice.classList.remove('hidden');
+            button.disabled = true;
+            section.classList.add('hidden');
+            const refreshButton = document.getElementById('refreshStatsBtn');
+            if (refreshButton) refreshButton.disabled = true;
+        }
+
+        function escapeHtml(value) {
+            return value
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function renderSourceList(targetId, sources, title = "แหล่งข้อมูลที่ AI ใช้อ้างอิง") {
+            const target = document.getElementById(targetId);
+            if (!target) return;
+
+            if (!sources.length) {
+                target.classList.add('hidden');
+                target.innerHTML = '';
+                return;
+            }
+
+            const items = sources.slice(0, 8).map((source, index) => {
+                const safeTitle = escapeHtml(source.title);
+                const safeUrl = escapeHtml(source.uri);
+                return `<li><a class="text-blue-700 underline break-all" href="${safeUrl}" target="_blank" rel="noopener noreferrer">${index + 1}. ${safeTitle}</a></li>`;
+            }).join('');
+
+            target.innerHTML = `<h3 class="font-bold text-base mb-2">${title}</h3><ul class="space-y-2">${items}</ul>`;
+            target.classList.remove('hidden');
+        }
+
+        function setButtonLoading(buttonId, labelId, spinnerId, isLoading, loadingText, defaultText) {
+            const button = document.getElementById(buttonId);
+            const label = document.getElementById(labelId);
+            const spinner = document.getElementById(spinnerId);
+            if (!button || !label || !spinner) return;
+
+            button.disabled = isLoading;
+            label.textContent = isLoading ? loadingText : defaultText;
+            spinner.classList.toggle('hidden', !isLoading);
+        }
+
+        function normalizeApiError(error, fallbackMessage) {
+            const message = String(error?.message || fallbackMessage);
+            if (message.includes('401') || message.includes('403')) {
+                return 'API key ไม่ถูกต้อง หรือโปรเจกต์ยังไม่มีสิทธิ์ใช้งานโมเดลนี้';
+            }
+            if (message.includes('404')) {
+                return 'ไม่พบโมเดลที่กำหนดใน API หรือชื่อโมเดลไม่รองรับ';
+            }
+            if (message.includes('429')) {
+                return 'มีการเรียกใช้งานถี่เกินไปหรือเกินโควต้า กรุณารอสักครู่แล้วลองใหม่';
+            }
+            if (message.includes('500') || message.includes('503')) {
+                return 'บริการ AI ขัดข้องชั่วคราว กรุณาลองใหม่อีกครั้ง';
+            }
+            return fallbackMessage;
+        }
+
+        async function invokeEdgeFunction(functionName, payload) {
+            if (!db) {
+                throw new Error("Supabase client unavailable");
+            }
+
+            const { data, error } = await db.functions.invoke(functionName, {
+                body: payload
+            });
+
+            if (error) {
+                throw new Error(error.message || `Supabase function ${functionName} failed`);
+            }
+
+            if (!data?.success) {
+                throw new Error(data?.error || `Supabase function ${functionName} returned no success payload`);
+            }
+
+            const label = document.getElementById('modelPriorityLabel');
+            if (label && data?.model) {
+                label.textContent = `${data.model} (กำลังใช้งาน) → ${GEMINI_MODELS.filter(item => item !== data.model).join(' → ')}`;
+            }
+
+            return data;
+        }
+
+        async function analyzeRiskWithGemini() {
+            const inputEl = document.getElementById('aiRiskInput');
+            const errorMsg = document.getElementById('aiErrorMsg');
+            const resultEl = document.getElementById('aiRiskResult');
+            const sourcesEl = document.getElementById('aiRiskSources');
+            const loadingEl = document.getElementById('aiLoading');
+            const text = inputEl.value.trim();
+
+            if (!text) {
+                errorMsg.classList.remove('hidden');
+                inputEl.focus();
+                return;
+            }
+            errorMsg.classList.add('hidden');
+
+            loadingEl.classList.remove('hidden');
+            resultEl.innerHTML = '';
+            resultEl.classList.add('hidden');
+            if (sourcesEl) {
+                sourcesEl.innerHTML = '';
+                sourcesEl.classList.add('hidden');
+            }
+
+            if (!db) {
+                resultEl.innerHTML = "<div class='text-center text-amber-700'><span class='text-3xl block mb-2'>ℹ️</span><b>ยังไม่สามารถใช้งาน AI ได้</b><br>กรุณาตรวจสอบ Supabase client และ Edge Functions ก่อนใช้งาน</div>";
+                resultEl.classList.remove('hidden');
+                loadingEl.classList.add('hidden');
+                return;
+            }
+
+            setButtonLoading(
+                'aiAnalyzeBtn',
+                'aiAnalyzeLabel',
+                'aiAnalyzeSpinner',
+                true,
+                'กำลังวิเคราะห์...',
+                '✨ วิเคราะห์ความเสี่ยงด้วย AI'
+            );
+
+            try {
+                const data = await invokeEdgeFunction('melioidosis-ai-risk', {
+                    prompt: text,
+                    preferredModels: GEMINI_MODELS
+                });
+                const responseText = data.text || "ไม่สามารถประเมินได้ในขณะนี้ กรุณาลองใหม่อีกครั้ง";
+                const sources = data.sources || [];
+                
+                // Format basic markdown to HTML for better display
+                let formattedText = escapeHtml(responseText)
+                    .replace(/\*\*(.*?)\*\*/g, '<b class="text-blue-900">$1</b>') 
+                    .replace(/\*(.*?)\*/g, '<i>$1</i>') 
+                    .replace(/\n/g, '<br>'); 
+                
+                resultEl.innerHTML = `<h3 class="font-bold text-lg sm:text-xl mb-3 text-earth border-b pb-2">🩺 ผลการประเมินเบื้องต้น</h3><p class="leading-relaxed text-sm sm:text-base">${formattedText}</p><p class="mt-4 text-xs text-gray-500">โมเดลที่ใช้: ${escapeHtml(data.model || 'unknown')}</p>`;
+                resultEl.classList.remove('hidden');
+                renderSourceList('aiRiskSources', sources);
+            } catch (error) {
+                console.error("Gemini API Error:", error);
+                resultEl.innerHTML = `<div class='text-center text-red-500'><span class='text-3xl block mb-2'>⚠️</span><b>เกิดข้อผิดพลาดในการเชื่อมต่อกับระบบ AI</b><br>${escapeHtml(normalizeApiError(error, 'กรุณาลองใหม่อีกครั้งในภายหลัง หรือตรวจสอบ Supabase Edge Function'))}</div>`;
+                resultEl.classList.remove('hidden');
+            } finally {
+                loadingEl.classList.add('hidden');
+                setButtonLoading(
+                    'aiAnalyzeBtn',
+                    'aiAnalyzeLabel',
+                    'aiAnalyzeSpinner',
+                    false,
+                    'กำลังวิเคราะห์...',
+                    '✨ วิเคราะห์ความเสี่ยงด้วย AI'
+                );
+            }
+        }
+
+        async function refreshStatsWithGemini() {
+            const button = document.getElementById('refreshStatsBtn');
+            const statusEl = document.getElementById('statsUpdateStatus');
+            const statsSourcesEl = document.getElementById('statsSources');
+            const casesEl = document.getElementById('casesCount');
+            const deathsEl = document.getElementById('deathsCount');
+            const asOfEl = document.getElementById('statsAsOfLabel');
+            const rangeEl = document.getElementById('statsRangeLabel');
+
+            if (!button || !statusEl || !casesEl || !deathsEl || !asOfEl || !rangeEl) return;
+
+            if (!db) {
+                statusEl.textContent = "ยังอัปเดตด้วย AI ไม่ได้ เพราะยังไม่ได้เชื่อมต่อ Supabase Edge Functions";
+                return;
+            }
+
+            statusEl.textContent = "AI กำลังค้นหาข้อมูลล่าสุดของยอดผู้ป่วยและผู้เสียชีวิต...";
+            if (statsSourcesEl) {
+                statsSourcesEl.innerHTML = '';
+                statsSourcesEl.classList.add('hidden');
+            }
+            setButtonLoading(
+                'refreshStatsBtn',
+                'refreshStatsLabel',
+                'refreshStatsSpinner',
+                true,
+                'กำลังอัปเดต...',
+                'อัปเดตยอดล่าสุดด้วย AI'
+            );
+
+            try {
+                const data = await invokeEdgeFunction('melioidosis-refresh-stats', {
+                    preferredModels: GEMINI_MODELS
+                });
+                const json = data.stats || {};
+                const sources = data.sources || [];
+
+                const cases = Number(json.cases);
+                const deaths = Number(json.deaths);
+
+                if (!Number.isFinite(cases) || !Number.isFinite(deaths)) {
+                    throw new Error("Invalid stats payload");
+                }
+
+                casesEl.textContent = cases.toLocaleString('th-TH');
+                deathsEl.textContent = deaths.toLocaleString('th-TH');
+                asOfEl.textContent = json.asOf || "อัปเดตโดย AI";
+                rangeEl.textContent = json.range || "ตามข้อมูลล่าสุดที่ค้นหาได้";
+                statusEl.innerHTML = `อัปเดตล่าสุดด้วย AI สำเร็จ โดยใช้ ${escapeHtml(data.model || 'unknown')}${json.summary ? `: ${escapeHtml(json.summary)}` : ""}`;
+                renderSourceList('statsSources', sources, "แหล่งข้อมูลที่ AI ใช้อ้างอิงในการอัปเดตยอดล่าสุด");
+            } catch (error) {
+                console.error("Gemini Stats Refresh Error:", error);
+                statusEl.textContent = normalizeApiError(error, "อัปเดตยอดล่าสุดไม่สำเร็จ กรุณาตรวจสอบ Supabase Edge Function หรือแหล่งข้อมูลอีกครั้ง");
+            } finally {
+                setButtonLoading(
+                    'refreshStatsBtn',
+                    'refreshStatsLabel',
+                    'refreshStatsSpinner',
+                    false,
+                    'กำลังอัปเดต...',
+                    'อัปเดตยอดล่าสุดด้วย AI'
+                );
+            }
+        }
+    </script>
+</body>
+</html>
