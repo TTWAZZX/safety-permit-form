@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Enterprise Dashboard: สถานการณ์โรคไวรัสตับอักเสบเอ</title>
+<title>ระบบเฝ้าระวังไวรัสตับอักเสบเอ | กรมควบคุมโรค</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -53,97 +53,564 @@ body {
 }
 .metric-card {
     text-align: left;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 .metric-card:hover {
-    transform: translateY(-2px);
+    transform: translateY(-3px);
+    box-shadow: 0 22px 40px -14px rgba(15, 23, 42, 0.32);
+}
+.metric-card:active {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px -10px rgba(15, 23, 42, 0.2);
+}
+.section-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+.status-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    border-radius: 9999px;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+.status-critical {
+    background: rgba(244, 63, 94, 0.16);
+    color: #fecdd3;
+    border: 1px solid rgba(251, 113, 133, 0.35);
+}
+.status-info {
+    background: rgba(56, 189, 248, 0.14);
+    color: #bae6fd;
+    border: 1px solid rgba(125, 211, 252, 0.28);
+}
+.status-neutral {
+    background: rgba(148, 163, 184, 0.14);
+    color: #e2e8f0;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+}
+.source-chip {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 9999px;
+    padding: 0.22rem 0.65rem;
+    background: #e2e8f0;
+    color: #334155;
+    font-size: 0.72rem;
+    font-weight: 600;
+}
+.data-card {
+    border-radius: 1rem;
+    border: 1px solid #e2e8f0;
+    background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,250,252,0.96) 100%);
+}
+.command-panel {
+    background:
+        radial-gradient(circle at top right, rgba(59, 130, 246, 0.08), transparent 26%),
+        linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    border: 1px solid #dbeafe;
+}
+.action-tile {
+    border: 1px solid #dbeafe;
+    background: #f8fbff;
+    border-radius: 1rem;
+}
+@media print {
+    header,
+    #liveUpdateBtn,
+    #liveUpdatePanel,
+    #infoModal,
+    #askAiBtn,
+    #checkFoodBtn {
+        display: none !important;
+    }
+    body {
+        background: #ffffff;
+    }
+    .card-shadow,
+    .data-card,
+    .command-panel,
+    .action-tile {
+        box-shadow: none !important;
+    }
+}
+.input-error,
+[data-error="true"] {
+    border-color: #f87171 !important;
+    box-shadow: 0 0 0 1px rgba(248, 113, 113, 0.35);
+}
+.modal-panel {
+    animation: modalIn 0.2s ease-out;
+}
+.state-error {
+    background: #fff1f2;
+    border-left: 4px solid #f43f5e;
+    color: #9f1239;
+}
+.risk-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.125rem 0.625rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+.risk-high {
+    background: #ffe4e6;
+    color: #be123c;
+}
+.risk-medium {
+    background: #fef3c7;
+    color: #b45309;
+}
+.risk-low {
+    background: #dcfce7;
+    color: #166534;
+}
+.province-pill[data-variant="rose"].pill-active {
+    box-shadow: 0 0 0 2px #fb7185;
+}
+.province-pill[data-variant="amber"].pill-active {
+    box-shadow: 0 0 0 2px #f59e0b;
+}
+.province-pill[data-variant="orange"].pill-active {
+    box-shadow: 0 0 0 2px #f97316;
+}
+.province-pill[data-variant="slate"].pill-active {
+    box-shadow: 0 0 0 2px #64748b;
+}
+#provinceChart {
+    cursor: pointer;
+}
+@keyframes modalIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+@media (max-width: 640px) {
+    #main-content {
+        margin-top: 5.5rem;
+    }
+    #liveUpdateBtn {
+        width: 2.75rem !important;
+        height: 2.75rem !important;
+        padding: 0 !important;
+        border-radius: 9999px !important;
+    }
+    #updateBtnIcon svg {
+        width: 1rem;
+        height: 1rem;
+    }
+    #updateBtnText {
+        display: none !important;
+    }
+    header h1 {
+        line-height: 1.15;
+    }
+    header .max-w-5xl h2 {
+        font-size: 2.1rem !important;
+        line-height: 1.08 !important;
+    }
+    header .max-w-5xl p {
+        font-size: 0.96rem !important;
+    }
+    header .max-w-5xl + section {
+        margin-bottom: -4rem !important;
+    }
+    .metric-card {
+        padding: 1rem !important;
+    }
+    .command-panel,
+    .bg-white.rounded-2xl,
+    .bg-indigo-50.rounded-2xl,
+    .bg-teal-50.rounded-2xl {
+        border-radius: 1.15rem !important;
+    }
+    .chart-container {
+        height: 260px;
+    }
 }
 </style>
 </head>
-<body class="antialiased pb-20">
+<body class="antialiased">
+<a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:bg-sky-500 focus:text-white focus:px-4 focus:py-2 focus:rounded-lg focus:font-semibold">ข้ามไปเนื้อหาหลัก</a>
 
-<header class="enterprise-gradient text-white pb-12 pt-8 px-4 sm:px-6 lg:px-8 border-b-4 border-sky-400">
+<header class="enterprise-gradient text-white pb-10 sm:pb-12 pt-6 sm:pt-8 px-4 sm:px-6 lg:px-8 border-b-4 border-sky-400">
     <div class="max-w-7xl mx-auto">
-        <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-            <div class="flex items-center space-x-3">
-                <span class="text-3xl" aria-hidden="true">&#128187;</span>
-                <div>
-                    <h1 class="text-2xl md:text-3xl font-bold tracking-wide">CDD-Alert <span class="text-sky-300">ระบบเฝ้าระวัง</span></h1>
-                    <p class="text-sm text-slate-300">กรมควบคุมโรค - กระทรวงสาธารณสุข</p>
+        <div class="flex items-center justify-between mb-6 sm:mb-8 gap-3 sm:gap-4">
+            <div class="flex items-center space-x-3 min-w-0 flex-1">
+                <svg class="w-8 h-8 sm:w-9 sm:h-9 text-sky-300 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0H3"/></svg>
+                <div class="min-w-0">
+                    <h1 class="text-lg sm:text-2xl md:text-3xl font-bold tracking-wide leading-tight">CDD-Alert <span class="text-sky-300">ประกาศเฝ้าระวัง</span></h1>
+                    <p class="text-xs sm:text-sm text-slate-300 truncate">กรมควบคุมโรค กระทรวงสาธารณสุข</p>
                 </div>
             </div>
-            <button id="liveUpdateBtn" type="button" class="focus-ring w-full md:w-auto bg-sky-500 hover:bg-sky-600 text-white font-semibold py-2.5 px-5 rounded-lg shadow-lg transition-all flex items-center justify-center space-x-2 border border-sky-300/30">
-                <span id="updateBtnIcon" class="text-lg" aria-hidden="true">🔄</span>
+            <button id="liveUpdateBtn" type="button" aria-label="อัปเดตข้อมูลล่าสุด" title="อัปเดตข้อมูลล่าสุด" class="focus-ring shrink-0 w-auto max-w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-2 px-4 sm:py-2.5 sm:px-5 rounded-xl shadow-lg transition-all inline-flex items-center justify-center gap-2 border border-sky-300/30 text-sm">
+                <span id="updateBtnIcon" aria-hidden="true"><svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg></span>
                 <span id="updateBtnText">อัปเดตข้อมูลล่าสุด</span>
             </button>
         </div>
 
+        <section class="hidden grid grid-cols-1 lg:grid-cols-[1.35fr_1fr] gap-4 mb-8">
+            <div class="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-5">
+                <div class="section-kicker text-sky-200 mb-3">
+                    <span class="h-2 w-2 rounded-full bg-sky-300"></span>
+                    Command Status
+                </div>
+                <div class="flex flex-wrap gap-2 mb-4">
+                    <span class="status-chip status-critical">ระดับเฝ้าระวังสูงสุด</span>
+                    <span class="status-chip status-info">พื้นที่หลัก: นครราชสีมา / ชลบุรี / ระยอง</span>
+                    <span class="status-chip status-neutral">ข้อมูลอ้างอิงต้นปี 2569</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                    <div class="rounded-xl bg-slate-950/25 border border-white/10 p-4">
+                        <div class="text-slate-300 text-xs uppercase tracking-[0.16em] mb-1">System Readiness</div>
+                        <div class="text-lg font-bold text-white">Operational</div>
+                        <p class="text-slate-300 mt-1">พร้อมสำหรับสรุปข้อมูลล่าสุดและคัดกรองเบื้องต้น</p>
+                    </div>
+                    <div class="rounded-xl bg-slate-950/25 border border-white/10 p-4">
+                        <div class="text-slate-300 text-xs uppercase tracking-[0.16em] mb-1">Data Timestamp</div>
+                        <div class="text-lg font-bold text-white">ณ ต้นปี 2569</div>
+                        <p class="text-slate-300 mt-1">ใช้เพื่อสื่อสารภาพรวมสถานการณ์และจุดเฝ้าระวัง</p>
+                    </div>
+                    <div class="rounded-xl bg-slate-950/25 border border-white/10 p-4">
+                        <div class="text-slate-300 text-xs uppercase tracking-[0.16em] mb-1">Primary Source</div>
+                        <div class="text-lg font-bold text-white">กรมควบคุมโรค</div>
+                        <p class="text-slate-300 mt-1">AI ใช้เพื่อคัดกรองและสื่อสาร ไม่ใช่การวินิจฉัย</p>
+                    </div>
+                </div>
+            </div>
+            <div class="rounded-2xl border border-sky-300/20 bg-slate-950/25 backdrop-blur-sm p-5">
+                <div class="section-kicker text-sky-200 mb-3">
+                    <span class="h-2 w-2 rounded-full bg-amber-300"></span>
+                    Executive Actions
+                </div>
+                <div class="space-y-3 text-sm">
+                    <div class="flex items-start gap-3 rounded-xl bg-white/5 border border-white/10 p-3">
+                        <span class="mt-1 h-2.5 w-2.5 rounded-full bg-rose-400"></span>
+                        <div>
+                            <p class="font-semibold text-white">สื่อสารความเสี่ยงในพื้นที่ตลาดและอาหารพร้อมรับประทาน</p>
+                            <p class="text-slate-300">เน้นจังหวัดที่มีผู้ป่วยหนักสูงและมีประวัติบริโภคอาหาร/น้ำปนเปื้อน</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3 rounded-xl bg-white/5 border border-white/10 p-3">
+                        <span class="mt-1 h-2.5 w-2.5 rounded-full bg-amber-300"></span>
+                        <div>
+                            <p class="font-semibold text-white">เร่งคัดกรองอาการตาเหลือง ปัสสาวะสีเข้ม และอาเจียนรุนแรง</p>
+                            <p class="text-slate-300">เพื่อแยกผู้ป่วยที่เสี่ยงตับวายเฉียบพลันและส่งต่อเร็วขึ้น</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3 rounded-xl bg-white/5 border border-white/10 p-3">
+                        <span class="mt-1 h-2.5 w-2.5 rounded-full bg-sky-300"></span>
+                        <div>
+                            <p class="font-semibold text-white">ใช้ AI tools เป็น decision support layer</p>
+                            <p class="text-slate-300">เหมาะสำหรับเจ้าหน้าที่สื่อสารความเสี่ยงและคัดกรองเบื้องต้นหน้างาน</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4 flex flex-wrap gap-2">
+                    <button type="button" onclick="window.print()" class="focus-ring inline-flex items-center gap-2 rounded-lg bg-white text-slate-900 px-4 py-2 text-sm font-semibold hover:bg-slate-100 transition">พิมพ์สรุปรายงาน</button>
+                    <button type="button" onclick="document.getElementById('liveUpdateBtn').click()" class="focus-ring inline-flex items-center gap-2 rounded-lg bg-sky-500 text-white px-4 py-2 text-sm font-semibold hover:bg-sky-400 transition">ดึงสถานการณ์ล่าสุด</button>
+                </div>
+            </div>
+        </section>
+
         <div id="liveUpdatePanel" class="hidden bg-slate-800/80 backdrop-blur-md border border-slate-600 rounded-xl p-5 mb-8 shadow-2xl relative overflow-hidden" aria-live="polite">
             <div class="absolute top-0 left-0 w-1 bg-sky-400 h-full"></div>
-            <div class="flex items-center space-x-3 mb-3">
+            <div class="flex items-center justify-between gap-3 mb-3">
+                <div class="flex items-center space-x-3">
                 <div class="h-2.5 w-2.5 bg-red-500 rounded-full animate-pulse" aria-hidden="true"></div>
-                <h2 class="font-bold text-sky-400">อัปเดตสถานการณ์ล่าสุด</h2>
+                <h2 class="font-bold text-sky-400">สถานการณ์ล่าสุด</h2>
+            </div>
+                <button type="button" class="focus-ring rounded-lg p-1.5 text-slate-300 hover:text-white hover:bg-white/10 transition" onclick="document.getElementById('liveUpdatePanel').classList.add('hidden')" aria-label="ปิดแผงสถานการณ์ล่าสุด">
+                    <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
             </div>
             <div id="liveUpdateContent" class="text-slate-200 text-sm md:text-base leading-relaxed">
-                ระบบพร้อมสรุปสถานการณ์ล่าสุดจากข้อมูลในหน้านี้
+                กดปุ่มเพื่อรับสรุปสถานการณ์การระบาดล่าสุด
             </div>
         </div>
 
-        <div class="text-center mt-8 md:mt-12 mb-10">
+        <section class="max-w-5xl mx-auto mt-7 sm:mt-8 md:mt-12 mb-6 sm:mb-8">
+            <div class="section-kicker text-sky-200 justify-center mb-2 sm:mb-3">
+                <span class="h-2 w-2 rounded-full bg-sky-300"></span>
+                Situation Update
+            </div>
+            <div class="text-center">
+                <h2 class="text-4xl md:text-5xl font-bold mb-4 text-gradient">รายงานการระบาด: ไวรัสตับอักเสบเอ</h2>
+                <p class="text-sm sm:text-base md:text-lg text-slate-300 max-w-3xl mx-auto leading-relaxed">
+                    สรุปสถานการณ์ผู้ป่วยรุนแรง พื้นที่เฝ้าระวัง และข้อมูลประกอบการสื่อสารภายในองค์กร
+                </p>
+            </div>
+            <div class="mt-5 sm:mt-6 rounded-2xl border border-white/15 bg-white/10 backdrop-blur-sm px-3 py-3 sm:px-4 sm:py-4 md:px-5">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5 sm:gap-3 text-left">
+                    <div class="rounded-xl bg-white/10 px-3.5 py-3 border border-white/10">
+                        <div class="text-xs uppercase tracking-[0.18em] text-sky-100/80 font-semibold">ระดับเฝ้าระวัง</div>
+                        <div class="mt-1 text-lg font-bold text-white">สูง</div>
+                    </div>
+                    <div class="rounded-xl bg-white/10 px-3.5 py-3 border border-white/10">
+                        <div class="text-xs uppercase tracking-[0.18em] text-sky-100/80 font-semibold">พื้นที่หลัก</div>
+                        <div class="mt-1 text-lg font-bold text-white">นครราชสีมา / ชลบุรี / ระยอง</div>
+                    </div>
+                    <div class="rounded-xl bg-white/10 px-3.5 py-3 border border-white/10">
+                        <div class="text-xs uppercase tracking-[0.18em] text-sky-100/80 font-semibold">ข้อมูลอ้างอิง</div>
+                        <div class="mt-1 text-lg font-bold text-white">ต้นปี 2569</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-3 sm:gap-4 max-w-7xl mx-auto -mb-16 sm:-mb-24 relative z-20">
+            <button type="button" class="metric-card focus-ring bg-white rounded-2xl p-6 md:p-7 border-l-4 border-indigo-500 shadow-xl transition-transform relative text-left overflow-hidden" data-title="พื้นที่ระบาดสูงสุด" data-content="นครราชสีมาพบผู้ป่วยสูงสุด 22 ราย รองลงมาคือชลบุรีและระยอง ต้องเร่งสื่อสารด้านสุขอนามัยอาหารและน้ำดื่มในพื้นที่" aria-expanded="false">
+                <div class="absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-indigo-100/80 to-transparent pointer-events-none"></div>
+                <div class="relative">
+                    <div class="text-indigo-700 text-xs md:text-sm font-bold mb-2 uppercase tracking-[0.18em]">พื้นที่เฝ้าระวังสูงสุด</div>
+                    <div class="text-3xl md:text-4xl font-black text-slate-900 leading-tight">นครราชสีมา</div>
+                    <div class="mt-3 flex items-end gap-2">
+                        <div class="text-5xl md:text-6xl font-black text-indigo-600 leading-none">22</div>
+                        <div class="text-base md:text-lg font-semibold text-slate-500 mb-1">ราย</div>
+                    </div>
+                    <p class="mt-4 max-w-xl text-sm md:text-base text-slate-600 leading-relaxed">
+                        จังหวัดที่ควรเร่งสื่อสารความเสี่ยงด้านอาหารและน้ำดื่มก่อนพื้นที่อื่น พร้อมใช้เป็นจุดโฟกัสของการเฝ้าระวังภาคสนาม
+                    </p>
+                </div>
+                <svg class="w-3.5 h-3.5 text-slate-300 absolute bottom-4 right-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25h1.5v5.25h-1.5v-5.25zm0-3h1.5v1.5h-1.5v-1.5z"/><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </button>
+            <div class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-3 sm:gap-4">
+                <button type="button" class="metric-card focus-ring bg-white rounded-xl p-5 border-l-4 border-rose-500 shadow-xl transition-transform relative text-left" data-title="ผู้ป่วยหนักสะสม" data-content="พบผู้ป่วยอาการรุนแรงสะสม 74 ราย กลุ่มหลักคือวัยทำงานที่มีประวัติบริโภคอาหารหรือน้ำแข็งปนเปื้อนเชื้อ" aria-expanded="false">
+                    <div class="text-slate-500 text-xs md:text-sm font-bold mb-1 uppercase tracking-wide">ผู้ป่วยรุนแรงสะสม (ปี 2568)</div>
+                    <div class="flex items-baseline"><div class="text-4xl font-black text-slate-800">74</div><div class="text-base font-medium text-slate-500 ml-2">ราย</div></div>
+                    <svg class="w-3.5 h-3.5 text-slate-300 absolute bottom-3 right-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25h1.5v5.25h-1.5v-5.25zm0-3h1.5v1.5h-1.5v-1.5z"/><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </button>
+                <button type="button" class="metric-card focus-ring bg-white rounded-xl p-5 border-l-4 border-red-600 shadow-xl transition-transform relative text-left" data-title="ผู้เสียชีวิตรายใหม่ ปี 2569" data-content="รายงานผู้เสียชีวิต 2 ราย ต้นปี 2569 ทั้งสองรายได้รับการรักษาล่าช้าและมีประวัติบริโภคอาหารทะเลหรืออาหารกึ่งสุก" aria-expanded="false">
+                    <div class="text-red-500 text-xs md:text-sm font-bold mb-1 uppercase tracking-wide">ผู้เสียชีวิต (ปี 2569)</div>
+                    <div class="flex items-baseline"><div class="text-4xl font-black text-red-600">2</div><div class="text-base font-medium text-slate-500 ml-2">ราย</div></div>
+                    <div class="text-xs text-red-400 mt-1">อยู่ระหว่างเฝ้าระวัง</div>
+                    <svg class="w-3.5 h-3.5 text-slate-300 absolute bottom-3 right-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25h1.5v5.25h-1.5v-5.25zm0-3h1.5v1.5h-1.5v-1.5z"/><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </button>
+                <button type="button" class="metric-card focus-ring bg-white rounded-xl p-5 border-l-4 border-amber-500 shadow-xl transition-transform relative text-left" data-title="ความรุนแรงเมื่อเกิดตับวาย" data-content="ผู้ป่วยส่วนใหญ่หายได้เอง หากเกิดภาวะตับวายเฉียบพลันต้องส่งต่อด่วน อัตราเสียชีวิตสูงมากหากไม่ได้รับการดูแลเฉพาะทาง" aria-expanded="false">
+                    <div class="text-slate-500 text-xs md:text-sm font-bold mb-1 uppercase tracking-wide">อัตราเสียชีวิต (ตับวาย)</div>
+                    <div class="flex items-baseline"><div class="text-4xl font-black text-amber-600">100</div><div class="text-2xl font-bold text-amber-600">%</div></div>
+                    <div class="text-xs text-amber-500 mt-1">เมื่อเกิดภาวะตับวาย ต้องส่งต่อด่วน</div>
+                    <svg class="w-3.5 h-3.5 text-slate-300 absolute bottom-3 right-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25h1.5v5.25h-1.5v-5.25zm0-3h1.5v1.5h-1.5v-1.5z"/><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </button>
+            </div>
+        </section>
+
+        <div class="hidden text-center mt-8 md:mt-12 mb-10">
             <h2 class="text-4xl md:text-5xl font-bold mb-4 text-gradient">รายงานการระบาด: ไวรัสตับอักเสบเอ</h2>
             <p class="text-base md:text-lg text-slate-300 max-w-3xl mx-auto leading-relaxed">
-                สรุปข้อมูลผู้ป่วยรุนแรง พื้นที่เฝ้าระวัง และเครื่องมือประเมินความเสี่ยงเบื้องต้น
-                สำหรับเจ้าหน้าที่และประชาชน โดยยังคงรูปแบบแดชบอร์ดเดิมให้อ่านง่ายบนมือถือและเดสก์ท็อป
+                ข้อมูลผู้ป่วยรุนแรง พื้นที่เฝ้าระวัง และเครื่องมือคัดกรองความเสี่ยง
+                สำหรับบุคลากรสาธารณสุขและประชาชนทั่วไป
             </p>
         </div>
 
-        <section class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-7xl mx-auto -mb-24 relative z-20">
-            <button type="button" class="metric-card focus-ring bg-white rounded-xl p-5 border-l-4 border-rose-500 shadow-xl transition-transform" data-title="ผู้ป่วยหนักสะสม" data-content="ยอดสะสมผู้ป่วยอาการรุนแรงในแดชบอร์ดนี้อยู่ที่ 74 ราย โดยกลุ่มที่พบมากคือวัยทำงานและผู้มีประวัติรับประทานอาหารหรือน้ำแข็งที่อาจปนเปื้อนเชื้อ">
-                <div class="text-slate-500 text-xs md:text-sm font-bold mb-1 uppercase tracking-wide">ผู้ป่วยหนักสะสม (ปี 68)</div>
+        <section class="hidden grid grid-cols-2 md:grid-cols-4 gap-4 max-w-7xl mx-auto -mb-24 relative z-20">
+            <button type="button" class="metric-card focus-ring bg-white rounded-xl p-5 border-l-4 border-rose-500 shadow-xl transition-transform relative" data-title="ผู้ป่วยหนักสะสม" data-content="พบผู้ป่วยอาการรุนแรงสะสม 74 ราย กลุ่มหลักคือวัยทำงานที่มีประวัติบริโภคอาหารหรือน้ำแข็งปนเปื้อนเชื้อ" aria-expanded="false">
+                <div class="text-slate-500 text-xs md:text-sm font-bold mb-1 uppercase tracking-wide">ผู้ป่วยรุนแรงสะสม (ปี 2568)</div>
                 <div class="flex items-baseline"><div class="text-4xl font-black text-slate-800">74</div><div class="text-base font-medium text-slate-500 ml-2">ราย</div></div>
+                <svg class="w-3.5 h-3.5 text-slate-300 absolute bottom-3 right-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25h1.5v5.25h-1.5v-5.25zm0-3h1.5v1.5h-1.5v-1.5z"/><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             </button>
-            <button type="button" class="metric-card focus-ring bg-white rounded-xl p-5 border-l-4 border-red-600 shadow-xl transition-transform" data-title="ผู้เสียชีวิตรายใหม่ ปี 2569" data-content="มีรายงานผู้เสียชีวิต 2 รายในช่วงต้นปี 2569 ทั้งสองรายเข้ารับการรักษาช้าและมีปัจจัยเสี่ยงด้านอาหารทะเลหรืออาหารกึ่งสุกกึ่งดิบ">
-                <div class="text-red-500 text-xs md:text-sm font-bold mb-1 uppercase tracking-wide">เสียชีวิตรายใหม่ (ปี 69)</div>
+            <button type="button" class="metric-card focus-ring bg-white rounded-xl p-5 border-l-4 border-red-600 shadow-xl transition-transform relative" data-title="ผู้เสียชีวิตรายใหม่ ปี 2569" data-content="รายงานผู้เสียชีวิต 2 ราย ต้นปี 2569 ทั้งสองรายได้รับการรักษาล่าช้าและมีประวัติบริโภคอาหารทะเลหรืออาหารกึ่งสุก" aria-expanded="false">
+                <div class="text-red-500 text-xs md:text-sm font-bold mb-1 uppercase tracking-wide">ผู้เสียชีวิต (ปี 2569)</div>
                 <div class="flex items-baseline"><div class="text-4xl font-black text-red-600">2</div><div class="text-base font-medium text-slate-500 ml-2">ราย</div></div>
-                <div class="text-xs text-red-400 mt-1">ต้องเฝ้าระวังต่อเนื่อง</div>
+                <div class="text-xs text-red-400 mt-1">อยู่ระหว่างเฝ้าระวัง</div>
+                <svg class="w-3.5 h-3.5 text-slate-300 absolute bottom-3 right-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25h1.5v5.25h-1.5v-5.25zm0-3h1.5v1.5h-1.5v-1.5z"/><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             </button>
-            <button type="button" class="metric-card focus-ring bg-white rounded-xl p-5 border-l-4 border-amber-500 shadow-xl transition-transform" data-title="ความรุนแรงเมื่อเกิดตับวาย" data-content="โรคไวรัสตับอักเสบเอส่วนใหญ่มักหายได้เอง แต่หากมีภาวะตับวายเฉียบพลันต้องรีบส่งต่อทันที เพราะอัตราการเสียชีวิตสูงมากหากไม่ได้รับการดูแลเฉพาะทาง">
+            <button type="button" class="metric-card focus-ring bg-white rounded-xl p-5 border-l-4 border-amber-500 shadow-xl transition-transform relative" data-title="ความรุนแรงเมื่อเกิดตับวาย" data-content="ผู้ป่วยส่วนใหญ่หายได้เอง หากเกิดภาวะตับวายเฉียบพลันต้องส่งต่อด่วน อัตราเสียชีวิตสูงมากหากไม่ได้รับการดูแลเฉพาะทาง" aria-expanded="false">
                 <div class="text-slate-500 text-xs md:text-sm font-bold mb-1 uppercase tracking-wide">อัตราเสียชีวิต (ตับวาย)</div>
                 <div class="flex items-baseline"><div class="text-4xl font-black text-amber-600">100</div><div class="text-2xl font-bold text-amber-600">%</div></div>
+                <svg class="w-3.5 h-3.5 text-slate-300 absolute bottom-3 right-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25h1.5v5.25h-1.5v-5.25zm0-3h1.5v1.5h-1.5v-1.5z"/><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             </button>
-            <button type="button" class="metric-card focus-ring bg-white rounded-xl p-5 border-l-4 border-indigo-500 shadow-xl transition-transform" data-title="พื้นที่ระบาดสูงสุด" data-content="นครราชสีมาเป็นจังหวัดที่พบผู้ป่วยสูงสุด 22 ราย รองลงมาคือชลบุรีและระยอง จึงควรสื่อสารเรื่องอาหารสะอาด น้ำแข็งสะอาด และการล้างมืออย่างเข้มข้น">
+            <button type="button" class="metric-card focus-ring bg-white rounded-xl p-5 border-l-4 border-indigo-500 shadow-xl transition-transform relative" data-title="พื้นที่ระบาดสูงสุด" data-content="นครราชสีมาพบผู้ป่วยสูงสุด 22 ราย รองลงมาคือชลบุรีและระยอง ต้องเร่งสื่อสารด้านสุขอนามัยอาหารและน้ำดื่มในพื้นที่" aria-expanded="false">
                 <div class="text-slate-500 text-xs md:text-sm font-bold mb-1 uppercase tracking-wide">พื้นที่ระบาดสูงสุด</div>
-                <div class="text-2xl md:text-3xl font-black text-indigo-800 mt-2">นครราชสีมา</div>
+                <div class="text-xl md:text-2xl font-black text-indigo-800 mt-1 leading-tight">นครราชสีมา</div>
+                <div class="flex items-baseline mt-1"><div class="text-2xl font-black text-indigo-600">22</div><div class="text-sm font-medium text-slate-500 ml-1.5">ราย</div></div>
+                <svg class="w-3.5 h-3.5 text-slate-300 absolute bottom-3 right-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25h1.5v5.25h-1.5v-5.25zm0-3h1.5v1.5h-1.5v-1.5z"/><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             </button>
         </section>
     </div>
 </header>
 
-<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 mt-32 relative z-10">
+<main id="main-content" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 sm:space-y-10 mt-24 sm:mt-28 md:mt-32 relative z-10">
+
+<section class="hidden command-panel rounded-2xl p-5 md:p-6 card-shadow">
+    <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
+        <div class="max-w-3xl">
+            <div class="section-kicker text-sky-700 mb-2">
+                <span class="h-2 w-2 rounded-full bg-sky-500"></span>
+                Enterprise Brief
+            </div>
+            <h2 class="text-2xl md:text-3xl font-bold text-slate-900 leading-tight">สรุปพร้อมใช้สำหรับผู้บริหาร เจ้าหน้าที่สาธารณสุข และทีมสื่อสารความเสี่ยง</h2>
+            <p class="mt-3 text-sm md:text-base text-slate-600 leading-relaxed">หน้านี้ออกแบบให้ใช้ได้ทั้งการติดตามสถานการณ์รายวัน การคัดกรองเบื้องต้น และการสรุปสถานการณ์ในที่ประชุม โดยแยกข้อมูลเฝ้าระวัง ข้อมูลเชิงวิเคราะห์ และผลจาก AI decision support ออกจากกันอย่างชัดเจน</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <span class="source-chip">แหล่งข้อมูลหลัก: กรมควบคุมโรค</span>
+            <span class="source-chip">AI Layer: Supabase Edge Function</span>
+            <span class="source-chip">Audience: Public Health / Executive / Public</span>
+        </div>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-5">
+        <div class="action-tile p-4">
+            <div class="text-xs font-bold uppercase tracking-[0.16em] text-slate-500 mb-1">ตอนนี้เกิดอะไร</div>
+            <p class="text-base font-semibold text-slate-900">พบการระบาดเด่นในจังหวัดอุตสาหกรรมและพื้นที่อาหารพร้อมบริโภค</p>
+            <p class="text-sm text-slate-600 mt-2">มีน้ำหนักต่อการสื่อสารความเสี่ยงเรื่องอาหาร น้ำ และสุขอนามัยมือ</p>
+        </div>
+        <div class="action-tile p-4">
+            <div class="text-xs font-bold uppercase tracking-[0.16em] text-slate-500 mb-1">ต้องทำอะไร</div>
+            <p class="text-base font-semibold text-slate-900">คัดกรองอาการรุนแรงและเร่งส่งต่อกลุ่มเสี่ยงสูง</p>
+            <p class="text-sm text-slate-600 mt-2">ใช้ panel ประเมินความเสี่ยงเพื่อช่วย triage และสื่อสารแนวทางเบื้องต้น</p>
+        </div>
+        <div class="action-tile p-4">
+            <div class="text-xs font-bold uppercase tracking-[0.16em] text-slate-500 mb-1">ข้อกำกับการใช้งาน</div>
+            <p class="text-base font-semibold text-slate-900">AI ใช้เพื่อประกอบการตัดสินใจ ไม่ใช่การวินิจฉัย</p>
+            <p class="text-sm text-slate-600 mt-2">ควรอ้างอิงข้อมูลเฝ้าระวังและการประเมินโดยแพทย์ทุกครั้งในกรณีอาการรุนแรง</p>
+        </div>
+    </div>
+</section>
+
+<section class="hidden command-panel rounded-2xl p-5 md:p-6 card-shadow">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div class="max-w-3xl">
+            <div class="section-kicker text-sky-700 mb-2">
+                <span class="h-2 w-2 rounded-full bg-sky-500"></span>
+                OSH Access
+            </div>
+            <h2 class="text-2xl md:text-3xl font-bold text-slate-900 leading-tight">เครื่องมือสำหรับ จป.วิชาชีพ</h2>
+            <p class="mt-3 text-sm md:text-base text-slate-600 leading-relaxed">แยกส่วนนี้เป็นปุ่มเฉพาะ เพื่อให้พนักงานทั่วไปโฟกัสเฉพาะข้อมูลที่ต้องรู้ทันที ส่วน จป.วิชาชีพสามารถกดเปิดแผงสรุปสารและติดตามสถานการณ์ได้เมื่อต้องใช้งาน</p>
+        </div>
+        <div class="flex flex-col items-start md:items-end gap-3">
+            <button type="button" onclick="openOshPanel()" class="focus-ring inline-flex items-center gap-2 rounded-xl bg-sky-600 text-white px-5 py-3 text-sm md:text-base font-bold shadow-md hover:bg-sky-500 transition">
+                เปิดแผงสำหรับ จป.วิชาชีพ
+                <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>
+            </button>
+            <p class="text-xs text-slate-500">สำหรับผู้รับผิดชอบการสื่อสารภายในองค์กรและการติดตามสถานการณ์</p>
+        </div>
+    </div>
+</section>
+
+<section class="hidden command-panel rounded-2xl p-5 md:p-6 card-shadow">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div class="max-w-3xl">
+            <div class="section-kicker text-sky-700 mb-2">
+                <span class="h-2 w-2 rounded-full bg-sky-500"></span>
+                OSH Access
+            </div>
+            <h2 class="text-2xl md:text-3xl font-bold text-slate-900 leading-tight">เครื่องมือสำหรับ จป.วิชาชีพ</h2>
+            <p class="mt-3 text-sm md:text-base text-slate-600 leading-relaxed">วางปุ่มนี้ไว้ล่างสุดของหน้าเพื่อแยกจากเนื้อหาหลักสำหรับพนักงานทั่วไป ผู้รับผิดชอบด้านความปลอดภัยและอาชีวอนามัยสามารถกดเปิดแผงสรุปสารและติดตามสถานการณ์ได้เมื่อต้องใช้งาน</p>
+        </div>
+        <div class="flex flex-col items-start md:items-end gap-3">
+            <button type="button" onclick="openOshPanel()" class="focus-ring inline-flex items-center gap-2 rounded-xl bg-sky-600 text-white px-5 py-3 text-sm md:text-base font-bold shadow-md hover:bg-sky-500 transition">
+                เปิดแผงสำหรับ จป.วิชาชีพ
+                <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>
+            </button>
+            <p class="text-xs text-slate-500">สำหรับผู้รับผิดชอบการสื่อสารภายในองค์กรและการติดตามสถานการณ์</p>
+        </div>
+    </div>
+</section>
+
+<section class="hidden command-panel rounded-2xl p-5 md:p-6 card-shadow">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div class="max-w-3xl">
+            <div class="section-kicker text-sky-700 mb-2">
+                <span class="h-2 w-2 rounded-full bg-sky-500"></span>
+                OSH Access
+            </div>
+            <h2 class="text-2xl md:text-3xl font-bold text-slate-900 leading-tight">เครื่องมือสำหรับ จป.วิชาชีพ</h2>
+            <p class="mt-3 text-sm md:text-base text-slate-600 leading-relaxed">วางปุ่มนี้ไว้ล่างสุดของหน้าเพื่อแยกจากเนื้อหาหลักสำหรับพนักงานทั่วไป ผู้รับผิดชอบด้านความปลอดภัยและอาชีวอนามัยสามารถกดเปิดแผงสรุปสารและติดตามสถานการณ์ได้เมื่อต้องใช้งาน</p>
+        </div>
+        <div class="flex flex-col items-start md:items-end gap-3">
+            <button type="button" onclick="openOshPanel()" class="focus-ring inline-flex items-center gap-2 rounded-xl bg-sky-600 text-white px-5 py-3 text-sm md:text-base font-bold shadow-md hover:bg-sky-500 transition">
+                เปิดแผงสำหรับ จป.วิชาชีพ
+                <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>
+            </button>
+            <p class="text-xs text-slate-500">สำหรับผู้รับผิดชอบการสื่อสารภายในองค์กรและการติดตามสถานการณ์</p>
+        </div>
+    </div>
+</section>
+
+<section class="hidden command-panel rounded-2xl p-5 md:p-6 card-shadow">
+    <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
+        <div class="max-w-3xl">
+            <div class="section-kicker text-sky-700 mb-2">
+                <span class="h-2 w-2 rounded-full bg-sky-500"></span>
+                Internal Communication Brief
+            </div>
+            <h2 class="text-2xl md:text-3xl font-bold text-slate-900 leading-tight">หน้าเดียวสำหรับ จป.วิชาชีพ ใช้สื่อสารให้พนักงานในบริษัทเข้าใจความเสี่ยงและแนวทางปฏิบัติได้ทันที</h2>
+            <p class="mt-3 text-sm md:text-base text-slate-600 leading-relaxed">หน้าเปิดนี้ถูกจัดใหม่ให้พนักงานอ่านแล้วรู้ว่าโรคติดต่อจากอะไร ต้องระวังอาการแบบไหน และเมื่อใดควรหยุดงานชั่วคราว แจ้งหัวหน้างาน หรือรีบพบแพทย์ ส่วนข้อมูลเฝ้าระวังรายจังหวัดและเครื่องมือ AI จะอยู่ถัดลงไปในฐานะข้อมูลสนับสนุนสำหรับ จป.วิชาชีพ</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <span class="source-chip">กลุ่มเป้าหมายหลัก: พนักงานภายในบริษัท</span>
+            <span class="source-chip">ผู้สื่อสารหลัก: จป.วิชาชีพ</span>
+            <span class="source-chip">แหล่งข้อมูลหลัก: กรมควบคุมโรค</span>
+            <span class="source-chip">AI ใช้เพื่อคัดกรองเบื้องต้น</span>
+        </div>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-5">
+        <div class="action-tile p-4">
+            <div class="text-xs font-bold uppercase tracking-[0.16em] text-slate-500 mb-1">พนักงานต้องรู้</div>
+            <p class="text-base font-semibold text-slate-900">ไวรัสตับอักเสบเอมักเกี่ยวข้องกับอาหาร น้ำดื่ม น้ำแข็ง และการล้างมือที่ไม่สะอาด</p>
+            <p class="text-sm text-slate-600 mt-2">ข้อความหลักที่ควรสื่อสารคือ กินร้อน ใช้ช้อนกลาง ล้างมือก่อนกินอาหาร และหลีกเลี่ยงอาหารกึ่งสุกกึ่งดิบหรือแหล่งน้ำที่ไม่มั่นใจ</p>
+        </div>
+        <div class="action-tile p-4">
+            <div class="text-xs font-bold uppercase tracking-[0.16em] text-slate-500 mb-1">อาการที่ต้องเฝ้าระวัง</div>
+            <p class="text-base font-semibold text-slate-900">ไข้ อ่อนเพลีย คลื่นไส้ ปวดท้อง ตัวเหลือง ตาเหลือง หรือปัสสาวะสีเข้ม</p>
+            <p class="text-sm text-slate-600 mt-2">หากเริ่มมีอาการเด่นหรือสงสัยว่ารับประทานอาหารเสี่ยง ให้แจ้งหัวหน้างาน ใช้แบบประเมินด้านล่าง และหลีกเลี่ยงการสัมผัสอาหารส่วนกลาง</p>
+        </div>
+        <div class="action-tile p-4">
+            <div class="text-xs font-bold uppercase tracking-[0.16em] text-slate-500 mb-1">ต้องทำทันทีเมื่อสงสัยเสี่ยง</div>
+            <p class="text-base font-semibold text-slate-900">หยุดปฏิบัติงานที่เกี่ยวข้องกับอาหารหรือพื้นที่ส่วนรวม และพบแพทย์เมื่อมีอาการรุนแรง</p>
+            <p class="text-sm text-slate-600 mt-2">หากมีตัวเหลือง ตาเหลือง อาเจียนมาก ซึม หรืออาการแย่ลงเร็ว ต้องส่งต่อพบแพทย์ทันที เครื่องมือ AI ในหน้านี้ใช้เพื่อคัดกรองเบื้องต้น ไม่ใช่การวินิจฉัย</p>
+        </div>
+    </div>
+</section>
 
 <section class="bg-white rounded-2xl p-5 md:p-8 card-shadow border-l-4 border-rose-500">
     <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-            <h2 class="text-xl md:text-2xl font-bold text-slate-800 flex items-center"><span class="text-rose-500 mr-2" aria-hidden="true">&#128202;</span> สถิติรายจังหวัด</h2>
-            <p class="text-sm md:text-base text-slate-500 mt-1">คลิกแท่งกราฟหรือปุ่มชื่อจังหวัดเพื่อดูข้อมูลสรุปเพิ่มเติม</p>
+            <div class="section-kicker text-rose-600 mb-2">
+                <span class="h-2 w-2 rounded-full bg-rose-500"></span>
+                Surveillance View
+            </div>
+            <h2 class="text-xl md:text-2xl font-bold text-slate-800 flex items-center gap-2"><svg class="w-6 h-6 text-rose-500 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zm9.75-9.75c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v15.75c0 .621-.504 1.125-1.125 1.125H13.875a1.125 1.125 0 01-1.125-1.125V3.375zm-6.75 6.75c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v9c0 .621-.504 1.125-1.125 1.125H7.125A1.125 1.125 0 016 19.125v-9z"/></svg>สถิติรายจังหวัด</h2>
+            <p class="text-sm md:text-base text-slate-500 mt-1">เลือกจังหวัดจากกราฟหรือปุ่มด้านล่างเพื่อดูข้อมูลเจาะลึก</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <span class="source-chip">ประเภทข้อมูล: Surveillance</span>
+            <span class="source-chip">มุมมอง: จังหวัดเสี่ยง</span>
         </div>
     </div>
     <div class="chart-container mb-6">
         <canvas id="provinceChart" aria-label="กราฟแท่งแสดงจำนวนผู้ป่วยรายจังหวัด" role="img"></canvas>
     </div>
+    <p class="text-xs text-slate-400 font-semibold uppercase tracking-widest text-center mb-2">ข้อมูลเจาะลึกรายจังหวัด</p>
     <div class="flex flex-wrap gap-2 justify-center">
-        <button type="button" onclick="showProvinceInfo('นครราชสีมา')" class="focus-ring px-4 py-2 bg-indigo-50 text-indigo-700 rounded-full text-sm font-semibold hover:bg-indigo-100 transition border border-indigo-200">นครราชสีมา</button>
-        <button type="button" onclick="showProvinceInfo('ชลบุรี (แหลมฉบัง)')" class="focus-ring px-4 py-2 bg-rose-50 text-rose-700 rounded-full text-sm font-semibold hover:bg-rose-100 transition border border-rose-200">ชลบุรี</button>
-        <button type="button" onclick="showProvinceInfo('ระยอง')" class="focus-ring px-4 py-2 bg-rose-50 text-rose-700 rounded-full text-sm font-semibold hover:bg-rose-100 transition border border-rose-200">ระยอง</button>
-        <button type="button" onclick="showProvinceInfo('ศรีสะเกษ')" class="focus-ring px-4 py-2 bg-slate-100 text-slate-700 rounded-full text-sm font-semibold hover:bg-slate-200 transition border border-slate-200">ศรีสะเกษ</button>
-        <button type="button" onclick="showProvinceInfo('ฉะเชิงเทรา')" class="focus-ring px-4 py-2 bg-slate-100 text-slate-700 rounded-full text-sm font-semibold hover:bg-slate-200 transition border border-slate-200">ฉะเชิงเทรา</button>
-        <button type="button" onclick="showProvinceInfo('ตาก')" class="focus-ring px-4 py-2 bg-slate-100 text-slate-700 rounded-full text-sm font-semibold hover:bg-slate-200 transition border border-slate-200">ตาก</button>
+        <button type="button" onclick="showProvinceInfo('นครราชสีมา')" data-province="นครราชสีมา" data-variant="rose" class="province-pill focus-ring px-4 py-2 bg-rose-50 text-rose-700 rounded-full text-sm font-semibold hover:bg-rose-100 transition border border-rose-200 flex items-center gap-1">นครราชสีมา<svg class="w-3 h-3 opacity-60" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg></button>
+        <button type="button" onclick="showProvinceInfo('ชลบุรี (แหลมฉบัง)')" data-province="ชลบุรี (แหลมฉบัง)" data-variant="amber" class="province-pill focus-ring px-4 py-2 bg-amber-50 text-amber-700 rounded-full text-sm font-semibold hover:bg-amber-100 transition border border-amber-200 flex items-center gap-1">ชลบุรี<svg class="w-3 h-3 opacity-60" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg></button>
+        <button type="button" onclick="showProvinceInfo('ระยอง')" data-province="ระยอง" data-variant="amber" class="province-pill focus-ring px-4 py-2 bg-amber-50 text-amber-700 rounded-full text-sm font-semibold hover:bg-amber-100 transition border border-amber-200 flex items-center gap-1">ระยอง<svg class="w-3 h-3 opacity-60" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg></button>
+        <button type="button" onclick="showProvinceInfo('ศรีสะเกษ')" data-province="ศรีสะเกษ" data-variant="orange" class="province-pill focus-ring px-4 py-2 bg-orange-50 text-orange-700 rounded-full text-sm font-semibold hover:bg-orange-100 transition border border-orange-200 flex items-center gap-1">ศรีสะเกษ<svg class="w-3 h-3 opacity-60" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg></button>
+        <button type="button" onclick="showProvinceInfo('ฉะเชิงเทรา')" data-province="ฉะเชิงเทรา" data-variant="slate" class="province-pill focus-ring px-4 py-2 bg-slate-100 text-slate-600 rounded-full text-sm font-semibold hover:bg-slate-200 transition border border-slate-200 flex items-center gap-1">ฉะเชิงเทรา<svg class="w-3 h-3 opacity-60" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg></button>
+        <button type="button" onclick="showProvinceInfo('ตาก')" data-province="ตาก" data-variant="slate" class="province-pill focus-ring px-4 py-2 bg-slate-100 text-slate-600 rounded-full text-sm font-semibold hover:bg-slate-200 transition border border-slate-200 flex items-center gap-1">ตาก<svg class="w-3 h-3 opacity-60" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg></button>
     </div>
 </section>
 
 <section class="grid grid-cols-1 lg:grid-cols-2 gap-8">
     <div class="bg-white rounded-2xl p-5 md:p-8 card-shadow border-l-4 border-amber-500 flex flex-col">
-        <h2 class="text-xl md:text-2xl font-bold text-slate-800 mb-3 flex items-center"><span class="text-amber-500 mr-2" aria-hidden="true">&#129298;</span> อาการทางคลินิกที่ต้องเฝ้าระวัง</h2>
-        <p class="text-sm text-slate-500 mb-5 leading-relaxed">ภาพและปุ่มด้านล่างใช้ช่วยอธิบายอาการเตือนที่ควรรีบพบแพทย์เมื่อสงสัยตับอักเสบเอ</p>
+        <h2 class="text-xl md:text-2xl font-bold text-slate-800 mb-3 flex items-center gap-2"><svg class="w-6 h-6 text-amber-500 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>อาการทางคลินิกที่ต้องเฝ้าระวัง</h2>
+        <p class="text-sm md:text-base text-slate-500 mb-5 leading-relaxed">อาการเตือนที่ต้องรีบพบแพทย์เมื่อสงสัยการติดเชื้อไวรัสตับอักเสบเอ</p>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
             <div class="flex flex-col h-full">
@@ -153,7 +620,7 @@ body {
                         <p class="text-white font-bold text-sm text-center drop-shadow-md">ตาเหลือง ตัวเหลือง</p>
                     </div>
                 </div>
-                <button type="button" class="focus-ring w-full text-sm bg-amber-100 text-amber-900 py-2.5 rounded-lg font-semibold hover:bg-amber-200 transition" data-title="ทำไมถึงตาเหลือง ตัวเหลือง?" data-content="เมื่อเซลล์ตับอักเสบ การกำจัดบิลิรูบินจะลดลง สารสีเหลืองจึงคั่งในกระแสเลือดและสะสมตามผิวหนังกับตาขาว เป็นสัญญาณที่ควรรีบประเมินเพิ่มเติม">คลิกอ่านสาเหตุ</button>
+                <button type="button" class="focus-ring w-full text-sm bg-amber-100 text-amber-900 py-2.5 rounded-xl font-semibold hover:bg-amber-200 transition flex items-center justify-center gap-1.5" data-title="ตาเหลือง ตัวเหลือง: สาเหตุและนัยสำคัญ" data-content="เมื่อตับอักเสบ การกำจัดบิลิรูบินลดลง สารสีเหลืองสะสมในกระแสเลือดและเนื้อเยื่อ ปรากฏที่ผิวหนังและตาขาว เป็นสัญญาณที่ต้องได้รับการประเมินโดยแพทย์">ดูสาเหตุ<svg class="w-3.5 h-3.5 opacity-70" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg></button>
             </div>
 
             <div class="flex flex-col h-full">
@@ -163,7 +630,7 @@ body {
                         <p class="text-white font-bold text-sm text-center drop-shadow-md">ปัสสาวะสีเข้ม</p>
                     </div>
                 </div>
-                <button type="button" class="focus-ring w-full text-sm bg-orange-100 text-orange-900 py-2.5 rounded-lg font-semibold hover:bg-orange-200 transition" data-title="ทำไมปัสสาวะจึงสีเข้ม?" data-content="เมื่อบิลิรูบินคั่งในร่างกาย ไตจะช่วยขับออกทางปัสสาวะแทน ทำให้สีปัสสาวะเข้มขึ้นคล้ายน้ำชาเข้ม เป็นสัญญาณร่วมที่พบบ่อยในภาวะตับอักเสบ">คลิกอ่านสาเหตุ</button>
+                <button type="button" class="focus-ring w-full text-sm bg-orange-100 text-orange-900 py-2.5 rounded-xl font-semibold hover:bg-orange-200 transition flex items-center justify-center gap-1.5" data-title="ปัสสาวะสีเข้ม: สาเหตุและนัยสำคัญ" data-content="เมื่อบิลิรูบินสูง ไตจะขับออกทางปัสสาวะ ทำให้มีสีเข้มคล้ายน้ำชา มักพบร่วมกับอาการตาเหลืองในผู้ป่วยตับอักเสบ">ดูสาเหตุ<svg class="w-3.5 h-3.5 opacity-70" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg></button>
             </div>
 
             <div class="flex flex-col h-full">
@@ -173,41 +640,74 @@ body {
                         <p class="text-white font-bold text-sm text-center drop-shadow-md">อุจจาระสีซีด</p>
                     </div>
                 </div>
-                <button type="button" class="focus-ring w-full text-sm bg-slate-200 text-slate-900 py-2.5 rounded-lg font-semibold hover:bg-slate-300 transition" data-title="ทำไมอุจจาระจึงสีซีด?" data-content="เมื่อน้ำดีไหลลงลำไส้ได้น้อย สีตามธรรมชาติของอุจจาระจะจางลง หากพบร่วมกับตาเหลืองหรือปัสสาวะเข้มควรพบแพทย์เร็วขึ้น">คลิกอ่านสาเหตุ</button>
+                <button type="button" class="focus-ring w-full text-sm bg-slate-200 text-slate-800 py-2.5 rounded-xl font-semibold hover:bg-slate-300 transition flex items-center justify-center gap-1.5" data-title="อุจจาระสีซีด: สาเหตุและนัยสำคัญ" data-content="เมื่อน้ำดีไหลลงลำไส้ลดลง อุจจาระจะมีสีซีดหรือขาว หากพบร่วมกับตาเหลืองหรือปัสสาวะสีเข้ม ให้รีบพบแพทย์">ดูสาเหตุ<svg class="w-3.5 h-3.5 opacity-70" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg></button>
             </div>
         </div>
-        <p class="text-sm text-center text-rose-600 font-semibold mt-1 leading-relaxed">หากพบหลายอาการร่วมกัน โดยเฉพาะตาเหลือง ตัวเหลือง คลื่นไส้มาก หรือซึมลง ควรรีบไปโรงพยาบาล</p>
+        <div class="mt-3 rounded-xl bg-rose-50 border-l-4 border-rose-500 px-4 py-2.5 flex gap-2 items-start">
+            <svg class="w-4 h-4 flex-shrink-0 mt-0.5 text-rose-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg>
+            <p class="text-sm text-rose-700 font-semibold leading-relaxed">พบอาการตาเหลือง ตัวเหลือง คลื่นไส้รุนแรง หรือระดับความรู้สึกตัวลดลง ให้ไปโรงพยาบาลทันที</p>
+        </div>
     </div>
 
     <div class="bg-white rounded-2xl p-5 md:p-8 card-shadow border-l-4 border-sky-500 flex flex-col">
-        <h2 class="text-xl md:text-2xl font-bold text-slate-800 mb-3 flex items-center"><span class="text-sky-500 mr-2" aria-hidden="true">&#128200;</span> สาเหตุและพฤติกรรมเสี่ยง</h2>
-        <p class="text-sm text-slate-500 mb-4 leading-relaxed">ปัจจัยที่พบได้บ่อยคืออาหารหรือเครื่องดื่มปนเปื้อน การไม่ได้ล้างมือ และการสัมผัสใกล้ชิดกับผู้ติดเชื้อ</p>
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+            <div class="section-kicker text-sky-600">
+                <span class="h-2 w-2 rounded-full bg-sky-500"></span>
+                Risk Factors
+            </div>
+            <span class="source-chip">ประเภทข้อมูล: Analytical Summary</span>
+        </div>
+        <h2 class="text-xl md:text-2xl font-bold text-slate-800 mb-3 flex items-center gap-2"><svg class="w-6 h-6 text-sky-500 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6a7.5 7.5 0 107.5 7.5h-7.5V6z"/><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0013.5 3v7.5z"/></svg>สาเหตุและพฤติกรรมเสี่ยง</h2>
+        <p class="text-sm md:text-base text-slate-500 mb-4 leading-relaxed">ปัจจัยเสี่ยงหลัก ได้แก่ อาหารและน้ำปนเปื้อนเชื้อ การไม่ล้างมือ และการสัมผัสใกล้ชิดกับผู้ติดเชื้อ</p>
+        <div class="grid grid-cols-3 gap-3 mb-4">
+            <div class="text-center bg-sky-50 rounded-xl p-3 border border-sky-100">
+                <div class="text-2xl font-black text-sky-600">65%</div>
+                <div class="text-xs text-sky-800 font-semibold mt-1 leading-snug">อาหาร / น้ำ<br>ปนเปื้อน</div>
+            </div>
+            <div class="text-center bg-indigo-50 rounded-xl p-3 border border-indigo-100">
+                <div class="text-2xl font-black text-indigo-600">20%</div>
+                <div class="text-xs text-indigo-800 font-semibold mt-1 leading-snug">ไม่ล้างมือ<br>ก่อนกินอาหาร</div>
+            </div>
+            <div class="text-center bg-pink-50 rounded-xl p-3 border border-pink-100">
+                <div class="text-2xl font-black text-pink-600">15%</div>
+                <div class="text-xs text-pink-800 font-semibold mt-1 leading-snug">สัมผัสใกล้ชิด<br>ผู้ติดเชื้อ</div>
+            </div>
+        </div>
         <div class="chart-container flex-grow">
             <canvas id="riskChart" aria-label="กราฟวงกลมแสดงสัดส่วนพฤติกรรมเสี่ยง" role="img"></canvas>
         </div>
-        <button type="button" class="focus-ring mt-5 text-sm bg-sky-50 text-sky-800 py-2.5 rounded-xl font-semibold hover:bg-sky-100 transition border border-sky-200" data-title="เจาะลึกพฤติกรรมเสี่ยง" data-content="ไวรัสตับอักเสบเอติดต่อทางปากจากการรับเชื้อที่ปนเปื้อนในอาหาร น้ำ หรือมือที่ไม่สะอาด กลุ่มเสี่ยงหลักคือผู้กินอาหารดิบกึ่งดิบ ผู้ใช้ชีวิตรวมกันหลายคน และผู้ที่ขาดการป้องกันด้านสุขอนามัย">
+        <button type="button" class="focus-ring mt-5 text-sm bg-sky-500 hover:bg-sky-600 text-white py-2.5 rounded-xl font-semibold transition shadow-sm flex items-center justify-center gap-2" data-title="เจาะลึกพฤติกรรมเสี่ยง" data-content="ไวรัสตับอักเสบเอแพร่ทางปากผ่านอาหาร น้ำ หรือมือที่ปนเปื้อนเชื้อ กลุ่มเสี่ยง ได้แก่ ผู้บริโภคอาหารดิบหรือกึ่งดิบ ผู้พักในที่แออัด และผู้ที่ขาดสุขอนามัยพื้นฐาน">
             ดูรายละเอียดการติดเชื้อ
+            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>
         </button>
     </div>
 </section>
 
 <section class="bg-indigo-50 rounded-2xl p-6 md:p-8 card-shadow border border-indigo-100">
-    <div class="flex flex-col md:flex-row gap-8 items-start">
+    <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)] gap-6 items-stretch">
         <div class="flex-1 w-full">
-            <h2 class="text-2xl md:text-3xl font-bold text-indigo-950 mb-2 flex items-center">
-                <span class="mr-2" aria-hidden="true">🤖</span> ประเมินความเสี่ยงเบื้องต้น
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+                <div class="section-kicker text-indigo-700">
+                    <span class="h-2 w-2 rounded-full bg-indigo-500"></span>
+                    Decision Support
+                </div>
+                <span class="source-chip">AI-assisted screening</span>
+            </div>
+            <h2 class="text-2xl md:text-3xl font-bold text-indigo-950 mb-2 flex items-center gap-2">
+                <svg class="w-7 h-7 text-indigo-500 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z"/></svg>ประเมินความเสี่ยงเบื้องต้น
             </h2>
             <p class="text-sm md:text-base text-indigo-800 mb-5 leading-relaxed">
-                เครื่องมือนี้ใช้ข้อมูลจาก Supabase Edge Function เพื่อคัดกรองความเสี่ยงเบื้องต้นจากพฤติกรรมและอาการที่พิมพ์เข้ามา
-                ผลลัพธ์ไม่ใช่คำวินิจฉัยโรค ไม่ใช้แทนแพทย์ ห้องฉุกเฉิน หรือการตรวจทางห้องปฏิบัติการ
+                กรอกพฤติกรรมเสี่ยงหรืออาการที่พบ เพื่อรับการคัดกรองความเสี่ยงเบื้องต้น
+                ผลลัพธ์ไม่ใช่การวินิจฉัยโรค และไม่สามารถใช้แทนการตรวจโดยแพทย์ได้
             </p>
-            <div class="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 leading-relaxed">
-                หากมีอาการตาเหลือง ตัวเหลือง ปัสสาวะเข้ม อาเจียนมาก ซึมลง หรือปวดท้องมาก ให้ไปโรงพยาบาลทันทีโดยไม่ต้องรอผลจากระบบนี้
+            <div class="mb-5 rounded-xl bg-amber-50 border-l-4 border-amber-500 px-4 py-3 text-sm text-amber-900 leading-relaxed flex gap-3 items-start">
+                <svg class="w-4 h-4 flex-shrink-0 mt-0.5 text-amber-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
+                <span>หากมีอาการตาเหลือง ปัสสาวะสีเข้ม อาเจียนรุนแรง หรือระดับความรู้สึกตัวลดลง ให้ไปโรงพยาบาลทันที</span>
             </div>
-            <label for="userInput" class="block text-sm font-semibold text-indigo-900 mb-2">เล่าพฤติกรรมเสี่ยงหรืออาการที่พบ</label>
+            <label for="userInput" class="block text-sm font-semibold text-indigo-900 mb-2">อธิบายพฤติกรรมเสี่ยงหรืออาการที่พบ</label>
             <div class="relative">
-                <textarea id="userInput" class="focus-ring w-full p-4 pb-12 border border-indigo-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-slate-700 bg-white text-sm md:text-base shadow-sm resize-none" rows="4" placeholder="ตัวอย่าง: ไปกินยำหอยแครงดิบที่แหลมฉบังมา วันนี้รู้สึกเพลีย คลื่นไส้ และเริ่มตาเหลืองนิดๆ"></textarea>
-                <div class="absolute bottom-3 right-3 text-xs text-slate-400">ประมวลผลในอุปกรณ์ของคุณ</div>
+                <textarea id="userInput" data-error="false" class="focus-ring w-full p-4 pb-12 border border-indigo-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-slate-700 bg-white text-sm md:text-base shadow-sm resize-none" rows="4" placeholder="ตัวอย่าง: ไปกินยำหอยแครงดิบที่แหลมฉบังมา วันนี้รู้สึกเพลีย คลื่นไส้ และเริ่มตาเหลืองนิดๆ"></textarea>
+                <div class="absolute bottom-3 right-3 text-xs text-slate-400">ใช้เพื่อการคัดกรองเบื้องต้นเท่านั้น</div>
             </div>
             <button id="askAiBtn" type="button" class="focus-ring mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-6 rounded-xl transition-all shadow-md flex justify-center items-center">
                 <span id="btnText">เริ่มประเมินความเสี่ยง</span>
@@ -215,52 +715,133 @@ body {
             </button>
         </div>
 
-        <div class="flex-1 w-full flex flex-col h-full">
-            <div id="aiResponseContainer" class="hidden h-full flex flex-col bg-white rounded-xl border border-indigo-100 shadow-sm overflow-hidden">
+        <div class="w-full flex flex-col h-full">
+            <div id="aiResponseContainer" class="h-full min-h-[220px] flex flex-col bg-white rounded-xl border border-indigo-100 shadow-sm overflow-hidden">
                 <div class="bg-indigo-100 px-4 py-2 border-b border-indigo-200 flex justify-between items-center">
                     <span class="text-xs font-bold text-indigo-900 uppercase">ผลการประเมินเบื้องต้น</span>
+                    <span class="text-[11px] font-semibold text-indigo-700">Source: Supabase AI</span>
                 </div>
-                <div id="aiResponse" class="p-5 text-slate-700 text-sm md:text-base leading-relaxed overflow-y-auto flex-grow max-h-[280px]"></div>
-            </div>
-            <div id="aiEmptyState" class="h-full min-h-[200px] flex flex-col items-center justify-center bg-white/60 border border-dashed border-indigo-200 rounded-xl text-center p-6">
-                <span class="text-4xl text-indigo-300 mb-2" aria-hidden="true">📋</span>
-                <p class="text-sm text-indigo-500 font-medium leading-relaxed">กรอกข้อมูลด้านซ้าย แล้วกดปุ่มประเมินเพื่อดูคำแนะนำเบื้องต้น</p>
+                <div id="aiResponse" class="p-5 text-slate-700 text-sm md:text-base leading-relaxed overflow-y-auto flex-grow max-h-[280px]">
+                    <p class="text-sm text-slate-400 leading-relaxed">ผลการประเมินจะแสดงที่นี่หลังจากส่งข้อมูล</p>
+                </div>
             </div>
         </div>
     </div>
 </section>
 
-<section class="max-w-3xl mx-auto mt-8 border-t border-slate-200 pt-8">
+<section>
     <div class="bg-teal-50 rounded-2xl p-6 md:p-8 card-shadow border border-teal-100 flex flex-col">
-        <h2 class="text-xl md:text-2xl font-bold text-teal-950 mb-2 flex items-center">
-            <span class="mr-2" aria-hidden="true">🍽️</span> ประเมินความเสี่ยงของเมนูอาหาร
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+            <div class="section-kicker text-teal-700">
+                <span class="h-2 w-2 rounded-full bg-teal-500"></span>
+                Food Safety Decision Aid
+            </div>
+            <span class="source-chip">AI-assisted hygiene screening</span>
+        </div>
+        <h2 class="text-xl md:text-2xl font-bold text-teal-950 mb-2 flex items-center gap-2">
+            <svg class="w-6 h-6 text-teal-600 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5"/></svg>ตรวจสอบความเสี่ยงเมนูอาหาร
         </h2>
-        <p class="text-sm text-teal-800 mb-3 leading-relaxed">พิมพ์ชื่อเมนูหรือวัตถุดิบที่ต้องการเช็ก เช่น หอยแครงดิบ น้ำแข็ง หรือผลไม้ล้างไม่สะอาด ระบบจะสรุประดับความเสี่ยงและข้อควรทำทันที</p>
-        <div class="mb-4 rounded-xl border border-teal-200 bg-white/70 px-4 py-3 text-sm text-teal-900 leading-relaxed">
-            ผลลัพธ์นี้ใช้เพื่อช่วยตัดสินใจด้านสุขอนามัยอาหารเบื้องต้นเท่านั้น ไม่ใช่การรับรองความปลอดภัยของร้านหรือเมนู
+        <p class="text-sm md:text-base text-teal-800 mb-3 leading-relaxed">ระบุเมนูหรือวัตถุดิบที่ต้องการตรวจสอบ เช่น หอยแครงดิบ น้ำแข็ง หรือผลไม้ดิบ เพื่อรับสรุประดับความเสี่ยงและคำแนะนำ</p>
+        <div class="mb-4 rounded-xl bg-white/80 border-l-4 border-teal-500 px-4 py-3 text-sm text-teal-900 leading-relaxed flex gap-3 items-start">
+            <svg class="w-4 h-4 flex-shrink-0 mt-0.5 text-teal-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/></svg>
+            <span>ผลการประเมินใช้สำหรับการตัดสินใจด้านสุขอนามัยเบื้องต้นเท่านั้น ไม่ใช่การรับรองความปลอดภัยของสถานประกอบการหรือผลิตภัณฑ์</span>
         </div>
         <div class="flex flex-col flex-grow">
             <label for="foodInput" class="block text-sm font-semibold text-teal-900 mb-2">ชื่อเมนูหรือวัตถุดิบ</label>
             <input type="text" id="foodInput" class="focus-ring w-full p-3 border border-teal-200 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none mb-4 text-slate-700 bg-white" placeholder="เช่น หอยแครงลวกไม่สุก น้ำแข็งไม่แน่ใจความสะอาด สลัดผลไม้รถเข็น">
             <button id="checkFoodBtn" type="button" class="focus-ring w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 rounded-xl transition shadow-md mb-4 flex justify-center items-center">
-                <span>ตรวจสอบความปลอดภัย</span>
+                <span id="foodBtnText">ตรวจสอบความปลอดภัย</span>
+                <svg id="foodLoadingSpinner" class="hidden ml-3 animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
             </button>
-            <div id="foodResponse" class="p-4 bg-white rounded-xl border border-teal-200 hidden text-sm text-slate-700 flex-grow shadow-inner leading-relaxed" aria-live="polite"></div>
+            <div id="foodEmptyState" class="flex-grow min-h-[180px] flex flex-col items-center justify-center bg-white/70 border border-dashed border-teal-200 rounded-xl text-center p-6">
+                <svg class="w-10 h-10 text-teal-300 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 3.75h9A2.25 2.25 0 0118.75 6v14.25L15 18l-3 2.25L9 18l-3.75 2.25V6A2.25 2.25 0 017.5 3.75z"/><path stroke-linecap="round" stroke-linejoin="round" d="M9 8.25h6m-6 3h6m-6 3h3"/></svg>
+                <p class="text-sm text-teal-600 font-medium leading-relaxed">ระบุเมนูหรือวัตถุดิบ แล้วกดตรวจสอบเพื่อดูระดับความเสี่ยงและคำแนะนำเบื้องต้น</p>
+            </div>
+            <div id="foodResponse" role="status" class="p-4 bg-white rounded-xl border border-teal-200 hidden text-sm text-slate-700 flex-grow shadow-inner leading-relaxed" aria-live="polite"></div>
         </div>
     </div>
 </section>
 
+<section class="hidden command-panel rounded-2xl p-5 md:p-6 card-shadow">
+    <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
+        <div class="max-w-3xl">
+            <div class="section-kicker text-sky-700 mb-2">
+                <span class="h-2 w-2 rounded-full bg-sky-500"></span>
+                OSH Communication Panel
+            </div>
+            <h2 class="text-2xl md:text-3xl font-bold text-slate-900 leading-tight">แผงสำหรับ จป.วิชาชีพ ใช้สรุปสารและติดตามสถานการณ์ก่อนสื่อสารให้พนักงาน</h2>
+            <p class="mt-3 text-sm md:text-base text-slate-600 leading-relaxed">วางไว้ส่วนล่างของหน้าเพื่อเป็นชั้นข้อมูลรองสำหรับผู้รับผิดชอบการสื่อสารภายในบริษัท โดยรวมทั้งสถานะเฝ้าระวัง จุดเน้นในการสื่อสาร และเครื่องมือสรุปรายงาน</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <span class="status-chip status-critical">ระดับเฝ้าระวังสูง</span>
+            <span class="status-chip status-info">พื้นที่หลัก: นครราชสีมา / ชลบุรี / ระยอง</span>
+            <span class="status-chip status-neutral">ข้อมูลอ้างอิงต้นปี 2569</span>
+        </div>
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-5">
+        <div class="space-y-3 text-sm">
+            <div class="action-tile p-4">
+                <div class="text-xs font-bold uppercase tracking-[0.16em] text-slate-500 mb-1">ประเด็นสื่อสารหลัก</div>
+                <p class="text-base font-semibold text-slate-900">เน้นเรื่องอาหาร น้ำแข็ง น้ำดื่ม และการล้างมือก่อนรับประทานอาหาร</p>
+                <p class="text-slate-600 mt-2">เหมาะสำหรับใช้ในประกาศภายในโรงอาหาร จุดพักพนักงาน รถรับส่ง และแชทกลุ่มพนักงาน</p>
+            </div>
+            <div class="action-tile p-4">
+                <div class="text-xs font-bold uppercase tracking-[0.16em] text-slate-500 mb-1">กลุ่มที่ควรคัดกรองก่อน</div>
+                <p class="text-base font-semibold text-slate-900">ผู้ที่มีอาการทางทางเดินอาหาร ร่วมกับอ่อนเพลีย ตัวเหลือง หรือประวัติรับประทานอาหารเสี่ยง</p>
+                <p class="text-slate-600 mt-2">ใช้แบบประเมิน AI ด้านล่างประกอบการซักถามเบื้องต้น และส่งต่อหน่วยแพทย์เมื่ออาการเข้าเกณฑ์</p>
+            </div>
+        </div>
+        <div class="space-y-3 text-sm">
+            <div class="action-tile p-4">
+                <div class="text-xs font-bold uppercase tracking-[0.16em] text-slate-500 mb-1">สถานะระบบ</div>
+                <p class="text-base font-semibold text-slate-900">พร้อมใช้ทั้งข้อมูลเฝ้าระวังล่าสุดและเครื่องมือคัดกรองเบื้องต้น</p>
+                <p class="text-slate-600 mt-2">AI ใช้เพื่อประกอบการสื่อสารและคัดกรอง ไม่ใช่การวินิจฉัยทางการแพทย์</p>
+            </div>
+            <div class="flex flex-wrap gap-2 pt-1">
+                <button type="button" onclick="window.print()" class="focus-ring inline-flex items-center gap-2 rounded-lg bg-white text-slate-900 px-4 py-2 text-sm font-semibold hover:bg-slate-100 transition">พิมพ์สรุปรายงาน</button>
+                <button type="button" onclick="document.getElementById('liveUpdateBtn').click()" class="focus-ring inline-flex items-center gap-2 rounded-lg bg-sky-500 text-white px-4 py-2 text-sm font-semibold hover:bg-sky-400 transition">ดึงสถานการณ์ล่าสุด</button>
+            </div>
+        </div>
+    </div>
+</section>
+<section class="command-panel rounded-2xl p-5 md:p-6 card-shadow">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+            <div class="section-kicker text-sky-700 mb-1">
+                <span class="h-2 w-2 rounded-full bg-sky-500"></span>
+                OSH Access
+            </div>
+            <p class="text-sm font-semibold text-slate-700">เครื่องมือสำหรับ จป.วิชาชีพ</p>
+        </div>
+        <div class="flex items-center">
+            <button type="button" onclick="openOshPanel()" class="focus-ring inline-flex items-center gap-2 rounded-lg bg-sky-600 text-white px-4 py-2 text-sm font-semibold shadow-sm hover:bg-sky-500 transition">
+                เปิดแผงสำหรับ จป.วิชาชีพ
+                <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>
+            </button>
+        </div>
+    </div>
+</section>
 </main>
+
+<footer class="bg-slate-800 text-slate-400 text-xs mt-10 py-4 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2">
+        <span>© 2569 กรมควบคุมโรค กระทรวงสาธารณสุข — ข้อมูลเพื่อการสาธารณสุขเบื้องต้น ไม่ใช่คำวินิจฉัยทางการแพทย์</span>
+        <span class="text-slate-500 whitespace-nowrap">ข้อมูล ณ ต้นปี พ.ศ. 2569</span>
+    </div>
+</footer>
 
 <div id="infoModal" class="fixed inset-0 z-50 hidden items-center justify-center px-4" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
     <button type="button" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" aria-label="ปิดหน้าต่างข้อมูล" onclick="closeModal()"></button>
-    <div class="glass-modal rounded-2xl shadow-2xl max-w-lg w-full z-50 overflow-hidden transform transition-all border border-slate-200 relative max-h-[85vh] flex flex-col">
+    <div class="glass-modal modal-panel rounded-2xl shadow-2xl max-w-lg w-full z-50 overflow-hidden transform transition-all border border-slate-200 relative max-h-[85vh] flex flex-col">
+        <button type="button" onclick="closeModal()" class="modal-focusable focus-ring absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition z-10" aria-label="ปิดหน้าต่างข้อมูล">
+            <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
         <div class="p-6 overflow-y-auto">
-            <h3 id="modalTitle" class="text-2xl font-bold text-indigo-950 mb-3 border-b pb-2 border-indigo-100"></h3>
+            <h3 id="modalTitle" class="text-2xl font-bold text-indigo-950 mb-3 border-b pb-2 border-indigo-100 pr-8"></h3>
             <div id="modalContent" class="text-slate-700 leading-relaxed text-sm md:text-base space-y-3"></div>
         </div>
         <div class="bg-slate-50 px-6 py-4 flex justify-end border-t border-slate-200">
-            <button id="modalCloseBtn" type="button" onclick="closeModal()" class="focus-ring bg-slate-800 hover:bg-slate-700 text-white px-6 py-2 rounded-lg font-semibold transition">ปิดหน้าต่าง</button>
+            <button id="modalCloseBtn" type="button" onclick="closeModal()" class="modal-focusable focus-ring bg-slate-800 hover:bg-slate-700 text-white px-6 py-2 rounded-lg font-semibold transition">ปิด</button>
         </div>
     </div>
 </div>
@@ -280,6 +861,8 @@ const provinceDataDB = {
 };
 
 const metricCards = document.querySelectorAll('.metric-card, [data-title][data-content]');
+const metricSummaryCards = document.querySelectorAll('.metric-card');
+const provincePills = document.querySelectorAll('.province-pill');
 let lastFocusedElement = null;
 
 function escapeHtml(value) {
@@ -312,11 +895,53 @@ function openModal(title, content) {
     document.getElementById('modalCloseBtn').focus();
 }
 
+function openOshPanel() {
+    lastFocusedElement = document.activeElement;
+    const content = `
+        <div class="space-y-4">
+            <div class="flex flex-wrap gap-2">
+                <span class="inline-flex items-center rounded-full bg-rose-50 px-3 py-1 text-xs font-bold text-rose-700 border border-rose-200">ระดับเฝ้าระวังสูง</span>
+                <span class="inline-flex items-center rounded-full bg-sky-50 px-3 py-1 text-xs font-bold text-sky-700 border border-sky-200">พื้นที่หลัก: นครราชสีมา / ชลบุรี / ระยอง</span>
+                <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600 border border-slate-200">ข้อมูลอ้างอิงต้นปี 2569</span>
+            </div>
+            <div class="grid gap-3">
+                <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <div class="text-xs font-bold uppercase tracking-[0.16em] text-slate-500 mb-1">ประเด็นสื่อสารหลัก</div>
+                    <p class="text-base font-semibold text-slate-900">เน้นเรื่องอาหาร น้ำแข็ง น้ำดื่ม และการล้างมือก่อนรับประทานอาหาร</p>
+                    <p class="text-sm text-slate-600 mt-2">เหมาะสำหรับใช้ในประกาศภายในโรงอาหาร จุดพักพนักงาน รถรับส่ง และแชทกลุ่มพนักงาน</p>
+                </div>
+                <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <div class="text-xs font-bold uppercase tracking-[0.16em] text-slate-500 mb-1">กลุ่มที่ควรคัดกรองก่อน</div>
+                    <p class="text-base font-semibold text-slate-900">ผู้ที่มีอาการทางทางเดินอาหาร ร่วมกับอ่อนเพลีย ตัวเหลือง หรือประวัติรับประทานอาหารเสี่ยง</p>
+                    <p class="text-sm text-slate-600 mt-2">ใช้แบบประเมิน AI ด้านล่างประกอบการซักถามเบื้องต้น และส่งต่อหน่วยแพทย์เมื่ออาการเข้าเกณฑ์</p>
+                </div>
+                <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <div class="text-xs font-bold uppercase tracking-[0.16em] text-slate-500 mb-1">สถานะระบบ</div>
+                    <p class="text-base font-semibold text-slate-900">พร้อมใช้ทั้งข้อมูลเฝ้าระวังล่าสุดและเครื่องมือคัดกรองเบื้องต้น</p>
+                    <p class="text-sm text-slate-600 mt-2">AI ใช้เพื่อประกอบการสื่อสารและคัดกรอง ไม่ใช่การวินิจฉัยทางการแพทย์</p>
+                </div>
+            </div>
+            <div class="flex flex-wrap gap-2 pt-1">
+                <button type="button" onclick="window.print()" class="modal-focusable focus-ring inline-flex items-center gap-2 rounded-lg bg-white text-slate-900 px-4 py-2 text-sm font-semibold hover:bg-slate-100 transition border border-slate-200">พิมพ์สรุปรายงาน</button>
+                <button type="button" onclick="document.getElementById('liveUpdateBtn').click(); closeModal();" class="modal-focusable focus-ring inline-flex items-center gap-2 rounded-lg bg-sky-500 text-white px-4 py-2 text-sm font-semibold hover:bg-sky-400 transition">ดึงสถานการณ์ล่าสุด</button>
+            </div>
+        </div>
+    `;
+
+    setModalContent('แผงสำหรับ จป.วิชาชีพ', content);
+    const modal = document.getElementById('infoModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+    document.getElementById('modalCloseBtn').focus();
+}
+
 function closeModal() {
     const modal = document.getElementById('infoModal');
     modal.classList.add('hidden');
     modal.classList.remove('flex');
     document.body.style.overflow = '';
+    metricSummaryCards.forEach((card) => card.setAttribute('aria-expanded', 'false'));
     if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
         lastFocusedElement.focus();
     }
@@ -326,11 +951,29 @@ document.addEventListener('keydown', (event) => {
     const modal = document.getElementById('infoModal');
     if (!modal.classList.contains('hidden') && event.key === 'Escape') {
         closeModal();
+        return;
+    }
+    if (!modal.classList.contains('hidden') && event.key === 'Tab') {
+        const focusable = Array.from(modal.querySelectorAll('.modal-focusable'));
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (!focusable.length) return;
+        if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault();
+            last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first.focus();
+        }
     }
 });
 
 metricCards.forEach((card) => {
     card.addEventListener('click', () => {
+        if (card.classList.contains('metric-card')) {
+            metricSummaryCards.forEach((item) => item.setAttribute('aria-expanded', 'false'));
+            card.setAttribute('aria-expanded', 'true');
+        }
         openModal(card.dataset.title, card.dataset.content);
     });
 });
@@ -358,6 +1001,9 @@ function showProvinceInfo(provinceName) {
     `;
 
     lastFocusedElement = document.activeElement;
+    provincePills.forEach((pill) => pill.classList.remove('pill-active'));
+    const activePill = document.querySelector(`.province-pill[data-province="${provinceName}"]`);
+    if (activePill) activePill.classList.add('pill-active');
     setModalContent(`สถิติเจาะลึก: จ.${provinceName}`, content);
     const modal = document.getElementById('infoModal');
     modal.classList.remove('hidden');
@@ -457,6 +1103,13 @@ new Chart(ctxRisk, {
     options: {
         ...commonOptions,
         ...tooltipConfig,
+        plugins: {
+            ...commonOptions.plugins,
+            ...tooltipConfig.plugins,
+            legend: {
+                display: false
+            }
+        },
         cutout: '68%',
         layout: { padding: 10 }
     }
@@ -506,13 +1159,19 @@ function riskLevelClass(level) {
     return 'text-emerald-700';
 }
 
+function riskBadgeClass(level) {
+    if (level === '\u0E2A\u0E39\u0E07') return 'risk-badge risk-high';
+    if (level === '\u0E1B\u0E32\u0E19\u0E01\u0E25\u0E32\u0E07') return 'risk-badge risk-medium';
+    return 'risk-badge risk-low';
+}
+
 function renderAssessmentResult(result) {
     const reasons = Array.isArray(result?.reasons) ? result.reasons : [];
     const recommendations = Array.isArray(result?.recommendations) ? result.recommendations : [];
 
     return `
         <div class="space-y-3">
-            <p><strong class="${riskLevelClass(result?.level)}">ระดับความเสี่ยง: ${escapeHtml(result?.level || 'ไม่ทราบ')}</strong></p>
+            <div class="flex items-center gap-2 flex-wrap"><span class="text-sm font-semibold text-slate-800">ระดับความเสี่ยง</span><strong class="${riskBadgeClass(result?.level)}">${escapeHtml(result?.level || 'ไม่ทราบ')}</strong></div>
             <p>${escapeHtml(result?.summary || 'ไม่มีผลการประเมิน')}</p>
             ${reasons.length ? `<ul class="list-disc pl-5 space-y-1">${reasons.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>` : ''}
             ${recommendations.length ? `<div class="pt-2 border-t border-slate-100"><p class="font-semibold text-slate-800 mb-1">ข้อแนะนำ</p><ul class="list-disc pl-5 space-y-1">${recommendations.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul></div>` : ''}
@@ -526,7 +1185,7 @@ function renderFoodResult(result) {
 
     return `
         <div class="space-y-2">
-            <p><strong class="${riskLevelClass(result?.level)}">ระดับความเสี่ยงของเมนู: ${escapeHtml(result?.level || 'ไม่ทราบ')}</strong></p>
+            <div class="flex items-center gap-2 flex-wrap"><span class="text-sm font-semibold text-slate-800">ระดับความเสี่ยงของเมนู</span><strong class="${riskBadgeClass(result?.level)}">${escapeHtml(result?.level || 'ไม่ทราบ')}</strong></div>
             <p>${escapeHtml(result?.summary || 'ไม่มีผลการประเมิน')}</p>
             ${recommendations.length ? `<ul class="list-disc pl-5 space-y-1 pt-2 border-t border-slate-100">${recommendations.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>` : ''}
             <p class="text-xs text-slate-500 pt-2 border-t border-slate-100">ผลลัพธ์นี้เป็นคำแนะนำสุขอนามัยอาหารเบื้องต้น ไม่ใช่การรับรองความปลอดภัยแบบทางการ</p>
@@ -536,7 +1195,7 @@ function renderFoodResult(result) {
 
 function renderBackendUnavailable(message) {
     return `
-        <div class="text-center text-amber-700">
+        <div class="state-error rounded-xl px-4 py-4 text-center">
             <span class="text-3xl block mb-2">ℹ️</span>
             <b>ยังไม่สามารถเชื่อมต่อระบบ Supabase ได้</b><br>
             ${escapeHtml(message)}
@@ -545,19 +1204,18 @@ function renderBackendUnavailable(message) {
 }
 
 document.getElementById('askAiBtn').addEventListener('click', async () => {
-    const userInput = document.getElementById('userInput').value.trim();
+    const userInputField = document.getElementById('userInput');
+    const userInput = userInputField.value.trim();
     if (!userInput) {
-        document.getElementById('userInput').focus();
+        userInputField.dataset.error = 'true';
+        userInputField.focus();
         return;
     }
+    userInputField.dataset.error = 'false';
 
-    const aiResponseContainer = document.getElementById('aiResponseContainer');
     const aiResponse = document.getElementById('aiResponse');
-    const aiEmptyState = document.getElementById('aiEmptyState');
 
     setButtonLoading('askAiBtn', 'btnText', 'loadingSpinner', true, 'กำลังประเมิน...', 'เริ่มประเมินความเสี่ยง');
-    aiEmptyState.classList.add('hidden');
-    aiResponseContainer.classList.remove('hidden');
     aiResponse.innerHTML = '<div class="animate-pulse space-y-3"><div class="h-3 bg-slate-200 rounded"></div><div class="h-3 bg-slate-200 rounded w-5/6"></div><div class="h-3 bg-slate-200 rounded w-4/6"></div></div>';
 
     try {
@@ -577,12 +1235,11 @@ document.getElementById('checkFoodBtn').addEventListener('click', async () => {
         return;
     }
 
-    const btn = document.getElementById('checkFoodBtn');
     const res = document.getElementById('foodResponse');
-    const originalText = btn.innerHTML;
+    const foodEmptyState = document.getElementById('foodEmptyState');
 
-    btn.innerHTML = '<span class="animate-pulse">กำลังตรวจสอบ...</span>';
-    btn.disabled = true;
+    setButtonLoading('checkFoodBtn', 'foodBtnText', 'foodLoadingSpinner', true, 'กำลังตรวจสอบ...', 'ตรวจสอบความปลอดภัย');
+    foodEmptyState.classList.add('hidden');
     res.classList.remove('hidden');
     res.innerHTML = '<span class="text-teal-600 font-semibold animate-pulse">กำลังประเมินความเสี่ยงของเมนู...</span>';
 
@@ -592,8 +1249,13 @@ document.getElementById('checkFoodBtn').addEventListener('click', async () => {
     } catch (error) {
         res.innerHTML = renderBackendUnavailable(error.message || 'กรุณาตรวจสอบการเชื่อมต่อ Supabase');
     } finally {
-        btn.innerHTML = originalText;
-        btn.disabled = false;
+        setButtonLoading('checkFoodBtn', 'foodBtnText', 'foodLoadingSpinner', false, 'กำลังตรวจสอบ...', 'ตรวจสอบความปลอดภัย');
+    }
+});
+
+document.getElementById('userInput').addEventListener('input', (event) => {
+    if (event.target.value.trim()) {
+        event.target.dataset.error = 'false';
     }
 });
 
