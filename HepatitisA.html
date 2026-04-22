@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Enterprise Dashboard: สถานการณ์โรคไวรัสตับอักเสบเอ</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body {
+    font-family: 'Kanit', sans-serif;
+    background-color: #F8FAFC;
+    color: #0F172A;
+}
+.chart-container {
+    position: relative;
+    width: 100%;
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    height: 300px;
+    max-height: 350px;
+}
+@media (min-width: 768px) {
+    .chart-container { height: 350px; }
+}
+.card-shadow {
+    box-shadow: 0 10px 30px -18px rgba(15, 23, 42, 0.28);
+}
+.enterprise-gradient {
+    background:
+        radial-gradient(circle at top right, rgba(56, 189, 248, 0.22), transparent 28%),
+        linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
+}
+.text-gradient {
+    background: linear-gradient(to right, #7DD3FC, #A5B4FC);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #f1f5f9; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+.glass-modal {
+    background: rgba(255, 255, 255, 0.97);
+    backdrop-filter: blur(12px);
+}
+.focus-ring:focus-visible {
+    outline: 3px solid rgba(56, 189, 248, 0.55);
+    outline-offset: 3px;
+}
+.metric-card {
+    text-align: left;
+}
+.metric-card:hover {
+    transform: translateY(-2px);
+}
+</style>
+</head>
+<body class="antialiased pb-20">
+
+<header class="enterprise-gradient text-white pb-12 pt-8 px-4 sm:px-6 lg:px-8 border-b-4 border-sky-400">
+    <div class="max-w-7xl mx-auto">
+        <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+            <div class="flex items-center space-x-3">
+                <span class="text-3xl" aria-hidden="true">&#128187;</span>
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-bold tracking-wide">CDD-Alert <span class="text-sky-300">ระบบเฝ้าระวัง</span></h1>
+                    <p class="text-sm text-slate-300">กรมควบคุมโรค - กระทรวงสาธารณสุข</p>
+                </div>
+            </div>
+            <button id="liveUpdateBtn" type="button" class="focus-ring w-full md:w-auto bg-sky-500 hover:bg-sky-600 text-white font-semibold py-2.5 px-5 rounded-lg shadow-lg transition-all flex items-center justify-center space-x-2 border border-sky-300/30">
+                <span id="updateBtnIcon" class="text-lg" aria-hidden="true">🔄</span>
+                <span id="updateBtnText">อัปเดตข้อมูลล่าสุด</span>
+            </button>
+        </div>
+
+        <div id="liveUpdatePanel" class="hidden bg-slate-800/80 backdrop-blur-md border border-slate-600 rounded-xl p-5 mb-8 shadow-2xl relative overflow-hidden" aria-live="polite">
+            <div class="absolute top-0 left-0 w-1 bg-sky-400 h-full"></div>
+            <div class="flex items-center space-x-3 mb-3">
+                <div class="h-2.5 w-2.5 bg-red-500 rounded-full animate-pulse" aria-hidden="true"></div>
+                <h2 class="font-bold text-sky-400">อัปเดตสถานการณ์ล่าสุด</h2>
+            </div>
+            <div id="liveUpdateContent" class="text-slate-200 text-sm md:text-base leading-relaxed">
+                ระบบพร้อมสรุปสถานการณ์ล่าสุดจากข้อมูลในหน้านี้
+            </div>
+        </div>
+
+        <div class="text-center mt-8 md:mt-12 mb-10">
+            <h2 class="text-4xl md:text-5xl font-bold mb-4 text-gradient">รายงานการระบาด: ไวรัสตับอักเสบเอ</h2>
+            <p class="text-base md:text-lg text-slate-300 max-w-3xl mx-auto leading-relaxed">
+                สรุปข้อมูลผู้ป่วยรุนแรง พื้นที่เฝ้าระวัง และเครื่องมือประเมินความเสี่ยงเบื้องต้น
+                สำหรับเจ้าหน้าที่และประชาชน โดยยังคงรูปแบบแดชบอร์ดเดิมให้อ่านง่ายบนมือถือและเดสก์ท็อป
+            </p>
+        </div>
+
+        <section class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-7xl mx-auto -mb-24 relative z-20">
+            <button type="button" class="metric-card focus-ring bg-white rounded-xl p-5 border-l-4 border-rose-500 shadow-xl transition-transform" data-title="ผู้ป่วยหนักสะสม" data-content="ยอดสะสมผู้ป่วยอาการรุนแรงในแดชบอร์ดนี้อยู่ที่ 74 ราย โดยกลุ่มที่พบมากคือวัยทำงานและผู้มีประวัติรับประทานอาหารหรือน้ำแข็งที่อาจปนเปื้อนเชื้อ">
+                <div class="text-slate-500 text-xs md:text-sm font-bold mb-1 uppercase tracking-wide">ผู้ป่วยหนักสะสม (ปี 68)</div>
+                <div class="flex items-baseline"><div class="text-4xl font-black text-slate-800">74</div><div class="text-base font-medium text-slate-500 ml-2">ราย</div></div>
+            </button>
+            <button type="button" class="metric-card focus-ring bg-white rounded-xl p-5 border-l-4 border-red-600 shadow-xl transition-transform" data-title="ผู้เสียชีวิตรายใหม่ ปี 2569" data-content="มีรายงานผู้เสียชีวิต 2 รายในช่วงต้นปี 2569 ทั้งสองรายเข้ารับการรักษาช้าและมีปัจจัยเสี่ยงด้านอาหารทะเลหรืออาหารกึ่งสุกกึ่งดิบ">
+                <div class="text-red-500 text-xs md:text-sm font-bold mb-1 uppercase tracking-wide">เสียชีวิตรายใหม่ (ปี 69)</div>
+                <div class="flex items-baseline"><div class="text-4xl font-black text-red-600">2</div><div class="text-base font-medium text-slate-500 ml-2">ราย</div></div>
+                <div class="text-xs text-red-400 mt-1">ต้องเฝ้าระวังต่อเนื่อง</div>
+            </button>
+            <button type="button" class="metric-card focus-ring bg-white rounded-xl p-5 border-l-4 border-amber-500 shadow-xl transition-transform" data-title="ความรุนแรงเมื่อเกิดตับวาย" data-content="โรคไวรัสตับอักเสบเอส่วนใหญ่มักหายได้เอง แต่หากมีภาวะตับวายเฉียบพลันต้องรีบส่งต่อทันที เพราะอัตราการเสียชีวิตสูงมากหากไม่ได้รับการดูแลเฉพาะทาง">
+                <div class="text-slate-500 text-xs md:text-sm font-bold mb-1 uppercase tracking-wide">อัตราเสียชีวิต (ตับวาย)</div>
+                <div class="flex items-baseline"><div class="text-4xl font-black text-amber-600">100</div><div class="text-2xl font-bold text-amber-600">%</div></div>
+            </button>
+            <button type="button" class="metric-card focus-ring bg-white rounded-xl p-5 border-l-4 border-indigo-500 shadow-xl transition-transform" data-title="พื้นที่ระบาดสูงสุด" data-content="นครราชสีมาเป็นจังหวัดที่พบผู้ป่วยสูงสุด 22 ราย รองลงมาคือชลบุรีและระยอง จึงควรสื่อสารเรื่องอาหารสะอาด น้ำแข็งสะอาด และการล้างมืออย่างเข้มข้น">
+                <div class="text-slate-500 text-xs md:text-sm font-bold mb-1 uppercase tracking-wide">พื้นที่ระบาดสูงสุด</div>
+                <div class="text-2xl md:text-3xl font-black text-indigo-800 mt-2">นครราชสีมา</div>
+            </button>
+        </section>
+    </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 mt-32 relative z-10">
+
+<section class="bg-white rounded-2xl p-5 md:p-8 card-shadow border-l-4 border-rose-500">
+    <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h2 class="text-xl md:text-2xl font-bold text-slate-800 flex items-center"><span class="text-rose-500 mr-2" aria-hidden="true">&#128202;</span> สถิติรายจังหวัด</h2>
+            <p class="text-sm md:text-base text-slate-500 mt-1">คลิกแท่งกราฟหรือปุ่มชื่อจังหวัดเพื่อดูข้อมูลสรุปเพิ่มเติม</p>
+        </div>
+    </div>
+    <div class="chart-container mb-6">
+        <canvas id="provinceChart" aria-label="กราฟแท่งแสดงจำนวนผู้ป่วยรายจังหวัด" role="img"></canvas>
+    </div>
+    <div class="flex flex-wrap gap-2 justify-center">
+        <button type="button" onclick="showProvinceInfo('นครราชสีมา')" class="focus-ring px-4 py-2 bg-indigo-50 text-indigo-700 rounded-full text-sm font-semibold hover:bg-indigo-100 transition border border-indigo-200">นครราชสีมา</button>
+        <button type="button" onclick="showProvinceInfo('ชลบุรี (แหลมฉบัง)')" class="focus-ring px-4 py-2 bg-rose-50 text-rose-700 rounded-full text-sm font-semibold hover:bg-rose-100 transition border border-rose-200">ชลบุรี</button>
+        <button type="button" onclick="showProvinceInfo('ระยอง')" class="focus-ring px-4 py-2 bg-rose-50 text-rose-700 rounded-full text-sm font-semibold hover:bg-rose-100 transition border border-rose-200">ระยอง</button>
+        <button type="button" onclick="showProvinceInfo('ศรีสะเกษ')" class="focus-ring px-4 py-2 bg-slate-100 text-slate-700 rounded-full text-sm font-semibold hover:bg-slate-200 transition border border-slate-200">ศรีสะเกษ</button>
+        <button type="button" onclick="showProvinceInfo('ฉะเชิงเทรา')" class="focus-ring px-4 py-2 bg-slate-100 text-slate-700 rounded-full text-sm font-semibold hover:bg-slate-200 transition border border-slate-200">ฉะเชิงเทรา</button>
+        <button type="button" onclick="showProvinceInfo('ตาก')" class="focus-ring px-4 py-2 bg-slate-100 text-slate-700 rounded-full text-sm font-semibold hover:bg-slate-200 transition border border-slate-200">ตาก</button>
+    </div>
+</section>
+
+<section class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <div class="bg-white rounded-2xl p-5 md:p-8 card-shadow border-l-4 border-amber-500 flex flex-col">
+        <h2 class="text-xl md:text-2xl font-bold text-slate-800 mb-3 flex items-center"><span class="text-amber-500 mr-2" aria-hidden="true">&#129298;</span> อาการทางคลินิกที่ต้องเฝ้าระวัง</h2>
+        <p class="text-sm text-slate-500 mb-5 leading-relaxed">ภาพและปุ่มด้านล่างใช้ช่วยอธิบายอาการเตือนที่ควรรีบพบแพทย์เมื่อสงสัยตับอักเสบเอ</p>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
+            <div class="flex flex-col h-full">
+                <div class="relative rounded-xl overflow-hidden border border-slate-200 group h-36 md:h-44 bg-slate-100 mb-2">
+                    <img src="https://images.unsplash.com/photo-1584362917165-526a968579e8?auto=format&fit=crop&w=400&q=80" alt="ตัวอย่างอาการตาเหลืองและตัวเหลือง" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                    <div class="absolute inset-0 bg-gradient-to-t from-amber-700/90 via-amber-700/20 to-transparent flex items-end justify-center p-3">
+                        <p class="text-white font-bold text-sm text-center drop-shadow-md">ตาเหลือง ตัวเหลือง</p>
+                    </div>
+                </div>
+                <button type="button" class="focus-ring w-full text-sm bg-amber-100 text-amber-900 py-2.5 rounded-lg font-semibold hover:bg-amber-200 transition" data-title="ทำไมถึงตาเหลือง ตัวเหลือง?" data-content="เมื่อเซลล์ตับอักเสบ การกำจัดบิลิรูบินจะลดลง สารสีเหลืองจึงคั่งในกระแสเลือดและสะสมตามผิวหนังกับตาขาว เป็นสัญญาณที่ควรรีบประเมินเพิ่มเติม">คลิกอ่านสาเหตุ</button>
+            </div>
+
+            <div class="flex flex-col h-full">
+                <div class="relative rounded-xl overflow-hidden border border-slate-200 group h-36 md:h-44 bg-slate-100 mb-2">
+                    <img src="https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?auto=format&fit=crop&w=400&q=80" alt="ตัวอย่างภาพสื่ออาการปัสสาวะสีเข้ม" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 filter sepia-[.4] hue-rotate-[-20deg] saturate-150">
+                    <div class="absolute inset-0 bg-gradient-to-t from-orange-800/90 via-orange-800/20 to-transparent flex items-end justify-center p-3">
+                        <p class="text-white font-bold text-sm text-center drop-shadow-md">ปัสสาวะสีเข้ม</p>
+                    </div>
+                </div>
+                <button type="button" class="focus-ring w-full text-sm bg-orange-100 text-orange-900 py-2.5 rounded-lg font-semibold hover:bg-orange-200 transition" data-title="ทำไมปัสสาวะจึงสีเข้ม?" data-content="เมื่อบิลิรูบินคั่งในร่างกาย ไตจะช่วยขับออกทางปัสสาวะแทน ทำให้สีปัสสาวะเข้มขึ้นคล้ายน้ำชาเข้ม เป็นสัญญาณร่วมที่พบบ่อยในภาวะตับอักเสบ">คลิกอ่านสาเหตุ</button>
+            </div>
+
+            <div class="flex flex-col h-full">
+                <div class="relative rounded-xl overflow-hidden border border-slate-200 group h-36 md:h-44 bg-slate-100 mb-2">
+                    <img src="https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=400&q=80" alt="ตัวอย่างภาพสื่ออุจจาระสีซีด" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 grayscale-[0.5] brightness-110">
+                    <div class="absolute inset-0 bg-gradient-to-t from-slate-700/90 via-slate-700/20 to-transparent flex items-end justify-center p-3">
+                        <p class="text-white font-bold text-sm text-center drop-shadow-md">อุจจาระสีซีด</p>
+                    </div>
+                </div>
+                <button type="button" class="focus-ring w-full text-sm bg-slate-200 text-slate-900 py-2.5 rounded-lg font-semibold hover:bg-slate-300 transition" data-title="ทำไมอุจจาระจึงสีซีด?" data-content="เมื่อน้ำดีไหลลงลำไส้ได้น้อย สีตามธรรมชาติของอุจจาระจะจางลง หากพบร่วมกับตาเหลืองหรือปัสสาวะเข้มควรพบแพทย์เร็วขึ้น">คลิกอ่านสาเหตุ</button>
+            </div>
+        </div>
+        <p class="text-sm text-center text-rose-600 font-semibold mt-1 leading-relaxed">หากพบหลายอาการร่วมกัน โดยเฉพาะตาเหลือง ตัวเหลือง คลื่นไส้มาก หรือซึมลง ควรรีบไปโรงพยาบาล</p>
+    </div>
+
+    <div class="bg-white rounded-2xl p-5 md:p-8 card-shadow border-l-4 border-sky-500 flex flex-col">
+        <h2 class="text-xl md:text-2xl font-bold text-slate-800 mb-3 flex items-center"><span class="text-sky-500 mr-2" aria-hidden="true">&#128200;</span> สาเหตุและพฤติกรรมเสี่ยง</h2>
+        <p class="text-sm text-slate-500 mb-4 leading-relaxed">ปัจจัยที่พบได้บ่อยคืออาหารหรือเครื่องดื่มปนเปื้อน การไม่ได้ล้างมือ และการสัมผัสใกล้ชิดกับผู้ติดเชื้อ</p>
+        <div class="chart-container flex-grow">
+            <canvas id="riskChart" aria-label="กราฟวงกลมแสดงสัดส่วนพฤติกรรมเสี่ยง" role="img"></canvas>
+        </div>
+        <button type="button" class="focus-ring mt-5 text-sm bg-sky-50 text-sky-800 py-2.5 rounded-xl font-semibold hover:bg-sky-100 transition border border-sky-200" data-title="เจาะลึกพฤติกรรมเสี่ยง" data-content="ไวรัสตับอักเสบเอติดต่อทางปากจากการรับเชื้อที่ปนเปื้อนในอาหาร น้ำ หรือมือที่ไม่สะอาด กลุ่มเสี่ยงหลักคือผู้กินอาหารดิบกึ่งดิบ ผู้ใช้ชีวิตรวมกันหลายคน และผู้ที่ขาดการป้องกันด้านสุขอนามัย">
+            ดูรายละเอียดการติดเชื้อ
+        </button>
+    </div>
+</section>
+
+<section class="bg-indigo-50 rounded-2xl p-6 md:p-8 card-shadow border border-indigo-100">
+    <div class="flex flex-col md:flex-row gap-8 items-start">
+        <div class="flex-1 w-full">
+            <h2 class="text-2xl md:text-3xl font-bold text-indigo-950 mb-2 flex items-center">
+                <span class="mr-2" aria-hidden="true">🤖</span> ประเมินความเสี่ยงเบื้องต้น
+            </h2>
+            <p class="text-sm md:text-base text-indigo-800 mb-5 leading-relaxed">
+                เครื่องมือนี้ใช้ข้อมูลจาก Supabase Edge Function เพื่อคัดกรองความเสี่ยงเบื้องต้นจากพฤติกรรมและอาการที่พิมพ์เข้ามา
+                ผลลัพธ์ไม่ใช่คำวินิจฉัยโรค ไม่ใช้แทนแพทย์ ห้องฉุกเฉิน หรือการตรวจทางห้องปฏิบัติการ
+            </p>
+            <div class="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 leading-relaxed">
+                หากมีอาการตาเหลือง ตัวเหลือง ปัสสาวะเข้ม อาเจียนมาก ซึมลง หรือปวดท้องมาก ให้ไปโรงพยาบาลทันทีโดยไม่ต้องรอผลจากระบบนี้
+            </div>
+            <label for="userInput" class="block text-sm font-semibold text-indigo-900 mb-2">เล่าพฤติกรรมเสี่ยงหรืออาการที่พบ</label>
+            <div class="relative">
+                <textarea id="userInput" class="focus-ring w-full p-4 pb-12 border border-indigo-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-slate-700 bg-white text-sm md:text-base shadow-sm resize-none" rows="4" placeholder="ตัวอย่าง: ไปกินยำหอยแครงดิบที่แหลมฉบังมา วันนี้รู้สึกเพลีย คลื่นไส้ และเริ่มตาเหลืองนิดๆ"></textarea>
+                <div class="absolute bottom-3 right-3 text-xs text-slate-400">ประมวลผลในอุปกรณ์ของคุณ</div>
+            </div>
+            <button id="askAiBtn" type="button" class="focus-ring mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-6 rounded-xl transition-all shadow-md flex justify-center items-center">
+                <span id="btnText">เริ่มประเมินความเสี่ยง</span>
+                <svg id="loadingSpinner" class="hidden ml-3 animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            </button>
+        </div>
+
+        <div class="flex-1 w-full flex flex-col h-full">
+            <div id="aiResponseContainer" class="hidden h-full flex flex-col bg-white rounded-xl border border-indigo-100 shadow-sm overflow-hidden">
+                <div class="bg-indigo-100 px-4 py-2 border-b border-indigo-200 flex justify-between items-center">
+                    <span class="text-xs font-bold text-indigo-900 uppercase">ผลการประเมินเบื้องต้น</span>
+                </div>
+                <div id="aiResponse" class="p-5 text-slate-700 text-sm md:text-base leading-relaxed overflow-y-auto flex-grow max-h-[280px]"></div>
+            </div>
+            <div id="aiEmptyState" class="h-full min-h-[200px] flex flex-col items-center justify-center bg-white/60 border border-dashed border-indigo-200 rounded-xl text-center p-6">
+                <span class="text-4xl text-indigo-300 mb-2" aria-hidden="true">📋</span>
+                <p class="text-sm text-indigo-500 font-medium leading-relaxed">กรอกข้อมูลด้านซ้าย แล้วกดปุ่มประเมินเพื่อดูคำแนะนำเบื้องต้น</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="max-w-3xl mx-auto mt-8 border-t border-slate-200 pt-8">
+    <div class="bg-teal-50 rounded-2xl p-6 md:p-8 card-shadow border border-teal-100 flex flex-col">
+        <h2 class="text-xl md:text-2xl font-bold text-teal-950 mb-2 flex items-center">
+            <span class="mr-2" aria-hidden="true">🍽️</span> ประเมินความเสี่ยงของเมนูอาหาร
+        </h2>
+        <p class="text-sm text-teal-800 mb-3 leading-relaxed">พิมพ์ชื่อเมนูหรือวัตถุดิบที่ต้องการเช็ก เช่น หอยแครงดิบ น้ำแข็ง หรือผลไม้ล้างไม่สะอาด ระบบจะสรุประดับความเสี่ยงและข้อควรทำทันที</p>
+        <div class="mb-4 rounded-xl border border-teal-200 bg-white/70 px-4 py-3 text-sm text-teal-900 leading-relaxed">
+            ผลลัพธ์นี้ใช้เพื่อช่วยตัดสินใจด้านสุขอนามัยอาหารเบื้องต้นเท่านั้น ไม่ใช่การรับรองความปลอดภัยของร้านหรือเมนู
+        </div>
+        <div class="flex flex-col flex-grow">
+            <label for="foodInput" class="block text-sm font-semibold text-teal-900 mb-2">ชื่อเมนูหรือวัตถุดิบ</label>
+            <input type="text" id="foodInput" class="focus-ring w-full p-3 border border-teal-200 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none mb-4 text-slate-700 bg-white" placeholder="เช่น หอยแครงลวกไม่สุก น้ำแข็งไม่แน่ใจความสะอาด สลัดผลไม้รถเข็น">
+            <button id="checkFoodBtn" type="button" class="focus-ring w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 rounded-xl transition shadow-md mb-4 flex justify-center items-center">
+                <span>ตรวจสอบความปลอดภัย</span>
+            </button>
+            <div id="foodResponse" class="p-4 bg-white rounded-xl border border-teal-200 hidden text-sm text-slate-700 flex-grow shadow-inner leading-relaxed" aria-live="polite"></div>
+        </div>
+    </div>
+</section>
+
+</main>
+
+<div id="infoModal" class="fixed inset-0 z-50 hidden items-center justify-center px-4" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <button type="button" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" aria-label="ปิดหน้าต่างข้อมูล" onclick="closeModal()"></button>
+    <div class="glass-modal rounded-2xl shadow-2xl max-w-lg w-full z-50 overflow-hidden transform transition-all border border-slate-200 relative max-h-[85vh] flex flex-col">
+        <div class="p-6 overflow-y-auto">
+            <h3 id="modalTitle" class="text-2xl font-bold text-indigo-950 mb-3 border-b pb-2 border-indigo-100"></h3>
+            <div id="modalContent" class="text-slate-700 leading-relaxed text-sm md:text-base space-y-3"></div>
+        </div>
+        <div class="bg-slate-50 px-6 py-4 flex justify-end border-t border-slate-200">
+            <button id="modalCloseBtn" type="button" onclick="closeModal()" class="focus-ring bg-slate-800 hover:bg-slate-700 text-white px-6 py-2 rounded-lg font-semibold transition">ปิดหน้าต่าง</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://dqsfioiqwxuxpucwwhsv.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxc2Zpb2lxd3h1eHB1Y3d3aHN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1OTk1NjUsImV4cCI6MjA4NDE3NTU2NX0.L_u0Ff3uHofxiimEs6ySFB4TPNtOWiKeSu3KFoVcA1U';
+const SUPABASE_FUNCTION_NAME = 'hepatitisa-assistant';
+const db = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+const provinceDataDB = {
+    'นครราชสีมา': { cases: 22, risk: 'ตลาดขนาดใหญ่และอาหารพร้อมรับประทานหลายจุดยังต้องคุมสุขอนามัยเข้มงวด', status: 'ระดับสีแดงเข้ม (เฝ้าระวังสูงสุด)', death: 1 },
+    'ชลบุรี (แหลมฉบัง)': { cases: 18, risk: 'อาหารทะเลดิบ กึ่งดิบ และการใช้ชีวิตรวมกันในชุมชนแรงงาน', status: 'ระดับสีแดง (เฝ้าระวังพิเศษ)', death: 0 },
+    'ระยอง': { cases: 15, risk: 'อาหารทะเลและการแพร่เชื้อในที่พักแรงงาน', status: 'ระดับสีแดง (เฝ้าระวังพิเศษ)', death: 1 },
+    'ศรีสะเกษ': { cases: 8, risk: 'สุขอนามัยด้านอาหารและน้ำดื่มในชุมชน', status: 'ระดับสีส้ม (เฝ้าระวัง)', death: 0 },
+    'ฉะเชิงเทรา': { cases: 6, risk: 'น้ำดื่มและน้ำแข็งที่อาจไม่สะอาด', status: 'ระดับสีเหลือง (ติดตาม)', death: 0 },
+    'ตาก': { cases: 5, risk: 'พื้นที่ชายแดนและข้อจำกัดด้านสุขาภิบาล', status: 'ระดับสีเหลือง (ติดตาม)', death: 0 }
+};
+
+const metricCards = document.querySelectorAll('.metric-card, [data-title][data-content]');
+let lastFocusedElement = null;
+
+function escapeHtml(value) {
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function formatTextToHtml(text) {
+    return escapeHtml(text)
+        .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-slate-900">$1</strong>')
+        .replace(/\n/g, '<br>');
+}
+
+function setModalContent(title, htmlContent) {
+    document.getElementById('modalTitle').textContent = title;
+    document.getElementById('modalContent').innerHTML = htmlContent;
+}
+
+function openModal(title, content) {
+    lastFocusedElement = document.activeElement;
+    setModalContent(title, `<p>${formatTextToHtml(content)}</p>`);
+    const modal = document.getElementById('infoModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+    document.getElementById('modalCloseBtn').focus();
+}
+
+function closeModal() {
+    const modal = document.getElementById('infoModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    document.body.style.overflow = '';
+    if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
+        lastFocusedElement.focus();
+    }
+}
+
+document.addEventListener('keydown', (event) => {
+    const modal = document.getElementById('infoModal');
+    if (!modal.classList.contains('hidden') && event.key === 'Escape') {
+        closeModal();
+    }
+});
+
+metricCards.forEach((card) => {
+    card.addEventListener('click', () => {
+        openModal(card.dataset.title, card.dataset.content);
+    });
+});
+
+function showProvinceInfo(provinceName) {
+    const data = provinceDataDB[provinceName];
+    if (!data) return;
+
+    const content = `
+        <div class="space-y-3">
+            <div class="flex justify-between items-center bg-slate-100 p-3 rounded-lg gap-4">
+                <span class="font-semibold text-slate-600">ผู้ป่วยหนักสะสม</span>
+                <span class="text-xl font-bold text-slate-800">${escapeHtml(String(data.cases))} ราย</span>
+            </div>
+            <div class="flex justify-between items-center bg-slate-100 p-3 rounded-lg gap-4">
+                <span class="font-semibold text-slate-600">ผู้เสียชีวิต (ปี 2569)</span>
+                <span class="text-lg font-bold ${data.death > 0 ? 'text-red-600' : 'text-slate-800'}">${escapeHtml(String(data.death))} ราย</span>
+            </div>
+            <div class="bg-indigo-50 p-3 rounded-lg border border-indigo-100">
+                <p class="font-semibold text-indigo-900 text-sm mb-1">ปัจจัยเสี่ยงหลักในพื้นที่</p>
+                <p class="text-indigo-700 text-sm">${escapeHtml(data.risk)}</p>
+            </div>
+            <div class="mt-2 text-center text-sm font-bold text-rose-500">${escapeHtml(data.status)}</div>
+        </div>
+    `;
+
+    lastFocusedElement = document.activeElement;
+    setModalContent(`สถิติเจาะลึก: จ.${provinceName}`, content);
+    const modal = document.getElementById('infoModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+    document.getElementById('modalCloseBtn').focus();
+}
+
+Chart.defaults.font.family = "'Kanit', sans-serif";
+Chart.defaults.color = '#64748b';
+
+const tooltipConfig = {
+    plugins: {
+        tooltip: {
+            backgroundColor: 'rgba(15, 23, 42, 0.92)',
+            titleFont: { size: 14, family: "'Kanit', sans-serif" },
+            bodyFont: { size: 13, family: "'Kanit', sans-serif" },
+            padding: 12,
+            cornerRadius: 10,
+            callbacks: {
+                title: function(tooltipItems) {
+                    const item = tooltipItems[0];
+                    let label = item.chart.data.labels[item.dataIndex];
+                    if (Array.isArray(label)) return label.join(' ');
+                    return label;
+                }
+            }
+        }
+    }
+};
+
+const commonOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+        legend: {
+            position: 'bottom',
+            labels: {
+                padding: 20,
+                usePointStyle: true,
+                pointStyle: 'circle'
+            }
+        }
+    }
+};
+
+const ctxProvince = document.getElementById('provinceChart').getContext('2d');
+const provinceChartInstance = new Chart(ctxProvince, {
+    type: 'bar',
+    data: {
+        labels: [['ชลบุรี', '(แหลมฉบัง)'], 'ตาก', 'ศรีสะเกษ', 'นครราชสีมา', 'ฉะเชิงเทรา', 'ระยอง'],
+        datasets: [{
+            label: 'ผู้ป่วยหนักสะสม (ราย)',
+            data: [18, 5, 8, 22, 6, 15],
+            backgroundColor: ['#F43F5E', '#94A3B8', '#94A3B8', '#F43F5E', '#94A3B8', '#F43F5E'],
+            borderRadius: 8,
+            borderSkipped: false
+        }]
+    },
+    options: {
+        ...commonOptions,
+        ...tooltipConfig,
+        onClick: (event, activeElements) => {
+            if (activeElements.length > 0) {
+                const dataIndex = activeElements[0].index;
+                let label = provinceChartInstance.data.labels[dataIndex];
+                if (Array.isArray(label)) label = label.join(' ');
+                showProvinceInfo(label);
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: { color: '#E2E8F0', drawBorder: false },
+                ticks: { precision: 0 }
+            },
+            x: {
+                grid: { display: false }
+            }
+        },
+        interaction: { mode: 'index', intersect: false }
+    }
+});
+
+const ctxRisk = document.getElementById('riskChart').getContext('2d');
+new Chart(ctxRisk, {
+    type: 'doughnut',
+    data: {
+        labels: [['อาหารหรือน้ำ', 'ปนเปื้อน'], ['ขาดการล้างมือ', 'ก่อนกินอาหาร'], ['สัมผัสใกล้ชิด', 'ผู้ติดเชื้อ']],
+        datasets: [{
+            data: [65, 20, 15],
+            backgroundColor: ['#38BDF8', '#818CF8', '#F472B6'],
+            borderWidth: 0,
+            hoverOffset: 4
+        }]
+    },
+    options: {
+        ...commonOptions,
+        ...tooltipConfig,
+        cutout: '68%',
+        layout: { padding: 10 }
+    }
+});
+
+function setButtonLoading(buttonId, labelId, spinnerId, isLoading, loadingText, defaultText) {
+    const button = document.getElementById(buttonId);
+    const label = document.getElementById(labelId);
+    const spinner = document.getElementById(spinnerId);
+    if (!button || !label || !spinner) return;
+
+    button.disabled = isLoading;
+    label.textContent = isLoading ? loadingText : defaultText;
+    spinner.classList.toggle('hidden', !isLoading);
+}
+
+function hasSupabaseConfig() {
+    return Boolean(db && SUPABASE_URL && SUPABASE_KEY && SUPABASE_FUNCTION_NAME);
+}
+
+async function invokeHepatitisAssistant(action, payload = {}) {
+    if (!hasSupabaseConfig()) {
+        throw new Error('Supabase backend is not configured');
+    }
+
+    const { data, error } = await db.functions.invoke(SUPABASE_FUNCTION_NAME, {
+        body: {
+            action,
+            ...payload
+        },
+    });
+
+    if (error) {
+        throw new Error(error.message || `Supabase function ${SUPABASE_FUNCTION_NAME} failed`);
+    }
+
+    if (!data?.success) {
+        throw new Error(data?.error || `Supabase function ${SUPABASE_FUNCTION_NAME} returned no success payload`);
+    }
+
+    return data;
+}
+
+function riskLevelClass(level) {
+    if (level === 'สูง') return 'text-rose-700';
+    if (level === 'ปานกลาง') return 'text-amber-700';
+    return 'text-emerald-700';
+}
+
+function renderAssessmentResult(result) {
+    const reasons = Array.isArray(result?.reasons) ? result.reasons : [];
+    const recommendations = Array.isArray(result?.recommendations) ? result.recommendations : [];
+
+    return `
+        <div class="space-y-3">
+            <p><strong class="${riskLevelClass(result?.level)}">ระดับความเสี่ยง: ${escapeHtml(result?.level || 'ไม่ทราบ')}</strong></p>
+            <p>${escapeHtml(result?.summary || 'ไม่มีผลการประเมิน')}</p>
+            ${reasons.length ? `<ul class="list-disc pl-5 space-y-1">${reasons.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>` : ''}
+            ${recommendations.length ? `<div class="pt-2 border-t border-slate-100"><p class="font-semibold text-slate-800 mb-1">ข้อแนะนำ</p><ul class="list-disc pl-5 space-y-1">${recommendations.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul></div>` : ''}
+            <p class="text-xs text-slate-500 pt-2 border-t border-slate-100">ผลลัพธ์นี้เป็นข้อมูลคัดกรองจาก Supabase Edge Function เพื่อการสื่อสารสุขภาพเบื้องต้นเท่านั้น ไม่ใช่คำวินิจฉัย และไม่ควรใช้แทนการประเมินโดยแพทย์</p>
+        </div>
+    `;
+}
+
+function renderFoodResult(result) {
+    const recommendations = Array.isArray(result?.recommendations) ? result.recommendations : [];
+
+    return `
+        <div class="space-y-2">
+            <p><strong class="${riskLevelClass(result?.level)}">ระดับความเสี่ยงของเมนู: ${escapeHtml(result?.level || 'ไม่ทราบ')}</strong></p>
+            <p>${escapeHtml(result?.summary || 'ไม่มีผลการประเมิน')}</p>
+            ${recommendations.length ? `<ul class="list-disc pl-5 space-y-1 pt-2 border-t border-slate-100">${recommendations.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>` : ''}
+            <p class="text-xs text-slate-500 pt-2 border-t border-slate-100">ผลลัพธ์นี้เป็นคำแนะนำสุขอนามัยอาหารเบื้องต้น ไม่ใช่การรับรองความปลอดภัยแบบทางการ</p>
+        </div>
+    `;
+}
+
+function renderBackendUnavailable(message) {
+    return `
+        <div class="text-center text-amber-700">
+            <span class="text-3xl block mb-2">ℹ️</span>
+            <b>ยังไม่สามารถเชื่อมต่อระบบ Supabase ได้</b><br>
+            ${escapeHtml(message)}
+        </div>
+    `;
+}
+
+document.getElementById('askAiBtn').addEventListener('click', async () => {
+    const userInput = document.getElementById('userInput').value.trim();
+    if (!userInput) {
+        document.getElementById('userInput').focus();
+        return;
+    }
+
+    const aiResponseContainer = document.getElementById('aiResponseContainer');
+    const aiResponse = document.getElementById('aiResponse');
+    const aiEmptyState = document.getElementById('aiEmptyState');
+
+    setButtonLoading('askAiBtn', 'btnText', 'loadingSpinner', true, 'กำลังประเมิน...', 'เริ่มประเมินความเสี่ยง');
+    aiEmptyState.classList.add('hidden');
+    aiResponseContainer.classList.remove('hidden');
+    aiResponse.innerHTML = '<div class="animate-pulse space-y-3"><div class="h-3 bg-slate-200 rounded"></div><div class="h-3 bg-slate-200 rounded w-5/6"></div><div class="h-3 bg-slate-200 rounded w-4/6"></div></div>';
+
+    try {
+        const data = await invokeHepatitisAssistant('risk_assessment', { text: userInput });
+        aiResponse.innerHTML = renderAssessmentResult(data.result);
+    } catch (error) {
+        aiResponse.innerHTML = renderBackendUnavailable(error.message || 'กรุณาตรวจสอบค่า URL, anon key และ Edge Function');
+    } finally {
+        setButtonLoading('askAiBtn', 'btnText', 'loadingSpinner', false, 'กำลังประเมิน...', 'เริ่มประเมินความเสี่ยง');
+    }
+});
+
+document.getElementById('checkFoodBtn').addEventListener('click', async () => {
+    const input = document.getElementById('foodInput').value.trim();
+    if (!input) {
+        document.getElementById('foodInput').focus();
+        return;
+    }
+
+    const btn = document.getElementById('checkFoodBtn');
+    const res = document.getElementById('foodResponse');
+    const originalText = btn.innerHTML;
+
+    btn.innerHTML = '<span class="animate-pulse">กำลังตรวจสอบ...</span>';
+    btn.disabled = true;
+    res.classList.remove('hidden');
+    res.innerHTML = '<span class="text-teal-600 font-semibold animate-pulse">กำลังประเมินความเสี่ยงของเมนู...</span>';
+
+    try {
+        const data = await invokeHepatitisAssistant('food_check', { text: input });
+        res.innerHTML = renderFoodResult(data.result);
+    } catch (error) {
+        res.innerHTML = renderBackendUnavailable(error.message || 'กรุณาตรวจสอบการเชื่อมต่อ Supabase');
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+});
+
+document.getElementById('liveUpdateBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('liveUpdateBtn');
+    const btnText = document.getElementById('updateBtnText');
+    const icon = document.getElementById('updateBtnIcon');
+    const panel = document.getElementById('liveUpdatePanel');
+    const content = document.getElementById('liveUpdateContent');
+
+    btn.disabled = true;
+    btn.classList.replace('bg-sky-500', 'bg-slate-600');
+    icon.classList.add('animate-spin');
+    btnText.textContent = 'กำลังสรุปข้อมูล...';
+    panel.classList.remove('hidden');
+    content.innerHTML = '<span class="animate-pulse">กำลังเตรียมข้อมูลล่าสุดจากแดชบอร์ด...</span>';
+
+    try {
+        const data = await invokeHepatitisAssistant('live_update');
+        const result = data.result || {};
+        content.innerHTML = `
+            <div class="p-3 bg-sky-900/50 rounded-lg border border-sky-500/30 font-medium space-y-2">
+                <p><span class="text-sky-300 font-bold">[อัปเดตล่าสุด]</span> ${escapeHtml(result.summary || 'ไม่มีข้อมูลสรุปล่าสุด')}</p>
+                ${Array.isArray(result.highlights) && result.highlights.length ? `<ul class="list-disc pl-5 text-slate-100 space-y-1">${result.highlights.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>` : ''}
+                <p class="text-xs text-slate-300">อัปเดตเมื่อ: ${escapeHtml(result.asOf || '-')}</p>
+            </div>
+        `;
+        btnText.textContent = 'อัปเดตแล้ว';
+        setTimeout(() => { btnText.textContent = 'อัปเดตข้อมูลล่าสุด'; }, 2500);
+    } catch (error) {
+        content.innerHTML = `<span class="text-amber-300">${escapeHtml(error.message || 'ไม่สามารถดึงข้อมูลจาก Supabase ได้')}</span>`;
+        btnText.textContent = 'เชื่อมต่อไม่สำเร็จ';
+    } finally {
+        btn.disabled = false;
+        btn.classList.replace('bg-slate-600', 'bg-sky-500');
+        icon.classList.remove('animate-spin');
+    }
+});
+</script>
+</body>
+</html>
