@@ -254,6 +254,13 @@
   }
   .prio-head{ display: flex; align-items: flex-start; gap: 14px; }
   .prio:active{ transform: scale(0.985); box-shadow: var(--shadow-md); }
+  .prio-btn{
+    width: 100%;
+    border: 1px solid var(--green-100);
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
   .prio-ic{
     width: 52px; height: 52px; border-radius: 15px; flex-shrink: 0;
     background: linear-gradient(135deg, var(--green-50), var(--green-100));
@@ -664,6 +671,17 @@
     </div>
     <form id="adminForm">
       <div class="field">
+        <label for="fRecordType">ประเภทข้อมูล</label>
+        <select id="fRecordType" name="record_type" required>
+          <option value="watchlist">โรคเฝ้าระวัง</option>
+          <option value="library">คลังข้อมูลโรค</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="fUrl">ลิงก์ข้อมูลอ้างอิง</label>
+        <input id="fUrl" name="url" type="url" placeholder="https://example.com/disease-detail" />
+      </div>
+      <div class="field">
         <label for="fName">ชื่อโรค · Disease name</label>
         <input id="fName" name="name" required placeholder="เช่น โรคไข้หวัดใหญ่" />
       </div>
@@ -685,6 +703,22 @@
       <div class="field">
         <label for="fDesc">คำอธิบาย · Description</label>
         <textarea id="fDesc" name="description" required placeholder="รายละเอียดและคำแนะนำ..."></textarea>
+      </div>
+      <div class="btn-row">
+        <button type="button" class="btn btn-ghost" id="draftDiseaseBtn">
+          <i data-lucide="wand-sparkles" width="16" height="16"></i> AI ช่วยร่างข้อมูลโรค
+        </button>
+      </div>
+      <div class="btn-row">
+        <button type="button" class="btn btn-ghost" id="suggestIconBtn">
+          <i data-lucide="sparkles" width="16" height="16"></i> AI เลือกไอคอน
+        </button>
+      </div>
+      <div class="field">
+        <label style="display:flex; align-items:center; gap:8px;">
+          <input type="checkbox" id="fPriority" name="is_priority" checked />
+          <span>แสดงในส่วนโรคเฝ้าระวัง</span>
+        </label>
       </div>
       <div class="btn-row">
         <button type="button" class="btn btn-ghost" id="adminSignOut">Sign out</button>
@@ -710,6 +744,8 @@
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxc2Zpb2lxd3h1eHB1Y3d3aHN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1OTk1NjUsImV4cCI6MjA4NDE3NTU2NX0.L_u0Ff3uHofxiimEs6ySFB4TPNtOWiKeSu3KFoVcA1U';
   const ADMIN_ACCESS_FUNCTION = 'epidemics-admin-access';
   const ADMIN_INSERT_FUNCTION = 'epidemics-admin-insert';
+  const ICON_SUGGEST_FUNCTION = 'epidemics-icon-suggest';
+  const DRAFT_ASSIST_FUNCTION = 'epidemics-draft-assist';
 
   // Lucide icon allowlist (fallback to shield-check when name invalid)
   const VALID_ICONS = new Set([
@@ -734,9 +770,34 @@
   let activeCat = 'all';
   let searchTerm = '';
   let isSubmitting = false;
+  let isSuggestingIcon = false;
+  let isDraftingDisease = false;
   let liffProfile = null;
   let currentSession = null;
   let currentRole = null;
+
+  function normalizeDisease(d, index=0){
+    const name = String(d?.name || '').trim();
+    const fallbackUrl =
+      /Melioidosis/i.test(name) ? 'https://ttwazzx.github.io/safety-permit-form/Melioidosis.html' :
+      /Hepatitis A/i.test(name) ? 'https://ttwazzx.github.io/safety-permit-form/HepatitisA.html' :
+      '';
+    const inferredWatchlist = d?.record_type
+      ? String(d.record_type).trim() === 'watchlist'
+      : /Melioidosis|Hepatitis A/i.test(name) || index < 2;
+
+    return {
+      ...d,
+      icon: VALID_ICONS.has(String(d?.icon || '').trim()) ? String(d.icon).trim() : 'shield-check',
+      name,
+      description: String(d?.description || '').trim(),
+      category: String(d?.category || 'other').trim() || 'other',
+      url: String(d?.url || fallbackUrl).trim(),
+      record_type: inferredWatchlist ? 'watchlist' : 'library',
+      is_priority: typeof d?.is_priority === 'boolean' ? d.is_priority : inferredWatchlist,
+      created_at: d?.created_at || null
+    };
+  }
 
   // ─── DOM helpers ────────────────────────────────────────
   const $ = (s, r=document) => r.querySelector(s);
@@ -787,7 +848,31 @@
     if (!btn.dataset.defaultHtml) btn.dataset.defaultHtml = btn.innerHTML;
     btn.disabled = loading;
     btn.innerHTML = loading
-      ? `<i data-lucide="loader-circle" width="16" height="16"></i> Signing in`
+      ? `<i data-lucide="loader-circle" width="16" height="16"></i> กำลังยืนยันสิทธิ์`
+      : btn.dataset.defaultHtml;
+    renderIcons();
+  }
+
+  function setSuggestIconLoading(loading){
+    const btn = $('#suggestIconBtn');
+    if (!btn) return;
+    if (!btn.dataset.defaultHtml) btn.dataset.defaultHtml = btn.innerHTML;
+    isSuggestingIcon = loading;
+    btn.disabled = loading;
+    btn.innerHTML = loading
+      ? `<i data-lucide="loader-circle" width="16" height="16"></i> AI กำลังเลือกไอคอน...`
+      : btn.dataset.defaultHtml;
+    renderIcons();
+  }
+
+  function setDraftDiseaseLoading(loading){
+    const btn = $('#draftDiseaseBtn');
+    if (!btn) return;
+    if (!btn.dataset.defaultHtml) btn.dataset.defaultHtml = btn.innerHTML;
+    isDraftingDisease = loading;
+    btn.disabled = loading;
+    btn.innerHTML = loading
+      ? `<i data-lucide="loader-circle" width="16" height="16"></i> AI กำลังร่างข้อมูล...`
       : btn.dataset.defaultHtml;
     renderIcons();
   }
@@ -797,7 +882,10 @@
       name: form.name.value.trim(),
       icon: form.icon.value.trim(),
       description: form.description.value.trim(),
-      category: form.category.value.trim()
+      category: form.category.value.trim(),
+      url: form.url.value.trim(),
+      record_type: form.record_type.value.trim() || 'watchlist',
+      is_priority: !!form.is_priority.checked
     };
 
     if (!values.name) return { valid: false, message: 'กรุณากรอกชื่อโรค' };
@@ -805,6 +893,8 @@
     if (values.description.length < 10) return { valid: false, message: 'คำอธิบายต้องมีอย่างน้อย 10 ตัวอักษร' };
     if (!values.category) return { valid: false, message: 'กรุณาเลือกหมวดหมู่' };
 
+    if (values.url && !/^https?:\/\//i.test(values.url)) return { valid: false, message: 'ลิงก์ต้องขึ้นต้นด้วย http:// หรือ https://' };
+    if (!['watchlist', 'library'].includes(values.record_type)) return { valid: false, message: 'ประเภทข้อมูลไม่ถูกต้อง' };
     return { valid: true, values };
   }
 
@@ -813,8 +903,83 @@
       name: values.name,
       icon: values.icon || 'shield-check',
       description: values.description,
-      category: values.category
+      category: values.category,
+      url: values.url || null,
+      record_type: values.record_type || 'watchlist',
+      is_priority: values.record_type === 'watchlist' ? values.is_priority : false,
+      ai_icon_suggested: false
     };
+  }
+
+  async function suggestIconWithAI(form){
+    if (!supabase) throw new Error('Supabase client is not configured.');
+
+    const accessToken = getLineAccessToken();
+    if (!accessToken) throw new Error('LINE admin session is required.');
+
+    const values = {
+      name: form.name.value.trim(),
+      category: form.category.value.trim(),
+      description: form.description.value.trim(),
+      url: form.url.value.trim()
+    };
+
+    if (!values.name) throw new Error('กรุณากรอกชื่อโรคก่อนให้ AI เลือกไอคอน');
+    if (values.description.length < 10) throw new Error('กรุณากรอกคำอธิบายอย่างน้อย 10 ตัวอักษรก่อนให้ AI เลือกไอคอน');
+
+    const { data, error } = await supabase.functions.invoke(ICON_SUGGEST_FUNCTION, {
+      body: {
+        ...values,
+        lineAccessToken: accessToken
+      }
+    });
+
+    if (error) throw error;
+    if (data?.error) throw new Error(data.error);
+
+    if (data?.icon){
+      form.icon.value = data.icon;
+    }
+
+    return data;
+  }
+
+  async function draftDiseaseWithAI(form){
+    if (!supabase) throw new Error('Supabase client is not configured.');
+
+    const accessToken = getLineAccessToken();
+    if (!accessToken) throw new Error('LINE admin session is required.');
+
+    const values = {
+      name: form.name.value.trim(),
+      url: form.url.value.trim(),
+      category: form.category.value.trim(),
+      description: form.description.value.trim(),
+      record_type: form.record_type.value.trim() || 'watchlist'
+    };
+
+    if (!values.name && !values.url){
+      throw new Error('กรุณากรอกชื่อโรคหรือ URL ก่อนให้ AI ช่วยร่างข้อมูล');
+    }
+
+    const { data, error } = await supabase.functions.invoke(DRAFT_ASSIST_FUNCTION, {
+      body: {
+        ...values,
+        lineAccessToken: accessToken
+      }
+    });
+
+    if (error) throw error;
+    if (data?.error) throw new Error(data.error);
+
+    if (data?.name) form.name.value = data.name;
+    if (data?.category) form.category.value = data.category;
+    if (data?.description) form.description.value = data.description;
+    if (data?.icon) form.icon.value = data.icon;
+    if (data?.url && !form.url.value.trim()) form.url.value = data.url;
+
+    form.dataset.aiIconSuggested = data?.icon ? 'true' : 'false';
+    return data;
   }
 
   async function submitToSupabase(payload){
@@ -918,14 +1083,14 @@
 
     if ($('#authStatusText')){
       $('#authStatusText').textContent = isAdmin
-        ? 'Admin access verified with LINE'
-        : 'Admin access required in LINE';
+        ? 'ยืนยันสิทธิ์แอดมินผ่าน LINE แล้ว'
+        : 'ต้องยืนยันสิทธิ์แอดมินผ่าน LINE';
     }
 
     if ($('#adminIdentity')){
       $('#adminIdentity').textContent = liffProfile?.displayName
         ? `${liffProfile.displayName} · LINE admin`
-        : 'LINE admin session active';
+        : 'เปิดใช้งานสิทธิ์แอดมินผ่าน LINE แล้ว';
     }
   }
 
@@ -951,15 +1116,15 @@
     try{
       const result = await verifyAdminAccess();
       if (result?.redirecting) return;
-      if (!result?.authorized) throw new Error('This LINE account is not allowed.');
+      if (!result?.authorized) throw new Error('บัญชี LINE นี้ไม่มีสิทธิ์แอดมิน');
       form.reset?.();
       updateAdminModalUI();
-      setFeedback($('#authFeedback'), 'Admin access verified.', 'success');
-      toast('Admin verified');
+      setFeedback($('#authFeedback'), 'ยืนยันสิทธิ์แอดมินสำเร็จ', 'success');
+      toast('ยืนยันสิทธิ์แอดมินสำเร็จ');
     }catch(err){
       console.warn(err);
-      setFeedback($('#authFeedback'), err.message || 'Unable to verify admin access.', 'error');
-      toast('Admin verification failed', 2400, 'error');
+      setFeedback($('#authFeedback'), err.message || 'ไม่สามารถยืนยันสิทธิ์แอดมินได้', 'error');
+      toast('ยืนยันสิทธิ์แอดมินไม่สำเร็จ', 2400, 'error');
     }finally{
       setAuthLoading(false);
     }
@@ -971,10 +1136,59 @@
       currentRole = null;
       updateAdminModalUI();
       closeAdminModal();
-      toast('Admin session cleared');
+      toast('ล้างสถานะแอดมินแล้ว');
     }catch(err){
       console.warn(err);
-      toast('Unable to clear admin state', 2200, 'error');
+      toast('ไม่สามารถล้างสถานะแอดมินได้', 2200, 'error');
+    }
+  }
+
+  async function handleSuggestIcon(){
+    const form = $('#adminForm');
+    if (!form || isSuggestingIcon) return;
+
+    setFeedback($('#formFeedback'));
+    setSuggestIconLoading(true);
+
+    try{
+      const access = await verifyAdminAccess();
+      if (access?.redirecting) return;
+      if (!access?.authorized) throw new Error('ต้องใช้สิทธิ์แอดมินผ่าน LINE');
+
+      const result = await suggestIconWithAI(form);
+      form.dataset.aiIconSuggested = 'true';
+      setFeedback($('#formFeedback'), result?.reason || 'AI เลือกไอคอนให้แล้ว', 'success');
+      toast(`AI เลือกไอคอน ${form.icon.value}`);
+    }catch(err){
+      console.warn(err);
+      setFeedback($('#formFeedback'), err.message || 'ไม่สามารถให้ AI เลือกไอคอนได้', 'error');
+      toast('AI เลือกไอคอนไม่สำเร็จ', 2400, 'error');
+    }finally{
+      setSuggestIconLoading(false);
+    }
+  }
+
+  async function handleDraftDisease(){
+    const form = $('#adminForm');
+    if (!form || isDraftingDisease) return;
+
+    setFeedback($('#formFeedback'));
+    setDraftDiseaseLoading(true);
+
+    try{
+      const access = await verifyAdminAccess();
+      if (access?.redirecting) return;
+      if (!access?.authorized) throw new Error('ต้องใช้สิทธิ์แอดมินผ่าน LINE');
+
+      const result = await draftDiseaseWithAI(form);
+      setFeedback($('#formFeedback'), result?.reason || 'AI ช่วยร่างข้อมูลโรคให้แล้ว', 'success');
+      toast('AI ร่างข้อมูลโรคเสร็จแล้ว');
+    }catch(err){
+      console.warn(err);
+      setFeedback($('#formFeedback'), err.message || 'ไม่สามารถให้ AI ร่างข้อมูลโรคได้', 'error');
+      toast('AI ร่างข้อมูลโรคไม่สำเร็จ', 2400, 'error');
+    }finally{
+      setDraftDiseaseLoading(false);
     }
   }
 
@@ -989,6 +1203,57 @@
       </div>`).join('');
   }
 
+  function renderWatchlist(data){
+    const wrap = document.querySelector('section[aria-label="Priority diseases"] .prio-list');
+    const sub = document.querySelector('section[aria-label="Priority diseases"] .sec-sub');
+    const items = (data || []).filter(d => d.record_type === 'watchlist' || d.is_priority);
+
+    if (sub){
+      sub.textContent = items.length
+        ? `${items.length} โรคสำคัญ แตะเพื่อเปิดคู่มือฉบับเต็ม`
+        : 'ยังไม่มีรายการเฝ้าระวังจากแอดมิน';
+    }
+
+    if (!wrap) return;
+
+    if (!items.length){
+      wrap.innerHTML = `<div class="empty">ยังไม่มีโรคที่ตั้งค่าเป็น watchlist</div>`;
+      return;
+    }
+
+    wrap.innerHTML = items.map((d) => {
+      const content = `
+        <div class="prio-head">
+          <div class="prio-ic">${icon(d.icon, 28)}</div>
+          <div class="prio-body">
+            <div class="prio-top"><span class="badge warn"><i data-lucide="alert-triangle" width="10" height="10"></i> เฝ้าระวัง</span></div>
+            <div class="prio-name">${esc(d.name)}</div>
+            <div class="prio-sub">${esc(d.description || 'แตะเพื่อดูรายละเอียดเพิ่มเติม')}</div>
+          </div>
+        </div>
+        <div class="cta">
+          <span>${d.url ? 'ดูรายละเอียดเต็ม' : 'ดูข้อมูลโรค'}</span>
+          <span class="cta-arrow"><i data-lucide="${d.url ? 'arrow-up-right' : 'chevron-right'}" width="14" height="14" stroke-width="2.5"></i></span>
+        </div>
+      `;
+
+      if (d.url){
+        return `<a class="prio" href="${esc(d.url)}" target="_blank" rel="noopener">${content}</a>`;
+      }
+
+      return `<button class="prio prio-btn" type="button" data-watch-name="${esc(d.name)}">${content}</button>`;
+    }).join('');
+
+    renderIcons();
+
+    wrap.onclick = (e) => {
+      const btn = e.target.closest('.prio-btn');
+      if (!btn) return;
+      const item = items.find(d => d.name === btn.dataset.watchName);
+      if (item) openSheet(item);
+    };
+  }
+
   // ─── Fetch ──────────────────────────────────────────────
   async function fetchDiseases(){
     renderSkeletons(4);
@@ -996,16 +1261,17 @@
       try{
         const { data, error } = await supabase.from('epidemics').select('*').order('created_at', { ascending: false });
         if (error) throw error;
-        diseases = (data && data.length) ? data : FALLBACK;
-      }catch(e){ console.warn('Supabase fetch failed → fallback:', e); diseases = FALLBACK; }
+        diseases = ((data && data.length) ? data : FALLBACK).map(normalizeDisease);
+      }catch(e){ console.warn('Supabase fetch failed → fallback:', e); diseases = FALLBACK.map(normalizeDisease); }
     } else {
       // Simulate network latency so skeletons are visible in demo
       await new Promise(r => setTimeout(r, 600));
-      diseases = FALLBACK;
+      diseases = FALLBACK.map(normalizeDisease);
     }
-    filtered = diseases.slice();
+    filtered = diseases.filter(d => d.record_type !== 'watchlist');
     const stat = document.getElementById('statCount');
-    if (stat) stat.textContent = diseases.length;
+    if (stat) stat.textContent = diseases.filter(d => d.record_type === 'watchlist' || d.is_priority).length;
+    renderWatchlist(diseases);
     applyFilters();
   }
 
@@ -1037,6 +1303,8 @@
   function applyFilters(){
     const k = (searchTerm || '').trim().toLowerCase();
     filtered = diseases.filter(d => {
+      const libraryOk = d.record_type !== 'watchlist';
+      if (!libraryOk) return false;
       const catOk = activeCat === 'all' || d.category === activeCat;
       if (!catOk) return false;
       if (!k) return true;
@@ -1074,27 +1342,34 @@
 
     const validation = validateForm(f);
     if (!validation.valid){
+      setFeedback($('#formFeedback'), validation.message, 'error');
       toast(validation.message, 2400, 'error');
       return;
     }
 
     const payload = buildPayload(validation.values);
+    payload.ai_icon_suggested = f.dataset.aiIconSuggested === 'true';
     setSubmitLoading(true);
+    setFeedback($('#formFeedback'));
 
     try{
       const access = await verifyAdminAccess();
       if (access?.redirecting) return;
-      if (!access?.authorized) throw new Error('LINE admin access is required.');
+      if (!access?.authorized) throw new Error('ต้องใช้สิทธิ์แอดมินผ่าน LINE');
 
       await submitToSupabase(payload);
       $('#adminModal').classList.remove('open');
       f.reset();
       f.icon.value = 'shield-check';
       f.category.value = '';
+      f.record_type.value = 'watchlist';
+      f.dataset.aiIconSuggested = 'false';
+      setFeedback($('#formFeedback'), 'บันทึกข้อมูลสำเร็จ', 'success');
       toast('เพิ่มข้อมูลสำเร็จ');
       await fetchDiseases();
     }catch(err){
       console.warn(err);
+      setFeedback($('#formFeedback'), err.message || 'บันทึกข้อมูลไม่สำเร็จ', 'error');
       toast('บันทึกไม่สำเร็จ', 2400, 'error');
     }finally{
       setSubmitLoading(false);
@@ -1104,7 +1379,7 @@
   // ─── Wiring ─────────────────────────────────────────────
   async function openAdminAccessModal(){
     if (!supabase){
-      toast('Configure Supabase URL and anon key first', 2600, 'error');
+      toast('กรุณาตั้งค่า Supabase URL และ Anon Key ก่อน', 2600, 'error');
       return;
     }
 
@@ -1112,13 +1387,13 @@
       const result = await verifyAdminAccess();
       if (result?.redirecting) return;
       if (!result?.authorized){
-        throw new Error('This LINE account is not allowed to manage epidemic data.');
+        throw new Error('บัญชี LINE นี้ไม่มีสิทธิ์จัดการข้อมูลโรค');
       }
       setFeedback($('#authFeedback'));
       openAdminModal();
     }catch(err){
       console.warn(err);
-      toast(err.message || 'Unable to verify admin access.', 2600, 'error');
+      toast(err.message || 'ไม่สามารถยืนยันสิทธิ์แอดมินได้', 2600, 'error');
     }
   }
 
@@ -1128,7 +1403,22 @@
     $('#adminModal').addEventListener('click', (e) => { if (e.target.id === 'adminModal') closeAdminModal(); });
     $('#authForm')?.addEventListener('submit', handleAuthSubmit);
     $('#adminForm').addEventListener('submit', addDisease);
+    $('#draftDiseaseBtn')?.addEventListener('click', handleDraftDisease);
+    $('#suggestIconBtn')?.addEventListener('click', handleSuggestIcon);
     $('#adminSignOut')?.addEventListener('click', signOutAdmin);
+    $('#fIcon')?.addEventListener('input', () => {
+      const form = $('#adminForm');
+      if (form) form.dataset.aiIconSuggested = 'false';
+    });
+    $('#fRecordType')?.addEventListener('change', (e) => {
+      const checkbox = $('#fPriority');
+      if (!checkbox) return;
+      if (e.target.value === 'library'){
+        checkbox.checked = false;
+      }else if (!checkbox.checked){
+        checkbox.checked = true;
+      }
+    });
 
     $('#scrim').addEventListener('click', closeSheet);
     $('#sheetClose').addEventListener('click', closeSheet);
@@ -1182,6 +1472,7 @@
     renderIcons();
     wire();
     supabase = initSupabase();
+    if ($('#adminForm')) $('#adminForm').dataset.aiIconSuggested = 'false';
     updateAdminModalUI();
     initLiff(); // non-blocking
     await fetchDiseases();
