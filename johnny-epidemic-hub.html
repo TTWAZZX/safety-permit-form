@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="theme-color" content="#0F8F5B" />
 <title>Johnny Epidemic Hub</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%230F8F5B'/><path d='M16 7a9 9 0 1 1 0 18A9 9 0 0 1 16 7zm0 2a7 7 0 1 0 0 14A7 7 0 0 0 16 9zm1 3v4h4v2h-4v4h-2v-4h-4v-2h4v-4h2z' fill='white'/></svg>" />
 
 <!-- Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1021,7 +1022,7 @@
       <div id="formStep1">
         <div class="field">
           <label for="fName">ชื่อโรค · Disease name</label>
-          <input id="fName" name="name" placeholder="เช่น โรคไข้หวัดใหญ่" />
+          <input id="fName" name="name" placeholder="เช่น โรคไข้หวัดใหญ่" autocomplete="off" />
         </div>
         <div class="field">
           <label for="fCategory">หมวดหมู่ · Category</label>
@@ -1061,12 +1062,12 @@
       <div id="formStep2" class="hidden">
         <div class="field">
           <label for="fIcon">ไอคอน · Lucide icon name</label>
-          <input id="fIcon" name="icon" placeholder="เช่น shield-check, bug, virus" value="shield-check" />
+          <input id="fIcon" name="icon" placeholder="เช่น shield-check, bug, virus" value="shield-check" autocomplete="off" />
           <small>ไอคอนต้องอยู่ในชุด VALID_ICONS ที่ระบบอนุญาต</small>
         </div>
         <div class="field">
           <label for="fUrl">ลิงก์ข้อมูลอ้างอิง</label>
-          <input id="fUrl" name="url" type="url" placeholder="https://example.com/disease-detail" />
+          <input id="fUrl" name="url" type="url" placeholder="https://example.com/disease-detail" autocomplete="url" />
         </div>
         <div class="field">
           <label for="fDesc">คำอธิบาย · Description</label>
@@ -1893,6 +1894,8 @@
         if (p?.displayName && sub) sub.textContent = `ยินดีต้อนรับ ${p.displayName}`;
         const greeting = $('#heroGreeting');
         if (p?.displayName && greeting) greeting.textContent = `สวัสดี ${p.displayName} พร้อมรับมือทุกสถานการณ์`;
+        // silently verify admin so currentRole is set before any sheet opens
+        if (supabase) verifyAdminAccess().catch(() => {});
       }
     }catch(e){ console.warn('LIFF init failed, continuing in browser mode:', e); }
   }
@@ -2048,6 +2051,7 @@
     try{
       currentSession = null;
       currentRole = null;
+      liffProfile = null;
       updateAdminModalUI();
       closeAdminModal();
       toast('ล้างสถานะแอดมินแล้ว');
@@ -2413,6 +2417,7 @@
       const card = e.target.closest('.card');
       if (!card) return;
       const idx = +card.dataset.idx;
+      if (isNaN(idx) || !data[idx]) return;
       openSheet(data[idx]);
     };
   }
@@ -2684,15 +2689,10 @@
     await fetchDiseases();
   }
 
-  // Expose for debugging / per-spec
-  window.fetchDiseases   = fetchDiseases;
-  window.renderDiseases  = renderDiseases;
-  window.addDisease      = addDisease;
-  window.checkAdminAccess= checkAdminAccess;
-  window.searchDiseases  = searchDiseases;
-  window.validateForm    = validateForm;
-  window.buildPayload    = buildPayload;
-  window.submitToSupabase= submitToSupabase;
+  window.addEventListener('unhandledrejection', e => {
+    console.warn('[Epidemic Hub] unhandled rejection:', e.reason);
+    e.preventDefault();
+  });
 
   document.addEventListener('DOMContentLoaded', init);
 })();
