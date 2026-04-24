@@ -210,6 +210,60 @@
   .status-pill svg{ color: var(--green-600); }
   .status-pill strong{ color: var(--ink-900); font-weight: 800; }
 
+  /* Epidemic news watch */
+  .news-watch{
+    margin: 18px var(--density-pad) 0;
+    background:#fff; border:1px solid var(--ink-200); border-radius:var(--r-xl);
+    box-shadow:var(--shadow-sm); overflow:hidden;
+  }
+  .news-head{
+    padding:14px 16px 10px;
+    display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
+    border-bottom:1px solid var(--ink-100);
+  }
+  .news-title{ font-size:14px; font-weight:800; color:var(--ink-900); line-height:1.25; }
+  .news-sub{ margin-top:2px; font-size:11.5px; color:var(--ink-500); font-weight:600; }
+  .news-actions{ display:flex; align-items:center; gap:6px; flex-shrink:0; }
+  .news-mini-btn{
+    width:32px; height:32px; border-radius:10px; border:1px solid var(--ink-200);
+    background:#fff; color:var(--ink-700); display:grid; place-items:center;
+  }
+  .news-viewport{ overflow:hidden; }
+  .news-track{ display:flex; transition:transform .35s cubic-bezier(.2,.8,.2,1); }
+  .news-card{
+    min-width:100%; padding:14px 16px 16px;
+    display:flex; flex-direction:column; gap:10px;
+  }
+  .news-card-top{ display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
+  .news-source{
+    display:inline-flex; align-items:center; gap:5px;
+    padding:4px 9px; border-radius:999px;
+    background:var(--green-50); color:var(--green-700);
+    font-size:10.5px; font-weight:800;
+  }
+  .news-date{ font-size:11px; color:var(--ink-500); font-weight:700; }
+  .news-card-title{ font-size:14.5px; font-weight:800; color:var(--ink-900); line-height:1.35; }
+  .news-summary{
+    font-size:12.5px; color:var(--ink-500); line-height:1.55;
+    overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+  }
+  .news-tags{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .news-tag{
+    padding:3px 8px; border-radius:999px; background:var(--ink-100);
+    color:var(--ink-500); font-size:10.5px; font-weight:800;
+  }
+  .news-foot{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:2px; }
+  .news-link{
+    color:var(--green-700); font-size:12.5px; font-weight:800;
+    display:inline-flex; align-items:center; gap:5px;
+  }
+  .news-dots{ display:flex; align-items:center; gap:5px; }
+  .news-dot{
+    width:6px; height:6px; border-radius:999px; border:0;
+    background:var(--ink-200); padding:0;
+  }
+  .news-dot.on{ width:18px; background:var(--green-500); }
+
   /* Filter chips */
   .chips-wrap{
     margin-top: 12px;
@@ -276,6 +330,15 @@
     color: var(--green-700); background: var(--green-100); padding: 4px 9px; border-radius: 999px;
   }
   .badge.warn{ color: #8A5300; background: #FFF1D6; }
+  .badge.high{ color: #B42318; background: #FFF1F0; }
+  .badge.info{ color: #175CD3; background: #EFF8FF; }
+  .meta-row{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:8px; }
+  .meta-pill{
+    display:inline-flex; align-items:center; gap:4px;
+    padding:3px 8px; border-radius:999px;
+    background:var(--ink-100); color:var(--ink-500);
+    font-size:10.5px; font-weight:700;
+  }
   .prio-name{ font-size: 17px; font-weight: 800; color: var(--ink-900); line-height: 1.3; letter-spacing: -0.015em; }
   .prio-sub{ font-size: 13px; color: var(--ink-500); margin-top: 6px; line-height: 1.55;
     overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
@@ -318,6 +381,10 @@
   }
   .card-name{ font-size: 14.5px; font-weight: 700; color: var(--ink-900); line-height: 1.35; letter-spacing: -0.005em;
     overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  }
+  .card-meta{
+    display:flex; align-items:center; gap:6px; flex-wrap:wrap;
+    min-height:24px;
   }
   .card .more{
     font-size: 12px; font-weight: 700; color: var(--green-600);
@@ -375,6 +442,7 @@
   .sheet-title{ font-size: 18px; font-weight: 800; letter-spacing: -0.01em; line-height: 1.25; }
   .sheet-tag{ display: inline-block; margin-top: 6px; font-size: 11px; font-weight: 600; color: var(--green-700);
     background: var(--green-100); padding: 3px 8px; border-radius: 999px; }
+  .sheet-meta{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:8px; }
   .sheet-body{ padding: 16px 20px 24px; overflow-y: auto; }
   .sheet-block{ margin-bottom: 18px; }
   .sheet-block h4{
@@ -383,6 +451,12 @@
     display: inline-flex; align-items: center; gap: 6px;
   }
   .sheet-block p, .sheet-block li{ font-size: 14px; color: var(--ink-700); line-height: 1.6; margin: 0; }
+  .sheet-source{
+    display:inline-flex; align-items:center; gap:6px;
+    color:var(--green-700); font-size:13px; font-weight:700;
+    padding:9px 11px; border-radius:12px;
+    background:var(--green-50); border:1px solid var(--green-100);
+  }
   .sheet-block ul{ padding-left: 18px; margin: 0; }
   .sheet-block ul li{ margin-bottom: 6px; }
   .sheet-close{
@@ -405,6 +479,9 @@
     width: 100%; max-width: 400px;
     background: #fff; border-radius: 24px; padding: 22px;
     animation: rise2 .28s cubic-bezier(.2,.8,.2,1);
+    max-height: calc(100dvh - 32px);
+    display: flex; flex-direction: column;
+    overflow: hidden;
   }
   @keyframes rise2{ from{ transform: translateY(20px); opacity: 0; } to{ transform: translateY(0); opacity: 1; } }
   .modal h3{ margin: 0 0 6px; font-size: 18px; font-weight: 800; letter-spacing: -0.01em; }
@@ -416,11 +493,23 @@
     background: #fff; font-family: inherit; font-size: 14px; outline: none;
     transition: border-color .15s ease, box-shadow .15s ease;
   }
+  .field select[multiple]{
+    min-height: 168px;
+    border-radius: 16px;
+    overflow-y: auto;
+  }
+  .field select[multiple] option{ padding: 9px 10px; border-radius: 10px; }
   .field input:focus, .field textarea:focus, .field select:focus{ border-color: var(--green-400); box-shadow: 0 0 0 4px rgba(76,187,132,.15); }
   .field textarea{ min-height: 92px; resize: vertical; }
   .field small{ color: var(--ink-500); font-size: 12px; line-height: 1.45; }
   .hidden{ display: none !important; }
-  .auth-panel, .admin-panel{ display: flex; flex-direction: column; gap: 12px; }
+  .auth-panel, .admin-panel{
+    display: flex; flex-direction: column; gap: 12px;
+    min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+    padding-right: 2px;
+  }
+  .admin-panel{ max-height: min(74dvh, 720px); }
+  .auth-panel{ max-height: min(64dvh, 520px); }
   .feedback{
     display: none; margin: 0 0 12px; padding: 10px 12px; border-radius: 14px;
     font-size: 13px; font-weight: 600; line-height: 1.45;
@@ -496,6 +585,16 @@
     background:var(--green-100); padding:2px 8px; border-radius:999px;
     display:inline-block; margin-top:3px;
   }
+  .admin-prev .prev-dest{
+    font-size:11px; color:var(--ink-500); font-weight:700; margin-top:5px;
+    display:flex; align-items:center; gap:5px; flex-wrap:wrap;
+  }
+  .admin-guard{
+    display:none; margin:0 0 12px; padding:10px 12px; border-radius:14px;
+    background:#FFF8E6; border:1px solid #FDE68A; color:#92400E;
+    font-size:12px; font-weight:700; line-height:1.45;
+  }
+  .admin-guard.show{ display:block; }
 
   /* ── Phase 3: Sheet admin actions ── */
   .sheet-actions{ margin-top:8px; padding-top:16px; border-top:1px solid var(--ink-100); display:flex; gap:10px; flex-wrap:wrap; }
@@ -521,6 +620,25 @@
   .ai-card-cat{ font-size:11px; color:var(--ink-500); }
   .ai-card-desc{ font-size:12px; color:var(--ink-500); line-height:1.45; }
   .ai-save-bar{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; flex-wrap:wrap; gap:8px; }
+
+  @media (min-width: 720px){
+    .modal{ align-items: center; }
+    .modal-card{ max-width: 440px; }
+    .admin-panel{ max-height: min(78dvh, 760px); }
+  }
+
+  @media (max-width: 480px){
+    .modal{ padding: 10px; align-items: flex-end; }
+    .modal-card{
+      max-height: calc(100dvh - 20px);
+      border-radius: 22px 22px 18px 18px;
+      padding: 18px;
+    }
+    .admin-panel{ max-height: calc(100dvh - 148px); }
+    .auth-panel{ max-height: calc(100dvh - 148px); }
+    .btn-row{ flex-wrap: wrap; }
+    .btn-row .btn{ min-width: 132px; }
+  }
 </style>
 </head>
 <body data-density="comfortable">
@@ -575,6 +693,36 @@
     ไม่สามารถโหลดข้อมูลล่าสุดได้ · แสดงข้อมูลสำรอง
   </div>
 
+  <section class="news-watch" aria-label="Epidemic news watch">
+    <div class="news-head">
+      <div>
+        <div class="news-title">Epidemic News Watch</div>
+        <div class="news-sub" id="newsStatus">ข่าวจากแหล่งข้อมูลสาธารณสุขที่เชื่อถือได้</div>
+      </div>
+      <div class="news-actions">
+        <button type="button" class="news-mini-btn" id="newsPrevBtn" aria-label="ข่าวก่อนหน้า">
+          <i data-lucide="chevron-left" width="16" height="16"></i>
+        </button>
+        <button type="button" class="news-mini-btn" id="newsPauseBtn" aria-label="หยุดหรือเล่นข่าวอัตโนมัติ">
+          <i data-lucide="pause" width="15" height="15"></i>
+        </button>
+        <button type="button" class="news-mini-btn" id="newsNextBtn" aria-label="ข่าวถัดไป">
+          <i data-lucide="chevron-right" width="16" height="16"></i>
+        </button>
+      </div>
+    </div>
+    <div class="news-viewport">
+      <div class="news-track" id="newsTrack">
+        <article class="news-card">
+          <div class="skel skel-line w40"></div>
+          <div class="skel skel-line w90"></div>
+          <div class="skel skel-line w60"></div>
+        </article>
+      </div>
+    </div>
+    <div class="news-dots" id="newsDots" style="padding:0 16px 14px;"></div>
+  </section>
+
   <!-- Search -->
   <div class="search" id="searchWrap">
     <i data-lucide="search" width="18" height="18"></i>
@@ -596,6 +744,18 @@
       </button>
       <button class="chip" data-cat="respiratory" role="tab">
         <i data-lucide="wind" width="13" height="13"></i> ระบบทางเดินหายใจ
+      </button>
+      <button class="chip" data-cat="vector" role="tab">
+        <i data-lucide="bug" width="13" height="13"></i> แมลง/พาหะ
+      </button>
+      <button class="chip" data-cat="water" role="tab">
+        <i data-lucide="waves" width="13" height="13"></i> น้ำ
+      </button>
+      <button class="chip" data-cat="contact" role="tab">
+        <i data-lucide="hand" width="13" height="13"></i> สัมผัส
+      </button>
+      <button class="chip" data-cat="occupational" role="tab">
+        <i data-lucide="factory" width="13" height="13"></i> งาน/อาชีพ
       </button>
       <button class="chip" data-cat="other" role="tab">
         <i data-lucide="circle-ellipsis" width="13" height="13"></i> อื่น ๆ
@@ -679,6 +839,7 @@
     <div>
       <div class="sheet-title" id="sheetTitle">—</div>
       <span class="sheet-tag" id="sheetTag">Epidemic · เฝ้าระวัง</span>
+      <div class="sheet-meta" id="sheetMeta"></div>
     </div>
   </div>
   <div class="sheet-body">
@@ -689,6 +850,12 @@
     <div class="sheet-block">
       <h4><i data-lucide="shield" width="12" height="12"></i> การป้องกัน</h4>
       <ul id="sheetPrevent"></ul>
+    </div>
+    <div class="sheet-block hidden" id="sheetSourceBlock">
+      <h4><i data-lucide="link" width="12" height="12"></i> แหล่งอ้างอิง</h4>
+      <a class="sheet-source" id="sheetSource" href="#" target="_blank" rel="noopener">
+        เปิดข้อมูลอ้างอิง <i data-lucide="arrow-up-right" width="13" height="13"></i>
+      </a>
     </div>
     <div class="sheet-actions hidden" id="sheetAdminActions">
       <button type="button" class="btn btn-archive hidden" id="sheetDeactivateBtn" style="flex:1 0 100%;">
@@ -727,7 +894,7 @@
           <input id="authPassword" name="password" type="password" required placeholder="Enter password" autocomplete="current-password" />
         </div>
         <div class="btn-row">
-          <button type="button" class="btn btn-ghost" id="adminCancel">ยกเลิก</button>
+          <button type="button" class="btn btn-ghost" id="authCancel">ยกเลิก</button>
           <button type="submit" class="btn btn-primary" id="authSubmit">
             <i data-lucide="log-in" width="16" height="16"></i> Sign in
           </button>
@@ -764,8 +931,13 @@
       <div>
         <div class="prev-name" id="previewName">ชื่อโรค</div>
         <span class="prev-cat" id="previewCat">หมวดหมู่</span>
+        <div class="prev-dest" id="previewDest">
+          <i data-lucide="eye" width="12" height="12"></i>
+          <span>จะแสดงในโรคเฝ้าระวัง</span>
+        </div>
       </div>
     </div>
+    <div class="admin-guard" id="adminGuard"></div>
 
     <!-- Step indicator -->
     <div class="step-ind" id="stepIndicator">
@@ -783,13 +955,22 @@
         </div>
         <div class="field">
           <label for="fCategory">หมวดหมู่ · Category</label>
-          <select id="fCategory" name="category">
-            <option value="">เลือกหมวดหมู่</option>
+          <select id="fCategory" name="category" multiple size="8" aria-describedby="categoryHelp">
             <option value="food">อาหาร</option>
             <option value="env">สิ่งแวดล้อม</option>
             <option value="respiratory">ระบบทางเดินหายใจ</option>
+            <option value="vector">แมลง/สัตว์พาหะ</option>
+            <option value="water">น้ำ/สุขาภิบาล</option>
+            <option value="contact">สัมผัส/ผิวหนัง</option>
+            <option value="blood">เลือด/สารคัดหลั่ง</option>
+            <option value="vaccine">วัคซีนป้องกันได้</option>
+            <option value="travel">เดินทาง/ต่างพื้นที่</option>
+            <option value="occupational">งาน/อาชีพ</option>
+            <option value="emerging">โรคอุบัติใหม่</option>
+            <option value="zoonotic">สัตว์สู่คน</option>
             <option value="other">อื่น ๆ</option>
           </select>
+          <small id="categoryHelp">เลือกได้หลายหมวดหมู่: แตะเลือกบนมือถือ หรือกด Ctrl/Command ค้างไว้บนคอมพิวเตอร์</small>
         </div>
         <div class="field">
           <label for="fRecordType">ประเภทข้อมูล</label>
@@ -799,7 +980,7 @@
           </select>
         </div>
         <div class="btn-row">
-          <button type="button" class="btn btn-ghost" id="adminCancel">ยกเลิก</button>
+          <button type="button" class="btn btn-ghost" id="formCancel">ยกเลิก</button>
           <button type="button" class="btn btn-primary" id="stepNextBtn">
             ถัดไป <i data-lucide="arrow-right" width="14" height="14"></i>
           </button>
@@ -888,14 +1069,18 @@
   const GENERATE_FUNCTION      = 'epidemics-ai-generate';
   const ICON_SUGGEST_FUNCTION  = 'epidemics-icon-suggest';
   const DRAFT_ASSIST_FUNCTION  = 'epidemics-draft-assist';
+  const NEWS_FUNCTION          = 'epidemic-news-feed';
 
   // Lucide icon allowlist (fallback to shield-check when name invalid)
   const VALID_ICONS = new Set([
-    'shield-check','shield-alert','shield','bug','droplet','thermometer','stethoscope',
-    'heart-pulse','pill','syringe','activity','biohazard','hand','alert-triangle',
-    'wind','leaf','cloud-rain','waves','spray-can',
-    'flask-conical','test-tube','microscope','hospital','bandage','cross','virus'
-  ]);
+  'shield-check','shield-alert','shield','bug','droplet','thermometer','stethoscope',
+  'heart-pulse','pill','syringe','activity','biohazard','hand','alert-triangle',
+  'exclamation-triangle','wind','leaf','cloud-rain','waves','mosquito','spray-can',
+  'flask-conical','test-tube','microscope','first-aid','ambulance','hospital',
+  'bandage','cross','virus','utensils','factory','dna','lungs','brain','bone',
+  'eye','ear','plane','map-pin','radiation','badge-alert','siren','scan-heart',
+  'hand-heart','bubbles','circle-ellipsis'
+]);
 
   // Fallback data
   const FALLBACK = [
@@ -955,6 +1140,40 @@
   let aiGeneratedDiseases = [];
   let isGenerating = false;
   let isSavingAI = false;
+  let newsItems = [];
+  let newsIndex = 0;
+  let newsPaused = false;
+  let newsTimer = null;
+
+  const NEWS_FALLBACK = [
+    {
+      title: 'กรมควบคุมโรคเตือนเฝ้าระวังโรคไวรัสตับอักเสบเอ หลังพบการระบาดในหลายจังหวัดทางภาคตะวันออก',
+      summary: 'ข่าวสำรองจากแหล่งทางการ ใช้แสดงเมื่อยังเชื่อมต่อ epidemic-news-feed ไม่ได้',
+      source: 'DDC',
+      url: 'https://ddc.moph.go.th/index.php/osc/ipm/newspic.php',
+      publishedAt: '2026-04-21',
+      tags: ['ไวรัสตับอักเสบเอ', 'อาหารและน้ำ', 'เฝ้าระวัง'],
+      severity: 'watch'
+    },
+    {
+      title: 'ติดตามข่าวสุขภาพและโรคอุบัติใหม่จาก Hfocus',
+      summary: 'คัดเฉพาะข่าวที่เกี่ยวข้องกับโรคอุบัติใหม่ โรคอุบัติซ้ำ และระบบเฝ้าระวังสุขภาพ',
+      source: 'Hfocus',
+      url: 'https://www.hfocus.org/',
+      publishedAt: null,
+      tags: ['ระบบสุขภาพ', 'โรคอุบัติใหม่'],
+      severity: 'info'
+    },
+    {
+      title: 'ติดตามข่าวสาธารณสุขจาก Thai PBS News',
+      summary: 'ใช้เป็นแหล่งข่าวสาธารณะประกอบการเฝ้าระวังโรคและสื่อสารความเสี่ยงในองค์กร',
+      source: 'Thai PBS',
+      url: 'https://www.thaipbs.or.th/news',
+      publishedAt: null,
+      tags: ['ข่าวสาธารณสุข', 'สื่อสาธารณะ'],
+      severity: 'info'
+    }
+  ];
 
   function normalizeDisease(d, index=0){
     const name = String(d?.name || '').trim();
@@ -971,7 +1190,7 @@
       icon: VALID_ICONS.has(String(d?.icon || '').trim()) ? String(d.icon).trim() : 'shield-check',
       name,
       description: String(d?.description || '').trim(),
-      category: String(d?.category || 'other').trim() || 'other',
+      category: getDiseaseCategories(d).join(','),
       url: String(d?.url || fallbackUrl).trim(),
       record_type: inferredWatchlist ? 'watchlist' : 'library',
       is_priority: typeof d?.is_priority === 'boolean' ? d.is_priority : inferredWatchlist,
@@ -984,6 +1203,95 @@
   const $ = (s, r=document) => r.querySelector(s);
   const $$ = (s, r=document) => [...r.querySelectorAll(s)];
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const CAT_LABELS = {
+    food:'อาหาร',
+    env:'สิ่งแวดล้อม',
+    respiratory:'ระบบทางเดินหายใจ',
+    vector:'แมลง/พาหะ',
+    water:'น้ำ/สุขาภิบาล',
+    contact:'สัมผัส/ผิวหนัง',
+    blood:'เลือด/สารคัดหลั่ง',
+    vaccine:'วัคซีนป้องกันได้',
+    travel:'เดินทาง/ต่างพื้นที่',
+    occupational:'งาน/อาชีพ',
+    emerging:'โรคอุบัติใหม่',
+    zoonotic:'สัตว์สู่คน',
+    other:'อื่น ๆ'
+  };
+  const CAT_ALIASES = Object.fromEntries([
+    ...Object.entries(CAT_LABELS).map(([key, label]) => [label, key]),
+    ['อาหารและน้ำ', 'food'],
+    ['สิ่งแวดล้อม', 'env'],
+    ['ทางเดินหายใจ', 'respiratory'],
+    ['แมลง', 'vector'],
+    ['พาหะ', 'vector'],
+    ['น้ำ', 'water'],
+    ['สัมผัส', 'contact'],
+    ['เลือด', 'blood'],
+    ['วัคซีน', 'vaccine'],
+    ['เดินทาง', 'travel'],
+    ['อาชีพ', 'occupational'],
+    ['อุบัติใหม่', 'emerging'],
+    ['สัตว์สู่คน', 'zoonotic'],
+    ['อื่นๆ', 'other']
+  ]);
+  const splitCategories = value => {
+    if (Array.isArray(value)) return value.map(v => CAT_ALIASES[String(v).trim()] || String(v).trim()).filter(Boolean);
+    return String(value || '')
+      .split(/[|,;]+/)
+      .map(v => v.trim())
+      .map(v => CAT_ALIASES[v] || v)
+      .filter(Boolean);
+  };
+  const getDiseaseCategories = d => splitCategories(d?.category).length ? splitCategories(d.category) : ['other'];
+  const getCategoryLabel = value => {
+    const cats = splitCategories(value);
+    return cats.length ? cats.map(cat => CAT_LABELS[cat] || cat).join(', ') : 'หมวดหมู่';
+  };
+  const getSelectedCategories = select => {
+    if (!select) return [];
+    return [...select.selectedOptions].map(opt => opt.value).filter(Boolean);
+  };
+  const setSelectedCategories = (select, value) => {
+    if (!select) return;
+    const selected = new Set(splitCategories(value));
+    [...select.options].forEach(opt => { opt.selected = selected.has(opt.value); });
+  };
+  const formatReviewedDate = value => {
+    if (!value) return 'ยังไม่ระบุวันตรวจทาน';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return 'ยังไม่ระบุวันตรวจทาน';
+    return `ตรวจทาน ${date.toLocaleDateString('th-TH', { day:'2-digit', month:'short', year:'numeric' })}`;
+  };
+  const getRiskMeta = d => {
+    const text = `${d?.name || ''} ${d?.description || ''} ${d?.category || ''}`.toLowerCase();
+    if (d?.record_type === 'watchlist' && d?.is_priority !== false) return { label:'เฝ้าระวัง', tone:'warn', icon:'alert-triangle' };
+    if (/outbreak|ระบาด|เสี่ยงสูง|critical|urgent|severe|fatal|เสียชีวิต/.test(text)) return { label:'เสี่ยงสูง', tone:'high', icon:'siren' };
+    if (/vaccine|วัคซีน|preventable/.test(text)) return { label:'ป้องกันได้', tone:'info', icon:'syringe' };
+    return { label:'ข้อมูลอ้างอิง', tone:'info', icon:'book-open' };
+  };
+  const metaPill = (text, iconName='info') => `<span class="meta-pill"><i data-lucide="${iconName}" width="11" height="11"></i>${esc(text)}</span>`;
+  const riskBadge = d => {
+    const risk = getRiskMeta(d);
+    return `<span class="badge ${risk.tone}"><i data-lucide="${risk.icon}" width="10" height="10"></i> ${esc(risk.label)}</span>`;
+  };
+  const getSourceLabel = url => {
+    try{
+      const host = new URL(url).hostname.replace(/^www\./, '');
+      if (/ddc\.moph\.go\.th/i.test(host)) return 'กรมควบคุมโรค';
+      if (/who\.int/i.test(host)) return 'WHO';
+      if (/cdc\.gov/i.test(host)) return 'CDC';
+      return host;
+    }catch(_e){
+      return 'แหล่งอ้างอิง';
+    }
+  };
+  const formatNewsDate = value => {
+    if (!value) return 'ล่าสุด';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return 'ล่าสุด';
+    return date.toLocaleDateString('th-TH', { day:'2-digit', month:'short', year:'numeric' });
+  };
   const icon = (name, size=22) => {
     const n = VALID_ICONS.has(name) ? name : 'shield-check';
     return `<i data-lucide="${n}" width="${size}" height="${size}" stroke-width="2"></i>`;
@@ -1063,7 +1371,7 @@
       name: form.name.value.trim(),
       icon: form.icon.value.trim(),
       description: form.description.value.trim(),
-      category: form.category.value.trim(),
+      category: getSelectedCategories(form.category).join(','),
       url: form.url.value.trim(),
       record_type: form.record_type.value.trim() || 'watchlist',
       is_priority: !!form.is_priority.checked
@@ -1072,7 +1380,7 @@
     if (!values.name) return { valid: false, message: 'กรุณากรอกชื่อโรค' };
     if (!VALID_ICONS.has(values.icon)) return { valid: false, message: 'ไอคอนไม่อยู่ในรายการที่อนุญาต' };
     if (values.description.length < 10) return { valid: false, message: 'คำอธิบายต้องมีอย่างน้อย 10 ตัวอักษร' };
-    if (!values.category) return { valid: false, message: 'กรุณาเลือกหมวดหมู่' };
+    if (!splitCategories(values.category).length) return { valid: false, message: 'กรุณาเลือกหมวดหมู่อย่างน้อย 1 หมวดหมู่' };
 
     if (values.url && !/^https?:\/\//i.test(values.url)) return { valid: false, message: 'ลิงก์ต้องขึ้นต้นด้วย http:// หรือ https://' };
     if (!['watchlist', 'library'].includes(values.record_type)) return { valid: false, message: 'ประเภทข้อมูลไม่ถูกต้อง' };
@@ -1080,16 +1388,46 @@
   }
 
   function buildPayload(values){
+    const shouldShowWatchlist = values.record_type === 'watchlist' && values.is_priority;
     return {
       name: values.name,
       icon: values.icon || 'shield-check',
       description: values.description,
       category: values.category,
       url: values.url || null,
-      record_type: values.record_type || 'watchlist',
-      is_priority: values.record_type === 'watchlist' ? values.is_priority : false,
+      record_type: shouldShowWatchlist ? 'watchlist' : 'library',
+      is_priority: shouldShowWatchlist,
       ai_icon_suggested: false
     };
+  }
+
+  function pickIconFromDiseaseText(values){
+    const text = `${values?.name || ''} ${values?.description || ''} ${values?.category || ''}`.toLowerCase();
+    const rules = [
+      [/dengue|ไข้เลือดออก|ยุง|mosquito|vector/, 'bug'],
+      [/hepatitis|ตับอักเสบ|อาหาร|food|water|สุขาภิบาล/, 'biohazard'],
+      [/influenza|covid|ไข้หวัด|respiratory|หายใจ|ไอ|ปอด/, 'wind'],
+      [/lepto|ฉี่หนู|น้ำท่วม|ดิน|soil|flood|water/, 'waves'],
+      [/rabies|พิษสุนัข|สัตว์|zoonotic/, 'shield-alert'],
+      [/cholera|อหิวา|diarrhea|ท้องเสีย|น้ำ/, 'droplet'],
+      [/vaccine|วัคซีน|immunization/, 'syringe'],
+      [/blood|เลือด|สารคัดหลั่ง/, 'droplet'],
+      [/skin|ผิวหนัง|สัมผัส|contact/, 'hand'],
+      [/emerging|อุบัติใหม่|outbreak|ระบาด/, 'siren']
+    ];
+    const found = rules.find(([pattern]) => pattern.test(text));
+    return found?.[1] || 'shield-check';
+  }
+
+  function ensureMixedLanguageDescription(text, name){
+    const raw = String(text || '').trim();
+    if (!raw) return raw;
+    const hasThai = /[\u0E00-\u0E7F]/.test(raw);
+    const hasEnglish = /[A-Za-z]/.test(raw);
+    if (hasThai && hasEnglish) return raw;
+    if (!hasEnglish) return `${raw}\n\nWorkplace note: monitor symptoms, keep hygiene controls active, and report suspected cases early.`;
+    if (!hasThai) return `สรุปโรค ${name || ''}: ${raw}`;
+    return raw;
   }
 
   async function suggestIconWithAI(form){
@@ -1100,29 +1438,36 @@
 
     const values = {
       name: form.name.value.trim(),
-      category: form.category.value.trim(),
+      category: getSelectedCategories(form.category).join(','),
       description: form.description.value.trim(),
       url: form.url.value.trim()
     };
 
     if (!values.name) throw new Error('กรุณากรอกชื่อโรคก่อนให้ AI เลือกไอคอน');
-    if (values.description.length < 10) throw new Error('กรุณากรอกคำอธิบายอย่างน้อย 10 ตัวอักษรก่อนให้ AI เลือกไอคอน');
 
-    const { data, error } = await supabase.functions.invoke(ICON_SUGGEST_FUNCTION, {
-      body: {
-        ...values,
-        lineAccessToken: accessToken
-      }
-    });
+    const body = {
+      ...values,
+      sourceHint: values.description ? 'Use the drafted disease information first, then the disease name.' : 'Use the disease name as the primary source.',
+      lineAccessToken: accessToken
+    };
 
-    if (error) throw error;
-    if (data?.error) throw new Error(data.error);
-
-    if (data?.icon){
-      form.icon.value = data.icon;
+    let data = null;
+    try{
+      const res = await supabase.functions.invoke(ICON_SUGGEST_FUNCTION, { body });
+      if (res.error) throw res.error;
+      if (res.data?.error) throw new Error(res.data.error);
+      data = res.data || {};
+    }catch(err){
+      console.warn('AI icon suggest failed, using disease-name fallback:', err);
+      data = { reason: 'เลือกไอคอนจากชื่อโรคและข้อมูลที่มีอยู่แทน เนื่องจาก AI icon service ตอบกลับไม่สำเร็จ' };
     }
 
-    return data;
+    const nextIcon = VALID_ICONS.has(data?.icon) ? data.icon : pickIconFromDiseaseText(values);
+    if (nextIcon){
+      form.icon.value = nextIcon;
+    }
+
+    return { ...data, icon: nextIcon };
   }
 
   async function draftDiseaseWithAI(form){
@@ -1134,18 +1479,20 @@
     const values = {
       name: form.name.value.trim(),
       url: form.url.value.trim(),
-      category: form.category.value.trim(),
+      category: getSelectedCategories(form.category).join(','),
       description: form.description.value.trim(),
       record_type: form.record_type.value.trim() || 'watchlist'
     };
 
-    if (!values.name && !values.url){
-      throw new Error('กรุณากรอกชื่อโรคหรือ URL ก่อนให้ AI ช่วยร่างข้อมูล');
+    if (!values.name){
+      throw new Error('กรุณากรอกชื่อโรคก่อนให้ AI ช่วยร่างข้อมูล');
     }
 
     const { data, error } = await supabase.functions.invoke(DRAFT_ASSIST_FUNCTION, {
       body: {
         ...values,
+        language: 'mixed-th-en',
+        draftStyle: 'Thai and English mixed in the same useful admin-ready description. Base the draft primarily on the disease name.',
         lineAccessToken: accessToken
       }
     });
@@ -1154,8 +1501,8 @@
     if (data?.error) throw new Error(data.error);
 
     if (data?.name) form.name.value = data.name;
-    if (data?.category) form.category.value = data.category;
-    if (data?.description) form.description.value = data.description;
+    if (data?.category) setSelectedCategories(form.category, data.category);
+    if (data?.description) form.description.value = ensureMixedLanguageDescription(data.description, data?.name || values.name);
     if (data?.icon) form.icon.value = data.icon;
     if (data?.url && !form.url.value.trim()) form.url.value = data.url;
 
@@ -1206,16 +1553,33 @@
   }
 
   // ─── Preview card ────────────────────────────────────────
-  const CAT_LABELS = { food:'อาหาร', env:'สิ่งแวดล้อม', respiratory:'ระบบทางเดินหายใจ', other:'อื่น ๆ' };
-
   function updatePreview(){
     const form = $('#adminForm');
     if (!form) return;
     const name = form.name?.value?.trim() || 'ชื่อโรค';
-    const cat  = form.category?.value || '';
+    const cat  = getSelectedCategories(form.category).join(',');
     const ic   = form.icon?.value?.trim() || 'shield-check';
+    const recordType = form.record_type?.value || 'watchlist';
+    const isPriority = !!form.is_priority?.checked;
+    const willWatch = recordType === 'watchlist' && isPriority;
+    const desc = form.description?.value?.trim() || '';
+    const url = form.url?.value?.trim() || '';
     $('#previewName').textContent = name;
-    $('#previewCat').textContent  = CAT_LABELS[cat] || 'หมวดหมู่';
+    $('#previewCat').textContent  = getCategoryLabel(cat);
+    const dest = $('#previewDest');
+    if (dest){
+      dest.innerHTML = willWatch
+        ? `<i data-lucide="eye" width="12" height="12"></i><span>จะแสดงในโรคเฝ้าระวัง</span>`
+        : `<i data-lucide="archive" width="12" height="12"></i><span>จะแสดงในข้อมูลโรคทั้งหมด</span>`;
+    }
+    const guard = $('#adminGuard');
+    if (guard){
+      const warnings = [];
+      if (willWatch && desc.length < 40) warnings.push('โรคเฝ้าระวังควรมีคำอธิบายที่ชัดเจนกว่านี้ก่อนเผยแพร่');
+      if (willWatch && !url) warnings.push('แนะนำให้ใส่ลิงก์อ้างอิงเพื่อเพิ่มความน่าเชื่อถือ');
+      guard.textContent = warnings.join(' · ');
+      guard.classList.toggle('show', warnings.length > 0);
+    }
     const icEl = $('#previewIc');
     if (icEl){ icEl.innerHTML = icon(VALID_ICONS.has(ic) ? ic : 'shield-check', 20); renderIcons(); }
   }
@@ -1240,8 +1604,8 @@
       form.name?.focus();
       return;
     }
-    if (!form.category?.value){
-      setFeedback($('#formFeedback'), 'กรุณาเลือกหมวดหมู่ก่อน', 'error');
+    if (!getSelectedCategories(form.category).length){
+      setFeedback($('#formFeedback'), 'กรุณาเลือกหมวดหมู่อย่างน้อย 1 หมวดหมู่ก่อน', 'error');
       form.category?.focus();
       return;
     }
@@ -1259,7 +1623,7 @@
     const form = $('#adminForm');
     if (form){
       form.name.value        = d.name || '';
-      form.category.value    = d.category || '';
+      setSelectedCategories(form.category, d.category || '');
       form.record_type.value = d.record_type || 'watchlist';
       form.icon.value        = d.icon || 'shield-check';
       form.url.value         = d.url || '';
@@ -1339,7 +1703,7 @@
               <div class="ai-card-ic">${icon(d.icon, 18)}</div>
               <div>
                 <div class="ai-card-name">${esc(d.name)}</div>
-                <div class="ai-card-cat">${CAT_LABELS[d.category] || d.category}</div>
+                <div class="ai-card-cat">${esc(getCategoryLabel(d.category))}</div>
               </div>
             </div>
             <div class="ai-card-desc">${esc(d.description)}</div>
@@ -1425,7 +1789,7 @@
         const { data, error } = await supabase.functions.invoke(ADMIN_INSERT_FUNCTION, {
           body: {
             name: d.name, icon: d.icon || 'shield-check', description: d.description,
-            category: d.category || 'other', url: null,
+            category: splitCategories(d.category).join(',') || 'other', url: null,
             record_type: 'library', is_priority: false, ai_icon_suggested: false,
             lineAccessToken: accessToken
           }
@@ -1574,7 +1938,7 @@
     if (form){
       form.reset();
       form.icon.value = 'shield-check';
-      form.category.value = '';
+      setSelectedCategories(form.category, '');
       form.record_type.value = 'watchlist';
       form.dataset.aiIconSuggested = 'false';
     }
@@ -1637,6 +2001,7 @@
 
       const result = await suggestIconWithAI(form);
       form.dataset.aiIconSuggested = 'true';
+      updatePreview();
       setFeedback($('#formFeedback'), result?.reason || 'AI เลือกไอคอนให้แล้ว', 'success');
       toast(`AI เลือกไอคอน ${form.icon.value}`);
     }catch(err){
@@ -1661,6 +2026,7 @@
       if (!access?.authorized) throw new Error('ต้องใช้สิทธิ์แอดมินผ่าน LINE');
 
       const result = await draftDiseaseWithAI(form);
+      updatePreview();
       setFeedback($('#formFeedback'), result?.reason || 'AI ช่วยร่างข้อมูลโรคให้แล้ว', 'success');
       toast('AI ร่างข้อมูลโรคเสร็จแล้ว');
     }catch(err){
@@ -1703,7 +2069,7 @@
   function renderWatchlist(data){
     const wrap = document.querySelector('section[aria-label="Priority diseases"] .prio-list');
     const sub = document.querySelector('section[aria-label="Priority diseases"] .sec-sub');
-    const items = (data || []).filter(d => d.record_type === 'watchlist' || d.is_priority);
+    const items = (data || []).filter(d => d.record_type === 'watchlist' && d.is_priority !== false);
 
     if (sub){
       sub.textContent = items.length
@@ -1714,7 +2080,7 @@
     if (!wrap) return;
 
     if (!items.length){
-      wrap.innerHTML = `<div class="empty">ยังไม่มีโรคที่ตั้งค่าเป็น watchlist</div>`;
+      wrap.innerHTML = `<div class="empty">ยังไม่มีโรคที่ตั้งค่าเป็น watchlist · รายการที่ไม่แสดงเด่นจะยังอยู่ในข้อมูลโรคทั้งหมด</div>`;
       return;
     }
 
@@ -1725,6 +2091,11 @@
           <div class="prio-body">
             <div class="prio-top"><span class="badge warn"><i data-lucide="alert-triangle" width="10" height="10"></i> เฝ้าระวัง</span></div>
             <div class="prio-name">${esc(d.name)}</div>
+            <div class="meta-row">
+              ${metaPill(getCategoryLabel(d.category), 'tags')}
+              ${metaPill(formatReviewedDate(d.created_at), 'calendar-check')}
+              ${d.url ? metaPill(getSourceLabel(d.url), 'link') : ''}
+            </div>
             <div class="prio-sub">${esc(d.description || 'แตะเพื่อดูรายละเอียดเพิ่มเติม')}</div>
           </div>
         </div>
@@ -1749,6 +2120,86 @@
       const item = items.find(d => d.name === btn.dataset.watchName);
       if (item) openSheet(item);
     };
+  }
+
+  function normalizeNewsItem(item){
+    return {
+      title: String(item?.title || '').trim(),
+      summary: String(item?.summary || '').trim(),
+      source: String(item?.source || 'Verified source').trim(),
+      url: String(item?.url || '').trim(),
+      publishedAt: item?.publishedAt || item?.published_at || null,
+      tags: Array.isArray(item?.tags) ? item.tags.slice(0, 4).map(t => String(t).trim()).filter(Boolean) : [],
+      severity: String(item?.severity || 'info').trim()
+    };
+  }
+
+  function renderNews(items, statusText='ข่าวจากแหล่งข้อมูลสาธารณสุขที่เชื่อถือได้'){
+    const track = $('#newsTrack');
+    const dots = $('#newsDots');
+    const status = $('#newsStatus');
+    if (!track || !dots) return;
+    newsItems = (items || []).map(normalizeNewsItem).filter(n => n.title && n.url).slice(0, 8);
+    if (!newsItems.length) newsItems = NEWS_FALLBACK.map(normalizeNewsItem);
+    newsIndex = Math.min(newsIndex, newsItems.length - 1);
+    if (status) status.textContent = statusText;
+    track.innerHTML = newsItems.map(n => `
+      <article class="news-card">
+        <div class="news-card-top">
+          <span class="news-source"><i data-lucide="shield-check" width="11" height="11"></i>${esc(n.source)}</span>
+          <span class="news-date">${esc(formatNewsDate(n.publishedAt))}</span>
+          ${n.severity === 'watch' ? '<span class="badge warn"><i data-lucide="alert-triangle" width="10" height="10"></i> เฝ้าระวัง</span>' : ''}
+        </div>
+        <div class="news-card-title">${esc(n.title)}</div>
+        <div class="news-summary">${esc(n.summary || 'อ่านรายละเอียดจากแหล่งข่าวต้นทาง')}</div>
+        <div class="news-tags">${n.tags.map(tag => `<span class="news-tag">${esc(tag)}</span>`).join('')}</div>
+        <div class="news-foot">
+          <a class="news-link" href="${esc(n.url)}" target="_blank" rel="noopener">อ่านข่าว <i data-lucide="arrow-up-right" width="13" height="13"></i></a>
+          <span class="news-date">Verified source only</span>
+        </div>
+      </article>
+    `).join('');
+    dots.innerHTML = newsItems.map((_, i) => `<button type="button" class="news-dot${i === newsIndex ? ' on' : ''}" data-news-idx="${i}" aria-label="ไปข่าวที่ ${i + 1}"></button>`).join('');
+    updateNewsSlide();
+    renderIcons();
+    startNewsAuto();
+  }
+
+  function updateNewsSlide(){
+    const track = $('#newsTrack');
+    if (!track) return;
+    track.style.transform = `translateX(${-newsIndex * 100}%)`;
+    $$('.news-dot', $('#newsDots') || document).forEach((dot, i) => dot.classList.toggle('on', i === newsIndex));
+  }
+
+  function moveNews(delta){
+    if (!newsItems.length) return;
+    newsIndex = (newsIndex + delta + newsItems.length) % newsItems.length;
+    updateNewsSlide();
+  }
+
+  function startNewsAuto(){
+    clearInterval(newsTimer);
+    if (newsPaused || newsItems.length < 2) return;
+    newsTimer = setInterval(() => moveNews(1), 6500);
+  }
+
+  async function fetchEpidemicNews(){
+    try{
+      if (!supabase) throw new Error('Supabase client is not configured.');
+      const { data, error } = await supabase.functions.invoke(NEWS_FUNCTION, {
+        body: {
+          existingDiseases: diseases.map(d => d.name).filter(Boolean),
+          limit: 8
+        }
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      renderNews(data?.items || [], data?.updatedAt ? `อัปเดตข่าว ${formatNewsDate(data.updatedAt)}` : 'ข่าวล่าสุดจาก verified sources');
+    }catch(err){
+      console.warn('News feed fallback:', err);
+      renderNews(NEWS_FALLBACK, 'แสดงข่าวสำรอง · รอเชื่อมต่อ epidemic-news-feed');
+    }
   }
 
   function updateLastFetchTime(){
@@ -1779,12 +2230,13 @@
     }
     const errBanner = $('#fetchErrBanner');
     if (errBanner){ errBanner.classList.toggle('hidden', !fetchError); if (fetchError) renderIcons(); }
-    filtered = diseases.filter(d => d.record_type !== 'watchlist');
+    filtered = diseases.filter(d => d.record_type !== 'watchlist' || d.is_priority === false);
     const stat = document.getElementById('statCount');
-    if (stat) stat.textContent = diseases.filter(d => d.record_type === 'watchlist' || d.is_priority).length;
+    if (stat) stat.textContent = diseases.filter(d => d.record_type === 'watchlist' && d.is_priority !== false).length;
     renderWatchlist(diseases);
     updateLastFetchTime();
     applyFilters();
+    fetchEpidemicNews();
   }
 
   // ─── Render ─────────────────────────────────────────────
@@ -1792,13 +2244,17 @@
     const g = $('#diseaseGrid');
     $('#countBadge').textContent = data.length ? `${data.length} รายการ` : '';
     if (!data.length){
-      g.innerHTML = `<div class="empty">ไม่พบโรคที่ตรงกับคำค้นหา</div>`;
+      g.innerHTML = `<div class="empty">ไม่พบข้อมูลที่ตรงกับคำค้นหาหรือตัวกรอง · ลองล้างคำค้นหา หรือเลือกหมวดหมู่ทั้งหมด</div>`;
       return;
     }
     g.innerHTML = data.map((d, i) => `
       <button class="card enter" style="animation-delay:${i*55}ms" data-idx="${i}" aria-label="${esc(d.name)}">
         <div class="card-ic">${icon(d.icon, 22)}</div>
         <div class="card-name">${esc(d.name)}</div>
+        <div class="card-meta">
+          ${riskBadge(d)}
+          ${metaPill(getCategoryLabel(d.category), 'tags')}
+        </div>
         <span class="more">อ่านเพิ่มเติม <i data-lucide="chevron-right" width="12" height="12"></i></span>
       </button>`).join('');
     renderIcons();
@@ -1815,9 +2271,9 @@
   function applyFilters(){
     const k = (searchTerm || '').trim().toLowerCase();
     filtered = diseases.filter(d => {
-      const libraryOk = d.record_type !== 'watchlist';
+      const libraryOk = d.record_type !== 'watchlist' || d.is_priority === false;
       if (!libraryOk) return false;
-      const catOk = activeCat === 'all' || d.category === activeCat;
+      const catOk = activeCat === 'all' || getDiseaseCategories(d).includes(activeCat);
       if (!catOk) return false;
       if (!k) return true;
       return (d.name || '').toLowerCase().includes(k) ||
@@ -1840,12 +2296,30 @@
     $('#sheetTitle').textContent = d.name || '';
     $('#sheetDesc').textContent  = d.description || 'ยังไม่มีรายละเอียด';
     $('#sheetIc').innerHTML = icon(d.icon, 28);
+    $('#sheetTag').textContent = getCategoryLabel(d.category);
+    const meta = $('#sheetMeta');
+    if (meta){
+      meta.innerHTML = `
+        ${riskBadge(d)}
+        ${metaPill(formatReviewedDate(d.created_at), 'calendar-check')}
+        ${d.url ? metaPill(getSourceLabel(d.url), 'link') : ''}
+      `;
+    }
     const items = (Array.isArray(d.prevention) && d.prevention.length)
       ? d.prevention : GENERIC_PREVENTION;
     $('#sheetPrevent').innerHTML = items.map(p => `<li>${esc(p)}</li>`).join('');
+    const sourceBlock = $('#sheetSourceBlock');
+    const sourceLink = $('#sheetSource');
+    if (sourceBlock && sourceLink){
+      sourceBlock.classList.toggle('hidden', !d.url);
+      if (d.url){
+        sourceLink.href = d.url;
+        sourceLink.innerHTML = `${esc(getSourceLabel(d.url))} <i data-lucide="arrow-up-right" width="13" height="13"></i>`;
+      }
+    }
     const isAdmin = currentRole === 'admin' && !!d.id;
     $('#sheetAdminActions')?.classList.toggle('hidden', !isAdmin);
-    $('#sheetDeactivateBtn')?.classList.toggle('hidden', d.record_type !== 'watchlist');
+    $('#sheetDeactivateBtn')?.classList.toggle('hidden', d.record_type !== 'watchlist' || d.is_priority === false);
     renderIcons();
     $('.app')?.setAttribute('inert', '');
     $('#scrim').classList.add('open');
@@ -1928,7 +2402,8 @@
 
   function wire(){
     $('#settingsBtn').addEventListener('click', openAdminAccessModal);
-    $('#adminCancel').addEventListener('click', closeAdminModal);
+    $('#authCancel')?.addEventListener('click', closeAdminModal);
+    $('#formCancel')?.addEventListener('click', closeAdminModal);
     $('#adminModal').addEventListener('click', (e) => { if (e.target.id === 'adminModal') closeAdminModal(); });
     $('#authForm')?.addEventListener('submit', handleAuthSubmit);
     $('#adminForm').addEventListener('submit', addDisease);
@@ -1949,13 +2424,32 @@
     $('#aiSelectAllBtn')?.addEventListener('click', handleAISelectAll);
     $('#aiSaveBtn')?.addEventListener('click', handleAISaveSelected);
 
+    $('#newsPrevBtn')?.addEventListener('click', () => { moveNews(-1); startNewsAuto(); });
+    $('#newsNextBtn')?.addEventListener('click', () => { moveNews(1); startNewsAuto(); });
+    $('#newsPauseBtn')?.addEventListener('click', () => {
+      newsPaused = !newsPaused;
+      const btn = $('#newsPauseBtn');
+      if (btn) btn.innerHTML = newsPaused
+        ? `<i data-lucide="play" width="15" height="15"></i>`
+        : `<i data-lucide="pause" width="15" height="15"></i>`;
+      startNewsAuto();
+      renderIcons();
+    });
+    $('#newsDots')?.addEventListener('click', (e) => {
+      const dot = e.target.closest('.news-dot');
+      if (!dot) return;
+      newsIndex = +dot.dataset.newsIdx || 0;
+      updateNewsSlide();
+      startNewsAuto();
+    });
+
     // Sheet edit / delete
     $('#sheetEditBtn')?.addEventListener('click', handleEditDisease);
     $('#sheetDeleteBtn')?.addEventListener('click', handleDeleteDisease);
     $('#sheetDeactivateBtn')?.addEventListener('click', handleDeactivateWatchlist);
 
     // Live preview — update on any change in the form
-    ['fName','fCategory','fIcon'].forEach(id => {
+    ['fName','fCategory','fIcon','fUrl','fDesc','fRecordType','fPriority'].forEach(id => {
       $('#' + id)?.addEventListener('input', updatePreview);
       $('#' + id)?.addEventListener('change', updatePreview);
     });
@@ -1973,6 +2467,13 @@
       }else if (!checkbox.checked){
         checkbox.checked = true;
       }
+      updatePreview();
+    });
+    $('#fPriority')?.addEventListener('change', (e) => {
+      const recordType = $('#fRecordType');
+      if (!recordType) return;
+      recordType.value = e.target.checked ? 'watchlist' : 'library';
+      updatePreview();
     });
 
     $('#scrim').addEventListener('click', closeSheet);
