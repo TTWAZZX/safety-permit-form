@@ -301,6 +301,8 @@
     background:var(--green-50); color:var(--green-700);
     font-size:10.5px; font-weight:800;
   }
+  .news-source.official{ background:#ECFDF3; color:#027A48; }
+  .news-source.trusted{ background:#EFF8FF; color:#175CD3; }
   .news-date{ font-size:11px; color:var(--ink-500); font-weight:700; }
   .news-card-title{ font-size:14.5px; font-weight:800; color:var(--ink-900); line-height:1.35; }
   .news-summary{
@@ -312,6 +314,7 @@
     padding:3px 8px; border-radius:999px; background:var(--ink-100);
     color:var(--ink-500); font-size:10.5px; font-weight:800;
   }
+  .news-tag.match{ background:#FFF1D6; color:#8A5300; }
   .news-foot{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:2px; }
   .news-link{
     color:var(--green-700); font-size:12.5px; font-weight:800;
@@ -2198,9 +2201,30 @@
       publishedAt: item?.publishedAt || item?.published_at || null,
       tags: Array.isArray(item?.tags) ? item.tags.slice(0, 4).map(t => String(t).trim()).filter(Boolean) : [],
       severity: String(item?.severity || 'info').trim(),
+      matchedDisease: String(item?.matchedDisease || item?.matched_disease || '').trim(),
       imageUrl: String(item?.imageUrl || '').trim(),
       imageType: ['article', 'source-logo'].includes(String(item?.imageType || '')) ? String(item.imageType) : null
     };
+  }
+
+  function getNewsSourceTrust(source){
+    const s = String(source || '').toLowerCase();
+    if (/ddc|moph|กรมควบคุมโรค|กระทรวงสาธารณสุข|กองระบาดวิทยา/.test(s)){
+      return { className: 'official', label: 'Official' };
+    }
+    if (/thai pbs|hfocus|thaihealth|สสส/.test(s)){
+      return { className: 'trusted', label: 'Trusted' };
+    }
+    return { className: '', label: 'Verified' };
+  }
+
+  function getNewsTags(n){
+    const tags = Array.isArray(n?.tags) ? [...n.tags] : [];
+    const matchedDisease = String(n?.matchedDisease || '').trim();
+    if (matchedDisease && !tags.includes(matchedDisease)){
+      tags.unshift(matchedDisease);
+    }
+    return tags.slice(0, 4);
   }
 
   function renderNewsMedia(n){
@@ -2253,13 +2277,16 @@
       <article class="news-card">
         ${renderNewsMedia(n)}
         <div class="news-card-top">
-          <span class="news-source"><i data-lucide="shield-check" width="11" height="11"></i>${esc(n.source)}</span>
+          <span class="news-source ${getNewsSourceTrust(n.source).className}"><i data-lucide="shield-check" width="11" height="11"></i>${esc(n.source)}</span>
+          <span class="news-tag">${esc(getNewsSourceTrust(n.source).label)}</span>
           <span class="news-date">${esc(formatNewsDate(n.publishedAt))}</span>
           ${n.severity === 'watch' ? '<span class="badge warn"><i data-lucide="alert-triangle" width="10" height="10"></i> เฝ้าระวัง</span>' : ''}
         </div>
         <div class="news-card-title">${esc(n.title)}</div>
         <div class="news-summary">${esc(n.summary || 'อ่านรายละเอียดจากแหล่งข่าวต้นทาง')}</div>
-        <div class="news-tags">${n.tags.map(tag => `<span class="news-tag">${esc(tag)}</span>`).join('')}</div>
+        <div class="news-tags">
+          ${getNewsTags(n).map(tag => `<span class="news-tag${tag === n.matchedDisease ? ' match' : ''}">${tag === n.matchedDisease ? 'เกี่ยวข้องกับ: ' : ''}${esc(tag)}</span>`).join('')}
+        </div>
         <div class="news-foot">
           <a class="news-link" href="${esc(n.url)}" target="_blank" rel="noopener">อ่านข่าว <i data-lucide="arrow-up-right" width="13" height="13"></i></a>
           <span class="news-date">Verified source only</span>
@@ -2290,8 +2317,19 @@
     updateNewsSlide();
   }
 
+  function prefersReducedMotion(){
+    return !!window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+  }
+
   function startNewsAuto(){
     clearInterval(newsTimer);
+    if (prefersReducedMotion()){
+      newsPaused = true;
+      const btn = $('#newsPauseBtn');
+      if (btn) btn.innerHTML = `<i data-lucide="play" width="15" height="15"></i>`;
+      renderIcons();
+      return;
+    }
     if (newsPaused || newsItems.length < 2) return;
     newsTimer = setInterval(() => moveNews(1), 6500);
   }
