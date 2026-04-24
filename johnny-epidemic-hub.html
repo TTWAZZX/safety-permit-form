@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="theme-color" content="#0F8F5B" />
 <title>Johnny Epidemic Hub</title>
 
@@ -465,6 +465,62 @@
     font-size: 11px; line-height: 1.5;
   }
   footer.legal .brand{ color: var(--green-600); font-weight: 700; }
+
+  /* ── Phase 3: Step indicator ── */
+  .step-ind{ display:flex; align-items:center; gap:0; margin-bottom:16px; }
+  .step-dot{
+    width:26px; height:26px; border-radius:50%; border:2px solid var(--ink-200);
+    display:grid; place-items:center; font-size:11px; font-weight:700;
+    color:var(--ink-400); background:#fff; transition:all .2s; flex-shrink:0;
+  }
+  .step-dot.active{ border-color:var(--green-500); color:var(--green-500); background:var(--green-50); }
+  .step-dot.done{ border-color:var(--green-500); background:var(--green-500); color:#fff; }
+  .step-line{ flex:1; height:2px; background:var(--ink-200); transition:background .2s; }
+  .step-line.done{ background:var(--green-500); }
+
+  /* ── Phase 3: Admin preview card ── */
+  .admin-prev{
+    display:flex; align-items:center; gap:12px;
+    padding:12px 14px; border-radius:14px;
+    background:var(--green-50); border:1px solid var(--green-100); margin-bottom:14px;
+  }
+  .admin-prev .prev-ic{
+    width:40px; height:40px; border-radius:11px; flex-shrink:0;
+    background:#fff; color:var(--green-600);
+    display:grid; place-items:center;
+    box-shadow:inset 0 0 0 1px rgba(15,143,91,.1);
+  }
+  .admin-prev .prev-name{ font-size:13px; font-weight:700; color:var(--ink-900); line-height:1.3; }
+  .admin-prev .prev-cat{
+    font-size:11px; font-weight:600; color:var(--green-700);
+    background:var(--green-100); padding:2px 8px; border-radius:999px;
+    display:inline-block; margin-top:3px;
+  }
+
+  /* ── Phase 3: Sheet admin actions ── */
+  .sheet-actions{ margin-top:8px; padding-top:16px; border-top:1px solid var(--ink-100); display:flex; gap:10px; flex-wrap:wrap; }
+  .btn-archive{ background:#EFF6FF; color:#1D4ED8; }
+  .btn-archive:active{ background:#DBEAFE; }
+  .btn-danger{ background:#FFF1F0; color:#B42318; }
+  .btn-danger:active{ background:#fee2e2; }
+
+  /* ── Feature A: Admin view toggle ── */
+  .view-toggle{ display:flex; gap:0; margin-bottom:14px; background:var(--ink-100); border-radius:var(--r-sm); overflow:hidden; }
+  .toggle-btn{ flex:1; border:none; background:none; padding:10px 8px; font-size:12px; font-weight:600; color:var(--ink-500); cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px; transition:background .15s, color .15s; }
+  .toggle-btn.active{ background:var(--green-500); color:#fff; border-radius:var(--r-sm); }
+
+  /* ── Feature A: AI disease review cards ── */
+  .ai-disease-card{ border:1.5px solid var(--ink-200); border-radius:var(--r-md); margin-bottom:8px; overflow:hidden; transition:border-color .15s, background .15s; }
+  .ai-disease-card:has(.ai-card-check:checked){ border-color:var(--green-500); background:var(--green-50); }
+  .ai-card-label{ display:flex; align-items:flex-start; gap:10px; padding:12px; cursor:pointer; width:100%; }
+  .ai-card-check{ margin-top:3px; width:16px; height:16px; flex-shrink:0; accent-color:var(--green-500); }
+  .ai-card-body{ flex:1; min-width:0; }
+  .ai-card-head{ display:flex; align-items:center; gap:8px; margin-bottom:5px; }
+  .ai-card-ic{ width:32px; height:32px; border-radius:9px; background:var(--green-50); color:var(--green-600); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .ai-card-name{ font-size:13px; font-weight:700; color:var(--ink-900); line-height:1.3; }
+  .ai-card-cat{ font-size:11px; color:var(--ink-500); }
+  .ai-card-desc{ font-size:12px; color:var(--ink-500); line-height:1.45; }
+  .ai-save-bar{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; flex-wrap:wrap; gap:8px; }
 </style>
 </head>
 <body data-density="comfortable">
@@ -494,7 +550,7 @@
       </div>
       <div>
         <div class="from">FROM JOHNNY SAFETY</div>
-        <h2>สวัสดีทีมงานทุกคน พร้อมรับมือทุกสถานการณ์</h2>
+        <h2 id="heroGreeting">สวัสดีทีมงานทุกคน พร้อมรับมือทุกสถานการณ์</h2>
       </div>
     </div>
     <p>ตรวจสอบข้อมูลโรคระบาดที่เฝ้าระวัง พร้อมมาตรการป้องกัน ก่อนเริ่มปฏิบัติงานทุกครั้ง</p>
@@ -509,8 +565,14 @@
     </span>
     <span class="status-pill">
       <i data-lucide="refresh-cw" width="13" height="13"></i>
-      อัปเดตล่าสุด: <strong>วันนี้</strong>
+      อัปเดตล่าสุด: <strong id="lastUpdateText">–</strong>
     </span>
+  </div>
+
+  <!-- Fetch error banner -->
+  <div id="fetchErrBanner" class="hidden" role="alert" style="margin: 8px var(--density-pad) 0; padding: 10px 14px; border-radius: 12px; background: #FFF8E6; border: 1px solid #FDE68A; color: #92400E; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+    <i data-lucide="wifi-off" width="14" height="14"></i>
+    ไม่สามารถโหลดข้อมูลล่าสุดได้ · แสดงข้อมูลสำรอง
   </div>
 
   <!-- Search -->
@@ -534,6 +596,9 @@
       </button>
       <button class="chip" data-cat="respiratory" role="tab">
         <i data-lucide="wind" width="13" height="13"></i> ระบบทางเดินหายใจ
+      </button>
+      <button class="chip" data-cat="other" role="tab">
+        <i data-lucide="circle-ellipsis" width="13" height="13"></i> อื่น ๆ
       </button>
     </div>
   </div>
@@ -623,12 +688,18 @@
     </div>
     <div class="sheet-block">
       <h4><i data-lucide="shield" width="12" height="12"></i> การป้องกัน</h4>
-      <ul id="sheetPrevent">
-        <li>สวมอุปกรณ์ป้องกันส่วนบุคคล (PPE) ทุกครั้งก่อนเริ่มปฏิบัติงาน</li>
-        <li>ล้างมือด้วยสบู่และน้ำสะอาดเป็นประจำ</li>
-        <li>หลีกเลี่ยงการสัมผัสแหล่งที่เสี่ยงต่อการติดเชื้อ</li>
-        <li>หากมีอาการผิดปกติ แจ้งหัวหน้างานและพบแพทย์ทันที</li>
-      </ul>
+      <ul id="sheetPrevent"></ul>
+    </div>
+    <div class="sheet-actions hidden" id="sheetAdminActions">
+      <button type="button" class="btn btn-archive hidden" id="sheetDeactivateBtn" style="flex:1 0 100%;">
+        <i data-lucide="archive" width="14" height="14"></i> ปิดการเฝ้าระวัง · ย้ายไปรวมโรคทั้งหมด
+      </button>
+      <button type="button" class="btn btn-ghost" id="sheetEditBtn">
+        <i data-lucide="pencil" width="14" height="14"></i> แก้ไข
+      </button>
+      <button type="button" class="btn btn-danger" id="sheetDeleteBtn">
+        <i data-lucide="trash-2" width="14" height="14"></i> ลบ
+      </button>
     </div>
   </div>
 </div>
@@ -636,8 +707,8 @@
 <!-- Admin modal -->
 <div class="modal" id="adminModal" role="dialog" aria-modal="true">
   <div class="modal-card">
-    <h3>เพิ่มข้อมูลโรคระบาด</h3>
-    <p class="hint">Admin only · ข้อมูลจะถูกบันทึกไปยัง Supabase</p>
+    <h3 id="adminModalTitle">เพิ่มข้อมูลโรคระบาด</h3>
+    <p class="hint" id="adminModalHint">Admin only · ข้อมูลจะถูกบันทึกไปยัง Supabase</p>
     <div class="feedback info" id="authFeedback"></div>
     <div class="feedback" id="formFeedback"></div>
 
@@ -665,69 +736,137 @@
     </div>
 
     <div class="admin-panel" id="adminPanel">
-    <div class="auth-badge">
-      <i data-lucide="badge-check" width="14" height="14"></i>
-      <span id="adminIdentity">Admin session active</span>
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+      <div class="auth-badge">
+        <i data-lucide="badge-check" width="14" height="14"></i>
+        <span id="adminIdentity">Admin session active</span>
+      </div>
+      <button type="button" class="btn btn-ghost" id="adminSignOut" style="flex:unset; height:36px; padding:0 12px; font-size:12px; gap:6px;">
+        <i data-lucide="log-out" width="14" height="14"></i> ออกจากระบบ
+      </button>
     </div>
-    <form id="adminForm">
-      <div class="field">
-        <label for="fRecordType">ประเภทข้อมูล</label>
-        <select id="fRecordType" name="record_type" required>
-          <option value="watchlist">โรคเฝ้าระวัง</option>
-          <option value="library">คลังข้อมูลโรค</option>
-        </select>
+
+    <!-- View toggle -->
+    <div class="view-toggle" id="adminViewToggle">
+      <button class="toggle-btn active" id="toggleFormBtn" type="button">
+        <i data-lucide="plus-circle" width="14" height="14"></i> เพิ่มโรคเอง
+      </button>
+      <button class="toggle-btn" id="toggleAIBtn" type="button">
+        <i data-lucide="wand-sparkles" width="14" height="14"></i> AI สร้างคลัง
+      </button>
+    </div>
+
+    <!-- Form view -->
+    <div id="adminFormView">
+    <!-- Live preview card -->
+    <div class="admin-prev" id="adminPreview">
+      <div class="prev-ic" id="previewIc"><i data-lucide="shield-check" width="20" height="20"></i></div>
+      <div>
+        <div class="prev-name" id="previewName">ชื่อโรค</div>
+        <span class="prev-cat" id="previewCat">หมวดหมู่</span>
       </div>
-      <div class="field">
-        <label for="fUrl">ลิงก์ข้อมูลอ้างอิง</label>
-        <input id="fUrl" name="url" type="url" placeholder="https://example.com/disease-detail" />
+    </div>
+
+    <!-- Step indicator -->
+    <div class="step-ind" id="stepIndicator">
+      <div class="step-dot active" id="stepDot1">1</div>
+      <div class="step-line" id="stepLine"></div>
+      <div class="step-dot" id="stepDot2">2</div>
+    </div>
+
+    <form id="adminForm" novalidate>
+      <!-- ── Step 1: ข้อมูลพื้นฐาน ── -->
+      <div id="formStep1">
+        <div class="field">
+          <label for="fName">ชื่อโรค · Disease name</label>
+          <input id="fName" name="name" placeholder="เช่น โรคไข้หวัดใหญ่" />
+        </div>
+        <div class="field">
+          <label for="fCategory">หมวดหมู่ · Category</label>
+          <select id="fCategory" name="category">
+            <option value="">เลือกหมวดหมู่</option>
+            <option value="food">อาหาร</option>
+            <option value="env">สิ่งแวดล้อม</option>
+            <option value="respiratory">ระบบทางเดินหายใจ</option>
+            <option value="other">อื่น ๆ</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="fRecordType">ประเภทข้อมูล</label>
+          <select id="fRecordType" name="record_type">
+            <option value="watchlist">โรคเฝ้าระวัง</option>
+            <option value="library">คลังข้อมูลโรค</option>
+          </select>
+        </div>
+        <div class="btn-row">
+          <button type="button" class="btn btn-ghost" id="adminCancel">ยกเลิก</button>
+          <button type="button" class="btn btn-primary" id="stepNextBtn">
+            ถัดไป <i data-lucide="arrow-right" width="14" height="14"></i>
+          </button>
+        </div>
       </div>
-      <div class="field">
-        <label for="fName">ชื่อโรค · Disease name</label>
-        <input id="fName" name="name" required placeholder="เช่น โรคไข้หวัดใหญ่" />
-      </div>
-      <div class="field">
-        <label for="fCategory">หมวดหมู่ · Category</label>
-        <select id="fCategory" name="category" required>
-          <option value="">เลือกหมวดหมู่</option>
-          <option value="food">อาหาร</option>
-          <option value="env">สิ่งแวดล้อม</option>
-          <option value="respiratory">ระบบทางเดินหายใจ</option>
-          <option value="other">อื่น ๆ</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="fIcon">ไอคอน · Lucide icon name</label>
-        <input id="fIcon" name="icon" required placeholder="เช่น shield-check, bug, virus" value="shield-check" />
-        <small>ไอคอนต้องอยู่ในชุด VALID_ICONS ที่ระบบอนุญาต</small>
-      </div>
-      <div class="field">
-        <label for="fDesc">คำอธิบาย · Description</label>
-        <textarea id="fDesc" name="description" required placeholder="รายละเอียดและคำแนะนำ..."></textarea>
-      </div>
-      <div class="btn-row">
-        <button type="button" class="btn btn-ghost" id="draftDiseaseBtn">
-          <i data-lucide="wand-sparkles" width="16" height="16"></i> AI ช่วยร่างข้อมูลโรค
-        </button>
-      </div>
-      <div class="btn-row">
-        <button type="button" class="btn btn-ghost" id="suggestIconBtn">
-          <i data-lucide="sparkles" width="16" height="16"></i> AI เลือกไอคอน
-        </button>
-      </div>
-      <div class="field">
-        <label style="display:flex; align-items:center; gap:8px;">
-          <input type="checkbox" id="fPriority" name="is_priority" checked />
-          <span>แสดงในส่วนโรคเฝ้าระวัง</span>
-        </label>
-      </div>
-      <div class="btn-row">
-        <button type="button" class="btn btn-ghost" id="adminSignOut">Sign out</button>
-        <button type="submit" class="btn btn-primary" id="adminSubmit">
-          <i data-lucide="check" width="16" height="16"></i> บันทึก
-        </button>
+
+      <!-- ── Step 2: รายละเอียด ── -->
+      <div id="formStep2" class="hidden">
+        <div class="field">
+          <label for="fIcon">ไอคอน · Lucide icon name</label>
+          <input id="fIcon" name="icon" placeholder="เช่น shield-check, bug, virus" value="shield-check" />
+          <small>ไอคอนต้องอยู่ในชุด VALID_ICONS ที่ระบบอนุญาต</small>
+        </div>
+        <div class="field">
+          <label for="fUrl">ลิงก์ข้อมูลอ้างอิง</label>
+          <input id="fUrl" name="url" type="url" placeholder="https://example.com/disease-detail" />
+        </div>
+        <div class="field">
+          <label for="fDesc">คำอธิบาย · Description</label>
+          <textarea id="fDesc" name="description" placeholder="รายละเอียดและคำแนะนำ..."></textarea>
+        </div>
+        <div class="btn-row">
+          <button type="button" class="btn btn-ghost" id="draftDiseaseBtn">
+            <i data-lucide="wand-sparkles" width="16" height="16"></i> AI ร่างข้อมูล
+          </button>
+          <button type="button" class="btn btn-ghost" id="suggestIconBtn">
+            <i data-lucide="sparkles" width="16" height="16"></i> AI ไอคอน
+          </button>
+        </div>
+        <div class="field">
+          <label style="display:flex; align-items:center; gap:8px;">
+            <input type="checkbox" id="fPriority" name="is_priority" checked />
+            <span>แสดงในส่วนโรคเฝ้าระวัง</span>
+          </label>
+        </div>
+        <div class="btn-row">
+          <button type="button" class="btn btn-ghost" id="stepBackBtn">
+            <i data-lucide="arrow-left" width="14" height="14"></i> ย้อนกลับ
+          </button>
+          <button type="submit" class="btn btn-primary" id="adminSubmit">
+            <i data-lucide="check" width="16" height="16"></i> บันทึกข้อมูล
+          </button>
+        </div>
       </div>
     </form>
-    </div>
+    </div><!-- /#adminFormView -->
+
+    <!-- AI Generate View -->
+    <div id="aiGenerateView" class="hidden">
+      <p class="hint" style="margin-bottom:12px;">AI จะสร้างรายการโรคระบาดสำคัญในไทย เหมาะสำหรับเก็บเป็นคลังข้อมูลให้พนักงานค้นหา ตรวจสอบก่อนบันทึก</p>
+      <button type="button" class="btn btn-primary" id="aiGenerateBtn" style="width:100%; margin-bottom:12px;">
+        <i data-lucide="wand-sparkles" width="16" height="16"></i> ให้ AI สร้างรายการโรค
+      </button>
+      <div id="aiResultsArea" class="hidden">
+        <div class="ai-save-bar">
+          <span id="aiSaveCount" style="font-size:13px; color:var(--ink-500);">ยังไม่ได้เลือก</span>
+          <div style="display:flex; gap:6px;">
+            <button type="button" class="btn btn-ghost" id="aiSelectAllBtn" style="height:32px; font-size:12px; padding:0 12px;">เลือกทั้งหมด</button>
+            <button type="button" class="btn btn-primary" id="aiSaveBtn" style="height:32px; font-size:12px; padding:0 12px;" disabled>
+              <i data-lucide="save" width="13" height="13"></i> บันทึกที่เลือก
+            </button>
+          </div>
+        </div>
+        <div id="aiCardsList"></div>
+      </div>
+    </div><!-- /#aiGenerateView -->
+    </div><!-- /#adminPanel -->
   </div>
 </div>
 
@@ -742,25 +881,61 @@
   const LIFF_ID = '2007053300-EbirII3r';
   const SUPABASE_URL = 'https://dqsfioiqwxuxpucwwhsv.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxc2Zpb2lxd3h1eHB1Y3d3aHN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1OTk1NjUsImV4cCI6MjA4NDE3NTU2NX0.L_u0Ff3uHofxiimEs6ySFB4TPNtOWiKeSu3KFoVcA1U';
-  const ADMIN_ACCESS_FUNCTION = 'epidemics-admin-access';
-  const ADMIN_INSERT_FUNCTION = 'epidemics-admin-insert';
-  const ICON_SUGGEST_FUNCTION = 'epidemics-icon-suggest';
-  const DRAFT_ASSIST_FUNCTION = 'epidemics-draft-assist';
+  const ADMIN_ACCESS_FUNCTION  = 'epidemics-admin-access';
+  const ADMIN_INSERT_FUNCTION  = 'epidemics-admin-insert';
+  const ADMIN_UPDATE_FUNCTION  = 'epidemics-admin-update';
+  const ADMIN_DELETE_FUNCTION  = 'epidemics-admin-delete';
+  const GENERATE_FUNCTION      = 'epidemics-ai-generate';
+  const ICON_SUGGEST_FUNCTION  = 'epidemics-icon-suggest';
+  const DRAFT_ASSIST_FUNCTION  = 'epidemics-draft-assist';
 
   // Lucide icon allowlist (fallback to shield-check when name invalid)
   const VALID_ICONS = new Set([
     'shield-check','shield-alert','shield','bug','droplet','thermometer','stethoscope',
     'heart-pulse','pill','syringe','activity','biohazard','hand','alert-triangle',
-    'exclamation-triangle','wind','leaf','cloud-rain','waves','mosquito','spray-can',
-    'flask-conical','test-tube','microscope','first-aid','ambulance','hospital'
+    'wind','leaf','cloud-rain','waves','spray-can',
+    'flask-conical','test-tube','microscope','hospital','bandage','cross','virus'
   ]);
 
   // Fallback data
   const FALLBACK = [
-    { name: 'ไข้เลือดออก (Dengue)',       icon: 'droplet',         category: 'env',         description: 'ระวังยุงลายในบริเวณที่มีน้ำขัง กำจัดแหล่งเพาะพันธุ์ยุงสัปดาห์ละครั้ง สวมเสื้อแขนยาวและใช้ยากันยุง' },
-    { name: 'โรคฉี่หนู (Leptospirosis)', icon: 'biohazard',       category: 'env',         description: 'หลีกเลี่ยงการลุยน้ำหรือแช่เท้าในน้ำสกปรก สวมรองเท้าบูทขณะปฏิบัติงานกลางแจ้ง' },
-    { name: 'ไข้หวัดใหญ่ (Influenza)',    icon: 'thermometer',     category: 'respiratory', description: 'สวมหน้ากากอนามัยเมื่อมีอาการไอจาม ล้างมือบ่อยๆ และรับวัคซีนประจำปี' },
-    { name: 'อาหารเป็นพิษ (Food Poisoning)', icon: 'alert-triangle', category: 'food',        description: 'รับประทานอาหารปรุงสุกใหม่ ดื่มน้ำสะอาด ตรวจสอบวันหมดอายุก่อนบริโภคเสมอ' }
+    {
+      name: 'ไข้เลือดออก (Dengue)', icon: 'droplet', category: 'env',
+      description: 'ระวังยุงลายในบริเวณที่มีน้ำขัง กำจัดแหล่งเพาะพันธุ์ยุงสัปดาห์ละครั้ง สวมเสื้อแขนยาวและใช้ยากันยุง',
+      prevention: [
+        'กำจัดแหล่งน้ำขังบริเวณพื้นที่ทำงานทุกสัปดาห์',
+        'สวมเสื้อแขนยาวและใช้สเปรย์กันยุงขณะปฏิบัติงานกลางแจ้ง',
+        'หากมีไข้สูงเฉียบพลัน ปวดศีรษะรุนแรง ให้แจ้งหัวหน้างานและพบแพทย์ทันที'
+      ]
+    },
+    {
+      name: 'โรคฉี่หนู (Leptospirosis)', icon: 'biohazard', category: 'env',
+      description: 'หลีกเลี่ยงการลุยน้ำหรือแช่เท้าในน้ำสกปรก สวมรองเท้าบูทขณะปฏิบัติงานกลางแจ้ง',
+      prevention: [
+        'สวมรองเท้าบูทและถุงมือยางทุกครั้งที่ทำงานในพื้นที่ชื้นหรือมีน้ำท่วม',
+        'ล้างมือและเท้าด้วยสบู่ทันทีหลังสัมผัสดินหรือน้ำที่อาจปนเปื้อน',
+        'หลีกเลี่ยงการลุยน้ำโดยไม่สวม PPE โดยเด็ดขาด'
+      ]
+    },
+    {
+      name: 'ไข้หวัดใหญ่ (Influenza)', icon: 'thermometer', category: 'respiratory',
+      description: 'สวมหน้ากากอนามัยเมื่อมีอาการไอจาม ล้างมือบ่อยๆ และรับวัคซีนประจำปี',
+      prevention: [
+        'สวมหน้ากากอนามัยในพื้นที่ที่มีคนหนาแน่นหรืออยู่ใกล้ผู้มีอาการไอจาม',
+        'ล้างมือด้วยสบู่หรือเจลแอลกอฮอล์บ่อยๆ โดยเฉพาะก่อนรับประทานอาหาร',
+        'รับวัคซีนไข้หวัดใหญ่ประจำปีตามนโยบายองค์กร'
+      ]
+    },
+    {
+      name: 'อาหารเป็นพิษ (Food Poisoning)', icon: 'alert-triangle', category: 'food',
+      description: 'รับประทานอาหารปรุงสุกใหม่ ดื่มน้ำสะอาด ตรวจสอบวันหมดอายุก่อนบริโภคเสมอ',
+      prevention: [
+        'รับประทานเฉพาะอาหารที่ปรุงสุกใหม่ หลีกเลี่ยงอาหารค้างคืนหรือทิ้งไว้นาน',
+        'ดื่มน้ำที่ผ่านการกรองหรือน้ำดื่มบรรจุขวดที่ปิดสนิทเท่านั้น',
+        'ตรวจสอบวันหมดอายุของอาหารและเครื่องดื่มก่อนบริโภคทุกครั้ง',
+        'ล้างมือด้วยสบู่ให้สะอาดก่อนหยิบจับอาหาร'
+      ]
+    }
   ];
 
   // ─── State ──────────────────────────────────────────────
@@ -775,6 +950,11 @@
   let liffProfile = null;
   let currentSession = null;
   let currentRole = null;
+  let currentEditDisease = null;
+  let currentFormStep = 1;
+  let aiGeneratedDiseases = [];
+  let isGenerating = false;
+  let isSavingAI = false;
 
   function normalizeDisease(d, index=0){
     const name = String(d?.name || '').trim();
@@ -795,7 +975,8 @@
       url: String(d?.url || fallbackUrl).trim(),
       record_type: inferredWatchlist ? 'watchlist' : 'library',
       is_priority: typeof d?.is_priority === 'boolean' ? d.is_priority : inferredWatchlist,
-      created_at: d?.created_at || null
+      created_at: d?.created_at || null,
+      prevention: Array.isArray(d?.prevention) ? d.prevention : null
     };
   }
 
@@ -1002,6 +1183,270 @@
     diseases.unshift(payload);
   }
 
+  async function callAdminUpdate(payload){
+    if (!supabase) throw new Error('Supabase client is not configured.');
+    const accessToken = getLineAccessToken();
+    if (!accessToken) throw new Error('LINE admin session is required.');
+    const { data, error } = await supabase.functions.invoke(ADMIN_UPDATE_FUNCTION, {
+      body: { ...payload, lineAccessToken: accessToken }
+    });
+    if (error) throw error;
+    if (data?.error) throw new Error(data.error);
+  }
+
+  async function callAdminDelete(id){
+    if (!supabase) throw new Error('Supabase client is not configured.');
+    const accessToken = getLineAccessToken();
+    if (!accessToken) throw new Error('LINE admin session is required.');
+    const { data, error } = await supabase.functions.invoke(ADMIN_DELETE_FUNCTION, {
+      body: { id, lineAccessToken: accessToken }
+    });
+    if (error) throw error;
+    if (data?.error) throw new Error(data.error);
+  }
+
+  // ─── Preview card ────────────────────────────────────────
+  const CAT_LABELS = { food:'อาหาร', env:'สิ่งแวดล้อม', respiratory:'ระบบทางเดินหายใจ', other:'อื่น ๆ' };
+
+  function updatePreview(){
+    const form = $('#adminForm');
+    if (!form) return;
+    const name = form.name?.value?.trim() || 'ชื่อโรค';
+    const cat  = form.category?.value || '';
+    const ic   = form.icon?.value?.trim() || 'shield-check';
+    $('#previewName').textContent = name;
+    $('#previewCat').textContent  = CAT_LABELS[cat] || 'หมวดหมู่';
+    const icEl = $('#previewIc');
+    if (icEl){ icEl.innerHTML = icon(VALID_ICONS.has(ic) ? ic : 'shield-check', 20); renderIcons(); }
+  }
+
+  // ─── Step navigation ─────────────────────────────────────
+  function goToStep(n){
+    currentFormStep = n;
+    $('#formStep1').classList.toggle('hidden', n !== 1);
+    $('#formStep2').classList.toggle('hidden', n !== 2);
+    const dot1 = $('#stepDot1'), dot2 = $('#stepDot2'), line = $('#stepLine');
+    dot1.classList.toggle('done',   n === 2);
+    dot1.classList.toggle('active', n === 1);
+    dot2.classList.toggle('active', n === 2);
+    line.classList.toggle('done',   n === 2);
+  }
+
+  function handleStepNext(){
+    const form = $('#adminForm');
+    if (!form) return;
+    if (!form.name?.value?.trim()){
+      setFeedback($('#formFeedback'), 'กรุณากรอกชื่อโรคก่อน', 'error');
+      form.name?.focus();
+      return;
+    }
+    if (!form.category?.value){
+      setFeedback($('#formFeedback'), 'กรุณาเลือกหมวดหมู่ก่อน', 'error');
+      form.category?.focus();
+      return;
+    }
+    setFeedback($('#formFeedback'));
+    goToStep(2);
+    $('#fIcon')?.focus();
+  }
+
+  // ─── Edit / Delete ───────────────────────────────────────
+  function handleEditDisease(){
+    const d = $('#sheet').__disease;
+    if (!d) return;
+    currentEditDisease = d;
+    closeSheet();
+    const form = $('#adminForm');
+    if (form){
+      form.name.value        = d.name || '';
+      form.category.value    = d.category || '';
+      form.record_type.value = d.record_type || 'watchlist';
+      form.icon.value        = d.icon || 'shield-check';
+      form.url.value         = d.url || '';
+      form.description.value = d.description || '';
+      form.is_priority.checked = !!d.is_priority;
+      form.dataset.aiIconSuggested = 'false';
+    }
+    const title = $('#adminModalTitle');
+    if (title) title.textContent = 'แก้ไขข้อมูลโรค';
+    const hint = $('#adminModalHint');
+    if (hint) hint.textContent = `กำลังแก้ไข: ${d.name}`;
+    showAdminView('form');
+    goToStep(1);
+    updatePreview();
+    openAdminModal();
+  }
+
+  async function handleDeleteDisease(){
+    const d = $('#sheet').__disease;
+    if (!d) return;
+    if (!confirm(`ยืนยันลบ "${d.name}" ออกจากระบบ?`)) return;
+    try{
+      const access = await verifyAdminAccess();
+      if (!access?.authorized) throw new Error('ต้องใช้สิทธิ์แอดมินผ่าน LINE');
+      await callAdminDelete(d.id);
+      closeSheet();
+      toast('ลบข้อมูลสำเร็จ');
+      await fetchDiseases();
+    }catch(err){
+      console.warn(err);
+      toast(err.message || 'ลบข้อมูลไม่สำเร็จ', 2400, 'error');
+    }
+  }
+
+  async function handleDeactivateWatchlist(){
+    const d = $('#sheet').__disease;
+    if (!d || d.record_type !== 'watchlist') return;
+    if (!confirm(`ปิดการเฝ้าระวัง "${d.name}"?\nโรคนี้จะย้ายไปรวมในส่วน "โรคทั้งหมด" ข้อมูลไม่หาย`)) return;
+    try{
+      const access = await verifyAdminAccess();
+      if (access?.redirecting) return;
+      if (!access?.authorized) throw new Error('ต้องใช้สิทธิ์แอดมินผ่าน LINE');
+      await callAdminUpdate({ id: d.id, record_type: 'library', is_priority: false });
+      closeSheet();
+      toast('ปิดการเฝ้าระวังสำเร็จ · ย้ายไปโรคทั้งหมดแล้ว');
+      await fetchDiseases();
+    }catch(err){
+      console.warn(err);
+      toast(err.message || 'เกิดข้อผิดพลาด', 2400, 'error');
+    }
+  }
+
+  // ─── Feature A: AI Generate ─────────────────────────────
+  function showAdminView(view){
+    const formView = $('#adminFormView');
+    const aiView   = $('#aiGenerateView');
+    if (!formView || !aiView) return;
+    formView.classList.toggle('hidden', view !== 'form');
+    aiView.classList.toggle('hidden',   view !== 'ai');
+    $('#toggleFormBtn')?.classList.toggle('active', view === 'form');
+    $('#toggleAIBtn')?.classList.toggle('active',   view === 'ai');
+  }
+
+  function renderAIResults(list){
+    const container = $('#aiCardsList');
+    if (!container) return;
+    if (!list.length){
+      container.innerHTML = '<div class="empty">AI ไม่สามารถสร้างรายการได้</div>';
+      return;
+    }
+    container.innerHTML = list.map((d, i) => `
+      <div class="ai-disease-card" data-ai-idx="${i}">
+        <label class="ai-card-label">
+          <input type="checkbox" class="ai-card-check" data-ai-idx="${i}" />
+          <div class="ai-card-body">
+            <div class="ai-card-head">
+              <div class="ai-card-ic">${icon(d.icon, 18)}</div>
+              <div>
+                <div class="ai-card-name">${esc(d.name)}</div>
+                <div class="ai-card-cat">${CAT_LABELS[d.category] || d.category}</div>
+              </div>
+            </div>
+            <div class="ai-card-desc">${esc(d.description)}</div>
+          </div>
+        </label>
+      </div>`).join('');
+    renderIcons();
+    $$('.ai-card-check', container).forEach(cb => {
+      cb.addEventListener('change', updateAISaveCount);
+    });
+  }
+
+  function updateAISaveCount(){
+    const checked = $$('.ai-card-check:checked').length;
+    const saveBtn = $('#aiSaveBtn');
+    const countEl = $('#aiSaveCount');
+    if (countEl) countEl.textContent = checked ? `เลือก ${checked} รายการ` : 'ยังไม่ได้เลือก';
+    if (saveBtn) saveBtn.disabled = checked === 0 || isSavingAI;
+  }
+
+  async function handleAIGenerate(){
+    if (isGenerating || !supabase) return;
+    isGenerating = true;
+    const btn = $('#aiGenerateBtn');
+    if (btn){
+      if (!btn.dataset.defaultHtml) btn.dataset.defaultHtml = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = `<i data-lucide="loader-circle" width="16" height="16"></i> AI กำลังสร้างรายการ...`;
+      renderIcons();
+    }
+    try{
+      const access = await verifyAdminAccess();
+      if (access?.redirecting) return;
+      if (!access?.authorized) throw new Error('ต้องใช้สิทธิ์แอดมินผ่าน LINE');
+      const { data, error } = await supabase.functions.invoke(GENERATE_FUNCTION, {
+        body: { lineAccessToken: getLineAccessToken(), existingNames: diseases.map(d => d.name).filter(Boolean) }
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      aiGeneratedDiseases = data?.diseases || [];
+      if (!aiGeneratedDiseases.length) throw new Error('AI ไม่สามารถสร้างรายการได้');
+      $('#aiResultsArea')?.classList.remove('hidden');
+      renderAIResults(aiGeneratedDiseases);
+      updateAISaveCount();
+      toast(`AI สร้างรายการโรค ${aiGeneratedDiseases.length} รายการ`);
+    }catch(err){
+      console.warn(err);
+      toast(err.message || 'AI สร้างรายการไม่สำเร็จ', 2400, 'error');
+    }finally{
+      isGenerating = false;
+      if (btn){ btn.disabled = false; btn.innerHTML = btn.dataset.defaultHtml; renderIcons(); }
+    }
+  }
+
+  function handleAISelectAll(){
+    const checks = $$('.ai-card-check');
+    const allChecked = checks.length > 0 && checks.every(c => c.checked);
+    checks.forEach(c => { c.checked = !allChecked; });
+    updateAISaveCount();
+  }
+
+  async function handleAISaveSelected(){
+    if (isSavingAI || !supabase) return;
+    const selected = $$('.ai-card-check:checked')
+      .map(cb => aiGeneratedDiseases[+cb.dataset.aiIdx])
+      .filter(Boolean);
+    if (!selected.length) return;
+    isSavingAI = true;
+    const saveBtn = $('#aiSaveBtn');
+    if (saveBtn){
+      if (!saveBtn.dataset.defaultHtml) saveBtn.dataset.defaultHtml = saveBtn.innerHTML;
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = `<i data-lucide="loader-circle" width="13" height="13"></i> กำลังบันทึก...`;
+      renderIcons();
+    }
+    try{
+      const access = await verifyAdminAccess();
+      if (access?.redirecting) return;
+      if (!access?.authorized) throw new Error('ต้องใช้สิทธิ์แอดมินผ่าน LINE');
+      const accessToken = getLineAccessToken();
+      let saved = 0;
+      for (const d of selected){
+        const { data, error } = await supabase.functions.invoke(ADMIN_INSERT_FUNCTION, {
+          body: {
+            name: d.name, icon: d.icon || 'shield-check', description: d.description,
+            category: d.category || 'other', url: null,
+            record_type: 'library', is_priority: false, ai_icon_suggested: false,
+            lineAccessToken: accessToken
+          }
+        });
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+        saved++;
+      }
+      toast(`บันทึก ${saved} รายการสำเร็จ`);
+      closeAdminModal();
+      await fetchDiseases();
+    }catch(err){
+      console.warn(err);
+      toast(err.message || 'บันทึกไม่สำเร็จ', 2400, 'error');
+    }finally{
+      isSavingAI = false;
+      if (saveBtn){ saveBtn.disabled = false; saveBtn.innerHTML = saveBtn.dataset.defaultHtml; renderIcons(); }
+      updateAISaveCount();
+    }
+  }
+
   // ─── LIFF ───────────────────────────────────────────────
   async function initLiff(){
     if (!window.liff || LIFF_ID === 'YOUR_LIFF_ID') return;
@@ -1012,6 +1457,8 @@
         liffProfile = p || null;
         const sub = document.querySelector('.hdr .subtitle');
         if (p?.displayName && sub) sub.textContent = `ยินดีต้อนรับ ${p.displayName}`;
+        const greeting = $('#heroGreeting');
+        if (p?.displayName && greeting) greeting.textContent = `สวัสดี ${p.displayName} พร้อมรับมือทุกสถานการณ์`;
       }
     }catch(e){ console.warn('LIFF init failed, continuing in browser mode:', e); }
   }
@@ -1099,12 +1546,45 @@
     setFeedback($('#authFeedback'));
     setFeedback($('#formFeedback'));
     updateAdminModalUI();
+    if (!currentEditDisease){
+      const title = $('#adminModalTitle');
+      if (title) title.textContent = 'เพิ่มข้อมูลโรคระบาด';
+      const hint = $('#adminModalHint');
+      if (hint) hint.textContent = 'Admin only · ข้อมูลจะถูกบันทึกไปยัง Supabase';
+      goToStep(1);
+      updatePreview();
+    }
+    $('.app')?.setAttribute('inert', '');
+    setTimeout(() => {
+      const firstFocus = $('#authPanel').classList.contains('hidden')
+        ? $('#fName')
+        : $('#authSubmit');
+      firstFocus?.focus();
+    }, 50);
   }
 
   function closeAdminModal(){
+    $('.app')?.removeAttribute('inert');
     $('#adminModal').classList.remove('open');
     setFeedback($('#authFeedback'));
     setFeedback($('#formFeedback'));
+    currentEditDisease = null;
+    goToStep(1);
+    const form = $('#adminForm');
+    if (form){
+      form.reset();
+      form.icon.value = 'shield-check';
+      form.category.value = '';
+      form.record_type.value = 'watchlist';
+      form.dataset.aiIconSuggested = 'false';
+    }
+    updatePreview();
+    // Reset AI view
+    aiGeneratedDiseases = [];
+    const aiCards = $('#aiCardsList');
+    if (aiCards) aiCards.innerHTML = '';
+    $('#aiResultsArea')?.classList.add('hidden');
+    showAdminView('form');
   }
 
   async function handleAuthSubmit(e){
@@ -1203,6 +1683,23 @@
       </div>`).join('');
   }
 
+  function renderWatchlistSkeletons(n=2){
+    const wrap = document.querySelector('section[aria-label="Priority diseases"] .prio-list');
+    if (!wrap) return;
+    wrap.innerHTML = Array.from({length:n}).map(() => `
+      <div class="skel-card" style="border-radius:var(--r-xl); min-height:120px;">
+        <div style="display:flex; gap:14px; align-items:flex-start;">
+          <div class="skel" style="width:52px; height:52px; border-radius:15px; flex-shrink:0;"></div>
+          <div style="flex:1; display:flex; flex-direction:column; gap:8px; padding-top:4px;">
+            <div class="skel skel-line w40"></div>
+            <div class="skel skel-line w90"></div>
+            <div class="skel skel-line w60"></div>
+          </div>
+        </div>
+        <div class="skel skel-line" style="margin-top:14px; height:44px; border-radius:12px; width:100%;"></div>
+      </div>`).join('');
+  }
+
   function renderWatchlist(data){
     const wrap = document.querySelector('section[aria-label="Priority diseases"] .prio-list');
     const sub = document.querySelector('section[aria-label="Priority diseases"] .sec-sub');
@@ -1254,24 +1751,39 @@
     };
   }
 
+  function updateLastFetchTime(){
+    const el = $('#lastUpdateText');
+    if (!el) return;
+    el.textContent = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.';
+  }
+
   // ─── Fetch ──────────────────────────────────────────────
   async function fetchDiseases(){
     renderSkeletons(4);
+    renderWatchlistSkeletons(2);
+    let fetchError = false;
     if (supabase){
       try{
         const { data, error } = await supabase.from('epidemics').select('*').order('created_at', { ascending: false });
         if (error) throw error;
         diseases = ((data && data.length) ? data : FALLBACK).map(normalizeDisease);
-      }catch(e){ console.warn('Supabase fetch failed → fallback:', e); diseases = FALLBACK.map(normalizeDisease); }
+      }catch(e){
+        console.warn('Supabase fetch failed → fallback:', e);
+        diseases = FALLBACK.map(normalizeDisease);
+        fetchError = true;
+      }
     } else {
       // Simulate network latency so skeletons are visible in demo
       await new Promise(r => setTimeout(r, 600));
       diseases = FALLBACK.map(normalizeDisease);
     }
+    const errBanner = $('#fetchErrBanner');
+    if (errBanner){ errBanner.classList.toggle('hidden', !fetchError); if (fetchError) renderIcons(); }
     filtered = diseases.filter(d => d.record_type !== 'watchlist');
     const stat = document.getElementById('statCount');
     if (stat) stat.textContent = diseases.filter(d => d.record_type === 'watchlist' || d.is_priority).length;
     renderWatchlist(diseases);
+    updateLastFetchTime();
     applyFilters();
   }
 
@@ -1316,16 +1828,33 @@
   function searchDiseases(keyword){ searchTerm = keyword || ''; applyFilters(); }
 
   // ─── Bottom sheet ───────────────────────────────────────
+  const GENERIC_PREVENTION = [
+    'สวมอุปกรณ์ป้องกันส่วนบุคคล (PPE) ทุกครั้งก่อนเริ่มปฏิบัติงาน',
+    'ล้างมือด้วยสบู่และน้ำสะอาดเป็นประจำ',
+    'หลีกเลี่ยงการสัมผัสแหล่งที่เสี่ยงต่อการติดเชื้อ',
+    'หากมีอาการผิดปกติ แจ้งหัวหน้างานและพบแพทย์ทันที'
+  ];
+
   function openSheet(d){
+    $('#sheet').__disease = d;
     $('#sheetTitle').textContent = d.name || '';
     $('#sheetDesc').textContent  = d.description || 'ยังไม่มีรายละเอียด';
     $('#sheetIc').innerHTML = icon(d.icon, 28);
+    const items = (Array.isArray(d.prevention) && d.prevention.length)
+      ? d.prevention : GENERIC_PREVENTION;
+    $('#sheetPrevent').innerHTML = items.map(p => `<li>${esc(p)}</li>`).join('');
+    const isAdmin = currentRole === 'admin' && !!d.id;
+    $('#sheetAdminActions')?.classList.toggle('hidden', !isAdmin);
+    $('#sheetDeactivateBtn')?.classList.toggle('hidden', d.record_type !== 'watchlist');
     renderIcons();
+    $('.app')?.setAttribute('inert', '');
     $('#scrim').classList.add('open');
     $('#sheet').classList.add('open');
     document.body.style.overflow = 'hidden';
+    setTimeout(() => $('#sheetClose')?.focus(), 50);
   }
   function closeSheet(){
+    $('.app')?.removeAttribute('inert');
     $('#scrim').classList.remove('open');
     $('#sheet').classList.remove('open');
     document.body.style.overflow = '';
@@ -1357,15 +1886,15 @@
       if (access?.redirecting) return;
       if (!access?.authorized) throw new Error('ต้องใช้สิทธิ์แอดมินผ่าน LINE');
 
-      await submitToSupabase(payload);
-      $('#adminModal').classList.remove('open');
-      f.reset();
-      f.icon.value = 'shield-check';
-      f.category.value = '';
-      f.record_type.value = 'watchlist';
-      f.dataset.aiIconSuggested = 'false';
-      setFeedback($('#formFeedback'), 'บันทึกข้อมูลสำเร็จ', 'success');
-      toast('เพิ่มข้อมูลสำเร็จ');
+      if (currentEditDisease){
+        await callAdminUpdate({ id: currentEditDisease.id, ...payload });
+        toast('แก้ไขข้อมูลสำเร็จ');
+      } else {
+        await submitToSupabase(payload);
+        toast('เพิ่มข้อมูลสำเร็จ');
+      }
+
+      closeAdminModal();
       await fetchDiseases();
     }catch(err){
       console.warn(err);
@@ -1406,9 +1935,35 @@
     $('#draftDiseaseBtn')?.addEventListener('click', handleDraftDisease);
     $('#suggestIconBtn')?.addEventListener('click', handleSuggestIcon);
     $('#adminSignOut')?.addEventListener('click', signOutAdmin);
+
+    // Step navigation
+    $('#stepNextBtn')?.addEventListener('click', handleStepNext);
+    $('#stepBackBtn')?.addEventListener('click', () => goToStep(1));
+
+    // View toggle
+    $('#toggleFormBtn')?.addEventListener('click', () => showAdminView('form'));
+    $('#toggleAIBtn')?.addEventListener('click',   () => showAdminView('ai'));
+
+    // AI generate
+    $('#aiGenerateBtn')?.addEventListener('click', handleAIGenerate);
+    $('#aiSelectAllBtn')?.addEventListener('click', handleAISelectAll);
+    $('#aiSaveBtn')?.addEventListener('click', handleAISaveSelected);
+
+    // Sheet edit / delete
+    $('#sheetEditBtn')?.addEventListener('click', handleEditDisease);
+    $('#sheetDeleteBtn')?.addEventListener('click', handleDeleteDisease);
+    $('#sheetDeactivateBtn')?.addEventListener('click', handleDeactivateWatchlist);
+
+    // Live preview — update on any change in the form
+    ['fName','fCategory','fIcon'].forEach(id => {
+      $('#' + id)?.addEventListener('input', updatePreview);
+      $('#' + id)?.addEventListener('change', updatePreview);
+    });
+
     $('#fIcon')?.addEventListener('input', () => {
       const form = $('#adminForm');
       if (form) form.dataset.aiIconSuggested = 'false';
+      updatePreview();
     });
     $('#fRecordType')?.addEventListener('change', (e) => {
       const checkbox = $('#fPriority');
