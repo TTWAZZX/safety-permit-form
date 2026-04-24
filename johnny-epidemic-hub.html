@@ -234,6 +234,37 @@
     min-width:100%; padding:14px 16px 16px;
     display:flex; flex-direction:column; gap:10px;
   }
+  .news-media{
+    position:relative; width:100%; aspect-ratio:16/9;
+    border-radius:16px; overflow:hidden;
+    background:
+      radial-gradient(120% 90% at 100% 0%, rgba(255,255,255,.75), rgba(255,255,255,0) 58%),
+      linear-gradient(135deg, var(--green-50), var(--green-100));
+    border:1px solid var(--green-100);
+    display:grid; place-items:center;
+    flex-shrink:0;
+  }
+  .news-media img{
+    position:absolute; inset:0; width:100%; height:100%;
+    object-fit:cover; display:block;
+  }
+  .news-media-fallback{
+    position:absolute; inset:0;
+    display:grid; place-items:center;
+    color:var(--green-700);
+    background:
+      radial-gradient(90% 90% at 80% 12%, rgba(255,255,255,.72), rgba(255,255,255,0) 56%),
+      linear-gradient(135deg, var(--green-50), var(--green-100));
+  }
+  .news-media-fallback .news-fallback-ic{
+    width:54px; height:54px; border-radius:18px;
+    display:grid; place-items:center;
+    background:#fff; box-shadow:inset 0 0 0 1px rgba(15,143,91,.12), var(--shadow-sm);
+  }
+  .news-media.has-image .news-media-fallback{ opacity:0; pointer-events:none; }
+  .news-media.img-failed .news-media-fallback,
+  .news-media:not(.has-image) .news-media-fallback{ opacity:1; }
+  .news-media.img-failed img{ display:none; }
   .news-card-top{ display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
   .news-source{
     display:inline-flex; align-items:center; gap:5px;
@@ -2139,12 +2170,31 @@
     const dots = $('#newsDots');
     const status = $('#newsStatus');
     if (!track || !dots) return;
-    newsItems = (items || []).map(normalizeNewsItem).filter(n => n.title && n.url).slice(0, 8);
-    if (!newsItems.length) newsItems = NEWS_FALLBACK.map(normalizeNewsItem);
+    newsItems = (items || [])
+      .map(item => ({
+        ...normalizeNewsItem(item),
+        imageUrl: String(item?.imageUrl || '').trim()
+      }))
+      .filter(n => n.title && n.url)
+      .slice(0, 8);
+    if (!newsItems.length){
+      newsItems = NEWS_FALLBACK.map(item => ({
+        ...normalizeNewsItem(item),
+        imageUrl: String(item?.imageUrl || '').trim()
+      }));
+    }
     newsIndex = Math.min(newsIndex, newsItems.length - 1);
     if (status) status.textContent = statusText;
     track.innerHTML = newsItems.map(n => `
       <article class="news-card">
+        <div class="news-media${n.imageUrl ? ' has-image' : ''}">
+          ${n.imageUrl ? `<img src="${esc(n.imageUrl)}" alt="" loading="lazy" decoding="async" data-news-image />` : ''}
+          <div class="news-media-fallback" aria-hidden="true">
+            <div class="news-fallback-ic">
+              <i data-lucide="${n.severity === 'watch' ? 'megaphone' : 'shield-check'}" width="28" height="28"></i>
+            </div>
+          </div>
+        </div>
         <div class="news-card-top">
           <span class="news-source"><i data-lucide="shield-check" width="11" height="11"></i>${esc(n.source)}</span>
           <span class="news-date">${esc(formatNewsDate(n.publishedAt))}</span>
@@ -2161,6 +2211,11 @@
     `).join('');
     dots.innerHTML = newsItems.map((_, i) => `<button type="button" class="news-dot${i === newsIndex ? ' on' : ''}" data-news-idx="${i}" aria-label="ไปข่าวที่ ${i + 1}"></button>`).join('');
     updateNewsSlide();
+    $$('img[data-news-image]', track).forEach(img => {
+      img.addEventListener('error', () => {
+        img.closest('.news-media')?.classList.add('img-failed');
+      }, { once: true });
+    });
     renderIcons();
     startNewsAuto();
   }
