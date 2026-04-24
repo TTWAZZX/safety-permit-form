@@ -235,18 +235,37 @@
     display:flex; flex-direction:column; gap:10px;
   }
   .news-media{
-    position:relative; width:100%; aspect-ratio:16/9;
-    border-radius:16px; overflow:hidden;
+    position:relative; width:100%;
+    border-radius:14px; overflow:hidden;
     background:
       radial-gradient(120% 90% at 100% 0%, rgba(255,255,255,.75), rgba(255,255,255,0) 58%),
       linear-gradient(135deg, var(--green-50), var(--green-100));
     border:1px solid var(--green-100);
-    display:grid; place-items:center;
     flex-shrink:0;
   }
-  .news-media img{
+  .news-media.article{
+    aspect-ratio:16/9;
+    background:#eef7f1;
+  }
+  .news-media.article img{
     position:absolute; inset:0; width:100%; height:100%;
     object-fit:cover; display:block;
+  }
+  .news-media.logo{
+    height:84px; max-height:100px;
+    display:flex; align-items:center; justify-content:center;
+    background:linear-gradient(135deg, var(--green-50), #fff);
+    border:1px solid rgba(15,143,91,.12);
+    padding:14px;
+  }
+  .news-media.logo img{
+    max-width:62%; max-height:42px;
+    object-fit:contain; display:block;
+  }
+  .news-media.fallback{
+    height:84px;
+    display:grid; place-items:center;
+    background:var(--green-50);
   }
   .news-media-fallback{
     position:absolute; inset:0;
@@ -261,10 +280,20 @@
     display:grid; place-items:center;
     background:#fff; box-shadow:inset 0 0 0 1px rgba(15,143,91,.12), var(--shadow-sm);
   }
+  .news-media-logo-label{
+    position:absolute; right:10px; bottom:8px;
+    color:var(--ink-400); font-size:10px; font-weight:800;
+  }
   .news-media.has-image .news-media-fallback{ opacity:0; pointer-events:none; }
-  .news-media.img-failed .news-media-fallback,
-  .news-media:not(.has-image) .news-media-fallback{ opacity:1; }
+  .news-media.fallback .news-media-fallback,
+  .news-media.img-failed .news-media-fallback{ opacity:1; }
   .news-media.img-failed img{ display:none; }
+  .news-media.img-failed{
+    height:84px; aspect-ratio:auto;
+    display:grid; place-items:center;
+    background:var(--green-50);
+  }
+  .news-media.img-failed .news-media-logo-label{ display:none; }
   .news-card-top{ display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
   .news-source{
     display:inline-flex; align-items:center; gap:5px;
@@ -294,6 +323,13 @@
     background:var(--ink-200); padding:0;
   }
   .news-dot.on{ width:18px; background:var(--green-500); }
+
+  @media (min-width: 720px){
+    .news-media.logo,
+    .news-media.fallback,
+    .news-media.img-failed{ height:96px; }
+    .news-media.logo img{ max-height:48px; }
+  }
 
   /* Filter chips */
   .chips-wrap{
@@ -1106,7 +1142,7 @@
   const VALID_ICONS = new Set([
   'shield-check','shield-alert','shield','bug','droplet','thermometer','stethoscope',
   'heart-pulse','pill','syringe','activity','biohazard','hand','alert-triangle',
-  'exclamation-triangle','wind','leaf','cloud-rain','waves','mosquito','spray-can',
+  'exclamation-triangle','wind','leaf','cloud-rain','waves','spray-can',
   'flask-conical','test-tube','microscope','first-aid','ambulance','hospital',
   'bandage','cross','virus','utensils','factory','dna','lungs','brain','bone',
   'eye','ear','plane','map-pin','radiation','badge-alert','siren','scan-heart',
@@ -2161,8 +2197,42 @@
       url: String(item?.url || '').trim(),
       publishedAt: item?.publishedAt || item?.published_at || null,
       tags: Array.isArray(item?.tags) ? item.tags.slice(0, 4).map(t => String(t).trim()).filter(Boolean) : [],
-      severity: String(item?.severity || 'info').trim()
+      severity: String(item?.severity || 'info').trim(),
+      imageUrl: String(item?.imageUrl || '').trim(),
+      imageType: ['article', 'source-logo'].includes(String(item?.imageType || '')) ? String(item.imageType) : null
     };
+  }
+
+  function renderNewsMedia(n){
+    const imageUrl = String(n?.imageUrl || '').trim();
+    const imageType = imageUrl && n?.imageType === 'source-logo'
+      ? 'source-logo'
+      : imageUrl && n?.imageType === 'article'
+        ? 'article'
+        : null;
+    const fallbackIcon = n?.severity === 'watch' ? 'megaphone' : 'shield-check';
+    const fallback = `
+      <div class="news-media-fallback" aria-hidden="true">
+        <div class="news-fallback-ic">
+          <i data-lucide="${fallbackIcon}" width="28" height="28"></i>
+        </div>
+      </div>`;
+    if (imageType === 'article'){
+      return `
+        <div class="news-media article has-image">
+          <img src="${esc(imageUrl)}" alt="" loading="lazy" decoding="async" data-news-image />
+          ${fallback}
+        </div>`;
+    }
+    if (imageType === 'source-logo'){
+      return `
+        <div class="news-media logo has-image">
+          <img src="${esc(imageUrl)}" alt="" loading="lazy" decoding="async" data-news-image />
+          ${fallback}
+          <span class="news-media-logo-label">${esc(n.source || 'Source logo')}</span>
+        </div>`;
+    }
+    return `<div class="news-media fallback">${fallback}</div>`;
   }
 
   function renderNews(items, statusText='ข่าวจากแหล่งข้อมูลสาธารณสุขที่เชื่อถือได้'){
@@ -2171,30 +2241,17 @@
     const status = $('#newsStatus');
     if (!track || !dots) return;
     newsItems = (items || [])
-      .map(item => ({
-        ...normalizeNewsItem(item),
-        imageUrl: String(item?.imageUrl || '').trim()
-      }))
+      .map(normalizeNewsItem)
       .filter(n => n.title && n.url)
       .slice(0, 8);
     if (!newsItems.length){
-      newsItems = NEWS_FALLBACK.map(item => ({
-        ...normalizeNewsItem(item),
-        imageUrl: String(item?.imageUrl || '').trim()
-      }));
+      newsItems = NEWS_FALLBACK.map(normalizeNewsItem);
     }
     newsIndex = Math.min(newsIndex, newsItems.length - 1);
     if (status) status.textContent = statusText;
     track.innerHTML = newsItems.map(n => `
       <article class="news-card">
-        <div class="news-media${n.imageUrl ? ' has-image' : ''}">
-          ${n.imageUrl ? `<img src="${esc(n.imageUrl)}" alt="" loading="lazy" decoding="async" data-news-image />` : ''}
-          <div class="news-media-fallback" aria-hidden="true">
-            <div class="news-fallback-ic">
-              <i data-lucide="${n.severity === 'watch' ? 'megaphone' : 'shield-check'}" width="28" height="28"></i>
-            </div>
-          </div>
-        </div>
+        ${renderNewsMedia(n)}
         <div class="news-card-top">
           <span class="news-source"><i data-lucide="shield-check" width="11" height="11"></i>${esc(n.source)}</span>
           <span class="news-date">${esc(formatNewsDate(n.publishedAt))}</span>
