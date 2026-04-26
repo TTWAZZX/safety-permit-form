@@ -67,6 +67,22 @@
                 border-radius: 1rem;
             }
         }
+        .kpi-skeleton {
+            display: inline-block;
+            background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
+            background-size: 200% 100%;
+            animation: kpi-shimmer 1.4s infinite;
+            border-radius: 0.5rem;
+            vertical-align: middle;
+            height: 3.5rem;
+            width: 8rem;
+        }
+        @media (min-width: 640px) { .kpi-skeleton { height: 4rem; width: 10rem; } }
+        @media (min-width: 768px) { .kpi-skeleton { height: 5.5rem; width: 13rem; } }
+        @keyframes kpi-shimmer {
+            0%   { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
     </style>
 </head>
 <body class="text-gray-800 antialiased font-sans">
@@ -138,14 +154,14 @@
             <div class="bg-white rounded-2xl mobile-safe-radius shadow-lg p-5 sm:p-8 border-l-8 border-warning flex items-center justify-between mobile-card-stack">
                 <div>
                     <h2 class="text-lg sm:text-xl text-gray-500 font-semibold mb-1">ยอดผู้ป่วยสะสมพุ่ง</h2>
-                    <p class="text-4xl sm:text-5xl md:text-7xl font-bold text-gray-900"><span id="casesCount" style="opacity:0;transition:opacity 0.5s ease">732</span> <span class="text-xl sm:text-2xl text-gray-500 font-normal">ราย</span></p>
+                    <p class="text-4xl sm:text-5xl md:text-7xl font-bold text-gray-900"><span id="casesCountSkeleton" class="kpi-skeleton"></span><span id="casesCount" class="hidden" style="transition:opacity 0.5s ease">732</span> <span class="text-xl sm:text-2xl text-gray-500 font-normal">ราย</span></p>
                 </div>
                 <div class="kpi-icon text-5xl sm:text-6xl opacity-20">🤒</div>
             </div>
             <div class="bg-white rounded-2xl mobile-safe-radius shadow-lg p-5 sm:p-8 border-l-8 border-alert flex items-center justify-between mobile-card-stack">
                 <div>
                     <h2 class="text-lg sm:text-xl text-gray-500 font-semibold mb-1">เสียชีวิตแล้ว</h2>
-                    <p class="text-4xl sm:text-5xl md:text-7xl font-bold text-alert"><span id="deathsCount" style="opacity:0;transition:opacity 0.5s ease">23</span> <span class="text-xl sm:text-2xl text-gray-500 font-normal">ราย</span></p>
+                    <p class="text-4xl sm:text-5xl md:text-7xl font-bold text-alert"><span id="deathsCountSkeleton" class="kpi-skeleton"></span><span id="deathsCount" class="hidden" style="transition:opacity 0.5s ease">23</span> <span class="text-xl sm:text-2xl text-gray-500 font-normal">ราย</span></p>
                 </div>
                 <div class="kpi-icon text-5xl sm:text-6xl opacity-20">🪦</div>
             </div>
@@ -681,10 +697,22 @@
             }
         }
 
+        function showKPI(id, value) {
+            const skeleton = document.getElementById(id + 'Skeleton');
+            const numEl = document.getElementById(id);
+            if (skeleton) skeleton.classList.add('hidden');
+            if (numEl) {
+                numEl.textContent = value;
+                numEl.classList.remove('hidden');
+                numEl.style.opacity = '0';
+                requestAnimationFrame(() => { numEl.style.opacity = '1'; });
+            }
+        }
+
         async function loadStatsOnStartup() {
             if (!db) {
-                document.getElementById('casesCount').style.opacity = '1';
-                document.getElementById('deathsCount').style.opacity = '1';
+                showKPI('casesCount', '—');
+                showKPI('deathsCount', '—');
                 document.getElementById('statsUpdateStatus').textContent = 'ไม่ได้เชื่อมต่อฐานข้อมูล';
                 return;
             }
@@ -699,21 +727,15 @@
                     }
                 }
             } catch(e) {}
-            await refreshStatsWithGemini();
-            const _cases = document.getElementById('casesCount');
-            const _deaths = document.getElementById('deathsCount');
-            if (_cases && _cases.style.opacity === '0') { _cases.textContent = '—'; _cases.style.opacity = '1'; }
-            if (_deaths && _deaths.style.opacity === '0') { _deaths.textContent = '—'; _deaths.style.opacity = '1'; }
+            document.getElementById('refreshStatsBtn')?.click();
         }
 
         function applyStatsToDOM(stats) {
-            const casesEl = document.getElementById('casesCount');
-            const deathsEl = document.getElementById('deathsCount');
+            showKPI('casesCount', Number(stats.cases).toLocaleString('th-TH'));
+            showKPI('deathsCount', Number(stats.deaths).toLocaleString('th-TH'));
             const asOfEl = document.getElementById('statsAsOfLabel');
             const rangeEl = document.getElementById('statsRangeLabel');
             const statusEl = document.getElementById('statsUpdateStatus');
-            if (casesEl) { casesEl.textContent = Number(stats.cases).toLocaleString('th-TH'); casesEl.style.opacity = '1'; }
-            if (deathsEl) { deathsEl.textContent = Number(stats.deaths).toLocaleString('th-TH'); deathsEl.style.opacity = '1'; }
             if (asOfEl) asOfEl.textContent = stats.asOf || '';
             if (rangeEl) rangeEl.textContent = stats.range || '';
             if (statusEl) statusEl.innerHTML = `อัปเดตล่าสุดด้วย AI สำเร็จ โดยใช้ ${escapeHtml(stats.model || 'unknown')}${stats.summary ? `: ${escapeHtml(stats.summary)}` : ''}`;
@@ -763,10 +785,8 @@
                     throw new Error("Invalid stats payload");
                 }
 
-                casesEl.textContent = cases.toLocaleString('th-TH');
-                casesEl.style.opacity = '1';
-                deathsEl.textContent = deaths.toLocaleString('th-TH');
-                deathsEl.style.opacity = '1';
+                showKPI('casesCount', cases.toLocaleString('th-TH'));
+                showKPI('deathsCount', deaths.toLocaleString('th-TH'));
                 asOfEl.textContent = json.asOf || "อัปเดตโดย AI";
                 rangeEl.textContent = json.range || "ตามข้อมูลล่าสุดที่ค้นหาได้";
                 statusEl.innerHTML = `อัปเดตล่าสุดด้วย AI สำเร็จ โดยใช้ ${escapeHtml(data.model || 'unknown')}${json.summary ? `: ${escapeHtml(json.summary)}` : ""}`;
@@ -788,8 +808,8 @@
             } catch (error) {
                 console.error("Gemini Stats Refresh Error:", error);
                 statusEl.textContent = normalizeApiError(error, "อัปเดตยอดล่าสุดไม่สำเร็จ กรุณาตรวจสอบ Supabase Edge Function หรือแหล่งข้อมูลอีกครั้ง");
-                casesEl.style.opacity = '1';
-                deathsEl.style.opacity = '1';
+                showKPI('casesCount', '—');
+                showKPI('deathsCount', '—');
             } finally {
                 setButtonLoading(
                     'refreshStatsBtn',
