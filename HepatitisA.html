@@ -378,9 +378,9 @@ body {
                 <div class="absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-indigo-100/80 to-transparent pointer-events-none"></div>
                 <div class="relative">
                     <div class="text-indigo-700 text-xs md:text-sm font-bold mb-2 uppercase tracking-[0.18em]">พื้นที่เฝ้าระวังสูงสุด</div>
-                    <div class="text-3xl md:text-4xl font-black text-slate-900 leading-tight">นครราชสีมา</div>
+                    <div id="dash-top-province" class="text-3xl md:text-4xl font-black text-slate-900 leading-tight">นครราชสีมา</div>
                     <div class="mt-3 flex items-end gap-2">
-                        <div class="text-5xl md:text-6xl font-black text-indigo-600 leading-none">22</div>
+                        <div id="dash-top-province-cases" class="text-5xl md:text-6xl font-black text-indigo-600 leading-none">22</div>
                         <div class="text-base md:text-lg font-semibold text-slate-500 mb-1">ราย</div>
                     </div>
                     <p class="mt-4 max-w-xl text-sm md:text-base text-slate-600 leading-relaxed">
@@ -389,15 +389,20 @@ body {
                 </div>
                 <svg class="w-3.5 h-3.5 text-slate-300 absolute bottom-4 right-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25h1.5v5.25h-1.5v-5.25zm0-3h1.5v1.5h-1.5v-1.5z"/><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             </button>
-            <div class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-3 sm:gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3 sm:gap-4">
+                <button type="button" class="metric-card focus-ring bg-white rounded-xl p-5 border-l-4 border-indigo-400 shadow-xl transition-transform relative text-left" data-title="ผู้ป่วยสะสมทั้งหมด" data-content="ยอดผู้ป่วยสะสมทุกจังหวัดที่รายงานในปี 2569 รวมทั้งผู้ป่วยที่อาการรุนแรงและไม่รุนแรง" aria-expanded="false">
+                    <div class="text-indigo-500 text-xs md:text-sm font-bold mb-1 uppercase tracking-wide">ผู้ป่วยสะสม (ปี 2569)</div>
+                    <div class="flex items-baseline"><div id="dash-total-cases" class="text-4xl font-black text-indigo-600">74</div><div class="text-base font-medium text-slate-500 ml-2">ราย</div></div>
+                    <svg class="w-3.5 h-3.5 text-slate-300 absolute bottom-3 right-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25h1.5v5.25h-1.5v-5.25zm0-3h1.5v1.5h-1.5v-1.5z"/><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </button>
                 <button type="button" class="metric-card focus-ring bg-white rounded-xl p-5 border-l-4 border-rose-500 shadow-xl transition-transform relative text-left" data-title="ผู้ป่วยหนักสะสม" data-content="พบผู้ป่วยอาการรุนแรงสะสม 74 ราย กลุ่มหลักคือวัยทำงานที่มีประวัติบริโภคอาหารหรือน้ำแข็งปนเปื้อนเชื้อ" aria-expanded="false">
                     <div class="text-slate-500 text-xs md:text-sm font-bold mb-1 uppercase tracking-wide">ผู้ป่วยรุนแรงสะสม (ปี 2569)</div>
-                    <div class="flex items-baseline"><div class="text-4xl font-black text-slate-800">74</div><div class="text-base font-medium text-slate-500 ml-2">ราย</div></div>
+                    <div class="flex items-baseline"><div id="dash-severe-cases" class="text-4xl font-black text-slate-800">74</div><div class="text-base font-medium text-slate-500 ml-2">ราย</div></div>
                     <svg class="w-3.5 h-3.5 text-slate-300 absolute bottom-3 right-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25h1.5v5.25h-1.5v-5.25zm0-3h1.5v1.5h-1.5v-1.5z"/><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 </button>
                 <button type="button" class="metric-card focus-ring bg-white rounded-xl p-5 border-l-4 border-red-600 shadow-xl transition-transform relative text-left" data-title="ผู้เสียชีวิตรายใหม่ ปี 2569" data-content="รายงานผู้เสียชีวิต 2 ราย ต้นปี 2569 ทั้งสองรายได้รับการรักษาล่าช้าและมีประวัติบริโภคอาหารทะเลหรืออาหารกึ่งสุก" aria-expanded="false">
                     <div class="text-red-500 text-xs md:text-sm font-bold mb-1 uppercase tracking-wide">ผู้เสียชีวิต (ปี 2569)</div>
-                    <div class="flex items-baseline"><div class="text-4xl font-black text-red-600">2</div><div class="text-base font-medium text-slate-500 ml-2">ราย</div></div>
+                    <div class="flex items-baseline"><div id="dash-deaths" class="text-4xl font-black text-red-600">2</div><div class="text-base font-medium text-slate-500 ml-2">ราย</div></div>
                     <div class="text-xs text-red-400 mt-1">อยู่ระหว่างเฝ้าระวัง</div>
                     <svg class="w-3.5 h-3.5 text-slate-300 absolute bottom-3 right-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25h1.5v5.25h-1.5v-5.25zm0-3h1.5v1.5h-1.5v-1.5z"/><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 </button>
@@ -860,6 +865,38 @@ const provinceDataDB = {
     'ตาก': { cases: 5, risk: 'พื้นที่ชายแดนและข้อจำกัดด้านสุขาภิบาล', status: 'ระดับสีเหลือง (ติดตาม)', death: 0 }
 };
 
+function applyDashboardStats(stats) {
+    if (!stats) return;
+    const set = (id, val) => { const el = document.getElementById(id); if (el && val != null) el.textContent = val; };
+    if (stats.totalCases != null) set('dash-total-cases', Number(stats.totalCases).toLocaleString('th-TH'));
+    if (stats.severeCases != null) set('dash-severe-cases', Number(stats.severeCases).toLocaleString('th-TH'));
+    if (stats.deaths != null) set('dash-deaths', Number(stats.deaths).toLocaleString('th-TH'));
+    if (stats.topProvince != null) set('dash-top-province', stats.topProvince);
+    if (stats.topProvinceCases != null) set('dash-top-province-cases', Number(stats.topProvinceCases).toLocaleString('th-TH'));
+    if (stats.provinceData && typeof stats.provinceData === 'object') {
+        Object.keys(stats.provinceData).forEach(k => { if (provinceDataDB[k]) Object.assign(provinceDataDB[k], stats.provinceData[k]); });
+        const provinces = Object.keys(stats.provinceData);
+        if (provinceChartInstance && provinces.length) {
+            provinceChartInstance.data.labels = provinces.map(p => p.includes('(') ? p.split('(').map((s, i) => i === 0 ? s.trim() : `(${s}`) : p);
+            provinceChartInstance.data.datasets[0].data = provinces.map(p => stats.provinceData[p].cases || 0);
+            const max = Math.max(...provinceChartInstance.data.datasets[0].data);
+            provinceChartInstance.data.datasets[0].backgroundColor = provinceChartInstance.data.datasets[0].data.map(v => v === max ? '#F43F5E' : '#94A3B8');
+            provinceChartInstance.update();
+        }
+    }
+}
+
+async function loadDashboardFromSnapshot() {
+    if (!db) return;
+    try {
+        const { data, error } = await db.from('hepatitis_a_snapshots')
+            .select('stats_json, created_at').order('created_at', { ascending: false }).limit(1).single();
+        if (!error && data && data.stats_json) {
+            applyDashboardStats(data.stats_json);
+        }
+    } catch (_) {}
+}
+
 const metricCards = document.querySelectorAll('.metric-card, [data-title][data-content]');
 const metricSummaryCards = document.querySelectorAll('.metric-card');
 const provincePills = document.querySelectorAll('.province-pill');
@@ -1278,6 +1315,7 @@ document.getElementById('liveUpdateBtn').addEventListener('click', async () => {
     try {
         const data = await invokeHepatitisAssistant('live_update');
         const result = data.result || {};
+        if (data.stats) applyDashboardStats(data.stats);
         const isSnapshot = typeof result.asOf === 'string' && result.asOf.includes('เวลา');
         content.innerHTML = `
             <div class="p-3 bg-sky-900/50 rounded-lg border border-sky-500/30 font-medium space-y-2">
@@ -1301,6 +1339,7 @@ document.getElementById('liveUpdateBtn').addEventListener('click', async () => {
     }
 });
 
+loadDashboardFromSnapshot();
 document.getElementById('liveUpdateBtn')?.click();
 </script>
 </body>
