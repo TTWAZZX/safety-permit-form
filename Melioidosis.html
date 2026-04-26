@@ -696,7 +696,11 @@
                     }
                 }
             } catch(e) {}
-            refreshStatsWithGemini();
+            await refreshStatsWithGemini();
+            const _cases = document.getElementById('casesCount');
+            const _deaths = document.getElementById('deathsCount');
+            if (_cases && _cases.style.opacity === '0') { _cases.textContent = '—'; _cases.style.opacity = '1'; }
+            if (_deaths && _deaths.style.opacity === '0') { _deaths.textContent = '—'; _deaths.style.opacity = '1'; }
         }
 
         function applyStatsToDOM(stats) {
@@ -757,7 +761,9 @@
                 }
 
                 casesEl.textContent = cases.toLocaleString('th-TH');
+                casesEl.style.opacity = '1';
                 deathsEl.textContent = deaths.toLocaleString('th-TH');
+                deathsEl.style.opacity = '1';
                 asOfEl.textContent = json.asOf || "อัปเดตโดย AI";
                 rangeEl.textContent = json.range || "ตามข้อมูลล่าสุดที่ค้นหาได้";
                 statusEl.innerHTML = `อัปเดตล่าสุดด้วย AI สำเร็จ โดยใช้ ${escapeHtml(data.model || 'unknown')}${json.summary ? `: ${escapeHtml(json.summary)}` : ""}`;

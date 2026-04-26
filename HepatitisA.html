@@ -1278,11 +1278,13 @@ document.getElementById('liveUpdateBtn').addEventListener('click', async () => {
     try {
         const data = await invokeHepatitisAssistant('live_update');
         const result = data.result || {};
+        const isSnapshot = typeof result.asOf === 'string' && result.asOf.includes('เวลา');
         content.innerHTML = `
             <div class="p-3 bg-sky-900/50 rounded-lg border border-sky-500/30 font-medium space-y-2">
                 <p><span class="text-sky-300 font-bold">[อัปเดตล่าสุด]</span> ${escapeHtml(result.summary || 'ไม่มีข้อมูลสรุปล่าสุด')}</p>
                 ${Array.isArray(result.highlights) && result.highlights.length ? `<ul class="list-disc pl-5 text-slate-100 space-y-1">${result.highlights.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>` : ''}
                 <p class="text-xs text-slate-300">อัปเดตเมื่อ: ${escapeHtml(result.asOf || '-')}</p>
+                ${isSnapshot ? `<p class="mt-2 inline-flex items-center gap-1.5 rounded-full bg-amber-400/20 border border-amber-400/40 px-3 py-1 text-xs text-amber-300 font-semibold">⚠ ข้อมูลจาก snapshot เมื่อ ${escapeHtml(result.asOf)} — กด "อัปเดตข้อมูลล่าสุด" เพื่อรีเฟรช</p>` : ''}
             </div>
         `;
         btnText.textContent = 'อัปเดตแล้ว';
