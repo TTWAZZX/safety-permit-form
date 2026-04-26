@@ -543,7 +543,7 @@
         }
 
         function escapeHtml(value) {
-            return value
+            return String(value ?? '')
                 .replace(/&/g, '&amp;')
                 .replace(/</g, '&lt;')
                 .replace(/>/g, '&gt;')
@@ -718,8 +718,8 @@
             }
             try {
                 const { data, error } = await db.from('melioidosis_stats_cache')
-                    .select('stats_json, updated_at').eq('id', 1).single();
-                if (!error && data) {
+                    .select('stats_json, updated_at').eq('id', 1).maybeSingle();
+                if (!error && data && isValidStatsPayload(data.stats_json)) {
                     const age = Date.now() - new Date(data.updated_at).getTime();
                     if (age < STATS_CACHE_TTL) {
                         applyStatsToDOM(data.stats_json);
@@ -730,7 +730,20 @@
             document.getElementById('refreshStatsBtn')?.click();
         }
 
+        function isValidStatsPayload(stats) {
+            if (!stats || typeof stats !== 'object') return false;
+            return Number.isFinite(Number(stats.cases)) && Number.isFinite(Number(stats.deaths));
+        }
+
         function applyStatsToDOM(stats) {
+            if (!isValidStatsPayload(stats)) {
+                showKPI('casesCount', '—');
+                showKPI('deathsCount', '—');
+                const statusEl = document.getElementById('statsUpdateStatus');
+                if (statusEl) statusEl.textContent = 'ข้อมูลสถิติที่ได้รับไม่ครบถ้วน กรุณากดอัปเดตอีกครั้ง';
+                return;
+            }
+
             showKPI('casesCount', Number(stats.cases).toLocaleString('th-TH'));
             showKPI('deathsCount', Number(stats.deaths).toLocaleString('th-TH'));
             const asOfEl = document.getElementById('statsAsOfLabel');
