@@ -1259,6 +1259,8 @@ document.getElementById('userInput').addEventListener('input', (event) => {
     }
 });
 
+let _liveUpdateAutoLoad = true;
+
 document.getElementById('liveUpdateBtn').addEventListener('click', async () => {
     const btn = document.getElementById('liveUpdateBtn');
     const btnText = document.getElementById('updateBtnText');
@@ -1285,6 +1287,7 @@ document.getElementById('liveUpdateBtn').addEventListener('click', async () => {
         `;
         btnText.textContent = 'อัปเดตแล้ว';
         setTimeout(() => { btnText.textContent = 'อัปเดตข้อมูลล่าสุด'; }, 2500);
+        if (!_liveUpdateAutoLoad) panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     } catch (error) {
         content.innerHTML = `<span class="text-amber-300">${escapeHtml(error.message || 'ไม่สามารถดึงข้อมูลจาก Supabase ได้')}</span>`;
         btnText.textContent = 'เชื่อมต่อไม่สำเร็จ';
@@ -1292,8 +1295,11 @@ document.getElementById('liveUpdateBtn').addEventListener('click', async () => {
         btn.disabled = false;
         btn.classList.replace('bg-slate-600', 'bg-sky-500');
         icon.classList.remove('animate-spin');
+        _liveUpdateAutoLoad = false;
     }
 });
+
+document.getElementById('liveUpdateBtn')?.click();
 </script>
 </body>
 </html>

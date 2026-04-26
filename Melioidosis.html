@@ -115,7 +115,7 @@
                     <div><b>พื้นที่เฝ้าระวัง:</b> ภาคตะวันออกเฉียงเหนือและภาคตะวันออก รวมชลบุรี</div>
                 </div>
                 <div class="mt-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-                    <p id="statsUpdateStatus" class="text-sm text-amber-800" aria-live="polite">ค่าตั้งต้นในหน้านี้มาจากเอกสารอ้างอิงของคุณ</p>
+                    <p id="statsUpdateStatus" class="text-sm text-amber-800" aria-live="polite">กำลังโหลดข้อมูล...</p>
                     <button id="refreshStatsBtn" onclick="refreshStatsWithGemini()" class="w-full sm:w-auto bg-amber-600 hover:bg-amber-700 disabled:bg-amber-300 disabled:cursor-not-allowed text-white font-bold py-3 px-5 rounded-full transition shadow-md">
                         <span id="refreshStatsSpinner" class="hidden align-middle mr-2">
                             <svg class="animate-spin h-5 w-5 inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -135,14 +135,14 @@
             <div class="bg-white rounded-2xl mobile-safe-radius shadow-lg p-5 sm:p-8 border-l-8 border-warning flex items-center justify-between mobile-card-stack">
                 <div>
                     <h2 class="text-lg sm:text-xl text-gray-500 font-semibold mb-1">ยอดผู้ป่วยสะสมพุ่ง</h2>
-                    <p class="text-4xl sm:text-5xl md:text-7xl font-bold text-gray-900"><span id="casesCount">732</span> <span class="text-xl sm:text-2xl text-gray-500 font-normal">ราย</span></p>
+                    <p class="text-4xl sm:text-5xl md:text-7xl font-bold text-gray-900"><span id="casesCount" style="opacity:0;transition:opacity 0.5s ease">732</span> <span class="text-xl sm:text-2xl text-gray-500 font-normal">ราย</span></p>
                 </div>
                 <div class="kpi-icon text-5xl sm:text-6xl opacity-20">🤒</div>
             </div>
             <div class="bg-white rounded-2xl mobile-safe-radius shadow-lg p-5 sm:p-8 border-l-8 border-alert flex items-center justify-between mobile-card-stack">
                 <div>
                     <h2 class="text-lg sm:text-xl text-gray-500 font-semibold mb-1">เสียชีวิตแล้ว</h2>
-                    <p class="text-4xl sm:text-5xl md:text-7xl font-bold text-alert"><span id="deathsCount">23</span> <span class="text-xl sm:text-2xl text-gray-500 font-normal">ราย</span></p>
+                    <p class="text-4xl sm:text-5xl md:text-7xl font-bold text-alert"><span id="deathsCount" style="opacity:0;transition:opacity 0.5s ease">23</span> <span class="text-xl sm:text-2xl text-gray-500 font-normal">ราย</span></p>
                 </div>
                 <div class="kpi-icon text-5xl sm:text-6xl opacity-20">🪦</div>
             </div>
@@ -363,9 +363,9 @@
                 <p><b>ข้อมูลหลักในหน้า:</b> ช่วงข้อมูลสะสม 1 ม.ค. - 16 เม.ย. 2569, ผู้ป่วย 732 ราย, เสียชีวิต 23 ราย, พื้นที่เฝ้าระวังสำคัญคือภาคตะวันออกเฉียงเหนือและภาคตะวันออก</p>
                 <p><b>อ้างอิงจากเอกสารต้นฉบับ:</b> รายงานการวิเคราะห์เชิงลึกทางระบาดวิทยา พยาธิกำเนิด และความก้าวหน้าทางคลินิกในการจัดการโรคเมลิออยโดสิส (Melioidosis) ประจำปี พ.ศ. 2569</p>
                 <p><b>แหล่งข้อมูลประกอบ:</b> กรมควบคุมโรค เรื่องเมลิออยโดสิส, ข่าวเฝ้าระวังจากกรมควบคุมโรคและสื่อที่เอกสารอ้างถึง, และข้อมูลพื้นที่เขตสุขภาพ 6 ซึ่งรวมจังหวัดชลบุรี</p>
-                <p class="break-all"><b>ลิงก์ทางการ:</b> https://www.ddc.moph.go.th/disease_detail.php?d=99</p>
-                <p class="break-all"><b>ลิงก์เฝ้าระวังที่เอกสารอ้างถึง:</b> https://www.ddc.moph.go.th/odpc6/news.php?news=53905&deptcode=odpc6</p>
-                <p class="break-all"><b>ลิงก์ข่าวตัวเลข 732/23 ในเอกสารอ้างอิง:</b> https://www.fm91bkk.com/newsarticle/70316</p>
+                <p><b>ลิงก์ทางการ:</b> <a href="https://www.ddc.moph.go.th/disease_detail.php?d=99" target="_blank" rel="noopener" class="text-blue-700 underline hover:text-blue-900 break-all">ddc.moph.go.th/disease_detail.php?d=99</a></p>
+                <p><b>ลิงก์เฝ้าระวังที่เอกสารอ้างถึง:</b> <a href="https://www.ddc.moph.go.th/odpc6/news.php?news=53905&deptcode=odpc6" target="_blank" rel="noopener" class="text-blue-700 underline hover:text-blue-900 break-all">ddc.moph.go.th/odpc6/news.php?news=53905</a></p>
+                <p><b>ลิงก์ข่าวตัวเลข 732/23 ในเอกสารอ้างอิง:</b> <a href="https://www.fm91bkk.com/newsarticle/70316" target="_blank" rel="noopener" class="text-blue-700 underline hover:text-blue-900 break-all">fm91bkk.com/newsarticle/70316</a></p>
             </div>
         </section>
 
@@ -404,6 +404,7 @@
 
         document.addEventListener("DOMContentLoaded", function() {
             setAiAvailability();
+            loadStatsOnStartup();
             const chartEl = document.getElementById('riskChart');
             if (!chartEl) return;
             const ctx = chartEl.getContext('2d');
@@ -496,6 +497,7 @@
         const SUPABASE_URL = 'https://dqsfioiqwxuxpucwwhsv.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxc2Zpb2lxd3h1eHB1Y3d3aHN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1OTk1NjUsImV4cCI6MjA4NDE3NTU2NX0.L_u0Ff3uHofxiimEs6ySFB4TPNtOWiKeSu3KFoVcA1U';
         const db = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+        const STATS_CACHE_TTL = 2 * 60 * 60 * 1000;
 
         function setAiAvailability() {
             const button = document.getElementById('aiAnalyzeBtn');
@@ -676,6 +678,40 @@
             }
         }
 
+        async function loadStatsOnStartup() {
+            if (!db) {
+                document.getElementById('casesCount').style.opacity = '1';
+                document.getElementById('deathsCount').style.opacity = '1';
+                document.getElementById('statsUpdateStatus').textContent = 'ไม่ได้เชื่อมต่อฐานข้อมูล';
+                return;
+            }
+            try {
+                const { data, error } = await db.from('melioidosis_stats_cache')
+                    .select('stats_json, updated_at').eq('id', 1).single();
+                if (!error && data) {
+                    const age = Date.now() - new Date(data.updated_at).getTime();
+                    if (age < STATS_CACHE_TTL) {
+                        applyStatsToDOM(data.stats_json);
+                        return;
+                    }
+                }
+            } catch(e) {}
+            refreshStatsWithGemini();
+        }
+
+        function applyStatsToDOM(stats) {
+            const casesEl = document.getElementById('casesCount');
+            const deathsEl = document.getElementById('deathsCount');
+            const asOfEl = document.getElementById('statsAsOfLabel');
+            const rangeEl = document.getElementById('statsRangeLabel');
+            const statusEl = document.getElementById('statsUpdateStatus');
+            if (casesEl) { casesEl.textContent = Number(stats.cases).toLocaleString('th-TH'); casesEl.style.opacity = '1'; }
+            if (deathsEl) { deathsEl.textContent = Number(stats.deaths).toLocaleString('th-TH'); deathsEl.style.opacity = '1'; }
+            if (asOfEl) asOfEl.textContent = stats.asOf || '';
+            if (rangeEl) rangeEl.textContent = stats.range || '';
+            if (statusEl) statusEl.innerHTML = `อัปเดตล่าสุดด้วย AI สำเร็จ โดยใช้ ${escapeHtml(stats.model || 'unknown')}${stats.summary ? `: ${escapeHtml(stats.summary)}` : ''}`;
+        }
+
         async function refreshStatsWithGemini() {
             const button = document.getElementById('refreshStatsBtn');
             const statusEl = document.getElementById('statsUpdateStatus');
@@ -726,9 +762,25 @@
                 rangeEl.textContent = json.range || "ตามข้อมูลล่าสุดที่ค้นหาได้";
                 statusEl.innerHTML = `อัปเดตล่าสุดด้วย AI สำเร็จ โดยใช้ ${escapeHtml(data.model || 'unknown')}${json.summary ? `: ${escapeHtml(json.summary)}` : ""}`;
                 renderSourceList('statsSources', sources, "แหล่งข้อมูลที่ AI ใช้อ้างอิงในการอัปเดตยอดล่าสุด");
+                try {
+                    await db.from('melioidosis_stats_cache').upsert({
+                        id: 1,
+                        stats_json: {
+                            cases,
+                            deaths,
+                            asOf: json.asOf || "อัปเดตโดย AI",
+                            range: json.range || "ตามข้อมูลล่าสุดที่ค้นหาได้",
+                            summary: json.summary || "",
+                            model: data.model || "unknown"
+                        },
+                        updated_at: new Date().toISOString()
+                    });
+                } catch(e) {}
             } catch (error) {
                 console.error("Gemini Stats Refresh Error:", error);
                 statusEl.textContent = normalizeApiError(error, "อัปเดตยอดล่าสุดไม่สำเร็จ กรุณาตรวจสอบ Supabase Edge Function หรือแหล่งข้อมูลอีกครั้ง");
+                casesEl.style.opacity = '1';
+                deathsEl.style.opacity = '1';
             } finally {
                 setButtonLoading(
                     'refreshStatsBtn',
