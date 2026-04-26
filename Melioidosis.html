@@ -107,8 +107,11 @@
             </p>
         </header>
 
-        <section class="mb-8">
-            <div class="bg-amber-50 border border-amber-200 rounded-2xl mobile-safe-radius p-4 sm:p-5 text-amber-900 shadow-sm">
+        <section id="statsPanel" class="mb-8">
+            <div class="bg-amber-50 border border-amber-200 rounded-2xl mobile-safe-radius p-4 sm:p-5 text-amber-900 shadow-sm relative">
+                <button onclick="document.getElementById('statsPanel').style.display='none'" aria-label="ปิดแผงข้อมูล" class="absolute top-3 right-3 text-amber-400 hover:text-amber-700 hover:bg-amber-100 rounded-lg p-1 transition">
+                    <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 text-sm sm:text-base">
                     <div><b>อัปเดตข้อมูล:</b> <span id="statsAsOfLabel">16 เมษายน 2569</span></div>
                     <div><b>ช่วงข้อมูลสะสม:</b> <span id="statsRangeLabel">1 มกราคม - 16 เมษายน 2569</span></div>
