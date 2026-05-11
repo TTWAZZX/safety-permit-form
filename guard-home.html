@@ -246,6 +246,59 @@
             margin-top: 3px; text-align: center; letter-spacing: 0.3px;
         }
 
+        /* ── Step 2: Shift Countdown ── */
+        .shift-countdown {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 14px 16px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow-sm);
+        }
+        .countdown-top {
+            display: flex; align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .countdown-shift {
+            display: flex; align-items: center; gap: 8px;
+        }
+        .countdown-shift-icon {
+            width: 32px; height: 32px; border-radius: 9px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1rem; flex-shrink: 0;
+        }
+        .countdown-shift-name {
+            font-size: 0.88rem; font-weight: 800; color: var(--ink);
+        }
+        .countdown-shift-range {
+            font-size: 0.7rem; color: var(--muted); margin-top: 1px;
+        }
+        .countdown-remaining {
+            text-align: right;
+        }
+        .countdown-remaining-value {
+            font-size: 1rem; font-weight: 800; color: var(--green-mid);
+            font-variant-numeric: tabular-nums;
+        }
+        .countdown-remaining-label {
+            font-size: 0.65rem; color: var(--muted); margin-top: 1px;
+        }
+        .progress-track {
+            height: 8px; border-radius: 99px;
+            background: var(--border); overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%; border-radius: 99px;
+            background: linear-gradient(90deg, var(--green-lt), var(--green-mid));
+            transition: width 0.8s ease;
+        }
+        .progress-meta {
+            display: flex; justify-content: space-between;
+            margin-top: 5px;
+            font-size: 0.65rem; color: var(--muted-lt);
+        }
+
         /* status pills */
         .status-row {
             display: flex; gap: 8px; margin-top: 12px;
@@ -514,8 +567,35 @@
     <!-- ── CONTENT ── -->
     <div class="content">
 
+        <!-- Step 2: Shift Countdown -->
+        <div class="shift-countdown fade-up d1" id="shiftCountdown">
+            <div class="countdown-top">
+                <div class="countdown-shift">
+                    <div class="countdown-shift-icon" id="cdIcon">
+                        <i class="bi bi-brightness-high-fill" id="cdIconI"></i>
+                    </div>
+                    <div>
+                        <div class="countdown-shift-name"  id="cdName">—</div>
+                        <div class="countdown-shift-range" id="cdRange">—</div>
+                    </div>
+                </div>
+                <div class="countdown-remaining">
+                    <div class="countdown-remaining-value" id="cdRemaining">—</div>
+                    <div class="countdown-remaining-label">เหลืออีก</div>
+                </div>
+            </div>
+            <div class="progress-track">
+                <div class="progress-fill" id="cdBar" style="width:0%"></div>
+            </div>
+            <div class="progress-meta">
+                <span id="cdStart">—</span>
+                <span id="cdPercent">0%</span>
+                <span id="cdEnd">—</span>
+            </div>
+        </div>
+
         <!-- งานประจำวัน -->
-        <div class="sec-label fade-up d1">
+        <div class="sec-label fade-up d3">
             <i class="bi bi-grid-1x2-fill"></i> งานประจำวัน
         </div>
 
@@ -620,6 +700,61 @@
     }
 
     setInterval(updateSyncLabel, 30000); // อัปเดต label ทุก 30 วิ
+
+    // ── Step 2: Shift Countdown ─────────────────────────────
+    const SHIFT_DEF = [
+        { label: 'กะเช้า', icon: 'bi-brightness-high-fill', iconBg: '#f0fdf4', iconColor: '#166534', start: 6,  end: 18 },
+        { label: 'กะดึก', icon: 'bi-moon-stars-fill',        iconBg: '#eef2ff', iconColor: '#4338ca', start: 18, end: 6  },
+    ];
+
+    function getShiftInfo() {
+        const h = new Date().getHours();
+        return (h >= 6 && h < 18) ? SHIFT_DEF[0] : SHIFT_DEF[1];
+    }
+
+    function calcCountdown() {
+        const now  = new Date();
+        const h    = now.getHours();
+        const m    = now.getMinutes();
+        const cur  = h * 60 + m;
+        const shift = getShiftInfo();
+        const TOTAL = 12 * 60; // 720 นาที
+
+        let elapsed;
+        if (shift.start === 6) {
+            elapsed = cur - 6 * 60;
+        } else {
+            elapsed = cur >= 18 * 60 ? cur - 18 * 60 : (24 * 60 - 18 * 60) + cur;
+        }
+
+        elapsed  = Math.max(0, Math.min(TOTAL, elapsed));
+        const remaining = TOTAL - elapsed;
+        const pct = Math.round((elapsed / TOTAL) * 100);
+        const rh  = Math.floor(remaining / 60);
+        const rm  = remaining % 60;
+
+        return { shift, pct, rh, rm, elapsed };
+    }
+
+    function renderCountdown() {
+        const { shift, pct, rh, rm } = calcCountdown();
+
+        document.getElementById('cdIconI').className = `bi ${shift.icon}`;
+        const iconEl = document.getElementById('cdIcon');
+        iconEl.style.background = shift.iconBg;
+        iconEl.style.color      = shift.iconColor;
+
+        document.getElementById('cdName').textContent    = shift.label;
+        document.getElementById('cdRange').textContent   = shift.start === 6 ? '06:00 – 18:00' : '18:00 – 06:00';
+        document.getElementById('cdRemaining').textContent = `${rh} ชม. ${String(rm).padStart(2,'0')} น.`;
+        document.getElementById('cdBar').style.width    = `${pct}%`;
+        document.getElementById('cdPercent').textContent = `${pct}%`;
+        document.getElementById('cdStart').textContent   = shift.start === 6 ? '06:00' : '18:00';
+        document.getElementById('cdEnd').textContent     = shift.start === 6 ? '18:00' : '06:00';
+    }
+
+    renderCountdown();
+    setInterval(renderCountdown, 60000); // อัปเดตทุก 1 นาที
 
     // ══════════════════════════════════
     // CLOCK
