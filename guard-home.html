@@ -241,6 +241,11 @@
         .btn-refresh.spinning i { animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
+        .sync-label {
+            font-size: 0.65rem; color: rgba(255,255,255,0.5);
+            margin-top: 3px; text-align: center; letter-spacing: 0.3px;
+        }
+
         /* status pills */
         .status-row {
             display: flex; gap: 8px; margin-top: 12px;
@@ -484,9 +489,12 @@
                 <div class="profile-greeting" id="profileGreeting">ยินดีต้อนรับ</div>
                 <div class="profile-name"     id="profileName">Guard Patrol</div>
             </div>
-            <button class="btn-refresh" id="btnRefresh" onclick="refreshProfile()" title="รีเฟรชข้อมูล">
-                <i class="bi bi-arrow-clockwise"></i>
-            </button>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0;">
+                <button class="btn-refresh" id="btnRefresh" onclick="refreshProfile()" title="รีเฟรชข้อมูล">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+                <div class="sync-label" id="syncLabel">—</div>
+            </div>
         </div>
 
         <!-- Status pills -->
@@ -592,6 +600,27 @@
     // ══════════════════════════════════
     const LIFF_ID = '2007053300-OBRxPyTY';
 
+    // ── Step 1: Last sync timestamp ─────────────────────────
+    let lastSyncTime = null;
+
+    function updateSyncLabel() {
+        const el = document.getElementById('syncLabel');
+        if (!el) return;
+        if (!lastSyncTime) { el.textContent = '—'; return; }
+
+        const diffSec = Math.floor((Date.now() - lastSyncTime) / 1000);
+        if (diffSec < 60)       el.textContent = 'เมื่อกี้';
+        else if (diffSec < 3600) el.textContent = `${Math.floor(diffSec / 60)} นาทีที่แล้ว`;
+        else                     el.textContent = `${Math.floor(diffSec / 3600)} ชั่วโมงที่แล้ว`;
+    }
+
+    function stampSync() {
+        lastSyncTime = Date.now();
+        updateSyncLabel();
+    }
+
+    setInterval(updateSyncLabel, 30000); // อัปเดต label ทุก 30 วิ
+
     // ══════════════════════════════════
     // CLOCK
     // ══════════════════════════════════
@@ -693,6 +722,7 @@
             }
             updateNet();
             renderShift();
+            stampSync();
         } catch (err) {
             console.warn('Refresh error:', err);
         } finally {
@@ -721,6 +751,7 @@
             document.getElementById('profileGreeting').textContent = getGreeting();
         }
 
+        stampSync();
         showApp();
     }
 
