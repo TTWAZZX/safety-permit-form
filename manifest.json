@@ -1,0 +1,25 @@
+{
+  "name": "Thai Summit SHE Guard App",
+  "short_name": "TSS Guard",
+  "description": "ระบบจัดการงานรปภ. บริษัท ไทยซัมมิท จำกัด (มหาชน)",
+  "start_url": "./guard-home.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#14532d",
+  "theme_color": "#14532d",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "https://lh3.googleusercontent.com/d/1aiOAp47RzJXyT3W4YzBjUpPvImxoU-p4",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://lh3.googleusercontent.com/d/1aiOAp47RzJXyT3W4YzBjUpPvImxoU-p4",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

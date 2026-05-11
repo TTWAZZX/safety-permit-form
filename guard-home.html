@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Thai Summit — SHE Guard App</title>
 
+    <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" href="https://lh3.googleusercontent.com/d/1aiOAp47RzJXyT3W4YzBjUpPvImxoU-p4">
     <link rel="apple-touch-icon"       href="https://lh3.googleusercontent.com/d/1aiOAp47RzJXyT3W4YzBjUpPvImxoU-p4">
 
@@ -25,7 +26,6 @@
         :root {
             /* สีส้ม — accent จากโลโก้ SHE (ตัวอักษร S, มือ) */
             --orange:        #d4500a;
-            --orange-lt:     #ea580c;
             --orange-bg:     #fff4ee;
             --orange-pale:   #ffe8d6;
             --orange-border: #f4b896;
@@ -41,10 +41,8 @@
             /* สีเขียวกลาง — สำหรับ card น้ำ/meter */
             --teal:          #15803d;
             --teal-bg:       #f0fdf4;
-            --teal-border:   #86efac;
 
             --ink:         #1c1917;
-            --ink-2:       #44403c;
             --muted:       #78716c;
             --muted-lt:    #a8a29e;
 
@@ -54,10 +52,8 @@
 
             --radius-sm:   10px;
             --radius:      16px;
-            --radius-lg:   22px;
 
             --shadow-sm:   0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.05);
-            --shadow:      0 4px 14px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05);
         }
 
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -420,9 +416,6 @@
         .tile-teal  { --tile-color: var(--teal); }
         .tile-teal  .tile-icon { background: var(--teal-bg); color: var(--teal); }
 
-        /* orange tile icon ใช้สีส้มตามโลโก้ */
-        .tile-orange .tile-icon { background: var(--orange-bg); color: var(--orange); }
-
         .tile-orange { --tile-color: var(--orange); }
         .tile-orange .tile-icon { background: var(--orange-bg); color: var(--orange); }
 
@@ -437,28 +430,36 @@
         @keyframes ripple-anim { to { transform: scale(5); opacity: 0; } }
 
         /* ════════════════════════════════
-           INSTALL BANNER
+           PWA INSTALL BANNER
         ════════════════════════════════ */
-        .install-banner {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 15px 16px;
-            display: flex; align-items: center; gap: 13px;
-            box-shadow: var(--shadow-sm);
-            margin-bottom: 22px;
-        }
-        .install-icon-wrap {
-            width: 42px; height: 42px; border-radius: 12px;
-            background: var(--orange-bg);
+        .pwa-banner {
+            background: linear-gradient(135deg, var(--orange-bg) 0%, #fff 100%);
             border: 1px solid var(--orange-border);
-            display: flex; align-items: center; justify-content: center;
-            color: var(--orange); font-size: 1.2rem; flex-shrink: 0;
+            border-radius: var(--radius);
+            padding: 13px 15px;
+            display: flex; align-items: center; gap: 12px;
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 20px;
         }
-        .install-banner p {
-            font-size: 0.76rem; color: var(--muted); line-height: 1.5;
+        .pwa-banner-icon {
+            width: 44px; height: 44px; border-radius: 12px;
+            overflow: hidden; flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.12);
         }
-        .install-banner strong { color: var(--ink); }
+        .pwa-banner-icon img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .pwa-banner-body { flex: 1; min-width: 0; }
+        .pwa-banner-title { font-size: 0.82rem; font-weight: 800; color: var(--ink); }
+        .pwa-banner-sub { font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+        .pwa-banner-btn {
+            background: var(--orange); color: #fff;
+            border: none; border-radius: 9px;
+            padding: 7px 13px; font-size: 0.76rem; font-weight: 700;
+            font-family: 'Sarabun', sans-serif;
+            cursor: pointer; flex-shrink: 0;
+            display: flex; align-items: center; gap: 5px;
+            transition: background 0.15s;
+        }
+        .pwa-banner-btn:active { background: var(--green); }
 
         /* ════════════════════════════════
            FOOTER
@@ -479,6 +480,20 @@
         /* ════════════════════════════════
            ANIMATIONS
         ════════════════════════════════ */
+        /* ── Step 5: Attendance status ── */
+        .attend-status {
+            display: inline-flex; align-items: center; gap: 5px;
+            font-size: 0.7rem; font-weight: 700;
+            padding: 4px 8px; border-radius: 7px;
+            margin-top: 5px; width: fit-content;
+            border: 1px solid transparent;
+            transition: background 0.3s;
+        }
+        .attend-status i { font-size: 0.75rem; }
+        .attend-status.checked { background: var(--green-pale); color: var(--green-mid); border-color: var(--green-border); }
+        .attend-status.pending { background: #fef9c3; color: #854d0e; border-color: #fde047; }
+        .attend-status.loading { background: var(--border); color: var(--muted-lt); border-color: var(--border); }
+
         /* ── Step 4: Violation badge ── */
         .violation-badge {
             display: inline-flex; align-items: center; gap: 4px;
@@ -523,6 +538,75 @@
         .d5 { animation-delay: 0.28s; }
         .d6 { animation-delay: 0.34s; }
         .d7 { animation-delay: 0.40s; }
+        .d8 { animation-delay: 0.46s; }
+
+        /* ── Step 6: Announcements ── */
+        .announce-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 22px; }
+        .announce-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--ann-color, var(--border));
+            border-radius: var(--radius);
+            padding: 14px 15px;
+            box-shadow: var(--shadow-sm);
+        }
+        .announce-cat {
+            display: inline-flex; align-items: center; gap: 4px;
+            font-size: 0.64rem; font-weight: 800; text-transform: uppercase;
+            letter-spacing: 0.8px; padding: 2px 7px; border-radius: 5px;
+            background: var(--ann-pale, var(--border));
+            color: var(--ann-color, var(--muted));
+            margin-bottom: 7px;
+        }
+        .announce-title {
+            font-size: 0.92rem; font-weight: 800;
+            color: var(--ink); line-height: 1.35; margin-bottom: 5px;
+        }
+        .announce-body {
+            font-size: 0.78rem; color: var(--muted); line-height: 1.55;
+            display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3;
+            -webkit-box-orient: vertical; overflow: hidden;
+        }
+        .announce-date {
+            font-size: 0.66rem; color: var(--muted-lt); margin-top: 8px;
+            display: flex; align-items: center; gap: 4px;
+        }
+        .announce-empty {
+            text-align: center; padding: 28px 16px;
+            color: var(--muted-lt); font-size: 0.82rem;
+            background: var(--surface);
+            border: 1px dashed var(--border);
+            border-radius: var(--radius);
+        }
+        .announce-empty i { font-size: 1.6rem; display: block; margin-bottom: 8px; }
+
+        /* ── Skeleton shimmer ── */
+        @keyframes shimmer {
+            0%   { background-position: -200% 0; }
+            100% { background-position:  200% 0; }
+        }
+        .skel {
+            background: linear-gradient(90deg, var(--border) 25%, #fafaf9 50%, var(--border) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.4s ease-in-out infinite;
+            border-radius: 6px;
+        }
+        .skel-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--border);
+            border-radius: var(--radius);
+            padding: 14px 15px;
+            box-shadow: var(--shadow-sm);
+            display: flex; flex-direction: column; gap: 9px;
+        }
+        .skel.h-10 { height: 10px; }
+        .skel.h-14 { height: 14px; }
+        .skel.h-8  { height: 8px; }
+        .skel.w-30 { width: 30%; }
+        .skel.w-55 { width: 55%; }
+        .skel.w-75 { width: 75%; }
+        .skel.w-85 { width: 85%; }
     </style>
 </head>
 <body>
@@ -606,6 +690,20 @@
     <!-- ── CONTENT ── -->
     <div class="content">
 
+        <!-- PWA Install Banner (แสดงเฉพาะเมื่อยังไม่ได้ติดตั้ง) -->
+        <div id="pwaBanner" class="pwa-banner fade-up d1" style="display:none;">
+            <div class="pwa-banner-icon">
+                <img src="https://lh3.googleusercontent.com/d/1aiOAp47RzJXyT3W4YzBjUpPvImxoU-p4" alt="Thai Summit">
+            </div>
+            <div class="pwa-banner-body">
+                <div class="pwa-banner-title">ติดตั้งแอปบนหน้าจอหลัก</div>
+                <div class="pwa-banner-sub">เข้าใช้งานได้เร็วขึ้น ไม่ต้องเปิดเบราว์เซอร์</div>
+            </div>
+            <button class="pwa-banner-btn" onclick="installPwa()">
+                <i class="bi bi-download"></i> ติดตั้ง
+            </button>
+        </div>
+
         <!-- Step 2: Shift Countdown -->
         <div class="shift-countdown fade-up d1" id="shiftCountdown">
             <div class="countdown-top">
@@ -651,6 +749,10 @@
                     <div class="tile-name">ลงเวลา<br>รปภ.</div>
                     <div class="p-badge badge-line">
                         <i class="bi bi-chat-fill"></i> LINE LIFF
+                    </div>
+                    <div id="attendStatus" class="attend-status loading">
+                        <i class="bi bi-clock"></i>
+                        <span id="attendStatusText">กำลังโหลด...</span>
                     </div>
                 </div>
             </a>
@@ -703,6 +805,30 @@
         </div>
 
 
+        <!-- กระดานข่าว SHE -->
+        <div class="sec-label fade-up d6">
+            <i class="bi bi-megaphone-fill"></i> กระดานข่าว SHE
+        </div>
+        <div id="announcementList" class="announce-list fade-up d8">
+            <div class="skel-card">
+                <div class="skel h-10 w-30"></div>
+                <div class="skel h-14 w-85"></div>
+                <div class="skel h-10 w-75"></div>
+                <div class="skel h-8  w-55"></div>
+            </div>
+            <div class="skel-card">
+                <div class="skel h-10 w-30"></div>
+                <div class="skel h-14 w-85"></div>
+                <div class="skel h-10 w-55"></div>
+                <div class="skel h-8  w-30"></div>
+            </div>
+            <div class="skel-card">
+                <div class="skel h-10 w-30"></div>
+                <div class="skel h-14 w-75"></div>
+                <div class="skel h-8  w-55"></div>
+            </div>
+        </div>
+
     </div>
 
     <!-- ── FOOTER ── -->
@@ -731,7 +857,8 @@
     const db = window.supabase?.createClient(SUPABASE_URL, SUPABASE_KEY) ?? null;
 
     // ── Step 1: Last sync timestamp ─────────────────────────
-    let lastSyncTime = null;
+    let lastSyncTime    = null;
+    let lineDisplayName = null; // Step 5: set after LIFF getProfile
 
     function updateSyncLabel() {
         const el = document.getElementById('syncLabel');
@@ -868,12 +995,17 @@
     }, { passive: true });
 
     // ── Step 4: Violation count ─────────────────────────────
-    function getTodayBangkok() {
+    function getTodayDateBkk() {
         const bkk = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
         const y = bkk.getFullYear();
         const m = String(bkk.getMonth() + 1).padStart(2, '0');
         const d = String(bkk.getDate()).padStart(2, '0');
-        return { start: `${y}-${m}-${d}T00:00:00+07:00`, end: `${y}-${m}-${d}T23:59:59+07:00` };
+        return `${y}-${m}-${d}`;
+    }
+
+    function getTodayBangkok() {
+        const today = getTodayDateBkk();
+        return { start: `${today}T00:00:00+07:00`, end: `${today}T23:59:59+07:00` };
     }
 
     async function fetchViolationCount() {
@@ -898,6 +1030,112 @@
             }
         } catch (err) {
             console.warn('fetchViolationCount error:', err);
+        }
+    }
+
+    // ── Step 5: Attendance status ───────────────────────────
+    function fmtTime(t) {
+        if (!t) return '';
+        return t.includes('T') ? t.slice(11, 16) : t.slice(0, 5);
+    }
+
+    async function fetchAttendanceStatus() {
+        const el     = document.getElementById('attendStatus');
+        const textEl = document.getElementById('attendStatusText');
+        if (!el || !textEl) return;
+
+        if (!db || !lineDisplayName) {
+            el.className = 'attend-status pending';
+            el.querySelector('i').className = 'bi bi-clock';
+            textEl.textContent = 'ยังไม่ลงเวลา';
+            return;
+        }
+
+        el.className = 'attend-status loading';
+        el.querySelector('i').className = 'bi bi-hourglass-split';
+        textEl.textContent = 'กำลังโหลด...';
+
+        try {
+            const today = getTodayDateBkk();
+
+            const { data, error } = await db
+                .from('guard_attendance')
+                .select('time_in, time_out')
+                .eq('fullname', lineDisplayName)
+                .eq('work_date', today)
+                .order('created_at', { ascending: false })
+                .limit(1);
+
+            if (error) throw error;
+
+            if (data && data.length > 0 && data[0].time_in) {
+                const rec = data[0];
+                el.className = 'attend-status checked';
+                el.querySelector('i').className = 'bi bi-check-circle-fill';
+                let txt = `เข้า ${fmtTime(rec.time_in)}`;
+                if (rec.time_out) txt += ` · ออก ${fmtTime(rec.time_out)}`;
+                textEl.textContent = txt;
+            } else {
+                el.className = 'attend-status pending';
+                el.querySelector('i').className = 'bi bi-clock';
+                textEl.textContent = 'ยังไม่ลงเวลา';
+            }
+        } catch (err) {
+            console.warn('fetchAttendanceStatus error:', err);
+            el.className = 'attend-status loading';
+            el.querySelector('i').className = 'bi bi-clock';
+            textEl.textContent = '—';
+        }
+    }
+
+    // ── Step 6: Announcements ───────────────────────────────
+    function escHtml(str) {
+        return String(str ?? '')
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    const ANN_STYLE = {
+        'ด่วน':        { color: '#dc2626', pale: '#fee2e2' },
+        'ความปลอดภัย': { color: '#166534', pale: '#dcfce7' },
+        'ทั่วไป':       { color: '#475569', pale: '#f1f5f9' },
+    };
+
+    async function fetchAnnouncements() {
+        const listEl = document.getElementById('announcementList');
+        if (!db || !listEl) return;
+
+        try {
+            const { data, error } = await db
+                .from('she_announcements')
+                .select('id, title, body, category, created_at')
+                .eq('is_active', true)
+                .order('created_at', { ascending: false })
+                .limit(5);
+
+            if (error) throw error;
+
+            if (!data || data.length === 0) {
+                listEl.innerHTML = '<div class="announce-empty"><i class="bi bi-megaphone"></i>ไม่มีประกาศในขณะนี้</div>';
+                return;
+            }
+
+            listEl.innerHTML = data.map(item => {
+                const s = ANN_STYLE[item.category] ?? ANN_STYLE['ทั่วไป'];
+                const date = new Date(item.created_at).toLocaleDateString('th-TH', {
+                    timeZone: 'Asia/Bangkok', day: 'numeric', month: 'short', year: 'numeric'
+                });
+                return `
+                <div class="announce-card" style="--ann-color:${s.color};--ann-pale:${s.pale}">
+                    <div class="announce-cat">${escHtml(item.category ?? 'ทั่วไป')}</div>
+                    <div class="announce-title">${escHtml(item.title)}</div>
+                    ${item.body ? `<div class="announce-body">${escHtml(item.body)}</div>` : ''}
+                    <div class="announce-date"><i class="bi bi-calendar3"></i> ${date}</div>
+                </div>`;
+            }).join('');
+        } catch (err) {
+            console.warn('fetchAnnouncements error:', err);
+            listEl.innerHTML = '<div class="announce-empty"><i class="bi bi-wifi-off"></i>ไม่สามารถโหลดข้อมูลได้</div>';
         }
     }
 
@@ -926,25 +1164,13 @@
     }
 
     // ══════════════════════════════════
-    // SHIFT DETECTION
+    // SHIFT DETECTION (ใช้ SHIFT_DEF เดียวกับ Countdown)
     // ══════════════════════════════════
-    const SHIFTS = [
-        { label: 'กะเช้า',  start:  7, end: 15, icon: 'bi-brightness-high-fill',  time: '07:00–15:00' },
-        { label: 'กะบ่าย', start: 15, end: 23, icon: 'bi-sunset-fill',            time: '15:00–23:00' },
-        { label: 'กะดึก',  start: 23, end:  7, icon: 'bi-moon-stars-fill',        time: '23:00–07:00' },
-    ];
-
-    function detectShift() {
-        const h = new Date().getHours();
-        if (h >= 7  && h < 15) return SHIFTS[0];
-        if (h >= 15 && h < 23) return SHIFTS[1];
-        return SHIFTS[2];
-    }
-
     function renderShift() {
-        const s = detectShift();
-        document.getElementById('shiftPillIcon').className  = `bi ${s.icon}`;
-        document.getElementById('shiftPillLabel').textContent = `${s.label} ${s.time}`;
+        const s = getShiftInfo();
+        document.getElementById('shiftPillIcon').className    = `bi ${s.icon}`;
+        document.getElementById('shiftPillLabel').textContent =
+            `${s.label} ${s.start === 6 ? '06:00–18:00' : '18:00–06:00'}`;
     }
     renderShift();
 
@@ -980,6 +1206,7 @@
     // LIFF — PROFILE
     // ══════════════════════════════════
     function applyProfile(profile) {
+        lineDisplayName = profile.displayName; // Step 5
         document.getElementById('profileGreeting').textContent = getGreeting();
         document.getElementById('profileName').textContent     = profile.displayName;
 
@@ -1000,15 +1227,18 @@
                 const profile = await liff.getProfile();
                 applyProfile(profile);
             }
-            updateNet();
-            renderShift();
-            fetchViolationCount();
-            stampSync();
         } catch (err) {
-            console.warn('Refresh error:', err);
+            console.warn('LIFF refresh error:', err);
         } finally {
             setTimeout(() => btn.classList.remove('spinning'), 600);
         }
+        // ดึงข้อมูล Supabase เสมอ แม้ LIFF จะ throw
+        updateNet();
+        renderShift();
+        fetchViolationCount();
+        fetchAttendanceStatus();
+        fetchAnnouncements();
+        stampSync();
     }
 
     // ══════════════════════════════════
@@ -1033,6 +1263,8 @@
         }
 
         fetchViolationCount();
+        fetchAttendanceStatus();
+        fetchAnnouncements();
         stampSync();
         showApp();
     }
@@ -1047,17 +1279,35 @@
     }
 
     // ══════════════════════════════════
+    // PWA INSTALL PROMPT
+    // ══════════════════════════════════
+    let deferredInstallPrompt = null;
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredInstallPrompt = e;
+        document.getElementById('pwaBanner').style.display = 'flex';
+    });
+
+    window.addEventListener('appinstalled', () => {
+        document.getElementById('pwaBanner').style.display = 'none';
+        deferredInstallPrompt = null;
+    });
+
+    function installPwa() {
+        if (!deferredInstallPrompt) return;
+        deferredInstallPrompt.prompt();
+        deferredInstallPrompt.userChoice.then(() => {
+            deferredInstallPrompt = null;
+            document.getElementById('pwaBanner').style.display = 'none';
+        });
+    }
+
+    // ══════════════════════════════════
     // SERVICE WORKER (PWA)
     // ══════════════════════════════════
     if ('serviceWorker' in navigator) {
-        const sw = `
-            const C='tsh-she-v1';
-            self.addEventListener('install',e=>e.waitUntil(caches.open(C).then(c=>c.add('./guard-home.html'))));
-            self.addEventListener('fetch',e=>e.respondWith(fetch(e.request).catch(()=>caches.match(e.request))));
-        `;
-        navigator.serviceWorker
-            .register(URL.createObjectURL(new Blob([sw], { type: 'application/javascript' })))
-            .catch(() => {});
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
     }
 
     window.addEventListener('load', initApp);
