@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Thai Summit — SHE Guard App</title>
+
+    <meta name="theme-color" content="#ea580c">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Thai Summit SHE">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
+    <style>
+        /* ════════════════════════════════
+           TOKENS
+        ════════════════════════════════ */
+        :root {
+            --orange:      #ea580c;
+            --orange-lt:   #f97316;
+            --orange-bg:   #fff7ed;
+            --orange-pale: #ffedd5;
+            --orange-border: #fed7aa;
+
+            --green:       #16a34a;
+            --green-lt:    #22c55e;
+            --green-bg:    #f0fdf4;
+            --green-pale:  #dcfce7;
+            --green-border:#bbf7d0;
+
+            --teal:        #0891b2;
+            --teal-bg:     #ecfeff;
+            --teal-border: #a5f3fc;
+
+            --ink:         #1c1917;
+            --ink-2:       #44403c;
+            --muted:       #78716c;
+            --muted-lt:    #a8a29e;
+
+            --bg:          #f5f5f4;
+            --surface:     #ffffff;
+            --border:      #e7e5e4;
+
+            --radius-sm:   10px;
+            --radius:      16px;
+            --radius-lg:   22px;
+
+            --shadow-sm:   0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.05);
+            --shadow:      0 4px 14px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background: var(--bg);
+            color: var(--ink);
+            min-height: 100dvh;
+            -webkit-tap-highlight-color: transparent;
+            overscroll-behavior: none;
+        }
+
+        /* ════════════════════════════════
+           LOADING
+        ════════════════════════════════ */
+        #loadingScreen {
+            position: fixed; inset: 0;
+            background: linear-gradient(155deg, var(--orange) 0%, #c2410c 100%);
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            gap: 18px; z-index: 9999;
+            transition: opacity 0.4s ease;
+        }
+        #loadingScreen.fade-out { opacity: 0; pointer-events: none; }
+
+        .load-logo {
+            width: 84px; height: 84px;
+            border-radius: 22px;
+            background: #fff;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            overflow: hidden;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .load-logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+        .load-company {
+            font-size: 1rem; font-weight: 800;
+            color: #fff; text-align: center; line-height: 1.35;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.15);
+        }
+        .load-dept {
+            font-size: 0.78rem; color: rgba(255,255,255,0.7);
+            text-align: center; margin-top: -10px;
+        }
+
+        .load-dots { display: flex; gap: 7px; }
+        .load-dots span {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: rgba(255,255,255,0.5);
+            animation: dot-pulse 1.2s ease-in-out infinite;
+        }
+        .load-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .load-dots span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes dot-pulse {
+            0%, 80%, 100% { transform: scale(0.75); opacity: 0.4; }
+            40%            { transform: scale(1.1);  opacity: 1; }
+        }
+
+        /* ════════════════════════════════
+           SHELL
+        ════════════════════════════════ */
+        #appContent { display: none; }
+
+        .shell {
+            max-width: 440px;
+            margin: 0 auto;
+            padding-bottom: calc(32px + env(safe-area-inset-bottom));
+        }
+
+        /* ════════════════════════════════
+           HEADER
+        ════════════════════════════════ */
+        .app-header {
+            background: linear-gradient(155deg, var(--orange-lt) 0%, var(--orange) 60%, #c2410c 100%);
+            padding: calc(env(safe-area-inset-top) + 18px) 18px 24px;
+            position: relative; overflow: hidden;
+        }
+
+        /* decorative circle */
+        .app-header::before {
+            content: '';
+            position: absolute; top: -80px; right: -80px;
+            width: 260px; height: 260px; border-radius: 50%;
+            background: rgba(255,255,255,0.07);
+            pointer-events: none;
+        }
+        .app-header::after {
+            content: '';
+            position: absolute; bottom: -60px; left: -40px;
+            width: 180px; height: 180px; border-radius: 50%;
+            background: rgba(255,255,255,0.05);
+            pointer-events: none;
+        }
+
+        /* top bar: logo + clock */
+        .header-top {
+            display: flex; align-items: center;
+            gap: 12px; position: relative;
+        }
+        .header-logo {
+            width: 46px; height: 46px;
+            border-radius: 12px;
+            background: #fff;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.18);
+            overflow: hidden; flex-shrink: 0;
+        }
+        .header-logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+        .header-brand { flex: 1; min-width: 0; }
+        .header-company {
+            font-size: 0.82rem; font-weight: 800;
+            color: #fff; line-height: 1.2;
+        }
+        .header-dept {
+            font-size: 0.68rem; color: rgba(255,255,255,0.7);
+            font-weight: 500; margin-top: 1px;
+        }
+
+        .header-clock { text-align: right; flex-shrink: 0; }
+        .clock-time {
+            font-size: 1.5rem; font-weight: 800;
+            color: #fff; letter-spacing: 0.5px;
+            font-variant-numeric: tabular-nums; line-height: 1;
+        }
+        .clock-date { font-size: 0.7rem; color: rgba(255,255,255,0.65); margin-top: 2px; }
+
+        /* profile card */
+        .profile-card {
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.25);
+            border-radius: var(--radius);
+            padding: 12px 14px;
+            display: flex; align-items: center; gap: 12px;
+            margin-top: 16px; position: relative;
+        }
+
+        .profile-pic-wrap {
+            position: relative; flex-shrink: 0;
+        }
+        .profile-pic {
+            width: 52px; height: 52px;
+            border-radius: 50%;
+            border: 2.5px solid rgba(255,255,255,0.9);
+            object-fit: cover;
+            display: block;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        .profile-pic-fallback {
+            width: 52px; height: 52px;
+            border-radius: 50%;
+            border: 2.5px solid rgba(255,255,255,0.9);
+            background: rgba(255,255,255,0.2);
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        .profile-pic-fallback i { font-size: 1.4rem; color: rgba(255,255,255,0.9); }
+
+        .profile-info { flex: 1; min-width: 0; }
+        .profile-greeting {
+            font-size: 0.72rem; color: rgba(255,255,255,0.75);
+            font-weight: 500;
+        }
+        .profile-name {
+            font-size: 1rem; font-weight: 800;
+            color: #fff; line-height: 1.2;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+
+        .btn-refresh {
+            width: 36px; height: 36px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.18);
+            border: 1px solid rgba(255,255,255,0.25);
+            color: #fff; font-size: 1rem;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: background 0.15s;
+            flex-shrink: 0;
+        }
+        .btn-refresh:active { background: rgba(255,255,255,0.30); }
+        .btn-refresh.spinning i { animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* status pills */
+        .status-row {
+            display: flex; gap: 8px; margin-top: 12px;
+            position: relative;
+        }
+        .stat-pill {
+            flex: 1;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 10px;
+            padding: 7px 11px;
+            display: flex; align-items: center; gap: 7px;
+            font-size: 0.78rem; font-weight: 600;
+            color: rgba(255,255,255,0.9);
+        }
+        .stat-pill i { font-size: 0.9rem; }
+        .net-dot {
+            width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+        }
+        .dot-on  { background: #4ade80; box-shadow: 0 0 6px #4ade80; }
+        .dot-off { background: #fbbf24; box-shadow: 0 0 6px #fbbf24; }
+
+        /* ════════════════════════════════
+           CONTENT
+        ════════════════════════════════ */
+        .content {
+            padding: 20px 16px 0;
+        }
+
+        .sec-label {
+            font-size: 0.7rem; font-weight: 800;
+            text-transform: uppercase; letter-spacing: 1.3px;
+            color: var(--muted);
+            margin-bottom: 10px; padding-left: 2px;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .sec-label i { font-size: 0.78rem; }
+
+        /* ════════════════════════════════
+           APP TILES
+        ════════════════════════════════ */
+        .tile-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .tile-grid.full { grid-template-columns: 1fr; }
+
+        .tile {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 18px 15px 15px;
+            text-decoration: none; color: var(--ink);
+            display: flex; flex-direction: column; gap: 11px;
+            position: relative; overflow: hidden;
+            cursor: pointer;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.12s ease, box-shadow 0.12s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .tile::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: var(--tile-color, var(--border));
+            border-radius: var(--radius) var(--radius) 0 0;
+        }
+        .tile:active { transform: scale(0.965); box-shadow: none; }
+
+        /* Wide tile */
+        .tile.wide {
+            flex-direction: row; align-items: center;
+            padding: 17px 18px; gap: 15px;
+        }
+        .tile.wide .tile-body { flex: 1; min-width: 0; }
+        .tile.wide .tile-chevron {
+            color: var(--muted-lt); font-size: 1rem; flex-shrink: 0;
+        }
+
+        /* Icon box */
+        .tile-icon {
+            width: 50px; height: 50px; border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem; flex-shrink: 0;
+        }
+        .tile.wide .tile-icon { width: 54px; height: 54px; font-size: 1.6rem; border-radius: 15px; }
+
+        .tile-eyebrow {
+            font-size: 0.66rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.9px;
+            color: var(--muted); margin-bottom: 2px;
+        }
+        .tile-name {
+            font-size: 1rem; font-weight: 800;
+            color: var(--ink); line-height: 1.2;
+        }
+        .tile-desc {
+            font-size: 0.76rem; color: var(--muted);
+            line-height: 1.4; margin-top: 3px;
+        }
+
+        /* Platform badge */
+        .p-badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            border-radius: 6px; padding: 3px 8px;
+            font-size: 0.65rem; font-weight: 700;
+            margin-top: 5px; width: fit-content;
+        }
+        .p-badge i { font-size: 0.7rem; }
+        .badge-line { background: var(--green-pale); border: 1px solid var(--green-border); color: var(--green); }
+        .badge-web  { background: var(--teal-bg);   border: 1px solid var(--teal-border);  color: var(--teal); }
+
+        /* Color variants */
+        .tile-green { --tile-color: var(--green); }
+        .tile-green .tile-icon { background: var(--green-bg); color: var(--green); }
+
+        .tile-teal  { --tile-color: var(--teal); }
+        .tile-teal  .tile-icon { background: var(--teal-bg); color: var(--teal); }
+
+        .tile-orange { --tile-color: var(--orange); }
+        .tile-orange .tile-icon { background: var(--orange-bg); color: var(--orange); }
+
+        /* Ripple */
+        .ripple {
+            position: absolute; border-radius: 50%;
+            background: rgba(0,0,0,0.06);
+            transform: scale(0);
+            animation: ripple-anim 0.5s linear forwards;
+            pointer-events: none;
+        }
+        @keyframes ripple-anim { to { transform: scale(5); opacity: 0; } }
+
+        /* ════════════════════════════════
+           INSTALL BANNER
+        ════════════════════════════════ */
+        .install-banner {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 15px 16px;
+            display: flex; align-items: center; gap: 13px;
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 22px;
+        }
+        .install-icon-wrap {
+            width: 42px; height: 42px; border-radius: 12px;
+            background: var(--orange-bg);
+            border: 1px solid var(--orange-border);
+            display: flex; align-items: center; justify-content: center;
+            color: var(--orange); font-size: 1.2rem; flex-shrink: 0;
+        }
+        .install-banner p {
+            font-size: 0.76rem; color: var(--muted); line-height: 1.5;
+        }
+        .install-banner strong { color: var(--ink); }
+
+        /* ════════════════════════════════
+           FOOTER
+        ════════════════════════════════ */
+        .app-footer {
+            text-align: center;
+            font-size: 0.68rem; color: var(--muted-lt);
+            line-height: 1.6; padding: 0 16px;
+        }
+        .footer-logo {
+            width: 28px; height: 28px; border-radius: 7px;
+            overflow: hidden; display: inline-block;
+            vertical-align: middle; margin-right: 6px;
+            box-shadow: var(--shadow-sm);
+        }
+        .footer-logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+        /* ════════════════════════════════
+           ANIMATIONS
+        ════════════════════════════════ */
+        .fade-up {
+            opacity: 0; transform: translateY(14px);
+            animation: fadeUp 0.35s ease forwards;
+        }
+        @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+        .d1 { animation-delay: 0.04s; }
+        .d2 { animation-delay: 0.10s; }
+        .d3 { animation-delay: 0.16s; }
+        .d4 { animation-delay: 0.22s; }
+        .d5 { animation-delay: 0.28s; }
+        .d6 { animation-delay: 0.34s; }
+        .d7 { animation-delay: 0.40s; }
+    </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════
+     LOADING
+══════════════════════════════════ -->
+<div id="loadingScreen">
+    <div class="load-logo">
+        <img src="https://lh3.googleusercontent.com/d/1npCeM2oX6k8yHPojFgoBKFl_nTVMGUT0" alt="Thai Summit">
+    </div>
+    <div class="load-company">บริษัท ไทยซัมมิท จำกัด (มหาชน)</div>
+    <div class="load-dept">ส่วนความปลอดภัย อาชีวอนามัย และสิ่งแวดล้อม (SHE)</div>
+    <div class="load-dots"><span></span><span></span><span></span></div>
+</div>
+
+<!-- ══════════════════════════════════
+     MAIN APP
+══════════════════════════════════ -->
+<div id="appContent">
+<div class="shell">
+
+    <!-- ── HEADER ── -->
+    <header class="app-header">
+
+        <!-- Logo + Clock -->
+        <div class="header-top">
+            <div class="header-logo">
+                <img src="https://lh3.googleusercontent.com/d/1npCeM2oX6k8yHPojFgoBKFl_nTVMGUT0" alt="Thai Summit">
+            </div>
+            <div class="header-brand">
+                <div class="header-company">บริษัท ไทยซัมมิท จำกัด (มหาชน)</div>
+                <div class="header-dept">ส่วนความปลอดภัย อาชีวอนามัย และสิ่งแวดล้อม (SHE)</div>
+            </div>
+            <div class="header-clock">
+                <div class="clock-time" id="liveClock">00:00</div>
+                <div class="clock-date"  id="liveDate">—</div>
+            </div>
+        </div>
+
+        <!-- Profile card -->
+        <div class="profile-card">
+            <div class="profile-pic-wrap">
+                <div class="profile-pic-fallback" id="profilePicFallback">
+                    <i class="bi bi-person-fill"></i>
+                </div>
+                <img class="profile-pic" id="profilePic" src="" alt="" style="display:none;">
+            </div>
+            <div class="profile-info">
+                <div class="profile-greeting" id="profileGreeting">ยินดีต้อนรับ</div>
+                <div class="profile-name"     id="profileName">Guard Patrol</div>
+            </div>
+            <button class="btn-refresh" id="btnRefresh" onclick="refreshProfile()" title="รีเฟรชข้อมูล">
+                <i class="bi bi-arrow-clockwise"></i>
+            </button>
+        </div>
+
+        <!-- Status pills -->
+        <div class="status-row">
+            <div class="stat-pill">
+                <span class="net-dot" id="netDot"></span>
+                <span id="netLabel">ออนไลน์</span>
+            </div>
+            <div class="stat-pill" id="shiftPill">
+                <i class="bi bi-brightness-high-fill" id="shiftPillIcon"></i>
+                <span id="shiftPillLabel">—</span>
+            </div>
+        </div>
+
+    </header>
+
+    <!-- ── CONTENT ── -->
+    <div class="content">
+
+        <!-- งานประจำวัน -->
+        <div class="sec-label fade-up d1">
+            <i class="bi bi-grid-1x2-fill"></i> งานประจำวัน
+        </div>
+
+        <div class="tile-grid">
+
+            <a class="tile tile-green fade-up d2"
+               href="https://liff.line.me/2007053300-gJitj7Vr"
+               onclick="tapTile(event)">
+                <div class="tile-icon">
+                    <i class="bi bi-person-badge-fill"></i>
+                </div>
+                <div>
+                    <div class="tile-eyebrow">Attendance</div>
+                    <div class="tile-name">ลงเวลา<br>รปภ.</div>
+                    <div class="p-badge badge-line">
+                        <i class="bi bi-chat-fill"></i> LINE LIFF
+                    </div>
+                </div>
+            </a>
+
+            <a class="tile tile-teal fade-up d3"
+               href="https://liff.line.me/2007053300-w9vHc99G"
+               onclick="tapTile(event)">
+                <div class="tile-icon">
+                    <i class="bi bi-droplet-half"></i>
+                </div>
+                <div>
+                    <div class="tile-eyebrow">Utility</div>
+                    <div class="tile-name">บันทึก<br>น้ำดื่ม</div>
+                    <div class="p-badge badge-line">
+                        <i class="bi bi-chat-fill"></i> LINE LIFF
+                    </div>
+                </div>
+            </a>
+
+        </div>
+
+        <!-- ความปลอดภัย -->
+        <div class="sec-label fade-up d4">
+            <i class="bi bi-shield-exclamation"></i> ความปลอดภัย
+        </div>
+
+        <div class="tile-grid full">
+            <a class="tile wide tile-orange fade-up d5"
+               href="https://ttwazzx.github.io/safety-permit-form/guard_violation.html"
+               onclick="tapTile(event)">
+                <div class="tile-icon">
+                    <i class="bi bi-exclamation-octagon-fill"></i>
+                </div>
+                <div class="tile-body">
+                    <div class="tile-eyebrow">Safety Report</div>
+                    <div class="tile-name">รายงานความผิด</div>
+                    <div class="tile-desc">บันทึก Violation Report พร้อมรูปหลักฐานและพิกัด GPS</div>
+                    <div class="p-badge badge-web">
+                        <i class="bi bi-globe2"></i> Web App
+                    </div>
+                </div>
+                <i class="bi bi-chevron-right tile-chevron"></i>
+            </a>
+        </div>
+
+        <!-- Install banner -->
+        <div class="install-banner fade-up d6">
+            <div class="install-icon-wrap">
+                <i class="bi bi-phone-fill"></i>
+            </div>
+            <p>
+                <strong>บันทึกเป็นไอคอนหน้าจอ</strong><br>
+                iOS: <strong>Share <i class="bi bi-box-arrow-up"></i> → Add to Home Screen</strong><br>
+                Android: <strong><i class="bi bi-three-dots-vertical"></i> → Add to Home screen</strong>
+            </p>
+        </div>
+
+    </div>
+
+    <!-- ── FOOTER ── -->
+    <div class="app-footer fade-up d7">
+        <div>
+            <span class="footer-logo">
+                <img src="https://lh3.googleusercontent.com/d/1npCeM2oX6k8yHPojFgoBKFl_nTVMGUT0" alt="">
+            </span>
+            บริษัท ไทยซัมมิท จำกัด (มหาชน)
+        </div>
+        <div>ส่วนความปลอดภัย อาชีวอนามัย และสิ่งแวดล้อม (SHE) · Guard Super App v1.0</div>
+    </div>
+
+</div>
+</div>
+
+<script>
+    // ══════════════════════════════════
+    // CONFIG
+    // ══════════════════════════════════
+    const LIFF_ID = '2007053300-OBRxPyTY';
+
+    // ══════════════════════════════════
+    // CLOCK
+    // ══════════════════════════════════
+    function updateClock() {
+        const now = new Date();
+        document.getElementById('liveClock').textContent =
+            now.toLocaleTimeString('th-TH', { hour12: false, hour: '2-digit', minute: '2-digit' });
+        document.getElementById('liveDate').textContent =
+            now.toLocaleDateString('th-TH', { weekday: 'short', day: 'numeric', month: 'short' });
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    // ══════════════════════════════════
+    // GREETING (ตามเวลา)
+    // ══════════════════════════════════
+    function getGreeting() {
+        const h = new Date().getHours();
+        if (h >= 5  && h < 12) return 'สวัสดีตอนเช้า';
+        if (h >= 12 && h < 17) return 'สวัสดีตอนบ่าย';
+        if (h >= 17 && h < 21) return 'สวัสดีตอนเย็น';
+        return 'สวัสดีตอนดึก';
+    }
+
+    // ══════════════════════════════════
+    // SHIFT DETECTION
+    // ══════════════════════════════════
+    const SHIFTS = [
+        { label: 'กะเช้า',  start:  7, end: 15, icon: 'bi-brightness-high-fill',  time: '07:00–15:00' },
+        { label: 'กะบ่าย', start: 15, end: 23, icon: 'bi-sunset-fill',            time: '15:00–23:00' },
+        { label: 'กะดึก',  start: 23, end:  7, icon: 'bi-moon-stars-fill',        time: '23:00–07:00' },
+    ];
+
+    function detectShift() {
+        const h = new Date().getHours();
+        if (h >= 7  && h < 15) return SHIFTS[0];
+        if (h >= 15 && h < 23) return SHIFTS[1];
+        return SHIFTS[2];
+    }
+
+    function renderShift() {
+        const s = detectShift();
+        document.getElementById('shiftPillIcon').className  = `bi ${s.icon}`;
+        document.getElementById('shiftPillLabel').textContent = `${s.label} ${s.time}`;
+    }
+    renderShift();
+
+    // ══════════════════════════════════
+    // NETWORK STATUS
+    // ══════════════════════════════════
+    function updateNet() {
+        const dot   = document.getElementById('netDot');
+        const label = document.getElementById('netLabel');
+        dot.className   = navigator.onLine ? 'net-dot dot-on' : 'net-dot dot-off';
+        label.textContent = navigator.onLine ? 'ออนไลน์' : 'ออฟไลน์';
+    }
+    updateNet();
+    window.addEventListener('online',  updateNet);
+    window.addEventListener('offline', updateNet);
+
+    // ══════════════════════════════════
+    // RIPPLE / TAP
+    // ══════════════════════════════════
+    function tapTile(e) {
+        const tile = e.currentTarget;
+        const r    = tile.getBoundingClientRect();
+        const size = Math.max(r.width, r.height);
+        const el   = document.createElement('span');
+        el.className = 'ripple';
+        el.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX - r.left - size / 2}px;top:${e.clientY - r.top - size / 2}px;`;
+        tile.appendChild(el);
+        el.addEventListener('animationend', () => el.remove());
+        if (navigator.vibrate) navigator.vibrate(25);
+    }
+
+    // ══════════════════════════════════
+    // LIFF — PROFILE
+    // ══════════════════════════════════
+    function applyProfile(profile) {
+        document.getElementById('profileGreeting').textContent = getGreeting();
+        document.getElementById('profileName').textContent     = profile.displayName;
+
+        if (profile.pictureUrl) {
+            const img = document.getElementById('profilePic');
+            img.src   = profile.pictureUrl;
+            img.alt   = profile.displayName;
+            img.style.display = 'block';
+            document.getElementById('profilePicFallback').style.display = 'none';
+        }
+    }
+
+    async function refreshProfile() {
+        const btn = document.getElementById('btnRefresh');
+        btn.classList.add('spinning');
+        try {
+            if (liff.isLoggedIn()) {
+                const profile = await liff.getProfile();
+                applyProfile(profile);
+            }
+            updateNet();
+            renderShift();
+        } catch (err) {
+            console.warn('Refresh error:', err);
+        } finally {
+            setTimeout(() => btn.classList.remove('spinning'), 600);
+        }
+    }
+
+    // ══════════════════════════════════
+    // BOOT
+    // ══════════════════════════════════
+    async function initApp() {
+        try {
+            await liff.init({ liffId: LIFF_ID });
+
+            if (!liff.isLoggedIn()) {
+                liff.login();
+                return;
+            }
+
+            const profile = await liff.getProfile();
+            applyProfile(profile);
+
+        } catch (err) {
+            // เปิดนอก LINE — ใช้งานได้ปกติ ไม่มี profile
+            console.warn('LIFF init skipped (non-LINE browser):', err);
+            document.getElementById('profileGreeting').textContent = getGreeting();
+        }
+
+        showApp();
+    }
+
+    function showApp() {
+        const screen = document.getElementById('loadingScreen');
+        screen.classList.add('fade-out');
+        setTimeout(() => {
+            screen.style.display = 'none';
+            document.getElementById('appContent').style.display = 'block';
+        }, 420);
+    }
+
+    // ══════════════════════════════════
+    // SERVICE WORKER (PWA)
+    // ══════════════════════════════════
+    if ('serviceWorker' in navigator) {
+        const sw = `
+            const C='tsh-she-v1';
+            self.addEventListener('install',e=>e.waitUntil(caches.open(C).then(c=>c.add('./guard-home.html'))));
+            self.addEventListener('fetch',e=>e.respondWith(fetch(e.request).catch(()=>caches.match(e.request))));
+        `;
+        navigator.serviceWorker
+            .register(URL.createObjectURL(new Blob([sw], { type: 'application/javascript' })))
+            .catch(() => {});
+    }
+
+    window.addEventListener('load', initApp);
+</script>
+</body>
+</html>

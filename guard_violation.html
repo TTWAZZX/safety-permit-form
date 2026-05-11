@@ -1757,6 +1757,36 @@
         window.addEventListener('offline', updateConnectionStatus);
         window.addEventListener('resize', updateMobileStepper);
 
+        // ─── LINE Notification (fire-and-forget) ───────────────
+        async function sendLineViolationNotify(payload, report) {
+            if (!db) return;
+            try {
+                await db.functions.invoke('notify-violation-line', {
+                    body: {
+                        case_id:                    payload.case_id,
+                        emp_id:                     payload.emp_id,
+                        fullname:                   payload.fullname,
+                        section:                    payload.section,
+                        violation_type:             payload.violation_type,
+                        location_ref:               payload.location_ref,
+                        action_taken:               payload.action_taken,
+                        reported_by:                payload.reported_by,
+                        guard_shift:                payload.guard_shift,
+                        severity_level:             payload.severity_level,
+                        workflow_status:            payload.workflow_status,
+                        repeat_offender:            payload.repeat_offender,
+                        recent_violation_count_30d: payload.recent_violation_count_30d,
+                        gps_latitude:               payload.gps_latitude  || null,
+                        gps_longitude:              payload.gps_longitude || null,
+                        evidence_url:               payload.evidence_url  || null,
+                        client_reported_at:         payload.client_reported_at
+                    }
+                });
+            } catch (err) {
+                console.warn('LINE notify failed (non-blocking):', err);
+            }
+        }
+
         // จัดการตอนกดปุ่ม Submit
         document.getElementById('violationForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -1916,6 +1946,10 @@
                         if (!insertResult.usedFallback) {
                             await recordCaseCreatedTimeline(payload, insertResult.report);
                         }
+
+                        // ส่ง LINE แจ้งกลุ่ม (fire-and-forget ไม่ block UI)
+                        sendLineViolationNotify(payload, insertResult.report);
+
                         addSyncHistory({
                             case_id: payload.case_id,
                             fullname: payload.fullname,
