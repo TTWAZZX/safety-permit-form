@@ -19,21 +19,25 @@
            TOKENS
         ════════════════════════════════ */
         :root {
-            --orange:      #ea580c;
-            --orange-lt:   #f97316;
-            --orange-bg:   #fff7ed;
-            --orange-pale: #ffedd5;
-            --orange-border: #fed7aa;
+            /* สีส้ม — accent จากโลโก้ SHE (ตัวอักษร S, มือ) */
+            --orange:        #d4500a;
+            --orange-lt:     #ea580c;
+            --orange-bg:     #fff4ee;
+            --orange-pale:   #ffe8d6;
+            --orange-border: #f4b896;
 
-            --green:       #16a34a;
-            --green-lt:    #22c55e;
-            --green-bg:    #f0fdf4;
-            --green-pale:  #dcfce7;
-            --green-border:#bbf7d0;
+            /* สีเขียวเข้ม — dominant จากวงแหวนโลโก้ SHE */
+            --green:         #14532d;
+            --green-mid:     #166534;
+            --green-lt:      #16a34a;
+            --green-bg:      #f0fdf4;
+            --green-pale:    #dcfce7;
+            --green-border:  #86efac;
 
-            --teal:        #0891b2;
-            --teal-bg:     #ecfeff;
-            --teal-border: #a5f3fc;
+            /* สีเขียวกลาง — สำหรับ card น้ำ/meter */
+            --teal:          #15803d;
+            --teal-bg:       #f0fdf4;
+            --teal-border:   #86efac;
 
             --ink:         #1c1917;
             --ink-2:       #44403c;
@@ -68,7 +72,7 @@
         ════════════════════════════════ */
         #loadingScreen {
             position: fixed; inset: 0;
-            background: linear-gradient(155deg, var(--orange) 0%, #c2410c 100%);
+            background: linear-gradient(155deg, #166534 0%, #14532d 100%);
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
             gap: 18px; z-index: 9999;
@@ -99,7 +103,7 @@
         .load-dots { display: flex; gap: 7px; }
         .load-dots span {
             width: 8px; height: 8px; border-radius: 50%;
-            background: rgba(255,255,255,0.5);
+            background: rgba(255,255,255,0.6);
             animation: dot-pulse 1.2s ease-in-out infinite;
         }
         .load-dots span:nth-child(2) { animation-delay: 0.2s; }
@@ -124,7 +128,7 @@
            HEADER
         ════════════════════════════════ */
         .app-header {
-            background: linear-gradient(155deg, var(--orange-lt) 0%, var(--orange) 60%, #c2410c 100%);
+            background: linear-gradient(155deg, #1a7a40 0%, #166534 45%, #14532d 100%);
             padding: calc(env(safe-area-inset-top) + 18px) 18px 24px;
             position: relative; overflow: hidden;
         }
@@ -344,8 +348,8 @@
             margin-top: 5px; width: fit-content;
         }
         .p-badge i { font-size: 0.7rem; }
-        .badge-line { background: var(--green-pale); border: 1px solid var(--green-border); color: var(--green); }
-        .badge-web  { background: var(--teal-bg);   border: 1px solid var(--teal-border);  color: var(--teal); }
+        .badge-line { background: var(--green-pale); border: 1px solid var(--green-border); color: var(--green-mid); }
+        .badge-web  { background: var(--orange-bg); border: 1px solid var(--orange-border); color: var(--orange); }
 
         /* Color variants */
         .tile-green { --tile-color: var(--green); }
@@ -353,6 +357,9 @@
 
         .tile-teal  { --tile-color: var(--teal); }
         .tile-teal  .tile-icon { background: var(--teal-bg); color: var(--teal); }
+
+        /* orange tile icon ใช้สีส้มตามโลโก้ */
+        .tile-orange .tile-icon { background: var(--orange-bg); color: var(--orange); }
 
         .tile-orange { --tile-color: var(--orange); }
         .tile-orange .tile-icon { background: var(--orange-bg); color: var(--orange); }
@@ -431,7 +438,7 @@
 ══════════════════════════════════ -->
 <div id="loadingScreen">
     <div class="load-logo">
-        <img src="https://lh3.googleusercontent.com/d/1npCeM2oX6k8yHPojFgoBKFl_nTVMGUT0" alt="Thai Summit">
+        <img src="https://lh3.googleusercontent.com/d/1aiOAp47RzJXyT3W4YzBjUpPvImxoU-p4" alt="Thai Summit">
     </div>
     <div class="load-company">บริษัท ไทยซัมมิท จำกัด (มหาชน)</div>
     <div class="load-dept">ส่วนความปลอดภัย อาชีวอนามัย และสิ่งแวดล้อม (SHE)</div>
@@ -450,7 +457,7 @@
         <!-- Logo + Clock -->
         <div class="header-top">
             <div class="header-logo">
-                <img src="https://lh3.googleusercontent.com/d/1npCeM2oX6k8yHPojFgoBKFl_nTVMGUT0" alt="Thai Summit">
+                <img src="https://lh3.googleusercontent.com/d/1aiOAp47RzJXyT3W4YzBjUpPvImxoU-p4" alt="Thai Summit">
             </div>
             <div class="header-brand">
                 <div class="header-company">บริษัท ไทยซัมมิท จำกัด (มหาชน)</div>
@@ -522,11 +529,11 @@
                href="https://liff.line.me/2007053300-w9vHc99G"
                onclick="tapTile(event)">
                 <div class="tile-icon">
-                    <i class="bi bi-droplet-half"></i>
+                    <i class="bi bi-speedometer2"></i>
                 </div>
                 <div>
-                    <div class="tile-eyebrow">Utility</div>
-                    <div class="tile-name">บันทึก<br>น้ำดื่ม</div>
+                    <div class="tile-eyebrow">Water Meter</div>
+                    <div class="tile-name">บันทึก<br>มิเตอร์น้ำ</div>
                     <div class="p-badge badge-line">
                         <i class="bi bi-chat-fill"></i> LINE LIFF
                     </div>
@@ -559,17 +566,6 @@
             </a>
         </div>
 
-        <!-- Install banner -->
-        <div class="install-banner fade-up d6">
-            <div class="install-icon-wrap">
-                <i class="bi bi-phone-fill"></i>
-            </div>
-            <p>
-                <strong>บันทึกเป็นไอคอนหน้าจอ</strong><br>
-                iOS: <strong>Share <i class="bi bi-box-arrow-up"></i> → Add to Home Screen</strong><br>
-                Android: <strong><i class="bi bi-three-dots-vertical"></i> → Add to Home screen</strong>
-            </p>
-        </div>
 
     </div>
 
@@ -577,7 +573,7 @@
     <div class="app-footer fade-up d7">
         <div>
             <span class="footer-logo">
-                <img src="https://lh3.googleusercontent.com/d/1npCeM2oX6k8yHPojFgoBKFl_nTVMGUT0" alt="">
+                <img src="https://lh3.googleusercontent.com/d/1aiOAp47RzJXyT3W4YzBjUpPvImxoU-p4" alt="">
             </span>
             บริษัท ไทยซัมมิท จำกัด (มหาชน)
         </div>
