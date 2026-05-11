@@ -123,7 +123,7 @@ function buildFlexMessage(d: Record<string, unknown>) {
               },
               {
                 type: 'box', layout: 'vertical',
-                backgroundColor: 'rgba(0,0,0,0.25)',
+                backgroundColor: '#00000040',
                 cornerRadius: '4px',
                 paddingAll: '5px',
                 width: '80px',
@@ -142,7 +142,7 @@ function buildFlexMessage(d: Record<string, unknown>) {
           {
             type: 'text',
             text: String(d.case_id ?? 'N/A'),
-            color: 'rgba(255,255,255,0.60)',
+            color: '#ffffff99',
             size: 'xs',
             margin: 'sm',
             letterSpacing: '0.5px',

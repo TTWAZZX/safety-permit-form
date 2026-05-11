@@ -622,7 +622,7 @@
 
             listEl.innerHTML = data.map(item => {
                 const s = ANN_STYLE[item.category] ?? ANN_STYLE['ทั่วไป'];
-                const date = new Date(item.created_at).toLocaleDateString('th-TH', {
+                const date = new Date(item.created_at).toLocaleString('th-TH', {
                     timeZone: 'Asia/Bangkok', day: 'numeric', month: 'short',
                     year: 'numeric', hour: '2-digit', minute: '2-digit'
                 });
