@@ -15,6 +15,7 @@
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
     <style>
@@ -478,6 +479,21 @@
         /* ════════════════════════════════
            ANIMATIONS
         ════════════════════════════════ */
+        /* ── Step 4: Violation badge ── */
+        .violation-badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            background: var(--orange-pale);
+            border: 1px solid var(--orange-border);
+            border-radius: 8px;
+            padding: 3px 9px;
+            font-size: 0.7rem; font-weight: 800;
+            color: var(--orange);
+            margin-top: 6px;
+            width: fit-content;
+            transition: opacity 0.3s;
+        }
+        .violation-badge.hidden { display: none; }
+
         /* ── Step 3: Pull-to-refresh ── */
         #pullIndicator {
             position: fixed; top: 0; left: 0; right: 0;
@@ -672,8 +688,14 @@
                     <div class="tile-eyebrow">Safety Report</div>
                     <div class="tile-name">รายงานความผิด</div>
                     <div class="tile-desc">บันทึก Violation Report พร้อมรูปหลักฐานและพิกัด GPS</div>
-                    <div class="p-badge badge-web">
-                        <i class="bi bi-globe2"></i> Web App
+                    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:4px;">
+                        <div class="p-badge badge-web">
+                            <i class="bi bi-globe2"></i> Web App
+                        </div>
+                        <div class="violation-badge hidden" id="violationBadge">
+                            <i class="bi bi-exclamation-circle-fill"></i>
+                            <span id="violationCount">0</span> เคสวันนี้
+                        </div>
                     </div>
                 </div>
                 <i class="bi bi-chevron-right tile-chevron"></i>
@@ -702,6 +724,11 @@
     // CONFIG
     // ══════════════════════════════════
     const LIFF_ID = '2007053300-OBRxPyTY';
+
+    // ── Supabase client (ใช้ร่วมกัน Step 4-6) ──────────────
+    const SUPABASE_URL = 'https://dqsfioiqwxuxpucwwhsv.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxc2Zpb2lxd3h1eHB1Y3d3aHN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1OTk1NjUsImV4cCI6MjA4NDE3NTU2NX0.L_u0Ff3uHofxiimEs6ySFB4TPNtOWiKeSu3KFoVcA1U';
+    const db = window.supabase?.createClient(SUPABASE_URL, SUPABASE_KEY) ?? null;
 
     // ── Step 1: Last sync timestamp ─────────────────────────
     let lastSyncTime = null;
@@ -840,6 +867,40 @@
         pullCurrent = 0;
     }, { passive: true });
 
+    // ── Step 4: Violation count ─────────────────────────────
+    function getTodayBangkok() {
+        const bkk = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
+        const y = bkk.getFullYear();
+        const m = String(bkk.getMonth() + 1).padStart(2, '0');
+        const d = String(bkk.getDate()).padStart(2, '0');
+        return { start: `${y}-${m}-${d}T00:00:00+07:00`, end: `${y}-${m}-${d}T23:59:59+07:00` };
+    }
+
+    async function fetchViolationCount() {
+        if (!db) return;
+        try {
+            const { start, end } = getTodayBangkok();
+            const { count, error } = await db
+                .from('violation_reports')
+                .select('id', { count: 'exact', head: true })
+                .gte('created_at', start)
+                .lte('created_at', end);
+
+            if (error) throw error;
+
+            const badge = document.getElementById('violationBadge');
+            const span  = document.getElementById('violationCount');
+            if (count > 0) {
+                span.textContent = count;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        } catch (err) {
+            console.warn('fetchViolationCount error:', err);
+        }
+    }
+
     // ══════════════════════════════════
     // CLOCK
     // ══════════════════════════════════
@@ -941,6 +1002,7 @@
             }
             updateNet();
             renderShift();
+            fetchViolationCount();
             stampSync();
         } catch (err) {
             console.warn('Refresh error:', err);
@@ -970,6 +1032,7 @@
             document.getElementById('profileGreeting').textContent = getGreeting();
         }
 
+        fetchViolationCount();
         stampSync();
         showApp();
     }
