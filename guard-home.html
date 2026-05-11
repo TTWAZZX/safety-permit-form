@@ -651,6 +651,13 @@
                 <div class="clock-time" id="liveClock">00:00</div>
                 <div class="clock-date"  id="liveDate">—</div>
             </div>
+            <button id="pwaExitBtn" onclick="exitPwaApp()" title="ปิดแอป"
+                    style="display:none;background:rgba(255,255,255,0.13);border:1px solid rgba(255,255,255,0.22);
+                           color:rgba(255,255,255,0.8);border-radius:8px;width:32px;height:32px;
+                           align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;
+                           font-size:0.9rem;-webkit-tap-highlight-color:transparent;">
+                <i class="bi bi-x-lg"></i>
+            </button>
         </div>
 
         <!-- Profile card -->
@@ -1318,6 +1325,27 @@
     // ══════════════════════════════════
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js').catch(() => {});
+    }
+
+    // ── PWA exit button: show in standalone or LINE client ──────
+    (function() {
+        const standalone = window.matchMedia('(display-mode: standalone)').matches
+                        || window.navigator.standalone === true;
+        const inLine = typeof liff !== 'undefined' && typeof liff.isInClient === 'function' && liff.isInClient();
+        if (standalone || inLine) {
+            const btn = document.getElementById('pwaExitBtn');
+            if (btn) btn.style.display = 'flex';
+        }
+    })();
+
+    function exitPwaApp() {
+        if (typeof liff !== 'undefined' && typeof liff.isInClient === 'function' && liff.isInClient()) {
+            try { liff.closeWindow(); return; } catch(e) {}
+        }
+        window.close();
+        setTimeout(() => {
+            alert('กดปุ่ม Home ของเครื่อง เพื่อออกจากแอป');
+        }, 250);
     }
 
     window.addEventListener('load', initApp);
