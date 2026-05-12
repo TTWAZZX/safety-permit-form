@@ -493,6 +493,7 @@
         .attend-status.checked { background: var(--green-pale); color: var(--green-mid); border-color: var(--green-border); }
         .attend-status.pending { background: #fef9c3; color: #854d0e; border-color: #fde047; }
         .attend-status.loading { background: var(--border); color: var(--muted-lt); border-color: var(--border); }
+        .attend-status.water   { background: #e0f2fe; color: #0369a1; border-color: #7dd3fc; }
 
         /* ── Step 4: Violation badge ── */
         .violation-badge {
@@ -748,9 +749,6 @@
                 <div>
                     <div class="tile-eyebrow">Attendance</div>
                     <div class="tile-name">ลงเวลา<br>รปภ.</div>
-                    <div class="p-badge badge-line">
-                        <i class="bi bi-chat-fill"></i> LINE LIFF
-                    </div>
                     <div id="attendStatus" class="attend-status loading">
                         <i class="bi bi-clock"></i>
                         <span id="attendStatusText">กำลังโหลด...</span>
@@ -767,8 +765,9 @@
                 <div>
                     <div class="tile-eyebrow">Water Meter</div>
                     <div class="tile-name">บันทึก<br>มิเตอร์น้ำ</div>
-                    <div class="p-badge badge-line">
-                        <i class="bi bi-chat-fill"></i> LINE LIFF
+                    <div id="waterStatus" class="attend-status loading">
+                        <i class="bi bi-droplet-fill"></i>
+                        <span id="waterStatusText">กำลังโหลด...</span>
                     </div>
                 </div>
             </a>
@@ -1099,6 +1098,42 @@
         }
     }
 
+    async function fetchWaterStatus() {
+        const el     = document.getElementById('waterStatus');
+        const textEl = document.getElementById('waterStatusText');
+        if (!el || !textEl) return;
+
+        if (!db) {
+            el.className = 'attend-status loading';
+            textEl.textContent = '—';
+            return;
+        }
+
+        try {
+            const { data, error } = await db
+                .from('water_meter_logs')
+                .select('meter_reading, record_date')
+                .order('record_date', { ascending: false })
+                .order('record_time', { ascending: false })
+                .limit(1);
+
+            if (error) throw error;
+
+            if (data && data.length > 0) {
+                el.className = 'attend-status water';
+                el.querySelector('i').className = 'bi bi-droplet-fill';
+                textEl.textContent = Number(data[0].meter_reading).toLocaleString() + ' หน่วย';
+            } else {
+                el.className = 'attend-status loading';
+                textEl.textContent = 'ยังไม่มีข้อมูล';
+            }
+        } catch (err) {
+            console.warn('fetchWaterStatus error:', err);
+            el.className = 'attend-status loading';
+            textEl.textContent = '—';
+        }
+    }
+
     // ── Step 6: Announcements ───────────────────────────────
     function escHtml(str) {
         return String(str ?? '')
@@ -1248,6 +1283,7 @@
         renderShift();
         fetchViolationCount();
         fetchAttendanceStatus();
+        fetchWaterStatus();
         fetchAnnouncements();
         stampSync();
     }
@@ -1275,6 +1311,7 @@
 
         fetchViolationCount();
         fetchAttendanceStatus();
+        fetchWaterStatus();
         fetchAnnouncements();
         stampSync();
         showApp();
