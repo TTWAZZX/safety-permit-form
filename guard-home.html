@@ -651,13 +651,7 @@
                 <div class="clock-time" id="liveClock">00:00</div>
                 <div class="clock-date"  id="liveDate">—</div>
             </div>
-            <button id="pwaExitBtn" onclick="exitPwaApp()" title="ปิดแอป"
-                    style="display:none;background:rgba(255,255,255,0.13);border:1px solid rgba(255,255,255,0.22);
-                           color:rgba(255,255,255,0.8);border-radius:8px;width:32px;height:32px;
-                           align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;
-                           font-size:0.9rem;-webkit-tap-highlight-color:transparent;">
-                <i class="bi bi-x-lg"></i>
-            </button>
+
         </div>
 
         <!-- Profile card -->
@@ -1327,45 +1321,6 @@
         navigator.serviceWorker.register('./sw.js').catch(() => {});
     }
 
-    // ── PWA exit button: show in standalone or LINE client ──────
-    (function() {
-        const standalone = window.matchMedia('(display-mode: standalone)').matches
-                        || window.navigator.standalone === true;
-        const inLine = typeof liff !== 'undefined' && typeof liff.isInClient === 'function' && liff.isInClient();
-        if (standalone || inLine) {
-            const btn = document.getElementById('pwaExitBtn');
-            if (btn) btn.style.display = 'flex';
-        }
-    })();
-
-    function exitPwaApp() {
-        if (typeof liff !== 'undefined' && typeof liff.isInClient === 'function' && liff.isInClient()) {
-            try { liff.closeWindow(); return; } catch(e) {}
-        }
-        window.close();
-        setTimeout(() => {
-            let t = document.getElementById('_exitToast');
-            if (!t) {
-                t = document.createElement('div');
-                t.id = '_exitToast';
-                t.style.cssText = [
-                    'position:fixed', 'bottom:calc(env(safe-area-inset-bottom,0px) + 24px)',
-                    'left:50%', 'transform:translateX(-50%)',
-                    'background:#1e293b', 'color:#fff',
-                    'padding:10px 20px', 'border-radius:12px',
-                    'font-size:0.85rem', 'font-family:Sarabun,sans-serif',
-                    'z-index:9999', 'opacity:0', 'transition:opacity 0.3s',
-                    'white-space:nowrap', 'pointer-events:none',
-                    'box-shadow:0 4px 16px rgba(0,0,0,0.25)'
-                ].join(';');
-                document.body.appendChild(t);
-            }
-            t.textContent = 'กดปุ่ม Home เพื่อออกจากแอป';
-            t.style.opacity = '1';
-            clearTimeout(t._hide);
-            t._hide = setTimeout(() => { t.style.opacity = '0'; }, 2500);
-        }, 200);
-    }
 
     window.addEventListener('load', initApp);
 </script>
