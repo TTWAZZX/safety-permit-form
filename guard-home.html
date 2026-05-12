@@ -750,10 +750,6 @@
                 <div>
                     <div class="tile-eyebrow">Attendance</div>
                     <div class="tile-name">ลงเวลา<br>รปภ.</div>
-                    <div id="attendStatus" class="attend-status loading">
-                        <i class="bi bi-clock"></i>
-                        <span id="attendStatusText">กำลังโหลด...</span>
-                    </div>
                 </div>
             </a>
 
@@ -1045,54 +1041,6 @@
         return t.includes('T') ? t.slice(11, 16) : t.slice(0, 5);
     }
 
-    async function fetchAttendanceStatus() {
-        const el     = document.getElementById('attendStatus');
-        const textEl = document.getElementById('attendStatusText');
-        if (!el || !textEl) return;
-
-        if (!db || !lineDisplayName) {
-            el.className = 'attend-status pending';
-            el.querySelector('i').className = 'bi bi-clock';
-            textEl.textContent = 'ยังไม่ลงเวลา';
-            return;
-        }
-
-        el.className = 'attend-status loading';
-        el.querySelector('i').className = 'bi bi-hourglass-split';
-        textEl.textContent = 'กำลังโหลด...';
-
-        try {
-            const today = getTodayDateBkk();
-
-            const { data, error } = await db
-                .from('guard_attendance')
-                .select('time_in, time_out')
-                .eq('fullname', lineDisplayName)
-                .eq('work_date', today)
-                .order('created_at', { ascending: false })
-                .limit(1);
-
-            if (error) throw error;
-
-            if (data && data.length > 0 && data[0].time_in) {
-                const rec = data[0];
-                el.className = 'attend-status checked';
-                el.querySelector('i').className = 'bi bi-check-circle-fill';
-                let txt = `เข้า ${fmtTime(rec.time_in)}`;
-                if (rec.time_out) txt += ` · ออก ${fmtTime(rec.time_out)}`;
-                textEl.textContent = txt;
-            } else {
-                el.className = 'attend-status pending';
-                el.querySelector('i').className = 'bi bi-clock';
-                textEl.textContent = 'ยังไม่ลงเวลา';
-            }
-        } catch (err) {
-            console.warn('fetchAttendanceStatus error:', err);
-            el.className = 'attend-status loading';
-            el.querySelector('i').className = 'bi bi-clock';
-            textEl.textContent = '—';
-        }
-    }
 
     async function fetchWaterStatus() {
         const el     = document.getElementById('waterStatus');
@@ -1304,7 +1252,6 @@
         updateNet();
         renderShift();
         fetchViolationCount();
-        fetchAttendanceStatus();
         fetchWaterStatus();
         fetchAnnouncements();
         stampSync();
@@ -1332,7 +1279,6 @@
         }
 
         fetchViolationCount();
-        fetchAttendanceStatus();
         fetchWaterStatus();
         fetchAnnouncements();
         stampSync();
