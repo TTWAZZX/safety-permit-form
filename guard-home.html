@@ -509,6 +509,7 @@
             transition: opacity 0.3s;
         }
         .violation-badge.hidden { display: none; }
+        .violation-badge.ok { background: var(--green-pale); border-color: var(--green-border); color: var(--green-mid); }
 
         /* ── Step 3: Pull-to-refresh ── */
         #pullIndicator {
@@ -790,14 +791,9 @@
                     <div class="tile-eyebrow">Safety Report</div>
                     <div class="tile-name">รายงานความผิด</div>
                     <div class="tile-desc">บันทึก Violation Report พร้อมรูปหลักฐานและพิกัด GPS</div>
-                    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:4px;">
-                        <div class="p-badge badge-web">
-                            <i class="bi bi-globe2"></i> Web App
-                        </div>
-                        <div class="violation-badge hidden" id="violationBadge">
-                            <i class="bi bi-exclamation-circle-fill"></i>
-                            <span id="violationCount">0</span> เคสวันนี้
-                        </div>
+                    <div id="violationBadge" class="violation-badge ok">
+                        <i class="bi bi-check-circle-fill" id="violationIcon"></i>
+                        <span id="violationCount">ปกติ</span>
                     </div>
                 </div>
                 <i class="bi bi-chevron-right tile-chevron"></i>
@@ -808,6 +804,9 @@
         <!-- กระดานข่าว SHE -->
         <div class="sec-label fade-up d6">
             <i class="bi bi-megaphone-fill"></i> กระดานข่าว SHE
+            <span id="annUnreadBadge" style="display:none;background:#ef4444;color:#fff;
+                  border-radius:10px;padding:1px 8px;font-size:0.62rem;font-weight:800;
+                  letter-spacing:0.3px;"></span>
         </div>
         <div id="announcementList" class="announce-list fade-up d8">
             <div class="skel-card">
@@ -840,14 +839,14 @@
             บริษัท ไทยซัมมิท จำกัด (มหาชน)
         </div>
         <div>ส่วนความปลอดภัย อาชีวอนามัย และสิ่งแวดล้อม (SHE) · Guard Super App v1.0</div>
-        <div style="margin-top:14px;">
+        <div style="margin-top:16px;">
             <a href="./she-announcements.html"
-               style="display:inline-flex;align-items:center;gap:5px;
-                      color:var(--muted-lt);font-size:0.66rem;font-weight:600;
-                      text-decoration:none;padding:5px 10px;border-radius:8px;
-                      border:1px solid var(--border);background:var(--surface);
-                      transition:color 0.15s;">
-                <i class="bi bi-shield-lock"></i> SHE Admin
+               style="display:inline-flex;align-items:center;gap:8px;
+                      color:var(--green-mid);font-size:0.75rem;font-weight:700;
+                      text-decoration:none;padding:9px 18px;border-radius:10px;
+                      border:1.5px solid var(--green-border);background:var(--green-bg);
+                      transition:background 0.15s;">
+                <i class="bi bi-shield-lock-fill"></i> SHE Admin Panel
             </a>
         </div>
     </div>
@@ -1032,11 +1031,15 @@
 
             const badge = document.getElementById('violationBadge');
             const span  = document.getElementById('violationCount');
+            const icon = document.getElementById('violationIcon');
             if (count > 0) {
-                span.textContent = count;
-                badge.classList.remove('hidden');
+                span.textContent = count + ' เคสวันนี้';
+                badge.className = 'violation-badge';
+                if (icon) icon.className = 'bi bi-exclamation-circle-fill';
             } else {
-                badge.classList.add('hidden');
+                span.textContent = 'ปกติ';
+                badge.className = 'violation-badge ok';
+                if (icon) icon.className = 'bi bi-check-circle-fill';
             }
         } catch (err) {
             console.warn('fetchViolationCount error:', err);
@@ -1163,7 +1166,26 @@
 
             if (!data || data.length === 0) {
                 listEl.innerHTML = '<div class="announce-empty"><i class="bi bi-megaphone"></i>ไม่มีประกาศในขณะนี้</div>';
+                updateAnnUnreadBadge(0);
                 return;
+            }
+
+            // unread tracking via localStorage
+            const readIds = JSON.parse(localStorage.getItem('she_read_ids') || '[]');
+            const unread  = data.filter(d => !readIds.includes(d.id)).length;
+            updateAnnUnreadBadge(unread);
+
+            // mark as read when list scrolls into view
+            if (unread > 0) {
+                const obs = new IntersectionObserver(entries => {
+                    if (entries[0].isIntersecting) {
+                        const allIds = data.map(d => d.id);
+                        localStorage.setItem('she_read_ids', JSON.stringify([...new Set([...readIds, ...allIds])]));
+                        updateAnnUnreadBadge(0);
+                        obs.disconnect();
+                    }
+                }, { threshold: 0.3 });
+                obs.observe(listEl);
             }
 
             listEl.innerHTML = data.map(item => {
@@ -1183,6 +1205,13 @@
             console.warn('fetchAnnouncements error:', err);
             listEl.innerHTML = '<div class="announce-empty"><i class="bi bi-wifi-off"></i>ไม่สามารถโหลดข้อมูลได้</div>';
         }
+    }
+
+    function updateAnnUnreadBadge(count) {
+        const b = document.getElementById('annUnreadBadge');
+        if (!b) return;
+        if (count > 0) { b.textContent = count; b.style.display = 'inline-block'; }
+        else           { b.style.display = 'none'; }
     }
 
     // ══════════════════════════════════
