@@ -11,7 +11,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <style>
@@ -75,14 +74,38 @@
 
         .panel { padding: 18px; }
         .btn, .form-control, .form-select, .badge { border-radius: 8px; }
+        .kpi-card { position: relative; overflow: hidden; }
+        .kpi-card::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 4px; background: var(--border); }
+        .kpi-card.kpi-open::before { background: var(--warning); }
+        .kpi-card.kpi-repeat::before { background: var(--danger); }
+        .kpi-card.kpi-urgent::before { background: var(--info); }
+        .kpi-card .kpi-icon { color: var(--muted); font-size: 1.15rem; }
         .kpi-value { font-size: 2rem; font-weight: 800; line-height: 1; }
         .kpi-label { color: var(--muted); font-weight: 700; font-size: 0.85rem; }
+        .filter-grid { display: grid; grid-template-columns: repeat(14, minmax(0, 1fr)); gap: 10px; align-items: end; }
+        .filter-field { grid-column: span 2; min-width: 0; }
+        .filter-field.search { grid-column: span 3; }
+        .filter-field.action { grid-column: span 1; display: flex; justify-content: flex-end; }
         .table thead th { color: var(--muted); font-size: 0.78rem; text-transform: uppercase; }
         .table td, .table th { vertical-align: middle; }
-        .repeat-row { background: #fff7ed; }
-        .case-link { color: var(--danger); font-weight: 800; text-decoration: none; }
+        .table tbody tr { border-left: 4px solid transparent; }
+        .table tbody tr.repeat-row { --bs-table-bg: #fff7ed; border-left-color: var(--danger); }
+        .table tbody tr.urgent-row { border-left-color: var(--info); }
+        .table tbody tr.repeat-row.urgent-row { border-left-color: var(--danger); }
+        .case-link { color: #1d4ed8; font-weight: 800; text-decoration: none; }
+        .case-link.urgent-case { color: var(--danger); }
+        .action-buttons { display: inline-flex; gap: 6px; justify-content: flex-end; }
+        .icon-btn { width: 38px; min-height: 38px; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+        .reset-filter-btn { width: 46px; min-height: 44px; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+        .status-badge { max-width: 150px; white-space: normal; line-height: 1.2; }
         .evidence-thumb { width: 64px; height: 48px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); }
-        .chart-box { height: 260px; }
+        .summary-list { display: grid; gap: 10px; }
+        .summary-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; background: #fff; }
+        .summary-label { min-width: 0; font-weight: 700; line-height: 1.35; }
+        .summary-bar { grid-column: 1 / -1; height: 7px; border-radius: 999px; background: #fee2e2; overflow: hidden; }
+        .summary-bar span { display: block; height: 100%; border-radius: inherit; background: var(--danger); }
+        .repeat-filter-card { text-align: left; background: #fff; }
+        .repeat-filter-card.active { border-color: var(--danger); background: #fff7ed; }
         .small-muted { color: var(--muted); font-size: 0.82rem; }
 
         .table-card-label { display: none; color: var(--muted); font-size: 0.72rem; font-weight: 800; text-transform: uppercase; }
@@ -162,7 +185,10 @@
             .topbar .btn, .panel label.btn, .panel button.btn { flex: 1 1 auto; }
             .panel { padding: 12px; }
             .kpi-value { font-size: 1.55rem; }
-            .chart-box { height: 220px; }
+            .filter-grid { grid-template-columns: 1fr; }
+            .filter-field, .filter-field.search, .filter-field.action { grid-column: auto; }
+            .filter-field.action { justify-content: stretch; }
+            .reset-filter-btn { width: 100%; }
             .table-responsive { overflow: visible; }
             .table { border-collapse: separate; border-spacing: 0 10px; }
             .table thead { display: none; }
@@ -175,6 +201,8 @@
                 box-shadow: 0 6px 14px rgba(15, 23, 42, 0.06);
             }
             .table tbody tr.repeat-row { background: #fff7ed; }
+            .table tbody tr.urgent-row { border-left-color: var(--info); }
+            .table tbody tr.repeat-row.urgent-row { border-left-color: var(--danger); }
             .table tbody td {
                 display: flex;
                 justify-content: space-between;
@@ -185,6 +213,7 @@
                 text-align: right;
             }
             .table tbody td:last-child { justify-content: flex-end; }
+            .action-buttons { width: 100%; justify-content: flex-end; }
             .table-card-label { display: block; min-width: 88px; text-align: left; }
             .evidence-thumb { width: 82px; height: 58px; }
             .admin-tab { flex: 1 1 auto; }
@@ -249,29 +278,29 @@
 
             <section id="viewReports" class="view-section active">
             <div class="row g-3 mb-3">
-                <div class="col-md-3"><div class="panel"><div class="kpi-label" data-i18n="totalCases">เคสทั้งหมด</div><div class="kpi-value" id="kpiTotal">0</div></div></div>
-                <div class="col-md-3"><div class="panel"><div class="kpi-label" data-i18n="openCases">รอปิดเคส</div><div class="kpi-value text-warning" id="kpiOpen">0</div></div></div>
-                <div class="col-md-3"><div class="panel"><div class="kpi-label">Repeat Offender</div><div class="kpi-value text-danger" id="kpiRepeat">0</div></div></div>
-                <div class="col-md-3"><div class="panel"><div class="kpi-label">Critical / High</div><div class="kpi-value text-info" id="kpiUrgent">0</div></div></div>
+                <div class="col-md-3"><div class="panel kpi-card"><div class="d-flex justify-content-between align-items-start"><div><div class="kpi-label" data-i18n="totalCases">เคสทั้งหมด</div><div class="kpi-value" id="kpiTotal">0</div></div><i class="bi bi-collection kpi-icon"></i></div></div></div>
+                <div class="col-md-3"><div class="panel kpi-card kpi-open"><div class="d-flex justify-content-between align-items-start"><div><div class="kpi-label" data-i18n="openCases">รอปิดเคส</div><div class="kpi-value text-warning" id="kpiOpen">0</div></div><i class="bi bi-hourglass-split kpi-icon"></i></div></div></div>
+                <div class="col-md-3"><div class="panel kpi-card kpi-repeat"><div class="d-flex justify-content-between align-items-start"><div><div class="kpi-label" data-i18n="repeatOffender">ผู้กระทำซ้ำ</div><div class="kpi-value text-danger" id="kpiRepeat">0</div></div><i class="bi bi-arrow-repeat kpi-icon"></i></div></div></div>
+                <div class="col-md-3"><div class="panel kpi-card kpi-urgent"><div class="d-flex justify-content-between align-items-start"><div><div class="kpi-label" data-i18n="urgentCases">เคสเร่งด่วน</div><div class="kpi-value text-info" id="kpiUrgent">0</div></div><i class="bi bi-exclamation-triangle kpi-icon"></i></div></div></div>
             </div>
 
             <div class="panel mb-3">
-                <div class="row g-2 align-items-end">
-                    <div class="col-md-2">
+                <div class="filter-grid">
+                    <div class="filter-field">
                         <label class="form-label fw-bold small" data-i18n="fromDate">วันที่เริ่ม</label>
                         <input type="date" id="filterFrom" class="form-control" onchange="applyFilters()">
                     </div>
-                    <div class="col-md-2">
+                    <div class="filter-field">
                         <label class="form-label fw-bold small" data-i18n="toDate">วันที่สิ้นสุด</label>
                         <input type="date" id="filterTo" class="form-control" onchange="applyFilters()">
                     </div>
-                    <div class="col-md-2">
+                    <div class="filter-field">
                         <label class="form-label fw-bold small" data-i18n="status">สถานะ</label>
                         <select id="filterStatus" class="form-select" onchange="applyFilters()">
                             <option value="ALL" data-i18n="all">ทั้งหมด</option>
                         </select>
                     </div>
-                    <div class="col-md-2">
+                    <div class="filter-field">
                         <label class="form-label fw-bold small" data-i18n="severity">ความเร่งด่วน</label>
                         <select id="filterSeverity" class="form-select" onchange="applyFilters()">
                             <option value="ALL" data-i18n="all">ทั้งหมด</option>
@@ -281,17 +310,22 @@
                             <option value="Low">Low</option>
                         </select>
                     </div>
-                    <div class="col-md-2">
-                        <label class="form-label fw-bold small">Repeat</label>
+                    <div class="filter-field">
+                        <label class="form-label fw-bold small" data-i18n="repeatFilter">การกระทำซ้ำ</label>
                         <select id="filterRepeat" class="form-select" onchange="applyFilters()">
                             <option value="ALL" data-i18n="all">ทั้งหมด</option>
-                            <option value="YES">Repeat Offender</option>
+                            <option value="YES" data-i18n="repeatOnly">เฉพาะผู้กระทำซ้ำ</option>
                             <option value="NO" data-i18n="notRepeat">ไม่ซ้ำ</option>
                         </select>
                     </div>
-                    <div class="col-md-2">
+                    <div class="filter-field search">
                         <label class="form-label fw-bold small" data-i18n="search">ค้นหา</label>
                         <input type="search" id="filterSearch" class="form-control" placeholder="ชื่อ/รหัส/ข้อหา" data-i18n-placeholder="reportSearchPlaceholder" oninput="applyFilters()">
+                    </div>
+                    <div class="filter-field action">
+                        <button class="btn btn-outline-secondary fw-bold reset-filter-btn" onclick="resetFilters()" title="Reset filters" data-i18n-title="resetFilters">
+                            <i class="bi bi-x-circle"></i>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -331,10 +365,10 @@
                 <div class="col-lg-4">
                     <div class="panel mb-3">
                         <h6 class="fw-bold mb-3" data-i18n="violationSummary">สรุปตามข้อหา</h6>
-                        <div class="chart-box"><canvas id="violationChart"></canvas></div>
+                        <div id="violationSummaryList" class="summary-list"></div>
                     </div>
                     <div class="panel">
-                        <h6 class="fw-bold mb-3" data-i18n="repeat30">ทำซ้ำใน 30 วัน</h6>
+                        <h6 class="fw-bold mb-3" data-i18n="repeat30">ผู้กระทำซ้ำทั้งหมด</h6>
                         <div id="repeatList" class="d-grid gap-2"></div>
                     </div>
                 </div>
@@ -418,11 +452,11 @@ let allReports = [];
 let filteredReports = [];
 let allEmployees = [];
 let repeatCounts = {};
-let violationChart = null;
 let reportAutoRefreshTimer = null;
 let reportRealtimeChannel = null;
 let currentLang = localStorage.getItem('guardViolationAdminLang') || 'th';
 let activeReportId = null;
+let activeRepeatFilterKey = '';
 
 const I18N = {
     th: {
@@ -436,18 +470,24 @@ const I18N = {
         loadingEmployeesWithCount: (count) => `กำลังโหลดรายชื่อ... ${count} รายการ`,
         updatedLatest: (date) => `อัปเดตล่าสุด ${date}`,
         realtimeReady: 'Realtime พร้อมใช้งาน',
-        refresh: 'Refresh',
+        refresh: 'รีเฟรช',
         excel: 'Excel',
         reportsTab: 'รายงาน',
         employeesTab: 'พนักงาน',
         totalCases: 'เคสทั้งหมด',
         openCases: 'รอปิดเคส',
+        repeatOffender: 'ผู้กระทำซ้ำ',
+        urgentCases: 'เคสเร่งด่วน',
+        newBadge: 'ใหม่',
         fromDate: 'วันที่เริ่ม',
         toDate: 'วันที่สิ้นสุด',
         status: 'สถานะ',
         all: 'ทั้งหมด',
         severity: 'ความเร่งด่วน',
+        repeatFilter: 'การกระทำซ้ำ',
+        repeatOnly: 'เฉพาะผู้กระทำซ้ำ',
         notRepeat: 'ไม่ซ้ำ',
+        resetFilters: 'ล้างตัวกรอง',
         search: 'ค้นหา',
         reportSearchPlaceholder: 'ชื่อ/รหัส/ข้อหา',
         caseList: 'รายการเคส',
@@ -456,7 +496,7 @@ const I18N = {
         level: 'ระดับ',
         evidence: 'หลักฐาน',
         violationSummary: 'สรุปตามข้อหา',
-        repeat30: 'ทำซ้ำใน 30 วัน',
+        repeat30: 'ผู้กระทำซ้ำทั้งหมด',
         addSingleEmployee: 'เพิ่มพนักงานรายคน',
         employeeIdHelp: 'รองรับรหัส 6 หลัก เช่น 000000 และรูปแบบ AP0000 / SP0000',
         addEmployee: 'เพิ่มพนักงาน',
@@ -517,7 +557,7 @@ const I18N = {
         newCaseToast: 'มีเคสใหม่เข้า Admin',
         updatedCaseToast: 'มีการอัปเดตเคส',
         noData: 'ไม่พบข้อมูล',
-        noRepeat: 'ยังไม่พบผู้กระทำซ้ำ 2 ครั้งใน 30 วัน',
+        noRepeat: 'ยังไม่พบผู้กระทำซ้ำ 2 ครั้งขึ้นไป',
         openGoogleMaps: 'เปิด Google Maps',
         openEvidence: 'เปิดรูปหลักฐาน',
         caseDetailHelp: 'หน้า Detail เคสแบบเต็ม สำหรับ audit, หลักฐาน และ workflow',
@@ -559,12 +599,13 @@ const I18N = {
         preparedBy: 'จัดทำโดย',
         preparedAt: 'วันที่จัดทำ',
         cumulativeViolations: 'จำนวนครั้งสะสมในการกระทำผิด',
-        violationsIn30Days: 'จำนวนครั้งใน 30 วัน',
+        violationsIn30Days: 'จำนวนครั้งสะสมทั้งหมด',
         recommendation: 'ข้อเสนอแนะ / การดำเนินการต่อ',
         recommendationText: 'โปรดแจ้งหัวหน้างาน/ส่วนงานที่เกี่ยวข้องเพื่อรับทราบ ตรวจสอบข้อเท็จจริง และดำเนินการตามระเบียบของบริษัท',
         signatureGuard: 'ผู้รายงาน',
         signatureSafety: 'ผู้ตรวจสอบ',
         signatureDept: 'หัวหน้าส่วนงาน',
+        workflowPending: 'รอตรวจสอบ',
         workflowUnderReview: 'รับเข้าตรวจสอบ',
         workflowRepeat: 'ตรวจเคสซ้ำ',
         workflowClosed: 'ปิดเคส',
@@ -594,12 +635,18 @@ const I18N = {
         employeesTab: 'Employees',
         totalCases: 'Total Cases',
         openCases: 'Open Cases',
+        repeatOffender: 'Repeat Offenders',
+        urgentCases: 'Urgent Cases',
+        newBadge: 'New',
         fromDate: 'From Date',
         toDate: 'To Date',
         status: 'Status',
         all: 'All',
         severity: 'Severity',
+        repeatFilter: 'Repeat',
+        repeatOnly: 'Repeat Offenders',
         notRepeat: 'Not Repeat',
+        resetFilters: 'Reset Filters',
         search: 'Search',
         reportSearchPlaceholder: 'Name / ID / Violation',
         caseList: 'Case List',
@@ -608,7 +655,7 @@ const I18N = {
         level: 'Level',
         evidence: 'Evidence',
         violationSummary: 'Violation Summary',
-        repeat30: 'Repeat in 30 Days',
+        repeat30: 'All Repeat Offenders',
         addSingleEmployee: 'Add Single Employee',
         employeeIdHelp: 'Supports 6-digit IDs such as 000000 and AP0000 / SP0000 formats',
         addEmployee: 'Add Employee',
@@ -669,7 +716,7 @@ const I18N = {
         newCaseToast: 'New case received in Admin',
         updatedCaseToast: 'Case updated',
         noData: 'No data found',
-        noRepeat: 'No repeat offenders found with 2 cases in 30 days',
+        noRepeat: 'No repeat offenders found with 2 or more cases',
         openGoogleMaps: 'Open Google Maps',
         openEvidence: 'Open Evidence Image',
         caseDetailHelp: 'Full case detail page for audit, evidence, and workflow',
@@ -711,12 +758,13 @@ const I18N = {
         preparedBy: 'Prepared by',
         preparedAt: 'Prepared at',
         cumulativeViolations: 'Cumulative Violations',
-        violationsIn30Days: 'Violations in 30 Days',
+        violationsIn30Days: 'Total Cumulative Violations',
         recommendation: 'Recommendation / Next Action',
         recommendationText: 'Please notify the supervisor or responsible department to acknowledge, verify the facts, and proceed according to company policy.',
         signatureGuard: 'Reporter',
         signatureSafety: 'Safety Reviewer',
         signatureDept: 'Department Head',
+        workflowPending: 'Pending Review',
         workflowUnderReview: 'Under Review',
         workflowRepeat: 'Repeat Review',
         workflowClosed: 'Closed',
@@ -748,6 +796,10 @@ function applyLanguage() {
     });
     document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
         el.setAttribute('placeholder', t(el.dataset.i18nPlaceholder));
+    });
+    document.querySelectorAll('[data-i18n-title]').forEach(el => {
+        el.setAttribute('title', t(el.dataset.i18nTitle));
+        el.setAttribute('aria-label', t(el.dataset.i18nTitle));
     });
     document.querySelectorAll('[data-lang-btn]').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.langBtn === currentLang);
@@ -801,6 +853,7 @@ function getStatusBadgeClass(status) {
 }
 
 function getWorkflowLabel(status) {
+    if (status === WORKFLOW_PENDING) return t('workflowPending');
     if (status === WORKFLOW_UNDER_REVIEW) return t('workflowUnderReview');
     if (status === WORKFLOW_REPEAT) return t('workflowRepeat');
     if (status === WORKFLOW_CLOSED) return t('workflowClosed');
@@ -818,7 +871,7 @@ function renderTimeline(events) {
             <div class="fw-bold">${escapeHtml(event.event_type || '-')}</div>
             <div class="small-muted">${formatDate(event.created_at)} | ${escapeHtml(event.actor_role || '-')} - ${escapeHtml(event.actor_name || '-')}</div>
             <div>${escapeHtml(event.note || '-')}</div>
-            ${(event.from_status || event.to_status) ? `<div class="small-muted">${escapeHtml(event.from_status || '-')} → ${escapeHtml(event.to_status || '-')}</div>` : ''}
+            ${(event.from_status || event.to_status) ? `<div class="small-muted">${escapeHtml(event.from_status ? getWorkflowLabel(event.from_status) : '-')} -> ${escapeHtml(event.to_status ? getWorkflowLabel(event.to_status) : '-')}</div>` : ''}
         </div>
     `).join('')}</div>`;
 }
@@ -1336,19 +1389,34 @@ async function fetchReports() {
 }
 
 function computeRepeatCounts() {
-    const since = Date.now() - (30 * 24 * 60 * 60 * 1000);
     repeatCounts = {};
 
     allReports.forEach(report => {
-        const empId = report.emp_id;
-        const dateValue = new Date(getReportDate(report)).getTime();
-        if (!empId || empId === 'MANUAL' || empId === 'VISITOR' || Number.isNaN(dateValue) || dateValue < since) return;
-        repeatCounts[empId] = (repeatCounts[empId] || 0) + 1;
+        const key = getRepeatIdentityKey(report);
+        if (!key) return;
+        repeatCounts[key] = (repeatCounts[key] || 0) + 1;
     });
 }
 
+function getRepeatIdentityKey(report) {
+    const empId = String(report.emp_id || '').trim();
+    const fullname = String(report.fullname || '').trim().replace(/\s+/g, ' ');
+    if (empId && !['MANUAL', 'VISITOR'].includes(empId.toUpperCase())) {
+        return `id:${empId.toUpperCase()}`;
+    }
+    if (fullname) {
+        return `name:${fullname.toLowerCase()}`;
+    }
+    return '';
+}
+
+function getRepeatCount(report) {
+    const key = getRepeatIdentityKey(report);
+    return key ? (repeatCounts[key] || 0) : 0;
+}
+
 function isRepeatReport(report) {
-    return Boolean(report.repeat_offender) || (repeatCounts[report.emp_id] || 0) >= 2;
+    return Boolean(report.repeat_offender) || getRepeatCount(report) >= 2;
 }
 
 function hydrateFilterOptions() {
@@ -1357,9 +1425,20 @@ function hydrateFilterOptions() {
     const statuses = [...new Set(allReports.map(r => r.workflow_status || WORKFLOW_PENDING))].sort();
     statusSelect.innerHTML = `<option value="ALL">${t('all')}</option>`;
     statuses.forEach(status => {
-        statusSelect.innerHTML += `<option value="${escapeHtml(status)}">${escapeHtml(status)}</option>`;
+        statusSelect.innerHTML += `<option value="${escapeHtml(status)}">${escapeHtml(getWorkflowLabel(status))}</option>`;
     });
     statusSelect.value = statuses.includes(currentValue) ? currentValue : 'ALL';
+}
+
+function resetFilters() {
+    activeRepeatFilterKey = '';
+    document.getElementById('filterFrom').value = '';
+    document.getElementById('filterTo').value = '';
+    document.getElementById('filterStatus').value = 'ALL';
+    document.getElementById('filterSeverity').value = 'ALL';
+    document.getElementById('filterRepeat').value = 'ALL';
+    document.getElementById('filterSearch').value = '';
+    applyFilters();
 }
 
 function applyFilters() {
@@ -1369,6 +1448,7 @@ function applyFilters() {
     const severity = document.getElementById('filterSeverity').value;
     const repeat = document.getElementById('filterRepeat').value;
     const search = document.getElementById('filterSearch').value.trim().toLowerCase();
+    if (repeat !== 'YES') activeRepeatFilterKey = '';
 
     filteredReports = allReports.filter(report => {
         const dateText = getReportDate(report)?.slice(0, 10) || '';
@@ -1383,6 +1463,7 @@ function applyFilters() {
         if (severity !== 'ALL' && reportSeverity !== severity) return false;
         if (repeat === 'YES' && !repeatReport) return false;
         if (repeat === 'NO' && repeatReport) return false;
+        if (activeRepeatFilterKey && getRepeatIdentityKey(report) !== activeRepeatFilterKey) return false;
         if (search && !haystack.includes(search)) return false;
         return true;
     });
@@ -1390,13 +1471,17 @@ function applyFilters() {
     renderSummary();
     renderTable();
     renderRepeatList();
-    renderViolationChart();
+    renderViolationSummary();
 }
 
 function renderSummary() {
+    const repeatIdentityCount = new Set(filteredReports
+        .filter(isRepeatReport)
+        .map(getRepeatIdentityKey)
+        .filter(Boolean)).size;
     document.getElementById('kpiTotal').innerText = filteredReports.length;
     document.getElementById('kpiOpen').innerText = filteredReports.filter(r => OPEN_STATUSES.includes(r.workflow_status || WORKFLOW_PENDING)).length;
-    document.getElementById('kpiRepeat').innerText = filteredReports.filter(isRepeatReport).length;
+    document.getElementById('kpiRepeat').innerText = repeatIdentityCount;
     document.getElementById('kpiUrgent').innerText = filteredReports.filter(r => ['Critical', 'High'].includes(r.severity_level)).length;
     document.getElementById('resultText').innerText = `${filteredReports.length} ${t('records')}`;
 }
@@ -1411,19 +1496,23 @@ function renderTable() {
     }
 
     filteredReports.forEach(report => {
-        const repeatBadge = isRepeatReport(report) ? `<span class="badge bg-danger ms-1">Repeat Offender</span>` : '';
-        const newBadge = !report.admin_seen_at ? `<span class="badge bg-primary ms-1">New</span>` : '';
+        const repeatReport = isRepeatReport(report);
+        const urgentReport = ['Critical', 'High'].includes(report.severity_level);
+        const rowClass = [repeatReport ? 'repeat-row' : '', urgentReport ? 'urgent-row' : ''].filter(Boolean).join(' ');
+        const repeatBadge = repeatReport ? `<span class="badge bg-danger ms-1">${t('repeatOffender')}</span>` : '';
+        const newBadge = !report.admin_seen_at ? `<span class="badge bg-primary ms-1">${t('newBadge')}</span>` : '';
         const evidence = report.evidence_url ? `<a href="${escapeHtml(report.evidence_url)}" target="_blank"><img src="${escapeHtml(report.evidence_url)}" class="evidence-thumb" alt="Evidence"></a>` : '<span class="text-muted">-</span>';
         const severityClass = report.severity_level === 'Critical' ? 'danger' : (report.severity_level === 'High' ? 'warning' : (report.severity_level === 'Low' ? 'secondary' : 'info'));
         const status = report.workflow_status || WORKFLOW_PENDING;
         const statusClass = getStatusBadgeClass(status);
+        const statusLabel = getWorkflowLabel(status);
 
         tbody.innerHTML += `
-            <tr class="${isRepeatReport(report) ? 'repeat-row' : ''}">
+            <tr class="${rowClass}">
                 <td>
                     <span class="table-card-label">Case</span>
                     <div>
-                    <a href="#" class="case-link" onclick="viewReport(${report.id}); return false;">${escapeHtml(report.case_id || ('#' + report.id))}</a>
+                    <a href="#" class="case-link ${urgentReport || repeatReport ? 'urgent-case' : ''}" onclick="viewReport(${report.id}); return false;">${escapeHtml(report.case_id || ('#' + report.id))}</a>
                     ${newBadge}
                     <div class="small-muted">${formatDate(getReportDate(report))}</div>
                     </div>
@@ -1438,13 +1527,13 @@ function renderTable() {
                 </td>
                 <td><span class="table-card-label">${t('violation')}</span><span>${escapeHtml(report.violation_type)}</span></td>
                 <td><span class="table-card-label">${t('level')}</span><span class="badge bg-${severityClass}">${escapeHtml(report.severity_level || 'Medium')}</span></td>
-                <td><span class="table-card-label">${t('status')}</span><span class="badge bg-${statusClass}">${escapeHtml(status)}</span></td>
+                <td><span class="table-card-label">${t('status')}</span><span class="badge bg-${statusClass} status-badge">${escapeHtml(statusLabel)}</span></td>
                 <td><span class="table-card-label">${t('evidence')}</span>${evidence}</td>
                 <td class="text-end">
-                    <div class="d-flex flex-wrap gap-1 justify-content-end">
-                        <button class="btn btn-sm btn-outline-primary" onclick="viewReport(${report.id})">${t('open')}</button>
-                        <button class="btn btn-sm btn-outline-secondary" onclick="openReportModal(${report.id})">${t('edit')}</button>
-                        <button class="btn btn-sm btn-outline-danger" onclick="deleteReport(${report.id})">${t('deleteCase')}</button>
+                    <div class="action-buttons">
+                        <button class="btn btn-sm btn-outline-primary icon-btn" onclick="viewReport(${report.id})" title="${t('open')}" aria-label="${t('open')}"><i class="bi bi-box-arrow-up-right"></i></button>
+                        <button class="btn btn-sm btn-outline-secondary icon-btn" onclick="openReportModal(${report.id})" title="${t('edit')}" aria-label="${t('edit')}"><i class="bi bi-pencil-square"></i></button>
+                        <button class="btn btn-sm btn-outline-danger icon-btn" onclick="deleteReport(${report.id})" title="${t('deleteCase')}" aria-label="${t('deleteCase')}"><i class="bi bi-trash"></i></button>
                     </div>
                 </td>
             </tr>
@@ -1463,16 +1552,29 @@ function renderRepeatList() {
         return;
     }
 
-    target.innerHTML = repeatEntries.map(([empId, count]) => {
-        const latest = allReports.find(r => r.emp_id === empId);
-        return `<div class="d-flex justify-content-between align-items-center border rounded p-2">
-            <div><div class="fw-bold">${escapeHtml(latest?.fullname || empId)}</div><div class="small-muted">${escapeHtml(empId)}</div></div>
+    target.innerHTML = repeatEntries.map(([key, count]) => {
+        const latest = allReports.find(r => getRepeatIdentityKey(r) === key);
+        const identityLabel = key.startsWith('id:') ? key.slice(3) : (latest?.fullname || key.slice(5));
+        const activeClass = activeRepeatFilterKey === key ? ' active' : '';
+        return `<button type="button" class="repeat-filter-card${activeClass} d-flex justify-content-between align-items-center border rounded p-2" onclick="filterByRepeatIdentity('${encodeURIComponent(key)}')" title="${t('repeatOnly')}" aria-label="${t('repeatOnly')}">
+            <span><span class="fw-bold d-block">${escapeHtml(latest?.fullname || identityLabel)}</span><span class="small-muted">${escapeHtml(latest?.emp_id || identityLabel)}</span></span>
             <span class="badge bg-danger">${count} ${t('times')}</span>
-        </div>`;
+        </button>`;
     }).join('');
 }
 
-function renderViolationChart() {
+function filterByRepeatIdentity(encodedKey) {
+    activeRepeatFilterKey = decodeURIComponent(encodedKey);
+    document.getElementById('filterFrom').value = '';
+    document.getElementById('filterTo').value = '';
+    document.getElementById('filterStatus').value = 'ALL';
+    document.getElementById('filterSeverity').value = 'ALL';
+    document.getElementById('filterRepeat').value = 'YES';
+    document.getElementById('filterSearch').value = '';
+    applyFilters();
+}
+
+function renderViolationSummary() {
     const counts = {};
     filteredReports.forEach(report => {
         const key = report.violation_type || t('unspecified');
@@ -1480,20 +1582,23 @@ function renderViolationChart() {
     });
 
     const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 6);
-    if (violationChart) violationChart.destroy();
-    violationChart = new Chart(document.getElementById('violationChart'), {
-        type: 'bar',
-        data: {
-            labels: entries.map(([label]) => label),
-            datasets: [{ data: entries.map(([, value]) => value), backgroundColor: '#dc2626', borderRadius: 8 }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } }, x: { ticks: { font: { family: 'Sarabun' } } } }
-        }
-    });
+    const target = document.getElementById('violationSummaryList');
+    if (!target) return;
+
+    if (entries.length === 0) {
+        target.innerHTML = `<div class="text-muted">${t('noData')}</div>`;
+        return;
+    }
+
+    const maxCount = Math.max(...entries.map(([, count]) => count), 1);
+    target.innerHTML = entries.map(([label, count]) => {
+        const width = Math.max((count / maxCount) * 100, 8);
+        return `<div class="summary-item">
+            <div class="summary-label">${escapeHtml(label)}</div>
+            <span class="badge bg-danger">${count}</span>
+            <div class="summary-bar"><span style="width:${width}%"></span></div>
+        </div>`;
+    }).join('');
 }
 
 function makeAdminCaseId() {
@@ -1549,7 +1654,7 @@ async function openReportModal(reportId = null) {
                 <div class="col-md-6">
                     <label class="form-label fw-bold small">${t('status')}</label>
                     <select id="reportStatus" class="form-select">
-                        ${[WORKFLOW_PENDING, WORKFLOW_REPEAT, WORKFLOW_UNDER_REVIEW, WORKFLOW_CLOSED, WORKFLOW_REJECTED].map(status => `<option value="${status}" ${selectedStatus === status ? 'selected' : ''}>${escapeHtml(status)}</option>`).join('')}
+                        ${[WORKFLOW_PENDING, WORKFLOW_REPEAT, WORKFLOW_UNDER_REVIEW, WORKFLOW_CLOSED, WORKFLOW_REJECTED].map(status => `<option value="${status}" ${selectedStatus === status ? 'selected' : ''}>${escapeHtml(getWorkflowLabel(status))}</option>`).join('')}
                     </select>
                 </div>
                 <div class="col-md-6">
@@ -1735,9 +1840,10 @@ async function printCasePdf(id) {
 
     const doc = printWindow.document;
     const timeline = await fetchCaseTimeline(report);
-    const repeatText = isRepeatReport(report) ? 'Repeat Offender' : '-';
-    const totalViolationCount = allReports.filter(item => item.emp_id && item.emp_id === report.emp_id).length || 1;
-    const recentViolationCount = repeatCounts[report.emp_id] || report.recent_violation_count_30d || 1;
+    const repeatText = isRepeatReport(report) ? t('repeatOffender') : '-';
+    const repeatKey = getRepeatIdentityKey(report);
+    const totalViolationCount = repeatKey ? allReports.filter(item => getRepeatIdentityKey(item) === repeatKey).length : 1;
+    const cumulativeViolationCount = getRepeatCount(report) || totalViolationCount || 1;
     const gpsText = report.gps_latitude && report.gps_longitude
         ? `${report.gps_latitude}, ${report.gps_longitude}`
         : '-';
@@ -1808,11 +1914,11 @@ async function printCasePdf(id) {
     addPdfRow(table, t('location'), report.location_ref || '-');
     addPdfRow(table, t('actionTaken'), report.action_taken || '-');
     addPdfRow(table, t('level'), report.severity_level || '-');
-    addPdfRow(table, t('status'), report.workflow_status || WORKFLOW_PENDING);
+    addPdfRow(table, t('status'), getWorkflowLabel(report.workflow_status || WORKFLOW_PENDING));
     addPdfRow(table, t('owner'), report.review_owner || '-');
     addPdfRow(table, t('cumulativeViolations'), `${totalViolationCount} ${t('times')}`);
-    addPdfRow(table, t('violationsIn30Days'), `${recentViolationCount} ${t('times')}`);
-    addPdfRow(table, 'Repeat Offender', repeatText);
+    addPdfRow(table, t('violationsIn30Days'), `${cumulativeViolationCount} ${t('times')}`);
+    addPdfRow(table, t('repeatOffender'), repeatText);
     addPdfRow(table, t('adminRemark'), report.admin_remark || '-');
     addPdfRow(table, t('closeReason'), report.closed_reason || '-');
     addPdfRow(table, t('gps'), gpsText);
@@ -1831,7 +1937,9 @@ async function printCasePdf(id) {
     const list = addEl(doc.body, 'ol');
     if (timeline.length) {
         timeline.forEach(event => {
-            addEl(list, 'li', `${formatDate(event.created_at)} - ${event.event_type || '-'} | ${event.from_status || '-'} -> ${event.to_status || '-'} ${event.note || ''}`);
+            const fromStatus = event.from_status ? getWorkflowLabel(event.from_status) : '-';
+            const toStatus = event.to_status ? getWorkflowLabel(event.to_status) : '-';
+            addEl(list, 'li', `${formatDate(event.created_at)} - ${event.event_type || '-'} | ${fromStatus} -> ${toStatus} ${event.note || ''}`);
         });
     } else {
         addEl(list, 'li', t('noTimeline'));
@@ -1882,7 +1990,7 @@ async function viewReport(id) {
         </div>
         <div class="detail-grid mb-3">
             <div class="detail-item">
-            <div class="mb-2"><b>${t('offender')}:</b> ${escapeHtml(report.fullname)} (${escapeHtml(report.emp_id)}) ${isRepeatReport(report) ? '<span class="badge bg-danger ms-1">Repeat Offender</span>' : ''}</div>
+            <div class="mb-2"><b>${t('offender')}:</b> ${escapeHtml(report.fullname)} (${escapeHtml(report.emp_id)}) ${isRepeatReport(report) ? `<span class="badge bg-danger ms-1">${t('repeatOffender')}</span>` : ''}</div>
             <div class="mb-2"><b>${t('sectionLabel')}:</b> ${escapeHtml(report.section || '-')}</div>
             <div class="mb-2"><b>${t('violation')}:</b> ${escapeHtml(report.violation_type)}</div>
             <div class="mb-2"><b>${t('location')}:</b> ${escapeHtml(report.location_ref)}</div>
@@ -1890,7 +1998,7 @@ async function viewReport(id) {
             <div class="detail-item">
             <div class="mb-2"><b>${t('actionTaken')}:</b> ${escapeHtml(report.action_taken)}</div>
             <div class="mb-2"><b>${t('level')}:</b> ${escapeHtml(report.severity_level || 'Medium')}</div>
-            <div class="mb-2"><b>${t('status')}:</b> ${escapeHtml(report.workflow_status || WORKFLOW_PENDING)}</div>
+            <div class="mb-2"><b>${t('status')}:</b> ${escapeHtml(getWorkflowLabel(report.workflow_status || WORKFLOW_PENDING))}</div>
             <div class="mb-2"><b>${t('owner')}:</b> ${escapeHtml(report.review_owner || '-')}</div>
             </div>
             <div class="detail-item">
@@ -1917,7 +2025,7 @@ async function updateStatus(id, status) {
 
     const requiresReason = [WORKFLOW_CLOSED, WORKFLOW_REJECTED].includes(status);
     const { value: statusForm } = await Swal.fire({
-        title: t('updateTo', status),
+        title: t('updateTo', getWorkflowLabel(status)),
         html: `<div class="text-start">
             <label class="form-label fw-bold">${t('timelineRemark')}${requiresReason ? ' *' : ''}</label>
             <textarea id="statusRemark" class="form-control" rows="4" placeholder="${t('statusRemarkPlaceholder')}"></textarea>
@@ -1976,7 +2084,7 @@ async function updateStatus(id, status) {
         event_type: EVENT_STATUS_CHANGED,
         from_status: previousStatus,
         to_status: status,
-        note: statusForm.remark || t('changedStatusTo', status),
+        note: statusForm.remark || t('changedStatusTo', getWorkflowLabel(status)),
         event_payload: {
             review_owner: getStatusOwner(status),
             closed_reason: requiresReason ? statusForm.remark : null
@@ -2003,7 +2111,9 @@ async function fetchTimelineSummaryMap(reports) {
 
     return (data || []).reduce((map, event) => {
         if (!map[event.case_id]) map[event.case_id] = [];
-        map[event.case_id].push(`${formatDate(event.created_at)} ${event.event_type}: ${event.from_status || '-'} -> ${event.to_status || '-'} (${event.actor_name || '-'}) ${event.note || ''}`);
+        const fromStatus = event.from_status ? getWorkflowLabel(event.from_status) : '-';
+        const toStatus = event.to_status ? getWorkflowLabel(event.to_status) : '-';
+        map[event.case_id].push(`${formatDate(event.created_at)} ${event.event_type}: ${fromStatus} -> ${toStatus} (${event.actor_name || '-'}) ${event.note || ''}`);
         return map;
     }, {});
 }
@@ -2025,7 +2135,7 @@ async function exportToExcel() {
         Location: report.location_ref,
         Action: report.action_taken,
         Severity: report.severity_level,
-        Status: report.workflow_status,
+        Status: getWorkflowLabel(report.workflow_status || WORKFLOW_PENDING),
         ReviewOwner: report.review_owner || '',
         AdminRemark: report.admin_remark || '',
         ClosedReason: report.closed_reason || '',
@@ -2033,7 +2143,7 @@ async function exportToExcel() {
         LastStatusChangedAt: report.last_status_changed_at ? formatDate(report.last_status_changed_at) : '',
         LastStatusChangedBy: report.last_status_changed_by || '',
         RepeatOffender: isRepeatReport(report) ? 'Yes' : 'No',
-        Recent30Days: repeatCounts[report.emp_id] || report.recent_violation_count_30d || 1,
+        CumulativeRepeatCount: getRepeatCount(report) || 1,
         Evidence: report.evidence_url || '',
         GPS: report.gps_latitude && report.gps_longitude ? `${report.gps_latitude},${report.gps_longitude}` : '',
         DeviceID: report.device_id || '',

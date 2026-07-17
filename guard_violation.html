@@ -84,6 +84,7 @@
         .live-pill { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; background: var(--surface-2); color: var(--muted); font-weight: 700; font-size: 0.82rem; }
         .live-pill.online { background: var(--success-soft); color: #065f46; border-color: #86efac; }
         .live-pill.offline { background: var(--warning-soft); color: #7c2d12; border-color: #fdba74; }
+        .admin-entry { display: inline-flex; }
 
         .app-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 14px; margin-top: 14px; }
         .workspace, .side-panel, .quick-panel, .form-section {
@@ -197,6 +198,18 @@
         .summary-line:last-child { border-bottom: 0; }
         .summary-label { color: var(--muted); font-size: 0.82rem; }
         .summary-value { font-weight: 800; text-align: right; }
+        .summary-value.danger { color: var(--danger); }
+        .field-status {
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: var(--surface-2);
+            color: var(--muted);
+            padding: 8px 10px;
+            font-weight: 800;
+            font-size: 0.85rem;
+        }
+        .field-status.success { background: var(--success-soft); border-color: #86efac; color: #065f46; }
+        .field-status.warning { background: var(--warning-soft); border-color: #fdba74; color: #7c2d12; }
         .insight-card { border-radius: 8px; border: 1px solid var(--line); padding: 12px; background: #fff; }
         .insight-card.warning { background: var(--warning-soft); border-color: #fdba74; color: #7c2d12; }
         .insight-card.danger { background: var(--danger-soft); border-color: #fca5a5; color: #7f1d1d; }
@@ -355,7 +368,14 @@
             .brand-mark { width: 40px; height: 40px; }
             .topbar-title { font-size: 1rem; }
             .topbar-subtitle, .section-kicker { font-size: 0.78rem; }
+            .admin-entry { display: none; }
             .summary-value { max-width: 60%; overflow-wrap: anywhere; }
+            .risk-alert.show {
+                position: sticky;
+                top: 8px;
+                z-index: 15;
+                box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+            }
             .mobile-progress-card, .mobile-action-bar { display: flex; }
             .mobile-progress-card { display: block; }
             .app-tabs { position: sticky; top: 6px; z-index: 25; }
@@ -404,7 +424,7 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
                     <i class="bi bi-house-fill"></i> หน้าหลัก
                 </button>
                 <span id="connectionStatus" class="live-pill">กำลังตรวจสอบ</span>
-                <a href="admin_guard_violation.html" target="_blank" class="btn btn-outline-dark fw-bold"><i class="bi bi-speedometer2 me-1"></i>Admin</a>
+                <a href="admin_guard_violation.html" target="_blank" class="btn btn-outline-dark fw-bold admin-entry"><i class="bi bi-speedometer2 me-1"></i>Admin</a>
             </div>
         </header>
 
@@ -454,7 +474,7 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
                         <div class="section-head">
                             <div>
                                 <h2 class="section-title">เลือกประเภทความผิด</h2>
-                                <div class="section-kicker">ระบบจะตรวจประวัติซ้ำ 30 วันก่อนส่งรายงาน</div>
+                                <div class="section-kicker">ระบบจะตรวจประวัติซ้ำสะสมทั้งหมดก่อนส่งรายงาน</div>
                             </div>
                             <span class="section-index">2</span>
                         </div>
@@ -504,6 +524,7 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
                                 รูปนี้ใช้เพื่อความปลอดภัยและการตรวจสอบภายในเท่านั้น
                             </div>
                             <input type="file" id="evidencePhoto" class="form-control mb-2" accept="image/*" capture="environment">
+                            <div id="evidenceStatus" class="field-status warning mb-2"><i class="bi bi-image me-1"></i>ยังไม่ได้แนบรูป</div>
                             <img id="evidencePreview" class="evidence-preview" alt="Evidence preview">
                             <button type="button" id="btnLocation" class="btn-secondary-action mt-3" onclick="captureLocation()">
                                 <i class="bi bi-crosshair me-1"></i> บันทึกพิกัด GPS
@@ -605,8 +626,11 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
                     <div class="summary-line"><span class="summary-label">จุดเกิดเหตุ</span><span class="summary-value" id="summaryLocation">-</span></div>
                     <div class="summary-line"><span class="summary-label">ระดับ</span><span class="summary-value" id="summarySeverity">Medium</span></div>
                     <div class="summary-line"><span class="summary-label">กะงาน</span><span class="summary-value" id="summaryShift">Day</span></div>
+                    <div class="summary-line"><span class="summary-label">ผู้กระทำซ้ำ</span><span class="summary-value" id="summaryRepeat">รอตรวจ</span></div>
+                    <div class="summary-line"><span class="summary-label">รูปหลักฐาน</span><span class="summary-value" id="summaryEvidence">ยังไม่ได้แนบ</span></div>
+                    <div class="summary-line"><span class="summary-label">พิกัด GPS</span><span class="summary-value" id="summaryGps">ยังไม่ได้บันทึก</span></div>
                     <div id="insightPanel" class="insight-card warning mt-3">
-                        ระบบจะตรวจผู้กระทำซ้ำ 2 ครั้งใน 30 วันตอนกดส่งรายงาน
+                        ระบบจะตรวจผู้กระทำซ้ำจากประวัติสะสมทั้งหมดตอนกดส่งรายงาน
                     </div>
                 </section>
             </aside>
@@ -645,8 +669,8 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
                     <div class="history-stat-value" id="historyEmployeeTotal">-</div>
                 </div>
                 <div class="history-stat">
-                    <div class="summary-label">ใน 30 วัน</div>
-                    <div class="history-stat-value text-danger" id="historyEmployee30d">-</div>
+                    <div class="summary-label">ครั้งถัดไป</div>
+                    <div class="history-stat-value text-danger" id="historyEmployeeNext">-</div>
                 </div>
             </div>
 
@@ -694,6 +718,7 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
         let guardHistoryLoaded = false;
         let employeeRiskTimer = null;
         let latestEmployeeRiskKey = '';
+        let latestRepeatSummary = { checked: false, projectedCount: null, isRepeat: false };
         const employeeSearchCache = new Map();
         const MOBILE_STEP_COUNT = 4;
         const mobileStepMeta = {
@@ -825,6 +850,32 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
             return '';
         }
 
+        function getWorkflowLabel(status) {
+            if (status === WORKFLOW_PENDING) return 'รอตรวจสอบ';
+            if (status === WORKFLOW_REPEAT) return 'ตรวจเคสซ้ำ';
+            if (status === 'Under Review') return 'รับเข้าตรวจสอบ';
+            if (status === 'Closed') return 'ปิดเคส';
+            if (status === 'Rejected') return 'ไม่รับเคส';
+            return status || WORKFLOW_PENDING;
+        }
+
+        function getRepeatIdentityKeyFromValues(empId, fullname) {
+            const normalizedEmpId = safeText(empId, '').toUpperCase();
+            const normalizedName = safeText(fullname, '').replace(/\s+/g, ' ');
+            if (normalizedEmpId && !['MANUAL', 'VISITOR'].includes(normalizedEmpId)) {
+                return { type: 'emp_id', value: normalizedEmpId };
+            }
+            if (normalizedName) {
+                return { type: 'fullname', value: normalizedName };
+            }
+            return null;
+        }
+
+        function getRepeatIdentityKey(report) {
+            const identity = getRepeatIdentityKeyFromValues(report.emp_id, report.fullname);
+            return identity ? `${identity.type}:${identity.value.toLowerCase()}` : '';
+        }
+
         function setEmployeeRiskAlert(type, html) {
             const alert = document.getElementById('employeeRiskAlert');
             if (!alert) return;
@@ -847,36 +898,43 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
             const rawEmpData = safeText(document.getElementById('empSearch')?.value, '');
             if (!rawEmpData) {
                 latestEmployeeRiskKey = '';
+                latestRepeatSummary = { checked: false, projectedCount: null, isRepeat: false };
+                updateLiveSummary();
                 setEmployeeRiskAlert('', '');
                 return;
             }
 
             const employee = parseEmployeeSelection(rawEmpData);
-            if (!employee.emp_id || employee.emp_id === 'VISITOR' || employee.emp_id.startsWith('MANUAL')) {
+            const repeatIdentity = getRepeatIdentityKeyFromValues(employee.emp_id, employee.fullname);
+            if (!repeatIdentity) {
                 latestEmployeeRiskKey = '';
-                setEmployeeRiskAlert('warning', '<i class="bi bi-info-circle-fill me-1"></i> รายการนี้เป็นการกรอกเอง ระบบจะไม่ตรวจ Repeat Offender จากรหัสพนักงาน');
+                latestRepeatSummary = { checked: false, projectedCount: null, isRepeat: false };
+                updateLiveSummary();
+                setEmployeeRiskAlert('warning', '<i class="bi bi-info-circle-fill me-1"></i> ยังไม่มีข้อมูลพอสำหรับตรวจประวัติซ้ำ');
                 return;
             }
 
-            const riskKey = `${employee.emp_id}|${rawEmpData}`;
+            const riskKey = `${repeatIdentity.type}|${repeatIdentity.value}|${rawEmpData}`;
             latestEmployeeRiskKey = riskKey;
-            setEmployeeRiskAlert('warning', `<i class="bi bi-hourglass-split me-1"></i> กำลังตรวจประวัติ 30 วันของ ${escapeHtml(employee.fullname)}...`);
+            setEmployeeRiskAlert('warning', `<i class="bi bi-hourglass-split me-1"></i> กำลังตรวจประวัติสะสมของ ${escapeHtml(employee.fullname)}...`);
 
-            const recentCount = await getRecentViolationCount(employee.emp_id);
+            const cumulativeCount = await getCumulativeViolationCount(employee.emp_id, employee.fullname);
             if (latestEmployeeRiskKey !== riskKey) return;
 
-            const projectedCount = recentCount + 1;
-            if (recentCount <= 0) {
-                setEmployeeRiskAlert('safe', `<i class="bi bi-check-circle-fill me-1"></i> ยังไม่พบประวัติใน 30 วัน ถ้าบันทึกครั้งนี้จะเป็นครั้งที่ 1`);
+            const projectedCount = cumulativeCount + 1;
+            latestRepeatSummary = { checked: true, projectedCount, isRepeat: projectedCount >= 2 };
+            updateLiveSummary();
+            if (cumulativeCount <= 0) {
+                setEmployeeRiskAlert('safe', `<i class="bi bi-check-circle-fill me-1"></i> ยังไม่พบประวัติสะสม ถ้าบันทึกครั้งนี้จะเป็นครั้งที่ 1`);
                 return;
             }
 
             if (projectedCount === 2) {
-                setEmployeeRiskAlert('danger', `<i class="bi bi-exclamation-triangle-fill me-1"></i> แจ้งเตือน: ${escapeHtml(employee.fullname)} มีประวัติแล้ว 1 ครั้งใน 30 วัน ถ้าบันทึกครั้งนี้จะเป็นครั้งที่ 2 และถูกส่งเป็น Repeat Offender Review`);
+                setEmployeeRiskAlert('danger', `<i class="bi bi-exclamation-triangle-fill me-1"></i> แจ้งเตือน: ${escapeHtml(employee.fullname)} มีประวัติแล้ว 1 ครั้ง ถ้าบันทึกครั้งนี้จะเป็นครั้งที่ 2 และถูกส่งเป็นตรวจเคสซ้ำ`);
                 return;
             }
 
-            setEmployeeRiskAlert('danger', `<i class="bi bi-exclamation-octagon-fill me-1"></i> Repeat Offender: ${escapeHtml(employee.fullname)} มีประวัติแล้ว ${recentCount} ครั้งใน 30 วัน ถ้าบันทึกครั้งนี้จะเป็นครั้งที่ ${projectedCount}`);
+            setEmployeeRiskAlert('danger', `<i class="bi bi-exclamation-octagon-fill me-1"></i> ผู้กระทำซ้ำ: ${escapeHtml(employee.fullname)} มีประวัติสะสมแล้ว ${cumulativeCount} ครั้ง ถ้าบันทึกครั้งนี้จะเป็นครั้งที่ ${projectedCount}`);
         }
 
         function switchGuardView(view) {
@@ -892,20 +950,20 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
         }
 
         async function countEmployeeViolations(empId) {
-            if (!db || !empId) return { total: '-', recent: '-' };
+            if (!db || !empId) return { total: '-', projected: '-' };
 
-            const sinceDate = new Date(Date.now() - (30 * 24 * 60 * 60 * 1000)).toISOString();
-            const [totalResult, recentResult] = await Promise.all([
-                db.from('violation_reports').select('id', { count: 'exact', head: true }).eq('emp_id', empId),
-                db.from('violation_reports').select('id', { count: 'exact', head: true }).eq('emp_id', empId).gte('created_at', sinceDate)
-            ]);
+            const totalResult = await db
+                .from('violation_reports')
+                .select('id', { count: 'exact', head: true })
+                .eq('emp_id', empId);
 
-            if (totalResult.error || recentResult.error) {
-                console.warn('History count skipped:', totalResult.error || recentResult.error);
-                return { total: '-', recent: '-' };
+            if (totalResult.error) {
+                console.warn('History count skipped:', totalResult.error);
+                return { total: '-', projected: '-' };
             }
 
-            return { total: totalResult.count || 0, recent: recentResult.count || 0 };
+            const total = totalResult.count || 0;
+            return { total, projected: total + 1 };
         }
 
         function encodeHistoryEmployee(report) {
@@ -1074,7 +1132,7 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
             const list = document.getElementById('historyList');
             const shownCount = document.getElementById('historyShownCount');
             const totalCount = document.getElementById('historyEmployeeTotal');
-            const recentCount = document.getElementById('historyEmployee30d');
+            const nextCount = document.getElementById('historyEmployeeNext');
             if (!status || !list) return;
 
             if (!db) {
@@ -1090,7 +1148,7 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
             list.innerHTML = '';
             shownCount.innerText = '0';
             totalCount.innerText = employeeCode ? '...' : '-';
-            recentCount.innerText = employeeCode ? '...' : '-';
+            nextCount.innerText = employeeCode ? '...' : '-';
 
             try {
                 list.innerHTML = '<div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div>';
@@ -1118,7 +1176,7 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
                 if (employeeCode) {
                     const counts = await countEmployeeViolations(employeeCode);
                     totalCount.innerText = String(counts.total);
-                    recentCount.innerText = String(counts.recent);
+                    nextCount.innerText = String(counts.projected);
                 }
 
                 status.innerText = employeeCode
@@ -1141,14 +1199,14 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
                                 <div class="history-meta">${escapeHtml(report.section || '-')} | ${formatThaiDate(getReportDate(report))}</div>
                             </div>
                             <div class="d-flex flex-wrap gap-1">
-                                <span class="history-pill ${statusClass}">${escapeHtml(report.workflow_status || WORKFLOW_PENDING)}</span>
-                                ${repeat ? '<span class="history-pill danger">Repeat Offender</span>' : ''}
+                                <span class="history-pill ${statusClass}">${escapeHtml(getWorkflowLabel(report.workflow_status || WORKFLOW_PENDING))}</span>
+                                ${repeat ? '<span class="history-pill danger">ผู้กระทำซ้ำ</span>' : ''}
                             </div>
                         </div>
                         <div><b>ข้อหา:</b> ${escapeHtml(report.violation_type || '-')}</div>
                         <div class="history-meta"><b>จุดเกิดเหตุ:</b> ${escapeHtml(report.location_ref || '-')}</div>
-                        <div class="history-meta">Case: ${escapeHtml(report.case_id || `#${report.id}`)} | 30 วัน: ${escapeHtml(report.recent_violation_count_30d || 1)} ครั้ง</div>
-                        <button type="button" class="btn btn-sm btn-outline-danger fw-bold" onclick="useHistoryEmployee('${employeeArg}')">
+                        <div class="history-meta">Case: ${escapeHtml(report.case_id || `#${report.id}`)} | สะสม: ${escapeHtml(report.recent_violation_count_30d || 1)} ครั้ง</div>
+                        <button type="button" class="btn btn-danger fw-bold w-100" onclick="useHistoryEmployee('${employeeArg}')">
                             <i class="bi bi-person-check me-1"></i>ใช้คนนี้บันทึกเคสใหม่
                         </button>
                     </article>`;
@@ -1199,6 +1257,15 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
             document.getElementById('summaryLocation').innerText = location || '-';
             document.getElementById('summarySeverity').innerText = severity;
             document.getElementById('summaryShift').innerText = shift;
+            const repeatSummary = document.getElementById('summaryRepeat');
+            if (repeatSummary) {
+                repeatSummary.classList.toggle('danger', latestRepeatSummary.isRepeat);
+                repeatSummary.innerText = latestRepeatSummary.checked
+                    ? (latestRepeatSummary.isRepeat ? `ผู้กระทำซ้ำ (${latestRepeatSummary.projectedCount} ครั้ง)` : `${latestRepeatSummary.projectedCount} ครั้ง`)
+                    : 'รอตรวจ';
+            }
+            document.getElementById('summaryEvidence').innerText = hasEvidence ? 'แนบแล้ว' : 'ยังไม่ได้แนบ';
+            document.getElementById('summaryGps').innerText = hasGps ? 'บันทึกแล้ว' : 'ยังไม่ได้บันทึก';
 
             setStepDone('stepEmp', Boolean(employee));
             setStepDone('stepViolation', Boolean(violation));
@@ -1351,7 +1418,7 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
                 actor_role: ACTOR_GUARD,
                 actor_name: payload.reported_by,
                 note: payload.repeat_offender
-                    ? `Repeat Offender ${payload.recent_violation_count_30d} ครั้งใน 30 วัน`
+                    ? `ผู้กระทำซ้ำ ${payload.recent_violation_count_30d} ครั้งสะสม`
                     : 'สร้างรายงานจาก Guard SuperApp',
                 event_payload: {
                     emp_id: payload.emp_id,
@@ -1383,15 +1450,23 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
             return (count || 0) > 0;
         }
 
-        async function getRecentViolationCount(empId) {
-            if (!db || !empId || empId === 'VISITOR' || empId.startsWith('MANUAL')) return 0;
+        async function getCumulativeViolationCount(empId, fullname = '') {
+            if (!db) return 0;
 
-            const sinceDate = new Date(Date.now() - (30 * 24 * 60 * 60 * 1000)).toISOString();
-            const { count, error } = await db
+            const identity = getRepeatIdentityKeyFromValues(empId, fullname);
+            if (!identity) return 0;
+
+            let query = db
                 .from('violation_reports')
-                .select('id', { count: 'exact', head: true })
-                .eq('emp_id', empId)
-                .gte('created_at', sinceDate);
+                .select('id', { count: 'exact', head: true });
+
+            if (identity.type === 'emp_id') {
+                query = query.eq('emp_id', identity.value);
+            } else {
+                query = query.ilike('fullname', identity.value);
+            }
+
+            const { count, error } = await query;
 
             if (error) {
                 console.warn('Repeat offender check error:', error);
@@ -1492,7 +1567,7 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
             }
 
             queueStatus.classList.add('show');
-            queueStatus.innerHTML = `<i class="bi bi-cloud-arrow-up-fill me-1"></i> มีรายงานรอ Sync ${queueCount} รายการ <button type="button" class="btn btn-sm btn-outline-dark ms-2 py-0" onclick="syncOfflineQueue()">Sync ตอนนี้</button>`;
+            queueStatus.innerHTML = `<i class="bi bi-cloud-arrow-up-fill me-1"></i> บันทึกไว้ในเครื่อง รอส่งเข้า Admin ${queueCount} รายการ <button type="button" class="btn btn-sm btn-outline-dark ms-2 py-0" onclick="syncOfflineQueue()">Sync ตอนนี้</button>`;
         }
 
         async function syncOfflineQueue() {
@@ -1639,11 +1714,15 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
                 document.getElementById('gpsLatitude').value = latitude.toFixed(7);
                 document.getElementById('gpsLongitude').value = longitude.toFixed(7);
                 document.getElementById('gpsAccuracy').value = Math.round(accuracy);
+                status.classList.remove('warning');
+                status.classList.add('success');
                 status.innerText = `บันทึกพิกัดแล้ว: ${latitude.toFixed(5)}, ${longitude.toFixed(5)} (±${Math.round(accuracy)} ม.)`;
                 btn.disabled = false;
                 btn.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> อัปเดตพิกัด GPS';
                 updateLiveSummary();
             }, (err) => {
+                status.classList.remove('success');
+                status.classList.add('warning');
                 status.innerText = `อ่านพิกัดไม่สำเร็จ: ${err.message}`;
                 btn.disabled = false;
                 btn.innerHTML = '<i class="bi bi-crosshair me-1"></i> บันทึกพิกัด GPS';
@@ -1662,14 +1741,24 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
 
             input.addEventListener('change', () => {
                 const file = input.files?.[0];
+                const status = document.getElementById('evidenceStatus');
                 if (!file) {
                     preview.style.display = 'none';
                     preview.removeAttribute('src');
+                    if (status) {
+                        status.className = 'field-status warning mb-2';
+                        status.innerHTML = '<i class="bi bi-image me-1"></i>ยังไม่ได้แนบรูป';
+                    }
+                    updateLiveSummary();
                     return;
                 }
 
                 preview.src = URL.createObjectURL(file);
                 preview.style.display = 'block';
+                if (status) {
+                    status.className = 'field-status success mb-2';
+                    status.innerHTML = `<i class="bi bi-check-circle-fill me-1"></i>แนบรูปแล้ว: ${escapeHtml(file.name)}`;
+                }
                 updateLiveSummary();
             });
         }
@@ -1802,6 +1891,7 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
 
             const rawEmpData = safeText(document.getElementById('empSearch').value, '');
             if(!rawEmpData) {
+                goToMobileStep(1);
                 Swal.fire('แจ้งเตือน', 'กรุณาค้นหาและเลือกพนักงานก่อนครับ', 'warning');
                 return;
             }
@@ -1812,6 +1902,7 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
             // ดึงข้อหา
             const selectedViolation = document.querySelector('input[name="violationType"]:checked');
             if (!selectedViolation) {
+                goToMobileStep(2);
                 Swal.fire('แจ้งเตือน', 'กรุณาเลือกข้อหา / ความผิดก่อนครับ', 'warning');
                 return;
             }
@@ -1820,6 +1911,7 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
             if (violation === 'OTHER') {
                 violation = safeText(document.getElementById('otherViolation').value, '');
                 if (!violation) {
+                    goToMobileStep(2);
                     Swal.fire('แจ้งเตือน', 'กรุณาระบุข้อหาอื่นๆ ก่อนครับ', 'warning');
                     return;
                 }
@@ -1827,6 +1919,7 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
 
             const locationCctv = safeText(document.getElementById('locationData').value, '');
             if (!locationCctv) {
+                goToMobileStep(3);
                 Swal.fire('แจ้งเตือน', 'กรุณาระบุจุดเกิดเหตุ / หลักฐานอ้างอิงก่อนครับ', 'warning');
                 return;
             }
@@ -1839,8 +1932,8 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
             const gpsLongitude = safeText(document.getElementById('gpsLongitude').value, '');
             const gpsAccuracy = safeText(document.getElementById('gpsAccuracy').value, '');
             const caseId = buildCaseId();
-            const recentViolationCount = await getRecentViolationCount(emp_id);
-            const projectedViolationCount = recentViolationCount + 1;
+            const cumulativeViolationCount = await getCumulativeViolationCount(emp_id, fullname);
+            const projectedViolationCount = cumulativeViolationCount + 1;
             const isRepeatOffender = projectedViolationCount >= 2;
             const finalSeverityLevel = isRepeatOffender && severityLevel === 'Medium' ? 'High' : severityLevel;
 
@@ -1852,7 +1945,7 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
             const insightPanel = document.getElementById('insightPanel');
             if (insightPanel && isRepeatOffender) {
                 insightPanel.className = 'insight-card danger mt-3';
-                insightPanel.innerHTML = `<b>Repeat Offender</b><br>${escapeHtml(fullname)} มีประวัติรวม ${projectedViolationCount} ครั้งใน 30 วัน`;
+                insightPanel.innerHTML = `<b>ผู้กระทำซ้ำ</b><br>${escapeHtml(fullname)} มีประวัติสะสมรวม ${projectedViolationCount} ครั้ง`;
             }
 
             const isDuplicate = await checkDuplicateReport(emp_id, violation, locationCctv);
@@ -1879,7 +1972,7 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
                     <div class="mb-1"><b>หลักฐาน:</b> ${escapeHtml(locationCctv)}</div>
                     <div class="mb-0"><b>การดำเนินการ:</b> ${escapeHtml(actionTaken)}</div>
                     <div class="mb-0"><b>ความเร่งด่วน:</b> ${escapeHtml(finalSeverityLevel)}</div>
-                    <div class="mb-0"><b>ทำซ้ำ 30 วัน:</b> ${isRepeatOffender ? `<span class="text-danger fw-bold">Repeat Offender (${projectedViolationCount} ครั้ง)</span>` : `${projectedViolationCount} ครั้ง`}</div>
+                    <div class="mb-0"><b>ประวัติสะสม:</b> ${isRepeatOffender ? `<span class="text-danger fw-bold">ผู้กระทำซ้ำ (${projectedViolationCount} ครั้ง)</span>` : `${projectedViolationCount} ครั้ง`}</div>
                     <div class="mb-0"><b>พิกัด:</b> ${gpsLatitude && gpsLongitude ? `${escapeHtml(gpsLatitude)}, ${escapeHtml(gpsLongitude)}` : 'ยังไม่ได้บันทึก'}</div>
                 </div>`,
                 icon: 'warning',
@@ -1910,7 +2003,7 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
                         review_owner: isRepeatOffender ? REVIEW_SAFETY_MANAGER : REVIEW_SAFETY_OFFICER,
                         repeat_offender: isRepeatOffender,
                         recent_violation_count_30d: projectedViolationCount,
-                        repeat_window_days: 30,
+                        repeat_window_days: null,
                         client_reported_at: new Date().toISOString(),
                         source_page: 'guard_violation.html',
                         device_user_agent: navigator.userAgent,
