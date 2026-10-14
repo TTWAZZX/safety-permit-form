@@ -169,21 +169,41 @@
 
             <section class="panel cases-panel" aria-labelledby="caseListTitle">
                 <div class="panel-heading cases-heading">
-                    <div><p class="eyebrow">CASE REGISTER</p><h2 id="caseListTitle">รายการ Safety Case</h2><p id="caseCount" class="panel-subtitle">กำลังโหลดรายการ…</p></div>
-                    <div class="case-filters">
-                        <label class="field compact-field"><span>สถานะ</span><select id="statusFilter"><option value="">ทุกสถานะ</option></select></label>
-                        <label class="field compact-field"><span>ระดับ</span><select id="rankFilter"><option value="">ทุกระดับ</option><option value="HIGH">สูง</option><option value="MEDIUM">กลาง</option><option value="LOW">ต่ำ</option><option value="UNSPECIFIED">ไม่ระบุ</option></select></label>
-                    </div>
+                    <div><p class="eyebrow">LIVE WORK QUEUE</p><h2 id="caseListTitle">คิวงาน Safety Case</h2><p id="caseCount" class="panel-subtitle">กำลังโหลดคิวงาน…</p></div>
+                    <div class="queue-updated"><span class="status-dot"></span><span id="queueUpdated">ข้อมูลปัจจุบัน</span></div>
+                </div>
+
+                <div class="queue-metrics" aria-label="สรุปคิวงานปัจจุบัน">
+                    <button class="queue-metric is-active" type="button" data-quick-filter="open"><span>เคสเปิด</span><strong id="queueOpen">—</strong></button>
+                    <button class="queue-metric" type="button" data-quick-filter="mine"><span>งานของฉัน</span><strong id="queueMine">—</strong></button>
+                    <button class="queue-metric" type="button" data-quick-filter="unassigned"><span>ยังไม่มีผู้รับ</span><strong id="queueUnassigned">—</strong></button>
+                    <button class="queue-metric queue-metric-danger" type="button" data-quick-filter="overdue"><span>เกิน SLA</span><strong id="queueOverdue">—</strong></button>
+                    <button class="queue-metric queue-metric-warning" type="button" data-quick-filter="high"><span>ความเสี่ยงสูง</span><strong id="queueHighRisk">—</strong></button>
+                </div>
+
+                <div class="queue-toolbar">
+                    <label class="field search-field">
+                        <span>ค้นหาคิวงาน</span>
+                        <input id="caseSearch" type="search" maxlength="80" autocomplete="off" placeholder="เลขเคส รายละเอียด หรือความเสี่ยง">
+                    </label>
+                    <label class="field compact-field"><span>ขอบเขต</span><select id="scopeFilter"><option value="OPEN">เคสเปิด</option><option value="CLOSED">เคสปิดแล้ว</option><option value="ALL">ทั้งหมด</option></select></label>
+                    <label class="field compact-field"><span>ผู้รับผิดชอบ</span><select id="assignmentFilter"><option value="ALL">ทุกคน</option><option value="MINE">งานของฉัน</option><option value="UNASSIGNED">ยังไม่มีผู้รับ</option></select></label>
+                    <label class="field compact-field"><span>SLA</span><select id="slaFilter"><option value="ALL">ทั้งหมด</option><option value="OVERDUE">เกินกำหนด</option><option value="DUE_SOON">ครบกำหนดใน 24 ชม.</option><option value="ON_TRACK">ยังไม่ใกล้กำหนด</option><option value="NO_DUE">ยังไม่มีกำหนด</option></select></label>
+                    <label class="field compact-field"><span>สถานะ</span><select id="statusFilter"><option value="">ทุกสถานะ</option></select></label>
+                    <label class="field compact-field"><span>ระดับ</span><select id="rankFilter"><option value="">ทุกระดับ</option><option value="HIGH">สูง</option><option value="MEDIUM">กลาง</option><option value="LOW">ต่ำ</option><option value="UNSPECIFIED">ไม่ระบุ</option></select></label>
+                    <label class="field compact-field"><span>แนวทาง</span><select id="pathFilter"><option value="">ทุกแนวทาง</option><option value="SELF_CORRECTION">ผู้แจ้งแก้ไขเอง</option><option value="SAFETY_OFFICER">ทีม Safety ดำเนินการ</option><option value="NOT_HAZARD">ไม่ใช่เหตุอันตราย</option></select></label>
+                    <label class="field compact-field"><span>เรียงลำดับ</span><select id="sortFilter"><option value="PRIORITY">สำคัญก่อน</option><option value="DUE_SOON">ใกล้ครบกำหนด</option><option value="RECENTLY_UPDATED">อัปเดตล่าสุด</option><option value="NEWEST">แจ้งใหม่ก่อน</option><option value="OLDEST">แจ้งเก่าก่อน</option></select></label>
+                    <button id="clearFilters" class="button button-ghost clear-filters" type="button">ล้างตัวกรอง</button>
                 </div>
 
                 <div class="table-wrap">
                     <table>
-                        <thead><tr><th>เลขที่เคส</th><th>วันที่แจ้ง</th><th>สถานะ</th><th>ระดับ</th><th>รายละเอียด</th><th>ผู้รับเคส</th></tr></thead>
+                        <thead><tr><th>เลขที่เคส</th><th>อายุเคส</th><th>สถานะ / ระดับ</th><th>SLA</th><th>รายละเอียด</th><th>ผู้รับเคส</th></tr></thead>
                         <tbody id="caseTableBody"></tbody>
                     </table>
                 </div>
                 <div id="caseCards" class="case-cards"></div>
-                <div id="emptyCases" class="empty-state" hidden><div aria-hidden="true">✓</div><strong>ไม่พบรายการในช่วงที่เลือก</strong><span>ลองเปลี่ยนเดือน ปี หรือตัวกรอง</span></div>
+                <div id="emptyCases" class="empty-state" hidden><div aria-hidden="true">✓</div><strong>ไม่พบเคสในคิวนี้</strong><span>ลองเปลี่ยนคำค้นหาหรือล้างตัวกรอง</span></div>
                 <nav class="pagination" aria-label="แบ่งหน้ารายการเคส">
                     <button id="previousPage" class="button button-ghost" type="button">ก่อนหน้า</button>
                     <span id="pageLabel">หน้า 1</span>

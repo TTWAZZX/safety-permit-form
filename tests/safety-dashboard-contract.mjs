@@ -13,6 +13,9 @@ for (const id of [
     'metricTotal', 'metricOpen', 'metricResolved', 'metricOverdue',
     'trendChart', 'statusBreakdown', 'rankBreakdown', 'pathBreakdown',
     'caseTableBody', 'caseCards', 'exportButton',
+    'caseSearch', 'scopeFilter', 'assignmentFilter', 'slaFilter',
+    'pathFilter', 'sortFilter', 'clearFilters', 'queueUpdated',
+    'queueOpen', 'queueMine', 'queueUnassigned', 'queueOverdue', 'queueHighRisk',
     'automationHealthBadge', 'healthReminderDue', 'healthReminderFailed',
     'healthWebhookFailed', 'healthScheduler', 'automationHealthUpdated',
 ]) {
@@ -25,7 +28,7 @@ for (const marker of [
     'window.liff.getAccessToken()',
     'Authorization: `Bearer ${state.token}`',
     "apiRequest('summary')",
-    "apiRequest('cases'",
+    "apiRequest('queue'",
     "apiRequest('export'",
     "apiRequest('health')",
     "format: 'xlsx'",
@@ -34,6 +37,10 @@ for (const marker of [
     "view === 'export'",
     'textContent',
     'renderAutomationHealth',
+    'renderQueueMetrics',
+    'formatSla',
+    "assignment: state.assignment",
+    "resolution_path: state.resolutionPath",
 ]) {
     if (!script.includes(marker)) throw new Error(`Dashboard script is missing: ${marker}`);
 }
@@ -57,4 +64,5 @@ if (!portal.includes('href="https://liff.line.me/2007053300-FmMHHcD7"')) throw n
 console.log('PASS Safety Dashboard LIFF authentication and admin-only backend contract');
 console.log('PASS monthly/yearly metrics, filtering, pagination, and XLSX export UI contract');
 console.log('PASS admin-only reminder, webhook, and scheduler health UI contract');
+console.log('PASS Phase 9 work queue search, SLA, assignment, sorting, quick filters, and responsive UI contract');
 console.log('PASS public frontend contains no privileged backend credentials');

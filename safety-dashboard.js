@@ -26,7 +26,7 @@ const PATH_LABELS = Object.freeze({
     UNSPECIFIED: 'ยังไม่เลือกแนวทาง',
 });
 const MONTHS = Object.freeze(['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม']);
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 20;
 
 const state = {
     token: '',
@@ -35,6 +35,12 @@ const state = {
     month: 0,
     status: '',
     rank: '',
+    resolutionPath: '',
+    search: '',
+    scope: 'OPEN',
+    assignment: 'ALL',
+    sla: 'ALL',
+    sort: 'PRIORITY',
     offset: 0,
     total: 0,
     busy: false,
@@ -86,6 +92,25 @@ function formatDateTime(value) {
     return new Intl.DateTimeFormat('th-TH', {
         timeZone: 'Asia/Bangkok', dateStyle: 'medium', timeStyle: 'short',
     }).format(date);
+}
+
+function formatAge(hours) {
+    const value = Number(hours);
+    if (!Number.isFinite(value)) return '—';
+    if (value < 1) return 'ไม่ถึง 1 ชม.';
+    if (value < 24) return `${Math.floor(value)} ชม.`;
+    return `${Math.floor(value / 24)} วัน ${Math.floor(value % 24)} ชม.`;
+}
+
+function formatSla(item) {
+    if (!item.is_open) return { label: 'ปิดแล้ว', tone: 'badge-muted' };
+    if (item.evidence_due_at === null || item.evidence_due_at === undefined) {
+        return { label: 'ยังไม่มีกำหนด', tone: 'badge-muted' };
+    }
+    const hours = Number(item.due_in_hours);
+    if (item.is_overdue) return { label: `เกิน ${formatAge(Math.abs(hours))}`, tone: 'badge-danger' };
+    if (hours < 24) return { label: `เหลือ ${formatAge(hours)}`, tone: 'badge-warning' };
+    return { label: `เหลือ ${formatAge(hours)}`, tone: 'badge-success' };
 }
 
 function compact(value, maxLength = 150) {
@@ -174,6 +199,10 @@ function setBusy(busy) {
     element('monthSelect').disabled = busy;
     element('statusFilter').disabled = busy;
     element('rankFilter').disabled = busy;
+    ['caseSearch', 'scopeFilter', 'assignmentFilter', 'slaFilter', 'pathFilter', 'sortFilter', 'clearFilters'].forEach((id) => {
+        element(id).disabled = busy;
+    });
+    document.querySelectorAll('.queue-metric').forEach((button) => { button.disabled = busy; });
     document.querySelectorAll('.period-button').forEach((button) => { button.disabled = busy; });
 }
 
@@ -307,24 +336,38 @@ function appendCell(row, value, className = '') {
     row.append(cell);
 }
 
-function renderCases(items, pagination) {
+function renderQueueMetrics(metrics) {
+    element('queueOpen').textContent = formatNumber(metrics?.open);
+    element('queueMine').textContent = formatNumber(metrics?.mine);
+    element('queueUnassigned').textContent = formatNumber(metrics?.unassigned);
+    element('queueOverdue').textContent = formatNumber(metrics?.overdue);
+    element('queueHighRisk').textContent = formatNumber(metrics?.high_risk);
+}
+
+function renderCases(items, pagination, metrics, generatedAt) {
     const table = element('caseTableBody');
     const cards = element('caseCards');
     table.replaceChildren();
     cards.replaceChildren();
     state.total = Number(pagination?.total) || 0;
     element('caseCount').textContent = `พบ ${formatNumber(state.total)} รายการ`;
+    element('queueUpdated').textContent = `อัปเดต ${formatDateTime(generatedAt)}`;
+    renderQueueMetrics(metrics);
     element('emptyCases').hidden = items.length > 0;
 
     items.forEach((item) => {
         const rank = caseRank(item);
+        const sla = formatSla(item);
         const row = document.createElement('tr');
         appendCell(row, item.case_number, 'case-number');
-        appendCell(row, formatDateTime(item.created_at));
-        appendCell(row, makeBadge(STATUS_LABELS[item.status] || item.status, statusTone(item.status)));
-        appendCell(row, makeBadge(RANK_LABELS[rank] || rank, rankTone(rank)));
+        appendCell(row, formatAge(item.age_hours));
+        const statusCell = document.createElement('div');
+        statusCell.className = 'stacked-badges';
+        statusCell.append(makeBadge(STATUS_LABELS[item.status] || item.status, statusTone(item.status)), makeBadge(RANK_LABELS[rank] || rank, rankTone(rank)));
+        appendCell(row, statusCell);
+        appendCell(row, makeBadge(sla.label, sla.tone));
         appendCell(row, compact(item.ai_finding), 'case-finding');
-        appendCell(row, item.assigned_admin_uid ? `LINE …${String(item.assigned_admin_uid).slice(-6)}` : 'ยังไม่มีผู้รับเคส');
+        appendCell(row, item.is_mine ? 'ฉันรับผิดชอบ' : item.assigned_admin_uid ? `LINE …${String(item.assigned_admin_uid).slice(-6)}` : 'ยังไม่มีผู้รับเคส');
         table.append(row);
 
         const card = document.createElement('article');
@@ -339,10 +382,13 @@ function renderCases(items, pagination) {
         header.append(number, time);
         const meta = document.createElement('div');
         meta.className = 'case-card-meta';
-        meta.append(makeBadge(STATUS_LABELS[item.status] || item.status, statusTone(item.status)), makeBadge(RANK_LABELS[rank] || rank, rankTone(rank)));
+        meta.append(makeBadge(STATUS_LABELS[item.status] || item.status, statusTone(item.status)), makeBadge(RANK_LABELS[rank] || rank, rankTone(rank)), makeBadge(sla.label, sla.tone));
         const finding = document.createElement('p');
         finding.textContent = compact(item.ai_finding, 220);
-        card.append(header, meta, finding);
+        const owner = document.createElement('p');
+        owner.className = 'case-card-owner';
+        owner.textContent = `ผู้รับเคส: ${item.is_mine ? 'ฉันรับผิดชอบ' : item.assigned_admin_uid ? `LINE …${String(item.assigned_admin_uid).slice(-6)}` : 'ยังไม่มีผู้รับเคส'} · อายุ ${formatAge(item.age_hours)}`;
+        card.append(header, meta, finding, owner);
         cards.append(card);
     });
 
@@ -371,11 +417,21 @@ async function loadHealth() {
 }
 
 async function loadCases() {
-    const response = await apiRequest('cases', {
-        status: state.status, rank: state.rank, limit: PAGE_SIZE, offset: state.offset,
+    const response = await apiRequest('queue', {
+        search: state.search,
+        scope: state.scope,
+        assignment: state.assignment,
+        sla: state.sla,
+        status: state.status,
+        rank: state.rank,
+        resolution_path: state.resolutionPath,
+        sort: state.sort,
+        limit: PAGE_SIZE,
+        offset: state.offset,
     });
     const payload = await response.json();
-    renderCases(payload.cases || [], payload.pagination || {});
+    const queue = payload.queue || {};
+    renderCases(queue.items || [], queue.pagination || {}, queue.metrics || {}, queue.generated_at);
 }
 
 async function loadDashboard() {
@@ -459,6 +515,19 @@ function populateControls() {
 }
 
 function bindEvents() {
+    let searchTimer = 0;
+    const refreshQueue = () => { state.offset = 0; loadCases().catch(handleRequestError); };
+    const syncQuickFilter = () => {
+        document.querySelectorAll('.queue-metric').forEach((button) => {
+            const filter = button.dataset.quickFilter;
+            const active = (filter === 'open' && state.scope === 'OPEN' && state.assignment === 'ALL' && state.sla === 'ALL' && state.rank === '')
+                || (filter === 'mine' && state.assignment === 'MINE')
+                || (filter === 'unassigned' && state.assignment === 'UNASSIGNED')
+                || (filter === 'overdue' && state.sla === 'OVERDUE')
+                || (filter === 'high' && state.rank === 'HIGH');
+            button.classList.toggle('is-active', active);
+        });
+    };
     document.querySelectorAll('.period-button').forEach((button) => {
         button.addEventListener('click', () => {
             state.period = button.dataset.period;
@@ -473,8 +542,43 @@ function bindEvents() {
     });
     element('yearSelect').addEventListener('change', (event) => { state.year = Number(event.target.value); state.offset = 0; loadDashboard(); });
     element('monthSelect').addEventListener('change', (event) => { state.month = Number(event.target.value); state.offset = 0; loadDashboard(); });
-    element('statusFilter').addEventListener('change', (event) => { state.status = event.target.value; state.offset = 0; loadCases().catch(handleRequestError); });
-    element('rankFilter').addEventListener('change', (event) => { state.rank = event.target.value; state.offset = 0; loadCases().catch(handleRequestError); });
+    element('caseSearch').addEventListener('input', (event) => {
+        window.clearTimeout(searchTimer);
+        searchTimer = window.setTimeout(() => { state.search = event.target.value.trim(); refreshQueue(); }, 350);
+    });
+    element('scopeFilter').addEventListener('change', (event) => { state.scope = event.target.value; syncQuickFilter(); refreshQueue(); });
+    element('assignmentFilter').addEventListener('change', (event) => { state.assignment = event.target.value; syncQuickFilter(); refreshQueue(); });
+    element('slaFilter').addEventListener('change', (event) => { state.sla = event.target.value; syncQuickFilter(); refreshQueue(); });
+    element('statusFilter').addEventListener('change', (event) => { state.status = event.target.value; syncQuickFilter(); refreshQueue(); });
+    element('rankFilter').addEventListener('change', (event) => { state.rank = event.target.value; syncQuickFilter(); refreshQueue(); });
+    element('pathFilter').addEventListener('change', (event) => { state.resolutionPath = event.target.value; refreshQueue(); });
+    element('sortFilter').addEventListener('change', (event) => { state.sort = event.target.value; refreshQueue(); });
+    document.querySelectorAll('.queue-metric').forEach((button) => {
+        button.addEventListener('click', () => {
+            state.scope = 'OPEN'; state.assignment = 'ALL'; state.sla = 'ALL'; state.rank = '';
+            if (button.dataset.quickFilter === 'mine') state.assignment = 'MINE';
+            if (button.dataset.quickFilter === 'unassigned') state.assignment = 'UNASSIGNED';
+            if (button.dataset.quickFilter === 'overdue') state.sla = 'OVERDUE';
+            if (button.dataset.quickFilter === 'high') state.rank = 'HIGH';
+            element('scopeFilter').value = state.scope;
+            element('assignmentFilter').value = state.assignment;
+            element('slaFilter').value = state.sla;
+            element('rankFilter').value = state.rank;
+            syncQuickFilter(); refreshQueue();
+        });
+    });
+    element('clearFilters').addEventListener('click', () => {
+        Object.assign(state, { search: '', scope: 'OPEN', assignment: 'ALL', sla: 'ALL', status: '', rank: '', resolutionPath: '', sort: 'PRIORITY', offset: 0 });
+        element('caseSearch').value = '';
+        element('scopeFilter').value = state.scope;
+        element('assignmentFilter').value = state.assignment;
+        element('slaFilter').value = state.sla;
+        element('statusFilter').value = '';
+        element('rankFilter').value = '';
+        element('pathFilter').value = '';
+        element('sortFilter').value = state.sort;
+        syncQuickFilter(); loadCases().catch(handleRequestError);
+    });
     element('refreshButton').addEventListener('click', loadDashboard);
     element('exportButton').addEventListener('click', exportCases);
     element('previousPage').addEventListener('click', () => { state.offset = Math.max(0, state.offset - PAGE_SIZE); loadCases().catch(handleRequestError); });
