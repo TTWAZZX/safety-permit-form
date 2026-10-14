@@ -167,6 +167,36 @@
                 </article>
             </section>
 
+            <section class="analytics-section" aria-labelledby="analyticsTitle">
+                <div class="section-heading">
+                    <div>
+                        <p class="eyebrow">ANALYTICS &amp; REPORTING</p>
+                        <h2 id="analyticsTitle">วิเคราะห์ประสิทธิภาพเชิงลึก</h2>
+                        <p class="panel-subtitle">SLA ระยะเวลาปิดเคส การติดตาม รางวัล การสื่อสาร และภาระงานของทีมในช่วงที่เลือก</p>
+                    </div>
+                    <span id="analyticsUpdated" class="analytics-updated" aria-live="polite">กำลังโหลดข้อมูล</span>
+                </div>
+
+                <div class="analytics-kpi-grid" aria-label="ตัวชี้วัดเชิงบริหาร">
+                    <article class="analytics-kpi"><span>ปิดภายใน SLA</span><strong id="analyticsSlaRate">—</strong><small id="analyticsSlaContext">—</small></article>
+                    <article class="analytics-kpi"><span>เวลาปิดมัธยฐาน</span><strong id="analyticsMedianClose">—</strong><small>ชั่วโมง</small></article>
+                    <article class="analytics-kpi"><span>เวลาปิด P90</span><strong id="analyticsP90Close">—</strong><small>ชั่วโมง</small></article>
+                    <article class="analytics-kpi"><span>Reminder สำเร็จ</span><strong id="analyticsReminderRate">—</strong><small id="analyticsReminderContext">—</small></article>
+                    <article class="analytics-kpi"><span>หลักฐานผ่านตรวจ</span><strong id="analyticsEvidenceRate">—</strong><small id="analyticsEvidenceContext">—</small></article>
+                    <article class="analytics-kpi"><span>คะแนนรางวัลรวม</span><strong id="analyticsRewardPoints">—</strong><small id="analyticsRewardContext">—</small></article>
+                    <article class="analytics-kpi"><span>ตอบรับ Chat เฉลี่ย</span><strong id="analyticsResponseTime">—</strong><small>นาที</small></article>
+                    <article class="analytics-kpi"><span>เคสความเสี่ยงสูง</span><strong id="analyticsHighRisk">—</strong><small id="analyticsHighRiskContext">—</small></article>
+                </div>
+
+                <div class="analytics-grid">
+                    <article class="panel"><div class="panel-heading"><div><p class="eyebrow">CLOSURE SPEED</p><h3>การกระจายเวลาปิดเคส</h3></div></div><div id="closeTimeBreakdown" class="breakdown-list"></div></article>
+                    <article class="panel"><div class="panel-heading"><div><p class="eyebrow">REPORT PROFILE</p><h3>ประเภทการแจ้งสูงสุด</h3></div></div><div id="reportTypeBreakdown" class="breakdown-list"></div></article>
+                    <article class="panel"><div class="panel-heading"><div><p class="eyebrow">FOLLOW-UP</p><h3>ประสิทธิภาพ Reminder</h3></div></div><div id="reminderPerformance" class="analytics-list"></div></article>
+                    <article class="panel"><div class="panel-heading"><div><p class="eyebrow">TEAM CAPACITY</p><h3>ภาระงานแอดมิน</h3></div></div><div id="adminWorkload" class="analytics-list"></div></article>
+                    <article class="panel analytics-wide"><div class="panel-heading"><div><p class="eyebrow">REWARD &amp; COMMUNICATION</p><h3>รางวัลและการสื่อสาร</h3></div></div><div id="rewardCommunicationSummary" class="analytics-summary-grid"></div></article>
+                </div>
+            </section>
+
             <section class="panel cases-panel" aria-labelledby="caseListTitle">
                 <div class="panel-heading cases-heading">
                     <div><p class="eyebrow">LIVE WORK QUEUE</p><h2 id="caseListTitle">คิวงาน Safety Case</h2><p id="caseCount" class="panel-subtitle">กำลังโหลดคิวงาน…</p></div>

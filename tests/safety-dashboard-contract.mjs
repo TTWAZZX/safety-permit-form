@@ -36,6 +36,13 @@ for (const id of [
     'markChatReadButton', 'refreshConversationButton', 'closeChatButton',
     'messageTemplateSelect', 'chatComposerInput', 'chatCharacterCount',
     'sendChatMessageButton',
+    'analyticsUpdated', 'analyticsSlaRate', 'analyticsSlaContext',
+    'analyticsMedianClose', 'analyticsP90Close', 'analyticsReminderRate',
+    'analyticsReminderContext', 'analyticsEvidenceRate', 'analyticsEvidenceContext',
+    'analyticsRewardPoints', 'analyticsRewardContext', 'analyticsResponseTime',
+    'analyticsHighRisk', 'analyticsHighRiskContext', 'closeTimeBreakdown',
+    'reportTypeBreakdown', 'reminderPerformance', 'adminWorkload',
+    'rewardCommunicationSummary',
 ]) {
     if (!html.includes(`id="${id}"`)) throw new Error(`Dashboard HTML is missing #${id}`);
     if (!script.includes(`'${id}'`)) throw new Error(`Dashboard script does not bind #${id}`);
@@ -48,6 +55,7 @@ for (const marker of [
     'window.liff.getAccessToken()',
     'Authorization: `Bearer ${state.token}`',
     "apiRequest('summary')",
+    "apiRequest('analytics')",
     "apiRequest('queue'",
     "apiRequest('export'",
     "apiRequest('health')",
@@ -92,6 +100,8 @@ for (const marker of [
     'renderChat',
     'renderTimeline',
     'renderCommunicationCenter',
+    'renderAnalytics',
+    'renderAnalyticsUnavailable',
     'detailRefreshTimer',
     "event.key === 'Escape'",
     "event.key === 'Tab'",
@@ -125,4 +135,5 @@ console.log('PASS Phase 10 responsive Case Detail 360, evidence gallery, chat, r
 console.log('PASS Phase 11 responsive Case Actions, safe manual retry, internal notes, tags, SLA, and LINE notification UI contract');
 console.log('PASS Phase 12 evidence review, reward, not-hazard, typed case-number confirmation, and two-step closure UI contract');
 console.log('PASS Phase 13 Communication Center, templates, unread state, safe retry, active-session ownership, and responsive composer contract');
+console.log('PASS Phase 14 full analytics, SLA, closure speed, follow-up, reward, communication, workload, and reporting UI contract');
 console.log('PASS public frontend contains no privileged backend credentials');

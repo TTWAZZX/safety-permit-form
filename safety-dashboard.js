@@ -1067,6 +1067,97 @@ function renderBreakdown(containerId, items, labels, color) {
     });
 }
 
+function appendAnalyticsRow(container, label, primary, secondary = '') {
+    const row = document.createElement('div');
+    row.className = 'analytics-list-row';
+    const copy = document.createElement('div');
+    const heading = document.createElement('strong');
+    heading.textContent = label;
+    copy.append(heading);
+    if (secondary) {
+        const detail = document.createElement('span');
+        detail.textContent = secondary;
+        copy.append(detail);
+    }
+    const value = document.createElement('b');
+    value.textContent = primary;
+    row.append(copy, value);
+    container.append(row);
+}
+
+function renderAnalytics(analytics) {
+    const kpis = analytics?.kpis || {};
+    element('analyticsSlaRate').textContent = `${formatNumber(kpis.sla_compliance_rate)}%`;
+    element('analyticsSlaContext').textContent = `${formatNumber(kpis.within_sla)} จาก ${formatNumber(kpis.sla_eligible)} เคสที่มี SLA`;
+    element('analyticsMedianClose').textContent = formatNumber(kpis.median_close_hours);
+    element('analyticsP90Close').textContent = formatNumber(kpis.p90_close_hours);
+    element('analyticsReminderRate').textContent = `${formatNumber(kpis.reminder_success_rate)}%`;
+    element('analyticsReminderContext').textContent = `ส่งสำเร็จ ${formatNumber(kpis.reminders_sent)} · ล้มเหลว ${formatNumber(kpis.reminders_failed)}`;
+    element('analyticsEvidenceRate').textContent = `${formatNumber(kpis.evidence_approval_rate)}%`;
+    element('analyticsEvidenceContext').textContent = `อนุมัติ ${formatNumber(kpis.after_evidence_approved)} จาก ${formatNumber(kpis.after_evidence_total)}`;
+    element('analyticsRewardPoints').textContent = formatNumber(kpis.reward_points);
+    element('analyticsRewardContext').textContent = `${formatNumber(kpis.rewards_total)} รางวัล`;
+    element('analyticsResponseTime').textContent = formatNumber(kpis.average_first_response_minutes);
+    element('analyticsHighRisk').textContent = formatNumber(kpis.high_risk);
+    element('analyticsHighRiskContext').textContent = `${formatNumber(kpis.high_risk_rate)}% ของเคสในช่วง`;
+    element('analyticsUpdated').textContent = `อัปเดต ${formatDateTime(analytics?.generated_at)}`;
+
+    renderBreakdown('closeTimeBreakdown', analytics?.close_time_distribution || [], {
+        UNDER_24_HOURS: 'ไม่เกิน 24 ชั่วโมง',
+        HOURS_24_TO_72: '24–72 ชั่วโมง',
+        DAYS_3_TO_7: '3–7 วัน',
+        OVER_7_DAYS: 'มากกว่า 7 วัน',
+    }, '#5f77d8');
+    renderBreakdown('reportTypeBreakdown', analytics?.by_report_type || [], {}, '#1f8f69');
+
+    const reminders = element('reminderPerformance');
+    reminders.replaceChildren();
+    const reminderItems = analytics?.reminder_performance || [];
+    if (!reminderItems.length) reminders.append(emptyDetail('ยังไม่มีการส่ง Reminder ในช่วงนี้'));
+    reminderItems.forEach((item) => appendAnalyticsRow(
+        reminders,
+        String(item.type || 'ไม่ระบุ'),
+        formatNumber(item.count),
+        `${item.status || 'ไม่ระบุ'} · ${formatNumber(item.attempts)} attempts`,
+    ));
+
+    const workload = element('adminWorkload');
+    workload.replaceChildren();
+    const admins = analytics?.admin_workload || [];
+    if (!admins.length) workload.append(emptyDetail('ยังไม่มีเคสที่มอบหมายให้แอดมินในช่วงนี้'));
+    admins.forEach((item) => appendAnalyticsRow(
+        workload,
+        item.admin_suffix ? `LINE …${item.admin_suffix}` : 'ไม่ระบุผู้รับผิดชอบ',
+        `${formatNumber(item.open)} เปิดอยู่`,
+        `รับทั้งหมด ${formatNumber(item.assigned)} · ปิด ${formatNumber(item.resolved)} · เฉลี่ย ${formatNumber(item.average_close_hours)} ชม.`,
+    ));
+
+    const summary = element('rewardCommunicationSummary');
+    summary.replaceChildren();
+    [
+        ['รางวัลออกแล้ว', formatNumber(kpis.rewards_issued), 'รายการ'],
+        ['รางวัลใช้แล้ว', formatNumber(kpis.rewards_redeemed), 'รายการ'],
+        ['Chat Sessions', formatNumber(kpis.chat_sessions), 'sessions'],
+        ['Chat ที่ยังเปิด', formatNumber(kpis.chat_open_sessions), 'sessions'],
+        ['ข้อความทั้งหมด', formatNumber(kpis.chat_messages), 'ข้อความ'],
+        ['Reminder รอดำเนินการ', formatNumber(kpis.reminders_pending), 'รายการ'],
+    ].forEach(([label, value, unit]) => {
+        const card = document.createElement('div');
+        const caption = document.createElement('span');
+        const strong = document.createElement('strong');
+        const small = document.createElement('small');
+        caption.textContent = label;
+        strong.textContent = value;
+        small.textContent = unit;
+        card.append(caption, strong, small);
+        summary.append(card);
+    });
+}
+
+function renderAnalyticsUnavailable() {
+    element('analyticsUpdated').textContent = 'อ่านข้อมูลเชิงลึกไม่ได้ กรุณารีเฟรช';
+}
+
 function caseRank(item) {
     return item.confirmed_rank || item.reported_rank || 'UNSPECIFIED';
 }
@@ -1168,6 +1259,17 @@ async function loadSummary() {
     renderSummary(payload.report);
 }
 
+async function loadAnalytics() {
+    try {
+        const response = await apiRequest('analytics');
+        const payload = await response.json();
+        renderAnalytics(payload.analytics);
+    } catch (error) {
+        console.warn('Safety analytics request failed', error);
+        renderAnalyticsUnavailable();
+    }
+}
+
 async function loadHealth() {
     try {
         const response = await apiRequest('health');
@@ -1203,7 +1305,7 @@ async function loadDashboard() {
     setNotice();
     updatePeriodDescription();
     try {
-        await Promise.all([loadSummary(), loadCases(), loadHealth()]);
+        await Promise.all([loadSummary(), loadAnalytics(), loadCases(), loadHealth()]);
     } catch (error) {
         handleRequestError(error);
     } finally {
