@@ -13,6 +13,8 @@ for (const id of [
     'metricTotal', 'metricOpen', 'metricResolved', 'metricOverdue',
     'trendChart', 'statusBreakdown', 'rankBreakdown', 'pathBreakdown',
     'caseTableBody', 'caseCards', 'exportButton',
+    'automationHealthBadge', 'healthReminderDue', 'healthReminderFailed',
+    'healthWebhookFailed', 'healthScheduler', 'automationHealthUpdated',
 ]) {
     if (!html.includes(`id="${id}"`)) throw new Error(`Dashboard HTML is missing #${id}`);
     if (!script.includes(`'${id}'`)) throw new Error(`Dashboard script does not bind #${id}`);
@@ -25,11 +27,13 @@ for (const marker of [
     "apiRequest('summary')",
     "apiRequest('cases'",
     "apiRequest('export'",
+    "apiRequest('health')",
     "format: 'xlsx'",
     "cache: 'no-store'",
     'AbortController',
     "view === 'export'",
     'textContent',
+    'renderAutomationHealth',
 ]) {
     if (!script.includes(marker)) throw new Error(`Dashboard script is missing: ${marker}`);
 }
@@ -52,4 +56,5 @@ if (!portal.includes('href="https://liff.line.me/2007053300-FmMHHcD7"')) throw n
 
 console.log('PASS Safety Dashboard LIFF authentication and admin-only backend contract');
 console.log('PASS monthly/yearly metrics, filtering, pagination, and XLSX export UI contract');
+console.log('PASS admin-only reminder, webhook, and scheduler health UI contract');
 console.log('PASS public frontend contains no privileged backend credentials');

@@ -99,6 +99,25 @@
 
             <div id="pageNotice" class="notice" role="alert" hidden></div>
 
+            <section class="automation-health panel" aria-labelledby="automationHealthTitle">
+                <div class="automation-health-heading">
+                    <div>
+                        <p class="eyebrow">AUTOMATION HEALTH</p>
+                        <h2 id="automationHealthTitle">สถานะระบบอัตโนมัติ</h2>
+                    </div>
+                    <div id="automationHealthBadge" class="health-badge health-checking" role="status" aria-live="polite">
+                        กำลังตรวจสอบ
+                    </div>
+                </div>
+                <div class="health-grid">
+                    <div><span>Reminder รอส่ง</span><strong id="healthReminderDue">—</strong></div>
+                    <div><span>Reminder ล้มเหลว 24 ชม.</span><strong id="healthReminderFailed">—</strong></div>
+                    <div><span>Webhook ล้มเหลว 24 ชม.</span><strong id="healthWebhookFailed">—</strong></div>
+                    <div><span>ตารางเวลา 30 นาที</span><strong id="healthScheduler">—</strong></div>
+                </div>
+                <p id="automationHealthUpdated" class="panel-subtitle">รอข้อมูลสถานะล่าสุด</p>
+            </section>
+
             <section class="metrics-grid" aria-label="ตัวชี้วัดสำคัญ">
                 <article class="metric-card metric-total">
                     <div class="metric-icon" aria-hidden="true">Σ</div>

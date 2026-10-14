@@ -199,6 +199,19 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #49a979; box-shadow: 0 0 0 4px rgba(73,169,121,.13); }
 
 .notice { margin: 0 0 20px; padding: 13px 16px; border: 1px solid #f3c4c1; border-radius: 13px; background: #fff2f1; color: #8b2f2a; }
+.automation-health { margin-bottom: 18px; }
+.automation-health-heading { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 18px; }
+.automation-health-heading h2 { margin: 0; font-size: 1.15rem; }
+.health-badge { display: inline-flex; align-items: center; gap: 7px; padding: 7px 11px; border-radius: 999px; font-size: .74rem; font-weight: 800; }
+.health-badge::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.health-good { background: var(--mint); color: #0b6648; }
+.health-warning { background: #fff0cf; color: #8a5a00; }
+.health-danger { background: #feeceb; color: #a83832; }
+.health-checking { background: #eff2f1; color: var(--muted); }
+.health-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.health-grid > div { padding: 14px 16px; border: 1px solid var(--line); border-radius: 14px; background: #f8fbf9; }
+.health-grid span { display: block; color: var(--muted); font-size: .72rem; }
+.health-grid strong { display: block; margin-top: 3px; font-size: 1.25rem; color: var(--ink); }
 .metrics-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; margin-bottom: 18px; }
 .metric-card {
     display: flex;
@@ -287,6 +300,7 @@ tbody tr:last-child td { border-bottom: 0; }
     .control-panel { align-items: stretch; flex-wrap: wrap; }
     .sync-status { width: 100%; margin: 0; padding: 6px 3px 0; }
     .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+    .health-grid { grid-template-columns: repeat(2, 1fr); }
     .insight-grid, .insight-grid-small { grid-template-columns: 1fr; }
     .cases-heading { align-items: stretch; flex-direction: column; }
     .case-filters { width: 100%; }
@@ -305,6 +319,8 @@ tbody tr:last-child td { border-bottom: 0; }
     .period-button { flex: 1; }
     .field { min-width: 0; }
     .metrics-grid { grid-template-columns: 1fr; }
+    .automation-health-heading { align-items: flex-start; flex-direction: column; }
+    .health-grid { grid-template-columns: 1fr; }
     .metric-card { min-height: 104px; }
     .panel { padding: 18px; border-radius: 18px; }
     .panel-heading { flex-direction: column; }

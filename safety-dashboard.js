@@ -193,6 +193,42 @@ function renderSummary(report) {
     renderBreakdown('pathBreakdown', report?.by_resolution_path || [], PATH_LABELS, '#4f7bd9');
 }
 
+function renderAutomationHealth(health) {
+    const reminders = health?.reminders || {};
+    const webhooks = health?.webhooks || {};
+    const scheduler = health?.scheduler || {};
+    element('healthReminderDue').textContent = formatNumber(reminders.due_now);
+    element('healthReminderFailed').textContent = formatNumber(reminders.failed_24h);
+    element('healthWebhookFailed').textContent = formatNumber(webhooks.failed_24h);
+    element('healthScheduler').textContent = scheduler.configured && scheduler.active && scheduler.cadence_ok
+        ? 'ปกติ'
+        : 'ต้องตรวจสอบ';
+
+    const critical = Number(reminders.stale_leases) > 0
+        || Number(reminders.exhausted) > 0
+        || Number(webhooks.stale_processing) > 0
+        || Number(webhooks.exhausted) > 0
+        || !scheduler.configured
+        || !scheduler.active
+        || !scheduler.cadence_ok;
+    const warning = Number(reminders.failed_24h) > 0 || Number(webhooks.failed_24h) > 0;
+    const badge = element('automationHealthBadge');
+    badge.className = critical
+        ? 'health-badge health-danger'
+        : warning
+            ? 'health-badge health-warning'
+            : 'health-badge health-good';
+    badge.textContent = critical ? 'ต้องตรวจสอบ' : warning ? 'มีรายการสะดุด' : 'ระบบปกติ';
+    element('automationHealthUpdated').textContent = `อัปเดต ${formatDateTime(health?.generated_at)} · ตรวจเฉพาะข้อมูลปฏิบัติการ ไม่แสดง secret`;
+}
+
+function renderAutomationHealthUnavailable() {
+    const badge = element('automationHealthBadge');
+    badge.className = 'health-badge health-warning';
+    badge.textContent = 'อ่านสถานะไม่ได้';
+    element('automationHealthUpdated').textContent = 'ข้อมูลเคสส่วนอื่นยังใช้งานได้ กรุณารีเฟรชเพื่อตรวจอีกครั้ง';
+}
+
 function renderTrend(items) {
     const chart = element('trendChart');
     chart.replaceChildren();
@@ -323,6 +359,17 @@ async function loadSummary() {
     renderSummary(payload.report);
 }
 
+async function loadHealth() {
+    try {
+        const response = await apiRequest('health');
+        const payload = await response.json();
+        renderAutomationHealth(payload.health);
+    } catch (error) {
+        console.warn('Safety automation health request failed', error);
+        renderAutomationHealthUnavailable();
+    }
+}
+
 async function loadCases() {
     const response = await apiRequest('cases', {
         status: state.status, rank: state.rank, limit: PAGE_SIZE, offset: state.offset,
@@ -337,7 +384,7 @@ async function loadDashboard() {
     setNotice();
     updatePeriodDescription();
     try {
-        await Promise.all([loadSummary(), loadCases()]);
+        await Promise.all([loadSummary(), loadCases(), loadHealth()]);
     } catch (error) {
         handleRequestError(error);
     } finally {
