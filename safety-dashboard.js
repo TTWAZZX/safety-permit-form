@@ -275,10 +275,15 @@ function renderDetailSummary(detail) {
     });
     appendDetailValue(grid, 'ระดับความเสี่ยง', RANK_LABELS[rank] || rank, rank === 'HIGH' ? 'detail-value-danger' : '');
     appendDetailValue(grid, 'แนวทาง', PATH_LABELS[item.resolution_path] || 'ยังไม่เลือก');
-    appendDetailValue(grid, 'ผู้รับผิดชอบ', item.is_mine ? 'ฉันรับผิดชอบ' : item.assigned_admin_suffix ? `LINE …${item.assigned_admin_suffix}` : 'ยังไม่มีผู้รับ');
+    appendDetailValue(grid, 'ผู้รับผิดชอบ', item.assigned_admin_name
+        ? `${item.assigned_admin_name}${item.is_mine ? ' (ฉัน)' : ''}`
+        : item.is_mine ? 'ฉันรับผิดชอบ'
+        : item.assigned_admin_suffix ? `Safety Admin …${item.assigned_admin_suffix}` : 'ยังไม่มีผู้รับ');
     appendDetailValue(grid, 'SLA', sla.label, sla.tone === 'badge-danger' ? 'detail-value-danger' : '');
-    appendDetailValue(grid, 'ผู้แจ้ง', hazard.reporter_name || 'ไม่ระบุ');
+    appendDetailValue(grid, 'ผู้แจ้ง (ชื่อ LINE)', item.reporter_line_name || hazard.reporter_name || 'ไม่ระบุ');
     appendDetailValue(grid, 'ข้อมูลติดต่อ', item.reporter_contact || 'ยังไม่มีข้อมูล');
+    appendDetailValue(grid, 'ผู้ปิดเคส', item.closed_by_name || (['RESOLVED', 'REJECTED_NOT_HAZARD', 'CANCELLED'].includes(item.status) ? 'ไม่พบชื่อผู้ดำเนินการ' : 'ยังไม่ปิดเคส'));
+    appendDetailValue(grid, 'วันที่ปิด', item.closed_at ? formatDateTime(item.closed_at) : '—');
     appendDetailValue(grid, 'วันที่แจ้ง', formatDateTime(item.created_at));
     appendDetailValue(grid, 'อัปเดตล่าสุด', formatDateTime(item.updated_at));
 }
@@ -343,8 +348,13 @@ function renderEvidence(items) {
         title.textContent = EVIDENCE_LABELS[item.evidence_kind] || item.evidence_kind || 'หลักฐาน';
         heading.append(title, makeBadge(REVIEW_LABELS[item.review_status] || item.review_status, reviewTone(item.review_status)));
         const date = document.createElement('span');
-        date.textContent = `ส่ง ${formatDateTime(item.created_at)}`;
+        date.textContent = `ส่ง ${formatDateTime(item.created_at)} · โดย ${item.submitted_by_name || 'ไม่ระบุชื่อ'}`;
         body.append(heading, date);
+        if (item.reviewed_by_name) {
+            const reviewer = document.createElement('span');
+            reviewer.textContent = `ตรวจโดย ${item.reviewed_by_name}${item.reviewed_at ? ` · ${formatDateTime(item.reviewed_at)}` : ''}`;
+            body.append(reviewer);
+        }
         if (item.review_note) {
             const note = document.createElement('p');
             note.textContent = item.review_note;
@@ -417,7 +427,9 @@ function renderChat(messages, sessions) {
         const bubble = document.createElement('article');
         bubble.className = `chat-message ${item.sender_type === 'SAFETY_ADMIN' ? 'chat-admin' : 'chat-reporter'}`;
         const sender = document.createElement('strong');
-        sender.textContent = item.sender_type === 'SAFETY_ADMIN' ? (item.is_current_admin ? 'ฉัน (Safety)' : 'Safety Admin') : 'ผู้แจ้ง';
+        sender.textContent = item.sender_name
+            ? `${item.sender_name}${item.is_current_admin ? ' (ฉัน)' : ''}`
+            : item.sender_type === 'SAFETY_ADMIN' ? (item.is_current_admin ? 'ฉัน (Safety)' : 'Safety Admin') : 'ผู้แจ้ง';
         bubble.append(sender);
         if (item.message_text) {
             const text = document.createElement('p');
@@ -557,7 +569,9 @@ function renderTimeline(items) {
         const title = document.createElement('strong');
         title.textContent = EVENT_LABELS[item.event_type] || String(item.event_type || '').replace(/_/g, ' ');
         const meta = document.createElement('span');
-        const actor = item.actor_type === 'SAFETY_ADMIN' ? (item.is_current_admin ? 'ฉัน' : 'Safety Admin') : item.actor_type === 'REPORTER' ? 'ผู้แจ้ง' : 'ระบบ';
+        const actor = item.actor_name
+            ? `${item.actor_name}${item.is_current_admin ? ' (ฉัน)' : ''}`
+            : item.actor_type === 'SAFETY_ADMIN' ? (item.is_current_admin ? 'ฉัน' : 'Safety Admin') : item.actor_type === 'REPORTER' ? 'ผู้แจ้ง' : 'ระบบ';
         meta.textContent = `${actor} · ${formatDateTime(item.created_at)}`;
         body.append(title, meta);
         if (item.from_status || item.to_status) {
@@ -701,7 +715,9 @@ function renderInternalNotes(items) {
         row.className = 'detail-list-row';
         const body = document.createElement('div');
         const title = document.createElement('strong');
-        title.textContent = item.is_current_admin ? 'ฉัน' : `Safety Admin …${item.author_admin_suffix || ''}`;
+        title.textContent = item.author_admin_name
+            ? `${item.author_admin_name}${item.is_current_admin ? ' (ฉัน)' : ''}`
+            : item.is_current_admin ? 'ฉัน' : `Safety Admin …${item.author_admin_suffix || ''}`;
         const note = document.createElement('span');
         note.textContent = item.note || '—';
         const time = document.createElement('span');
@@ -748,7 +764,10 @@ function renderCaseActions(detail) {
     const item = detail.case || {};
     const terminal = ['RESOLVED', 'REJECTED_NOT_HAZARD', 'CANCELLED'].includes(item.status);
     element('claimCaseButton').disabled = state.actionBusy || terminal || item.is_mine || Boolean(item.assigned_admin_suffix);
-    element('claimCaseButton').textContent = item.is_mine ? 'ฉันรับเคสนี้แล้ว' : item.assigned_admin_suffix ? `มีผู้รับแล้ว …${item.assigned_admin_suffix}` : terminal ? 'เคสปิดแล้ว' : 'รับเคสนี้';
+    element('claimCaseButton').textContent = item.is_mine ? 'ฉันรับเคสนี้แล้ว'
+        : item.assigned_admin_name ? `ผู้รับ: ${item.assigned_admin_name}`
+        : item.assigned_admin_suffix ? `มีผู้รับแล้ว …${item.assigned_admin_suffix}`
+        : terminal ? 'เคสปิดแล้ว' : 'รับเคสนี้';
     element('caseRankInput').value = ['HIGH', 'MEDIUM', 'LOW'].includes(item.confirmed_rank) ? item.confirmed_rank : (['HIGH', 'MEDIUM', 'LOW'].includes(item.reported_rank) ? item.reported_rank : 'MEDIUM');
     element('caseDueInput').value = toLocalDateTimeInput(item.evidence_due_at);
     element('caseTagsInput').value = Array.isArray(item.tags) ? item.tags.join(', ') : '';
