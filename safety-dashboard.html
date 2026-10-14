@@ -212,6 +212,80 @@
             </section>
         </main>
 
+        <div id="caseDetailOverlay" class="detail-overlay" hidden>
+            <section id="caseDetailPanel" class="detail-panel" role="dialog" aria-modal="true" aria-labelledby="detailCaseNumber" tabindex="-1">
+                <header class="detail-header">
+                    <div>
+                        <p class="eyebrow">CASE DETAIL 360°</p>
+                        <div class="detail-title-row">
+                            <h2 id="detailCaseNumber">รายละเอียด Safety Case</h2>
+                            <span id="detailStatus" class="badge badge-muted">กำลังโหลด</span>
+                        </div>
+                        <p id="detailUpdated" class="panel-subtitle">ข้อมูลล่าสุดจากระบบ</p>
+                    </div>
+                    <button id="closeCaseDetail" class="detail-close" type="button" aria-label="ปิดรายละเอียดเคส">×</button>
+                </header>
+
+                <nav id="detailNavigation" class="detail-navigation" aria-label="ส่วนต่าง ๆ ของรายละเอียดเคส" hidden>
+                    <a href="#detailOverview">ภาพรวม</a>
+                    <a href="#detailEvidenceSection">หลักฐาน</a>
+                    <a href="#detailChatSection">การสนทนา</a>
+                    <a href="#detailTimelineSection">Timeline</a>
+                </nav>
+
+                <div id="detailLoading" class="detail-loading" role="status">
+                    <div class="loader" aria-hidden="true"></div>
+                    <strong>กำลังรวบรวมข้อมูลเคส…</strong>
+                    <span>ตรวจสอบหลักฐาน การติดตาม การสนทนา และประวัติทั้งหมด</span>
+                </div>
+                <div id="detailError" class="notice detail-error" role="alert" hidden></div>
+
+                <div id="detailContent" class="detail-content" hidden>
+                    <section id="detailOverview" class="detail-section">
+                        <div class="detail-section-heading"><div><p class="eyebrow">OVERVIEW</p><h3>ภาพรวมและ SLA</h3></div></div>
+                        <div id="detailSummaryGrid" class="detail-summary-grid"></div>
+                    </section>
+
+                    <div class="detail-two-column">
+                        <section class="detail-section">
+                            <div class="detail-section-heading"><div><p class="eyebrow">ORIGINAL REPORT</p><h3>ข้อมูลการแจ้งเหตุ</h3></div></div>
+                            <div id="detailHazard" class="detail-prose"></div>
+                        </section>
+                        <section class="detail-section">
+                            <div class="detail-section-heading"><div><p class="eyebrow">AI &amp; SAFETY REVIEW</p><h3>ผลวิเคราะห์และคำแนะนำ</h3></div></div>
+                            <div id="detailAi" class="detail-prose"></div>
+                        </section>
+                    </div>
+
+                    <section id="detailEvidenceSection" class="detail-section">
+                        <div class="detail-section-heading"><div><p class="eyebrow">EVIDENCE</p><h3>หลักฐาน Before / After</h3></div><span id="detailEvidenceCount" class="detail-count">0 รายการ</span></div>
+                        <div id="detailEvidence" class="evidence-grid"></div>
+                    </section>
+
+                    <div class="detail-two-column">
+                        <section class="detail-section">
+                            <div class="detail-section-heading"><div><p class="eyebrow">FOLLOW-UP</p><h3>Reminder และการติดตาม</h3></div><span id="detailReminderCount" class="detail-count">0 รายการ</span></div>
+                            <div id="detailReminders" class="detail-list"></div>
+                        </section>
+                        <section class="detail-section">
+                            <div class="detail-section-heading"><div><p class="eyebrow">ROYAL POINT</p><h3>รางวัลและคะแนน</h3></div></div>
+                            <div id="detailReward" class="detail-prose"></div>
+                        </section>
+                    </div>
+
+                    <section id="detailChatSection" class="detail-section">
+                        <div class="detail-section-heading"><div><p class="eyebrow">CASE CONVERSATION</p><h3>การสนทนาเฉพาะเคส</h3></div><span id="detailChatCount" class="detail-count">0 ข้อความ</span></div>
+                        <div id="detailChat" class="chat-thread"></div>
+                    </section>
+
+                    <section id="detailTimelineSection" class="detail-section">
+                        <div class="detail-section-heading"><div><p class="eyebrow">AUDIT TIMELINE</p><h3>ประวัติการดำเนินการ</h3></div><span id="detailTimelineCount" class="detail-count">0 เหตุการณ์</span></div>
+                        <div id="detailTimeline" class="timeline"></div>
+                    </section>
+                </div>
+            </section>
+        </div>
+
         <footer class="footer">
             <span>TSH Safety Management System</span>
             <span>ข้อมูลสำหรับผู้ดูแลที่ได้รับอนุญาตเท่านั้น</span>

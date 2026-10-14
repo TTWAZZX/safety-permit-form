@@ -25,6 +25,26 @@ const PATH_LABELS = Object.freeze({
     NOT_HAZARD: 'ไม่ใช่เหตุอันตราย',
     UNSPECIFIED: 'ยังไม่เลือกแนวทาง',
 });
+const EVIDENCE_LABELS = Object.freeze({ BEFORE: 'ก่อนแก้ไข', AFTER: 'หลังแก้ไข', ADDITIONAL: 'หลักฐานเพิ่มเติม' });
+const REVIEW_LABELS = Object.freeze({ PENDING: 'รอตรวจ', APPROVED: 'อนุมัติแล้ว', REJECTED: 'ให้แก้ไขใหม่' });
+const EVENT_LABELS = Object.freeze({
+    SAFETY_CASE_CREATED: 'สร้าง Safety Case',
+    SAFETY_CASE_AI_ANALYZED: 'AI วิเคราะห์เคสแล้ว',
+    SAFETY_CASE_RESOLUTION_SELECTED: 'เลือกแนวทางดำเนินการ',
+    SAFETY_CASE_CLAIMED: 'แอดมินรับเคส',
+    SAFETY_CASE_MARKED_URGENT: 'ระบุเป็นเคสเร่งด่วน',
+    SAFETY_ADVICE_SUBMITTED: 'ส่งคำแนะนำจาก Safety',
+    SAFETY_EVIDENCE_SUBMITTED: 'ผู้แจ้งส่งหลักฐาน',
+    SAFETY_EVIDENCE_APPROVED: 'อนุมัติหลักฐาน',
+    SAFETY_EVIDENCE_REJECTED: 'ขอหลักฐานเพิ่มเติม',
+    SAFETY_REWARD_ISSUED: 'ออกรหัสคะแนนและปิดเคส',
+    SAFETY_CASE_CANCELLED_BY_ADMIN: 'แอดมินยกเลิกเคส',
+    MANUAL_REPORTER_REMINDER_REQUESTED: 'แอดมินแจ้งเตือนผู้แจ้ง',
+    MANUAL_ADMIN_NOTIFICATION_REQUESTED: 'แจ้งเตือนทีม Safety',
+    CASE_CHAT_REQUESTED: 'ผู้แจ้งขอสนทนากับ Safety',
+    CASE_CHAT_ACCEPTED: 'แอดมินรับการสนทนา',
+    CASE_CHAT_CLOSED: 'ปิดการสนทนา',
+});
 const MONTHS = Object.freeze(['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม']);
 const PAGE_SIZE = 20;
 
@@ -44,6 +64,9 @@ const state = {
     offset: 0,
     total: 0,
     busy: false,
+    detailBusy: false,
+    detailCaseId: '',
+    detailReturnFocus: null,
 };
 
 const element = (id) => document.getElementById(id);
@@ -136,6 +159,327 @@ function makeBadge(label, tone) {
     badge.className = `badge ${tone}`;
     badge.textContent = label;
     return badge;
+}
+
+function emptyDetail(message) {
+    const empty = document.createElement('p');
+    empty.className = 'detail-empty';
+    empty.textContent = message;
+    return empty;
+}
+
+function appendDetailValue(container, label, value, className = '') {
+    const block = document.createElement('div');
+    block.className = `detail-value ${className}`.trim();
+    const caption = document.createElement('span');
+    caption.textContent = label;
+    const content = document.createElement('strong');
+    content.textContent = String(value ?? '—') || '—';
+    block.append(caption, content);
+    container.append(block);
+    return block;
+}
+
+function appendProse(container, label, value) {
+    const block = document.createElement('div');
+    block.className = 'prose-block';
+    const heading = document.createElement('strong');
+    heading.textContent = label;
+    const text = document.createElement('p');
+    text.textContent = compact(value, 2000);
+    block.append(heading, text);
+    container.append(block);
+}
+
+function reviewTone(status) {
+    if (status === 'APPROVED') return 'badge-success';
+    if (status === 'REJECTED') return 'badge-danger';
+    return 'badge-warning';
+}
+
+function reminderTone(status) {
+    if (status === 'SENT') return 'badge-success';
+    if (status === 'FAILED') return 'badge-danger';
+    if (status === 'CANCELLED') return 'badge-muted';
+    return 'badge-warning';
+}
+
+function renderDetailSummary(detail) {
+    const item = detail.case || {};
+    const hazard = detail.hazard_report || {};
+    const grid = element('detailSummaryGrid');
+    grid.replaceChildren();
+    const rank = item.confirmed_rank || item.reported_rank || 'UNSPECIFIED';
+    const sla = formatSla({
+        is_open: !['RESOLVED', 'REJECTED_NOT_HAZARD', 'CANCELLED'].includes(item.status),
+        evidence_due_at: item.evidence_due_at,
+        due_in_hours: item.evidence_due_at ? (new Date(item.evidence_due_at).getTime() - Date.now()) / 3600000 : null,
+        is_overdue: Boolean(item.evidence_due_at) && new Date(item.evidence_due_at).getTime() < Date.now(),
+    });
+    appendDetailValue(grid, 'ระดับความเสี่ยง', RANK_LABELS[rank] || rank, rank === 'HIGH' ? 'detail-value-danger' : '');
+    appendDetailValue(grid, 'แนวทาง', PATH_LABELS[item.resolution_path] || 'ยังไม่เลือก');
+    appendDetailValue(grid, 'ผู้รับผิดชอบ', item.is_mine ? 'ฉันรับผิดชอบ' : item.assigned_admin_suffix ? `LINE …${item.assigned_admin_suffix}` : 'ยังไม่มีผู้รับ');
+    appendDetailValue(grid, 'SLA', sla.label, sla.tone === 'badge-danger' ? 'detail-value-danger' : '');
+    appendDetailValue(grid, 'ผู้แจ้ง', hazard.reporter_name || 'ไม่ระบุ');
+    appendDetailValue(grid, 'ข้อมูลติดต่อ', item.reporter_contact || 'ยังไม่มีข้อมูล');
+    appendDetailValue(grid, 'วันที่แจ้ง', formatDateTime(item.created_at));
+    appendDetailValue(grid, 'อัปเดตล่าสุด', formatDateTime(item.updated_at));
+}
+
+function renderDetailOverview(detail) {
+    const hazard = detail.hazard_report || {};
+    const item = detail.case || {};
+    const hazardContainer = element('detailHazard');
+    hazardContainer.replaceChildren();
+    appendProse(hazardContainer, 'รายละเอียดที่แจ้ง', hazard.note);
+    appendProse(hazardContainer, 'ประเภท / ความรุนแรง', [hazard.report_type, hazard.severity].filter(Boolean).join(' · '));
+    appendProse(hazardContainer, 'วันที่รับรายงาน', formatDateTime(hazard.reported_at || item.created_at));
+    if (hazard.has_original_line_image) appendProse(hazardContainer, 'ภาพต้นฉบับ', 'มีภาพต้นฉบับใน LINE (ดูหลักฐานที่จัดเก็บไว้ด้านล่าง)');
+
+    const aiContainer = element('detailAi');
+    aiContainer.replaceChildren();
+    appendProse(aiContainer, 'สิ่งที่ตรวจพบ', item.ai_finding);
+    appendProse(aiContainer, 'ความเสี่ยง', item.ai_risk);
+    appendProse(aiContainer, 'คำแนะนำจาก AI', item.ai_recommendation);
+    appendProse(aiContainer, 'คำแนะนำจาก Safety', item.safety_advice);
+    appendProse(aiContainer, 'บันทึกการตรวจ', item.safety_review_note);
+}
+
+function createEvidenceImage(url, alt) {
+    const link = document.createElement('a');
+    link.className = 'evidence-image-link';
+    link.href = url;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    const image = document.createElement('img');
+    image.src = url;
+    image.alt = alt;
+    image.loading = 'lazy';
+    image.referrerPolicy = 'no-referrer';
+    link.append(image);
+    return link;
+}
+
+function renderEvidence(items) {
+    const container = element('detailEvidence');
+    container.replaceChildren();
+    element('detailEvidenceCount').textContent = `${formatNumber(items.length)} รายการ`;
+    if (!items.length) {
+        container.append(emptyDetail('ยังไม่มีหลักฐานในเคสนี้'));
+        return;
+    }
+    items.forEach((item, index) => {
+        const card = document.createElement('article');
+        card.className = 'evidence-card';
+        if (item.image_url) card.append(createEvidenceImage(item.image_url, `${EVIDENCE_LABELS[item.evidence_kind] || 'หลักฐาน'} ${index + 1}`));
+        else {
+            const placeholder = document.createElement('div');
+            placeholder.className = 'evidence-placeholder';
+            placeholder.textContent = 'ไม่สามารถเปิดภาพได้หรือ URL หมดอายุ';
+            card.append(placeholder);
+        }
+        const body = document.createElement('div');
+        body.className = 'evidence-body';
+        const heading = document.createElement('div');
+        heading.className = 'evidence-heading';
+        const title = document.createElement('strong');
+        title.textContent = EVIDENCE_LABELS[item.evidence_kind] || item.evidence_kind || 'หลักฐาน';
+        heading.append(title, makeBadge(REVIEW_LABELS[item.review_status] || item.review_status, reviewTone(item.review_status)));
+        const date = document.createElement('span');
+        date.textContent = `ส่ง ${formatDateTime(item.created_at)}`;
+        body.append(heading, date);
+        if (item.review_note) {
+            const note = document.createElement('p');
+            note.textContent = item.review_note;
+            body.append(note);
+        }
+        card.append(body);
+        container.append(card);
+    });
+}
+
+function renderReminders(items) {
+    const container = element('detailReminders');
+    container.replaceChildren();
+    element('detailReminderCount').textContent = `${formatNumber(items.length)} รายการ`;
+    if (!items.length) {
+        container.append(emptyDetail('เคสนี้ยังไม่มีประวัติ Reminder'));
+        return;
+    }
+    items.forEach((item) => {
+        const row = document.createElement('article');
+        row.className = 'detail-list-row';
+        const main = document.createElement('div');
+        const title = document.createElement('strong');
+        title.textContent = `${item.audience === 'REPORTER' ? 'ผู้แจ้ง' : 'ทีม Safety'} · ${item.reminder_type || 'ติดตามเคส'}`;
+        const meta = document.createElement('span');
+        meta.textContent = `${formatDateTime(item.scheduled_for)} · พยายาม ${formatNumber(item.attempts)} ครั้ง`;
+        main.append(title, meta);
+        row.append(main, makeBadge(item.status || 'UNKNOWN', reminderTone(item.status)));
+        if (item.error_detail) {
+            const error = document.createElement('p');
+            error.className = 'detail-inline-error';
+            error.textContent = compact(item.error_detail, 300);
+            row.append(error);
+        }
+        container.append(row);
+    });
+}
+
+function renderReward(reward) {
+    const container = element('detailReward');
+    container.replaceChildren();
+    if (!reward) {
+        container.append(emptyDetail('ยังไม่มีการออกรหัสคะแนนสำหรับเคสนี้'));
+        return;
+    }
+    const total = document.createElement('div');
+    total.className = 'reward-total';
+    const label = document.createElement('span');
+    label.textContent = 'คะแนนรวม';
+    const value = document.createElement('strong');
+    value.textContent = formatNumber(reward.total_points);
+    total.append(label, value);
+    container.append(total);
+    appendProse(container, 'รหัส Royal Point', reward.code);
+    appendProse(container, 'สถานะ', reward.status);
+    appendProse(container, 'รายละเอียดคะแนน', `แจ้งเหตุ ${formatNumber(reward.report_points)} + แก้ไข ${formatNumber(reward.correction_points)} + ปิดเคส ${formatNumber(reward.resolution_bonus)} + Rank ${formatNumber(reward.rank_a_bonus)}`);
+    appendProse(container, 'วันที่ออก', formatDateTime(reward.issued_at));
+}
+
+function renderChat(messages, sessions) {
+    const container = element('detailChat');
+    container.replaceChildren();
+    element('detailChatCount').textContent = `${formatNumber(messages.length)} ข้อความ`;
+    if (!messages.length) {
+        const status = sessions[0]?.status ? `สถานะห้องล่าสุด: ${sessions[0].status}` : 'เคสนี้ยังไม่มีการสนทนา';
+        container.append(emptyDetail(status));
+        return;
+    }
+    messages.forEach((item) => {
+        const bubble = document.createElement('article');
+        bubble.className = `chat-message ${item.sender_type === 'SAFETY_ADMIN' ? 'chat-admin' : 'chat-reporter'}`;
+        const sender = document.createElement('strong');
+        sender.textContent = item.sender_type === 'SAFETY_ADMIN' ? (item.is_current_admin ? 'ฉัน (Safety)' : 'Safety Admin') : 'ผู้แจ้ง';
+        bubble.append(sender);
+        if (item.message_text) {
+            const text = document.createElement('p');
+            text.textContent = item.message_text;
+            bubble.append(text);
+        }
+        if (item.image_url) bubble.append(createEvidenceImage(item.image_url, 'รูปภาพในการสนทนา'));
+        if (item.message_type === 'STICKER') {
+            const sticker = document.createElement('p');
+            sticker.textContent = 'ส่งสติกเกอร์';
+            bubble.append(sticker);
+        }
+        const time = document.createElement('time');
+        time.textContent = formatDateTime(item.created_at);
+        bubble.append(time);
+        container.append(bubble);
+    });
+}
+
+function readableEventDetail(detail) {
+    if (!detail || typeof detail !== 'object') return '';
+    return Object.entries(detail)
+        .filter(([, value]) => ['string', 'number', 'boolean'].includes(typeof value))
+        .slice(0, 5)
+        .map(([key, value]) => `${key.replace(/_/g, ' ')}: ${String(value)}`)
+        .join(' · ');
+}
+
+function renderTimeline(items) {
+    const container = element('detailTimeline');
+    container.replaceChildren();
+    element('detailTimelineCount').textContent = `${formatNumber(items.length)} เหตุการณ์`;
+    if (!items.length) {
+        container.append(emptyDetail('ยังไม่มีประวัติเหตุการณ์'));
+        return;
+    }
+    items.forEach((item) => {
+        const event = document.createElement('article');
+        event.className = 'timeline-event';
+        const dot = document.createElement('span');
+        dot.className = 'timeline-dot';
+        const body = document.createElement('div');
+        const title = document.createElement('strong');
+        title.textContent = EVENT_LABELS[item.event_type] || String(item.event_type || '').replace(/_/g, ' ');
+        const meta = document.createElement('span');
+        const actor = item.actor_type === 'SAFETY_ADMIN' ? (item.is_current_admin ? 'ฉัน' : 'Safety Admin') : item.actor_type === 'REPORTER' ? 'ผู้แจ้ง' : 'ระบบ';
+        meta.textContent = `${actor} · ${formatDateTime(item.created_at)}`;
+        body.append(title, meta);
+        if (item.from_status || item.to_status) {
+            const transition = document.createElement('p');
+            transition.textContent = `${STATUS_LABELS[item.from_status] || item.from_status || 'เริ่มต้น'} → ${STATUS_LABELS[item.to_status] || item.to_status || 'คงสถานะเดิม'}`;
+            body.append(transition);
+        }
+        const detail = readableEventDetail(item.detail);
+        if (detail) {
+            const note = document.createElement('p');
+            note.textContent = detail;
+            body.append(note);
+        }
+        event.append(dot, body);
+        container.append(event);
+    });
+}
+
+function renderCaseDetail(detail) {
+    const item = detail.case || {};
+    element('detailCaseNumber').textContent = item.case_number || 'รายละเอียด Safety Case';
+    const status = element('detailStatus');
+    status.className = `badge ${statusTone(item.status)}`;
+    status.textContent = STATUS_LABELS[item.status] || item.status || 'ไม่ทราบสถานะ';
+    element('detailUpdated').textContent = `ข้อมูล ณ ${formatDateTime(detail.generated_at)} · อ่านอย่างเดียว`;
+    renderDetailSummary(detail);
+    renderDetailOverview(detail);
+    renderEvidence(Array.isArray(detail.evidence) ? detail.evidence : []);
+    renderReminders(Array.isArray(detail.reminders) ? detail.reminders : []);
+    renderReward(detail.reward || null);
+    renderChat(Array.isArray(detail.chat_messages) ? detail.chat_messages : [], Array.isArray(detail.chat_sessions) ? detail.chat_sessions : []);
+    renderTimeline(Array.isArray(detail.events) ? detail.events : []);
+}
+
+async function openCaseDetail(caseId, trigger = null) {
+    if (!caseId || state.detailBusy) return;
+    state.detailBusy = true;
+    state.detailCaseId = caseId;
+    state.detailReturnFocus = trigger || document.activeElement;
+    const overlay = element('caseDetailOverlay');
+    overlay.hidden = false;
+    document.body.classList.add('detail-open');
+    element('detailLoading').hidden = false;
+    element('detailError').hidden = true;
+    element('detailContent').hidden = true;
+    element('detailNavigation').hidden = true;
+    element('detailCaseNumber').textContent = 'กำลังโหลดรายละเอียด…';
+    element('caseDetailPanel').focus();
+    try {
+        const response = await apiRequest('detail', { case_id: caseId });
+        const payload = await response.json();
+        renderCaseDetail(payload.detail || {});
+        element('detailLoading').hidden = true;
+        element('detailContent').hidden = false;
+        element('detailNavigation').hidden = false;
+    } catch (error) {
+        console.error('Case detail request failed', error);
+        element('detailLoading').hidden = true;
+        const errorBox = element('detailError');
+        errorBox.textContent = error?.status === 404 ? 'ไม่พบเคสนี้หรือเคสถูกย้ายแล้ว' : 'โหลดรายละเอียดเคสไม่สำเร็จ กรุณาปิดแล้วลองใหม่';
+        errorBox.hidden = false;
+        if ([401, 403].includes(error?.status)) handleRequestError(error);
+    } finally {
+        state.detailBusy = false;
+    }
+}
+
+function closeCaseDetail() {
+    element('caseDetailOverlay').hidden = true;
+    document.body.classList.remove('detail-open');
+    state.detailCaseId = '';
+    if (state.detailReturnFocus instanceof HTMLElement) state.detailReturnFocus.focus();
+    state.detailReturnFocus = null;
 }
 
 function periodParams(view) {
@@ -359,6 +703,10 @@ function renderCases(items, pagination, metrics, generatedAt) {
         const rank = caseRank(item);
         const sla = formatSla(item);
         const row = document.createElement('tr');
+        row.className = 'case-row';
+        row.tabIndex = 0;
+        row.setAttribute('role', 'button');
+        row.setAttribute('aria-label', `เปิดรายละเอียดเคส ${item.case_number || ''}`);
         appendCell(row, item.case_number, 'case-number');
         appendCell(row, formatAge(item.age_hours));
         const statusCell = document.createElement('div');
@@ -369,9 +717,19 @@ function renderCases(items, pagination, metrics, generatedAt) {
         appendCell(row, compact(item.ai_finding), 'case-finding');
         appendCell(row, item.is_mine ? 'ฉันรับผิดชอบ' : item.assigned_admin_uid ? `LINE …${String(item.assigned_admin_uid).slice(-6)}` : 'ยังไม่มีผู้รับเคส');
         table.append(row);
+        row.addEventListener('click', () => openCaseDetail(item.id, row));
+        row.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                openCaseDetail(item.id, row);
+            }
+        });
 
         const card = document.createElement('article');
         card.className = 'case-card';
+        card.tabIndex = 0;
+        card.setAttribute('role', 'button');
+        card.setAttribute('aria-label', `เปิดรายละเอียดเคส ${item.case_number || ''}`);
         const header = document.createElement('div');
         header.className = 'case-card-header';
         const number = document.createElement('strong');
@@ -390,6 +748,13 @@ function renderCases(items, pagination, metrics, generatedAt) {
         owner.textContent = `ผู้รับเคส: ${item.is_mine ? 'ฉันรับผิดชอบ' : item.assigned_admin_uid ? `LINE …${String(item.assigned_admin_uid).slice(-6)}` : 'ยังไม่มีผู้รับเคส'} · อายุ ${formatAge(item.age_hours)}`;
         card.append(header, meta, finding, owner);
         cards.append(card);
+        card.addEventListener('click', () => openCaseDetail(item.id, card));
+        card.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                openCaseDetail(item.id, card);
+            }
+        });
     });
 
     const page = Math.floor(state.offset / PAGE_SIZE) + 1;
@@ -584,6 +949,27 @@ function bindEvents() {
     element('previousPage').addEventListener('click', () => { state.offset = Math.max(0, state.offset - PAGE_SIZE); loadCases().catch(handleRequestError); });
     element('nextPage').addEventListener('click', () => { state.offset += PAGE_SIZE; loadCases().catch(handleRequestError); });
     element('retryLoginButton').addEventListener('click', () => window.location.reload());
+    element('closeCaseDetail').addEventListener('click', closeCaseDetail);
+    element('caseDetailOverlay').addEventListener('click', (event) => {
+        if (event.target === element('caseDetailOverlay')) closeCaseDetail();
+    });
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && !element('caseDetailOverlay').hidden) closeCaseDetail();
+        if (event.key === 'Tab' && !element('caseDetailOverlay').hidden) {
+            const focusable = [...element('caseDetailPanel').querySelectorAll('a[href], button:not(:disabled), [tabindex="0"]')]
+                .filter((item) => !item.hidden && item.getClientRects().length > 0);
+            if (!focusable.length) return;
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first.focus();
+            }
+        }
+    });
 }
 
 async function initialize() {

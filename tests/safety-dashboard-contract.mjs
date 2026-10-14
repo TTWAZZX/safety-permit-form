@@ -18,6 +18,10 @@ for (const id of [
     'queueOpen', 'queueMine', 'queueUnassigned', 'queueOverdue', 'queueHighRisk',
     'automationHealthBadge', 'healthReminderDue', 'healthReminderFailed',
     'healthWebhookFailed', 'healthScheduler', 'automationHealthUpdated',
+    'caseDetailOverlay', 'caseDetailPanel', 'closeCaseDetail',
+    'detailLoading', 'detailError', 'detailContent', 'detailCaseNumber',
+    'detailSummaryGrid', 'detailHazard', 'detailAi', 'detailEvidence',
+    'detailReminders', 'detailReward', 'detailChat', 'detailTimeline',
 ]) {
     if (!html.includes(`id="${id}"`)) throw new Error(`Dashboard HTML is missing #${id}`);
     if (!script.includes(`'${id}'`)) throw new Error(`Dashboard script does not bind #${id}`);
@@ -31,6 +35,7 @@ for (const marker of [
     "apiRequest('queue'",
     "apiRequest('export'",
     "apiRequest('health')",
+    "apiRequest('detail'",
     "format: 'xlsx'",
     "cache: 'no-store'",
     'AbortController',
@@ -41,6 +46,17 @@ for (const marker of [
     'formatSla',
     "assignment: state.assignment",
     "resolution_path: state.resolutionPath",
+    'openCaseDetail(item.id',
+    'renderCaseDetail',
+    'renderEvidence',
+    'renderReminders',
+    'renderReward',
+    'renderChat',
+    'renderTimeline',
+    "event.key === 'Escape'",
+    "event.key === 'Tab'",
+    "rel = 'noopener noreferrer'",
+    "referrerPolicy = 'no-referrer'",
 ]) {
     if (!script.includes(marker)) throw new Error(`Dashboard script is missing: ${marker}`);
 }
@@ -65,4 +81,5 @@ console.log('PASS Safety Dashboard LIFF authentication and admin-only backend co
 console.log('PASS monthly/yearly metrics, filtering, pagination, and XLSX export UI contract');
 console.log('PASS admin-only reminder, webhook, and scheduler health UI contract');
 console.log('PASS Phase 9 work queue search, SLA, assignment, sorting, quick filters, and responsive UI contract');
+console.log('PASS Phase 10 responsive Case Detail 360, evidence gallery, chat, reminder, reward, and audit timeline UI contract');
 console.log('PASS public frontend contains no privileged backend credentials');
