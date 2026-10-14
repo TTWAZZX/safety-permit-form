@@ -25,11 +25,18 @@ for (const id of [
     'claimCaseButton', 'caseRankInput',
     'caseDueInput', 'caseTagsInput', 'caseNoteInput', 'caseMessageInput',
     'caseInternalNotes', 'caseActionDeliveries',
+    'resolutionActionState', 'resolutionActionNotice', 'reviewEvidenceInput',
+    'evidenceReviewNoteInput', 'approveEvidenceButton', 'reviseEvidenceButton',
+    'rewardPreview', 'completeSafetyActionButton', 'rewardCodeInput',
+    'issueRewardButton', 'notHazardReasonInput', 'rejectNotHazardButton',
+    'closeReasonInput', 'prepareCloseButton', 'closeConfirmation',
+    'closeCaseNumberInput', 'confirmCloseButton',
 ]) {
     if (!html.includes(`id="${id}"`)) throw new Error(`Dashboard HTML is missing #${id}`);
     if (!script.includes(`'${id}'`)) throw new Error(`Dashboard script does not bind #${id}`);
 }
 if (!html.includes('id="detailActionsSection"')) throw new Error('Dashboard HTML is missing #detailActionsSection');
+if (!html.includes('id="detailResolutionSection"')) throw new Error('Dashboard HTML is missing #detailResolutionSection');
 
 for (const marker of [
     "liff.init({ liffId: config.liffId })",
@@ -50,6 +57,12 @@ for (const marker of [
     "performCaseAction('REQUEST_INFO'",
     "performCaseAction('REQUEST_EVIDENCE'",
     "performCaseAction('NOTIFY_TEAM'",
+    "performCaseAction('REVIEW_EVIDENCE'",
+    "performCaseAction('COMPLETE_SAFETY_ACTION'",
+    "performCaseAction('ISSUE_REWARD'",
+    "performCaseAction('CREATE_CLOSE_INTENT'",
+    "performCaseAction('CONFIRM_CLOSE'",
+    "performCaseAction('REJECT_NOT_HAZARD'",
     "pendingActionKeys",
     "crypto.randomUUID()",
     "format: 'xlsx'",
@@ -99,4 +112,5 @@ console.log('PASS admin-only reminder, webhook, and scheduler health UI contract
 console.log('PASS Phase 9 work queue search, SLA, assignment, sorting, quick filters, and responsive UI contract');
 console.log('PASS Phase 10 responsive Case Detail 360, evidence gallery, chat, reminder, reward, and audit timeline UI contract');
 console.log('PASS Phase 11 responsive Case Actions, safe manual retry, internal notes, tags, SLA, and LINE notification UI contract');
+console.log('PASS Phase 12 evidence review, reward, not-hazard, typed case-number confirmation, and two-step closure UI contract');
 console.log('PASS public frontend contains no privileged backend credentials');

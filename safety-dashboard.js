@@ -37,6 +37,10 @@ const EVENT_LABELS = Object.freeze({
     SAFETY_EVIDENCE_SUBMITTED: 'ผู้แจ้งส่งหลักฐาน',
     SAFETY_EVIDENCE_APPROVED: 'อนุมัติหลักฐาน',
     SAFETY_EVIDENCE_REJECTED: 'ขอหลักฐานเพิ่มเติม',
+    AFTER_EVIDENCE_APPROVED: 'อนุมัติหลักฐานหลังแก้ไข',
+    AFTER_EVIDENCE_REVISION_REQUESTED: 'ขอแก้ไขหลักฐานหลังดำเนินการ',
+    SAFETY_ACTION_COMPLETED: 'ทีม Safety ดำเนินการเสร็จแล้ว',
+    SAFETY_NOT_HAZARD_CONFIRMED: 'ยืนยันว่าไม่ใช่เหตุอันตราย',
     SAFETY_REWARD_ISSUED: 'ออกรหัสคะแนนและปิดเคส',
     SAFETY_CASE_CANCELLED_BY_ADMIN: 'แอดมินยกเลิกเคส',
     MANUAL_REPORTER_REMINDER_REQUESTED: 'แอดมินแจ้งเตือนผู้แจ้ง',
@@ -53,6 +57,10 @@ const EVENT_LABELS = Object.freeze({
     DASHBOARD_REQUEST_INFO: 'ขอข้อมูลเพิ่มเติมจากผู้แจ้ง',
     DASHBOARD_REQUEST_EVIDENCE: 'ขอหลักฐานเพิ่มเติมจากผู้แจ้ง',
     DASHBOARD_NOTIFY_TEAM: 'แจ้งทีม Safety จาก Dashboard',
+    DASHBOARD_REVIEW_EVIDENCE: 'ตรวจหลักฐานจาก Dashboard',
+    DASHBOARD_ISSUE_REWARD: 'ออกรหัส Royal Point จาก Dashboard',
+    DASHBOARD_CONFIRM_CLOSE: 'ยกเลิกเคสจาก Dashboard',
+    DASHBOARD_REJECT_NOT_HAZARD: 'ยืนยันว่าไม่ใช่เหตุอันตรายจาก Dashboard',
 });
 const MONTHS = Object.freeze(['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม']);
 const PAGE_SIZE = 20;
@@ -75,6 +83,8 @@ const state = {
     busy: false,
     detailBusy: false,
     actionBusy: false,
+    resolutionBusy: false,
+    closeIntent: null,
     detailCaseId: '',
     detailData: null,
     detailReturnFocus: null,
@@ -463,6 +473,93 @@ function setCaseActionBusy(busy) {
     ].forEach((id) => { element(id).disabled = busy; });
 }
 
+function setResolutionNotice(message = '', tone = '') {
+    const notice = element('resolutionActionNotice');
+    notice.textContent = message;
+    notice.className = `action-notice ${tone}`.trim();
+    notice.hidden = !message;
+}
+
+function setResolutionBusy(busy) {
+    state.resolutionBusy = busy;
+    element('resolutionActionState').textContent = busy ? 'กำลังดำเนินการ…' : 'พร้อมตรวจสอบ';
+    [
+        'reviewEvidenceInput', 'evidenceReviewNoteInput', 'approveEvidenceButton',
+        'reviseEvidenceButton', 'completeSafetyActionButton', 'rewardCodeInput',
+        'issueRewardButton', 'notHazardReasonInput', 'rejectNotHazardButton',
+        'closeReasonInput', 'prepareCloseButton', 'closeCaseNumberInput', 'confirmCloseButton',
+    ].forEach((id) => { element(id).disabled = busy; });
+}
+
+function renderRewardPreview(preview) {
+    const container = element('rewardPreview');
+    container.replaceChildren();
+    if (!preview) {
+        container.append(emptyDetail('ยังไม่สามารถคำนวณคะแนนสำหรับสถานะนี้ได้'));
+        return;
+    }
+    appendDetailValue(container, 'ระดับความเสี่ยง', RANK_LABELS[preview.rank] || preview.rank || '—');
+    appendDetailValue(container, 'คะแนนแจ้งเหตุ', formatNumber(preview.report_points));
+    appendDetailValue(container, 'คะแนนแก้ไข', formatNumber(preview.correction_points));
+    appendDetailValue(container, 'คะแนนรวมโดยประมาณ', formatNumber(preview.total_points), 'detail-value-reward');
+    if (preview.configured === false) container.append(emptyDetail('กติกาคะแนนหลักยังตั้งค่าไม่ครบ ระบบจะไม่อนุญาตให้ออกรางวัล'));
+}
+
+function renderResolutionActions(detail) {
+    const item = detail.case || {};
+    const terminal = ['RESOLVED', 'REJECTED_NOT_HAZARD', 'CANCELLED'].includes(item.status);
+    const evidence = Array.isArray(detail.evidence) ? detail.evidence : [];
+    const pendingAfter = evidence.filter((entry) => entry.evidence_kind === 'AFTER' && entry.review_status === 'PENDING');
+    const evidenceSelect = element('reviewEvidenceInput');
+    const selectedEvidence = evidenceSelect.value;
+    evidenceSelect.replaceChildren();
+    pendingAfter.forEach((entry, index) => {
+        const option = document.createElement('option');
+        option.value = entry.id;
+        option.textContent = `หลักฐาน After #${index + 1} · ${formatDateTime(entry.created_at)}`;
+        evidenceSelect.append(option);
+    });
+    if (pendingAfter.some((entry) => entry.id === selectedEvidence)) evidenceSelect.value = selectedEvidence;
+    if (!pendingAfter.length) {
+        const option = document.createElement('option');
+        option.value = '';
+        option.textContent = 'ไม่มีหลักฐาน After ที่รอตรวจ';
+        evidenceSelect.append(option);
+    }
+
+    const busy = state.resolutionBusy;
+    const canReview = !terminal && item.status === 'USER_EVIDENCE_SUBMITTED' && pendingAfter.length > 0;
+    const canComplete = !terminal && ['SAFETY_ACTION_IN_PROGRESS', 'ESCALATED_TO_SAFETY'].includes(item.status);
+    const canReward = !terminal && item.status === 'AWAITING_REWARD_CODE' && !detail.reward && detail.reward_preview?.configured !== false;
+    const canReject = !terminal && item.status === 'SAFETY_REVIEW_PENDING';
+    element('reviewEvidenceInput').disabled = busy || !canReview;
+    element('evidenceReviewNoteInput').disabled = busy || !canReview;
+    element('approveEvidenceButton').disabled = busy || !canReview;
+    element('reviseEvidenceButton').disabled = busy || !canReview;
+    element('completeSafetyActionButton').disabled = busy || !canComplete;
+    element('rewardCodeInput').disabled = busy || !canReward;
+    element('issueRewardButton').disabled = busy || !canReward;
+    element('notHazardReasonInput').disabled = busy || !canReject;
+    element('rejectNotHazardButton').disabled = busy || !canReject;
+    element('closeReasonInput').disabled = busy || terminal;
+    element('prepareCloseButton').disabled = busy || terminal;
+
+    const intent = state.closeIntent;
+    const intentActive = Boolean(intent?.intent_id) && new Date(intent.expires_at).getTime() > Date.now() && !terminal;
+    element('closeConfirmation').hidden = !intentActive;
+    if (intentActive) {
+        element('closeConfirmationReason').textContent = `ยืนยันยกเลิก ${item.case_number || 'เคสนี้'} · ${intent.reason_code || 'ไม่ระบุเหตุผล'}`;
+        element('closeConfirmationExpiry').textContent = `คำยืนยันหมดอายุ ${formatDateTime(intent.expires_at)}`;
+    } else if (state.closeIntent) {
+        state.closeIntent = null;
+        element('closeCaseNumberInput').value = '';
+    }
+    const typedCaseNumber = element('closeCaseNumberInput').value.trim();
+    element('closeCaseNumberInput').disabled = busy || !intentActive;
+    element('confirmCloseButton').disabled = busy || !intentActive || typedCaseNumber !== String(item.case_number || '');
+    renderRewardPreview(detail.reward_preview || null);
+}
+
 function renderInternalNotes(items) {
     const container = element('caseInternalNotes');
     container.replaceChildren();
@@ -543,15 +640,18 @@ async function reloadCurrentCaseDetail() {
 }
 
 async function performCaseAction(action, payload = {}, options = {}) {
-    if (state.actionBusy || !state.detailCaseId || !state.detailData?.case) return;
+    const resolution = Boolean(options.resolution);
+    if ((state.actionBusy || state.resolutionBusy) || !state.detailCaseId || !state.detailData?.case) return;
     if (options.confirmMessage && !window.confirm(options.confirmMessage)) return;
     const operationKey = `${state.detailCaseId}:${action}`;
     const idempotencyKey = state.pendingActionKeys.get(operationKey) || crypto.randomUUID();
     state.pendingActionKeys.set(operationKey, idempotencyKey);
-    setCaseActionBusy(true);
-    setCaseActionNotice();
+    const setBusy = resolution ? setResolutionBusy : setCaseActionBusy;
+    const setActionNotice = resolution ? setResolutionNotice : setCaseActionNotice;
+    setBusy(true);
+    setActionNotice();
     try {
-        await apiAction({
+        const response = await apiAction({
             case_id: state.detailCaseId,
             action,
             idempotency_key: idempotencyKey,
@@ -559,7 +659,8 @@ async function performCaseAction(action, payload = {}, options = {}) {
             payload,
         });
         state.pendingActionKeys.delete(operationKey);
-        setCaseActionNotice(options.successMessage || 'ดำเนินการสำเร็จ', 'action-notice-success');
+        if (typeof options.onSuccess === 'function') options.onSuccess(response.action || {});
+        setActionNotice(options.successMessage || 'ดำเนินการสำเร็จ', 'action-notice-success');
         if (action === 'ADD_NOTE') element('caseNoteInput').value = '';
         if (['REMIND_REPORTER', 'REQUEST_INFO', 'REQUEST_EVIDENCE', 'NOTIFY_TEAM'].includes(action)) element('caseMessageInput').value = '';
         await Promise.all([reloadCurrentCaseDetail(), loadCases(), loadSummary()]);
@@ -567,11 +668,14 @@ async function performCaseAction(action, payload = {}, options = {}) {
         if ([400, 404, 409].includes(error?.status)) state.pendingActionKeys.delete(operationKey);
         const conflict = error?.status === 409 ? 'ข้อมูลเคสเปลี่ยนไปแล้ว กรุณารีเฟรชรายละเอียดและลองอีกครั้ง' : '';
         const retry = error?.status === 502 || error?.name === 'AbortError' ? ' การกดคำสั่งเดิมอีกครั้งจะใช้รหัสเดิมและไม่ส่งซ้ำ' : '';
-        setCaseActionNotice(`${conflict || error?.message || 'ดำเนินการไม่สำเร็จ'}${retry}`, 'action-notice-error');
+        setActionNotice(`${conflict || error?.message || 'ดำเนินการไม่สำเร็จ'}${retry}`, 'action-notice-error');
         if ([401, 403].includes(error?.status)) handleRequestError(error);
     } finally {
-        setCaseActionBusy(false);
-        if (state.detailData) renderCaseActions(state.detailData);
+        setBusy(false);
+        if (state.detailData) {
+            renderCaseActions(state.detailData);
+            renderResolutionActions(state.detailData);
+        }
     }
 }
 
@@ -590,12 +694,14 @@ function renderCaseDetail(detail) {
     renderChat(Array.isArray(detail.chat_messages) ? detail.chat_messages : [], Array.isArray(detail.chat_sessions) ? detail.chat_sessions : []);
     renderTimeline(Array.isArray(detail.events) ? detail.events : []);
     renderCaseActions(detail);
+    renderResolutionActions(detail);
 }
 
 async function openCaseDetail(caseId, trigger = null) {
     if (!caseId || state.detailBusy) return;
     state.detailBusy = true;
     state.detailCaseId = caseId;
+    state.closeIntent = null;
     state.detailReturnFocus = trigger || document.activeElement;
     const overlay = element('caseDetailOverlay');
     overlay.hidden = false;
@@ -631,6 +737,7 @@ function closeCaseDetail() {
     document.body.classList.remove('detail-open');
     state.detailCaseId = '';
     state.detailData = null;
+    state.closeIntent = null;
     if (state.detailReturnFocus instanceof HTMLElement) state.detailReturnFocus.focus();
     state.detailReturnFocus = null;
 }
@@ -1153,6 +1260,96 @@ function bindEvents() {
     element('requestInfoButton').addEventListener('click', () => performCaseAction('REQUEST_INFO', { message: element('caseMessageInput').value }, { confirmMessage: 'ส่งคำขอข้อมูลเพิ่มเติมให้ผู้แจ้งผ่าน LINE ตอนนี้หรือไม่?', successMessage: 'ส่งคำขอข้อมูลเพิ่มเติมแล้ว' }));
     element('requestEvidenceButton').addEventListener('click', () => performCaseAction('REQUEST_EVIDENCE', { message: element('caseMessageInput').value }, { confirmMessage: 'ส่งคำขอหลักฐานเพิ่มเติมให้ผู้แจ้งผ่าน LINE ตอนนี้หรือไม่?', successMessage: 'ส่งคำขอหลักฐานเพิ่มเติมแล้ว' }));
     element('notifyTeamButton').addEventListener('click', () => performCaseAction('NOTIFY_TEAM', { message: element('caseMessageInput').value }, { confirmMessage: 'แจ้ง Safety Admin คนอื่นผ่าน LINE ตอนนี้หรือไม่?', successMessage: 'แจ้งทีม Safety แล้ว' }));
+    element('approveEvidenceButton').addEventListener('click', () => {
+        const evidenceId = element('reviewEvidenceInput').value;
+        if (!evidenceId) return setResolutionNotice('ไม่มีหลักฐาน After ที่รอตรวจ', 'action-notice-error');
+        performCaseAction('REVIEW_EVIDENCE', {
+            evidence_id: evidenceId,
+            decision: 'APPROVE',
+            note: element('evidenceReviewNoteInput').value.trim() || null,
+        }, {
+            resolution: true,
+            withStaleCheck: true,
+            confirmMessage: 'ยืนยันอนุมัติหลักฐาน After รายการนี้หรือไม่?',
+            successMessage: 'อนุมัติหลักฐานแล้ว',
+            onSuccess: () => { element('evidenceReviewNoteInput').value = ''; },
+        });
+    });
+    element('reviseEvidenceButton').addEventListener('click', () => {
+        const evidenceId = element('reviewEvidenceInput').value;
+        const note = element('evidenceReviewNoteInput').value.trim();
+        if (!evidenceId) return setResolutionNotice('ไม่มีหลักฐาน After ที่รอตรวจ', 'action-notice-error');
+        if (note.length < 3) return setResolutionNotice('กรุณาระบุเหตุผลที่ให้แก้ไขอย่างน้อย 3 ตัวอักษร', 'action-notice-error');
+        performCaseAction('REVIEW_EVIDENCE', { evidence_id: evidenceId, decision: 'REVISE', note }, {
+            resolution: true,
+            withStaleCheck: true,
+            confirmMessage: 'ส่งหลักฐานกลับให้ผู้แจ้งแก้ไขหรือไม่?',
+            successMessage: 'ส่งคำขอแก้ไขหลักฐานให้ผู้แจ้งแล้ว',
+            onSuccess: () => { element('evidenceReviewNoteInput').value = ''; },
+        });
+    });
+    element('completeSafetyActionButton').addEventListener('click', () => performCaseAction('COMPLETE_SAFETY_ACTION', {}, {
+        resolution: true,
+        withStaleCheck: true,
+        confirmMessage: 'ยืนยันว่าทีม Safety ดำเนินการเสร็จแล้วหรือไม่?',
+        successMessage: 'ยืนยันงาน Safety เสร็จแล้ว เคสเข้าสู่ขั้นตอนออกรางวัล',
+    }));
+    element('issueRewardButton').addEventListener('click', () => {
+        const rewardCode = element('rewardCodeInput').value.trim();
+        if (!/^[A-Za-z0-9][A-Za-z0-9_-]{2,49}$/.test(rewardCode)) {
+            return setResolutionNotice('รหัส Royal Point ต้องยาว 3–50 ตัว และใช้ตัวอักษร ตัวเลข _ หรือ - เท่านั้น', 'action-notice-error');
+        }
+        performCaseAction('ISSUE_REWARD', { reward_code: rewardCode }, {
+            resolution: true,
+            withStaleCheck: true,
+            confirmMessage: `ยืนยันออกรหัส ${rewardCode} และปิดเคสนี้หรือไม่?`,
+            successMessage: 'ออกรหัส Royal Point และปิดเคสสำเร็จ',
+            onSuccess: () => { element('rewardCodeInput').value = ''; },
+        });
+    });
+    element('rejectNotHazardButton').addEventListener('click', () => {
+        const reason = element('notHazardReasonInput').value.trim();
+        if (reason.length < 3) return setResolutionNotice('กรุณาระบุเหตุผลอย่างน้อย 3 ตัวอักษร', 'action-notice-error');
+        performCaseAction('REJECT_NOT_HAZARD', { reason }, {
+            resolution: true,
+            withStaleCheck: true,
+            confirmMessage: 'ยืนยันว่าเคสนี้ไม่เข้าข่ายเหตุอันตรายและปิดเคสหรือไม่?',
+            successMessage: 'ปิดเคสเป็นไม่เข้าข่ายเหตุอันตรายแล้ว',
+            onSuccess: () => { element('notHazardReasonInput').value = ''; },
+        });
+    });
+    element('prepareCloseButton').addEventListener('click', () => performCaseAction('CREATE_CLOSE_INTENT', {
+        reason_code: element('closeReasonInput').value,
+    }, {
+        resolution: true,
+        withStaleCheck: true,
+        confirmMessage: 'สร้างคำยืนยันยกเลิกเคสที่มีอายุสั้นหรือไม่? ขั้นตอนนี้ยังไม่ยกเลิกเคส',
+        successMessage: 'เตรียมคำยืนยันแล้ว กรุณาพิมพ์เลขเคสให้ตรงก่อนยืนยันขั้นสุดท้าย',
+        onSuccess: (result) => {
+            state.closeIntent = result.close_intent || null;
+            element('closeCaseNumberInput').value = '';
+        },
+    }));
+    element('closeCaseNumberInput').addEventListener('input', () => {
+        if (state.detailData) renderResolutionActions(state.detailData);
+    });
+    element('confirmCloseButton').addEventListener('click', () => {
+        const item = state.detailData?.case || {};
+        if (!state.closeIntent?.intent_id) return setResolutionNotice('คำยืนยันหมดอายุหรือไม่พร้อมใช้งาน กรุณาเตรียมใหม่', 'action-notice-error');
+        if (element('closeCaseNumberInput').value.trim() !== String(item.case_number || '')) {
+            return setResolutionNotice('เลขเคสที่พิมพ์ไม่ตรง กรุณาตรวจสอบอีกครั้ง', 'action-notice-error');
+        }
+        performCaseAction('CONFIRM_CLOSE', { intent_id: state.closeIntent.intent_id }, {
+            resolution: true,
+            withStaleCheck: true,
+            confirmMessage: `ยืนยันยกเลิก ${item.case_number} ถาวรหรือไม่?`,
+            successMessage: 'ยกเลิกเคสและหยุดงานอัตโนมัติที่เกี่ยวข้องแล้ว',
+            onSuccess: () => {
+                state.closeIntent = null;
+                element('closeCaseNumberInput').value = '';
+            },
+        });
+    });
     element('previousPage').addEventListener('click', () => { state.offset = Math.max(0, state.offset - PAGE_SIZE); loadCases().catch(handleRequestError); });
     element('nextPage').addEventListener('click', () => { state.offset += PAGE_SIZE; loadCases().catch(handleRequestError); });
     element('retryLoginButton').addEventListener('click', () => window.location.reload());
