@@ -15,7 +15,7 @@ for (const id of [
     'caseTableBody', 'caseCards', 'exportButton',
     'caseSearch', 'scopeFilter', 'assignmentFilter', 'slaFilter',
     'pathFilter', 'sortFilter', 'clearFilters', 'queueUpdated',
-    'queueOpen', 'queueMine', 'queueUnassigned', 'queueOverdue', 'queueHighRisk',
+    'queueAll', 'queueOpen', 'queueMine', 'queueUnassigned', 'queueOverdue', 'queueHighRisk',
     'automationHealthBadge', 'healthReminderDue', 'healthReminderFailed',
     'healthWebhookFailed', 'healthScheduler', 'automationHealthUpdated',
     'caseDetailOverlay', 'caseDetailPanel', 'closeCaseDetail',
@@ -119,6 +119,7 @@ for (const marker of [
     "setDashboardView(storedDashboardView())",
     "document.querySelectorAll('[data-dashboard-tab]')",
     "window.localStorage.setItem(DASHBOARD_VIEW_STORAGE_KEY",
+    "scope: 'ALL'",
     "rel = 'noopener noreferrer'",
     "referrerPolicy = 'no-referrer'",
 ]) {
@@ -147,6 +148,9 @@ for (const id of [
 }
 if (!html.includes('data-dashboard-tab="queue"') || !html.includes('data-dashboard-panel="queue"')) {
     throw new Error('Admin work queue workspace navigation is missing');
+}
+if (!html.includes('data-quick-filter="all"') || !html.includes('<option value="ALL">ทั้งหมด</option>')) {
+    throw new Error('Dashboard work queue does not default to the complete case history');
 }
 if (!html.includes('role="tablist"') || !html.includes('role="tabpanel"')) {
     throw new Error('Dashboard workspace navigation accessibility roles are missing');

@@ -81,12 +81,13 @@ const state = {
     rank: '',
     resolutionPath: '',
     search: '',
-    scope: 'OPEN',
+    scope: 'ALL',
     assignment: 'ALL',
     sla: 'ALL',
     sort: 'PRIORITY',
     offset: 0,
     total: 0,
+    allCaseTotal: null,
     busy: false,
     detailBusy: false,
     actionBusy: false,
@@ -1217,6 +1218,7 @@ function appendCell(row, value, className = '') {
 }
 
 function renderQueueMetrics(metrics) {
+    element('queueAll').textContent = state.allCaseTotal === null ? '—' : formatNumber(state.allCaseTotal);
     element('queueOpen').textContent = formatNumber(metrics?.open);
     element('queueMine').textContent = formatNumber(metrics?.mine);
     element('queueUnassigned').textContent = formatNumber(metrics?.unassigned);
@@ -1230,6 +1232,9 @@ function renderCases(items, pagination, metrics, generatedAt) {
     table.replaceChildren();
     cards.replaceChildren();
     state.total = Number(pagination?.total) || 0;
+    const hasNoSecondaryFilters = !state.search && state.assignment === 'ALL' && state.sla === 'ALL'
+        && !state.status && !state.rank && !state.resolutionPath;
+    if (state.scope === 'ALL' && hasNoSecondaryFilters) state.allCaseTotal = state.total;
     element('caseCount').textContent = `พบ ${formatNumber(state.total)} รายการ`;
     element('queueUpdated').textContent = `อัปเดต ${formatDateTime(generatedAt)}`;
     renderQueueMetrics(metrics);
@@ -1436,7 +1441,8 @@ function bindEvents() {
     const syncQuickFilter = () => {
         document.querySelectorAll('.queue-metric').forEach((button) => {
             const filter = button.dataset.quickFilter;
-            const active = (filter === 'open' && state.scope === 'OPEN' && state.assignment === 'ALL' && state.sla === 'ALL' && state.rank === '')
+            const active = (filter === 'all' && state.scope === 'ALL' && state.assignment === 'ALL' && state.sla === 'ALL' && state.rank === '' && state.status === '' && state.resolutionPath === '' && state.search === '')
+                || (filter === 'open' && state.scope === 'OPEN' && state.assignment === 'ALL' && state.sla === 'ALL' && state.rank === '')
                 || (filter === 'mine' && state.assignment === 'MINE')
                 || (filter === 'unassigned' && state.assignment === 'UNASSIGNED')
                 || (filter === 'overdue' && state.sla === 'OVERDUE')
@@ -1485,7 +1491,8 @@ function bindEvents() {
     element('sortFilter').addEventListener('change', (event) => { state.sort = event.target.value; refreshQueue(); });
     document.querySelectorAll('.queue-metric').forEach((button) => {
         button.addEventListener('click', () => {
-            state.scope = 'OPEN'; state.assignment = 'ALL'; state.sla = 'ALL'; state.rank = '';
+            state.scope = button.dataset.quickFilter === 'all' ? 'ALL' : 'OPEN';
+            state.assignment = 'ALL'; state.sla = 'ALL'; state.rank = ''; state.status = ''; state.resolutionPath = ''; state.search = '';
             if (button.dataset.quickFilter === 'mine') state.assignment = 'MINE';
             if (button.dataset.quickFilter === 'unassigned') state.assignment = 'UNASSIGNED';
             if (button.dataset.quickFilter === 'overdue') state.sla = 'OVERDUE';
@@ -1494,11 +1501,14 @@ function bindEvents() {
             element('assignmentFilter').value = state.assignment;
             element('slaFilter').value = state.sla;
             element('rankFilter').value = state.rank;
+            element('statusFilter').value = '';
+            element('pathFilter').value = '';
+            element('caseSearch').value = '';
             syncQuickFilter(); refreshQueue();
         });
     });
     element('clearFilters').addEventListener('click', () => {
-        Object.assign(state, { search: '', scope: 'OPEN', assignment: 'ALL', sla: 'ALL', status: '', rank: '', resolutionPath: '', sort: 'PRIORITY', offset: 0 });
+        Object.assign(state, { search: '', scope: 'ALL', assignment: 'ALL', sla: 'ALL', status: '', rank: '', resolutionPath: '', sort: 'PRIORITY', offset: 0 });
         element('caseSearch').value = '';
         element('scopeFilter').value = state.scope;
         element('assignmentFilter').value = state.assignment;

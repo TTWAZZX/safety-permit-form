@@ -233,8 +233,9 @@
                     <div class="queue-updated"><span class="status-dot"></span><span id="queueUpdated">ข้อมูลปัจจุบัน</span></div>
                 </div>
 
-                <div class="queue-metrics" aria-label="สรุปคิวงานปัจจุบัน">
-                    <button class="queue-metric is-active" type="button" data-quick-filter="open"><span>เคสเปิด</span><strong id="queueOpen">—</strong></button>
+                <div class="queue-metrics" aria-label="สรุปรายการ Safety Case">
+                    <button class="queue-metric is-active" type="button" data-quick-filter="all"><span>ทุกเคส</span><strong id="queueAll">—</strong></button>
+                    <button class="queue-metric" type="button" data-quick-filter="open"><span>เคสเปิด</span><strong id="queueOpen">—</strong></button>
                     <button class="queue-metric" type="button" data-quick-filter="mine"><span>งานของฉัน</span><strong id="queueMine">—</strong></button>
                     <button class="queue-metric" type="button" data-quick-filter="unassigned"><span>ยังไม่มีผู้รับ</span><strong id="queueUnassigned">—</strong></button>
                     <button class="queue-metric queue-metric-danger" type="button" data-quick-filter="overdue"><span>เกิน SLA</span><strong id="queueOverdue">—</strong></button>
@@ -246,7 +247,7 @@
                         <span>ค้นหาคิวงาน</span>
                         <input id="caseSearch" type="search" maxlength="80" autocomplete="off" placeholder="เลขเคส รายละเอียด หรือความเสี่ยง">
                     </label>
-                    <label class="field compact-field"><span>ขอบเขต</span><select id="scopeFilter"><option value="OPEN">เคสเปิด</option><option value="CLOSED">เคสปิดแล้ว</option><option value="ALL">ทั้งหมด</option></select></label>
+                    <label class="field compact-field"><span>ขอบเขต</span><select id="scopeFilter"><option value="ALL">ทั้งหมด</option><option value="OPEN">เคสเปิด</option><option value="CLOSED">เคสปิดแล้ว</option></select></label>
                     <label class="field compact-field"><span>ผู้รับผิดชอบ</span><select id="assignmentFilter"><option value="ALL">ทุกคน</option><option value="MINE">งานของฉัน</option><option value="UNASSIGNED">ยังไม่มีผู้รับ</option></select></label>
                     <label class="field compact-field"><span>SLA</span><select id="slaFilter"><option value="ALL">ทั้งหมด</option><option value="OVERDUE">เกินกำหนด</option><option value="DUE_SOON">ครบกำหนดใน 24 ชม.</option><option value="ON_TRACK">ยังไม่ใกล้กำหนด</option><option value="NO_DUE">ยังไม่มีกำหนด</option></select></label>
                     <label class="field compact-field"><span>สถานะ</span><select id="statusFilter"><option value="">ทุกสถานะ</option></select></label>
