@@ -25,26 +25,31 @@ for (const marker of [
     "apiRequest('summary')",
     "apiRequest('cases'",
     "apiRequest('export'",
+    "format: 'xlsx'",
     "cache: 'no-store'",
     'AbortController',
+    "view === 'export'",
     'textContent',
 ]) {
     if (!script.includes(marker)) throw new Error(`Dashboard script is missing: ${marker}`);
 }
 
-if (!config.includes("liffId: 'REPLACE_WITH_NEW_LIFF_ID'")) {
-    throw new Error('Dedicated LIFF ID placeholder is missing');
+if (!config.includes("liffId: '2007053300-FmMHHcD7'")) {
+    throw new Error('Dedicated Safety Dashboard LIFF ID is missing');
 }
 if (!config.includes('/functions/v1/safety-admin-dashboard')) {
     throw new Error('Dashboard backend endpoint is missing');
+}
+if (!config.includes('exportTimeoutMs: 30000')) {
+    throw new Error('XLSX export timeout is not configured');
 }
 if (/service[_-]?role|db[_-]?password|channel[_-]?secret/i.test(config)) {
     throw new Error('Public dashboard config appears to contain a secret field');
 }
 if (!html.includes("default-src 'self'")) throw new Error('Dashboard CSP is missing');
 if (/\.innerHTML\s*=/.test(script)) throw new Error('Dashboard must not render API data with innerHTML');
-if (!portal.includes('href="safety-dashboard.html"')) throw new Error('Admin Portal is missing the Dashboard entry');
+if (!portal.includes('href="https://liff.line.me/2007053300-FmMHHcD7"')) throw new Error('Admin Portal is missing the LIFF Dashboard entry');
 
 console.log('PASS Safety Dashboard LIFF authentication and admin-only backend contract');
-console.log('PASS monthly/yearly metrics, filtering, pagination, and CSV export UI contract');
+console.log('PASS monthly/yearly metrics, filtering, pagination, and XLSX export UI contract');
 console.log('PASS public frontend contains no privileged backend credentials');

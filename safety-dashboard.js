@@ -125,7 +125,10 @@ async function apiRequest(view, extra = {}) {
         if (value !== '' && value !== null && value !== undefined) params.set(key, String(value));
     }
     const controller = new AbortController();
-    const timeout = window.setTimeout(() => controller.abort(), Number(config.requestTimeoutMs) || 12000);
+    const timeoutMs = view === 'export'
+        ? Number(config.exportTimeoutMs) || 30000
+        : Number(config.requestTimeoutMs) || 12000;
+    const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
     try {
         const response = await fetch(`${config.apiUrl}?${params}`, {
             method: 'GET',
@@ -349,10 +352,12 @@ async function exportCases() {
     setBusy(true);
     setNotice();
     try {
-        const response = await apiRequest('export', { status: state.status, rank: state.rank });
+        const response = await apiRequest('export', {
+            status: state.status, rank: state.rank, format: 'xlsx',
+        });
         const blob = await response.blob();
         const disposition = response.headers.get('content-disposition') || '';
-        const filename = disposition.match(/filename="([^"]+)"/)?.[1] || 'safety-cases.csv';
+        const filename = disposition.match(/filename="([^"]+)"/)?.[1] || 'safety-cases.xlsx';
         const objectUrl = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = objectUrl;
