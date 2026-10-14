@@ -228,6 +228,7 @@
 
                 <nav id="detailNavigation" class="detail-navigation" aria-label="ส่วนต่าง ๆ ของรายละเอียดเคส" hidden>
                     <a href="#detailOverview">ภาพรวม</a>
+                    <a href="#detailActionsSection">จัดการเคส</a>
                     <a href="#detailEvidenceSection">หลักฐาน</a>
                     <a href="#detailChatSection">การสนทนา</a>
                     <a href="#detailTimelineSection">Timeline</a>
@@ -244,6 +245,47 @@
                     <section id="detailOverview" class="detail-section">
                         <div class="detail-section-heading"><div><p class="eyebrow">OVERVIEW</p><h3>ภาพรวมและ SLA</h3></div></div>
                         <div id="detailSummaryGrid" class="detail-summary-grid"></div>
+                    </section>
+
+                    <section id="detailActionsSection" class="detail-section case-actions-section">
+                        <div class="detail-section-heading">
+                            <div><p class="eyebrow">CASE ACTIONS</p><h3>จัดการเคส</h3><p class="panel-subtitle">ทุกคำสั่งยืนยันสิทธิ์ บันทึก Audit และป้องกันการกดซ้ำ</p></div>
+                            <span id="caseActionState" class="detail-count" role="status" aria-live="polite">พร้อมทำงาน</span>
+                        </div>
+                        <div id="caseActionNotice" class="action-notice" role="alert" hidden></div>
+                        <div class="action-grid">
+                            <article class="action-card">
+                                <h4>ผู้รับผิดชอบและระดับความเสี่ยง</h4>
+                                <button id="claimCaseButton" class="button button-primary" type="button">รับเคสนี้</button>
+                                <label class="field"><span>ยืนยันระดับความเสี่ยง</span><select id="caseRankInput"><option value="HIGH">สูง</option><option value="MEDIUM">กลาง</option><option value="LOW">ต่ำ</option></select></label>
+                                <button id="saveCaseRankButton" class="button button-ghost" type="button">บันทึกระดับ</button>
+                            </article>
+                            <article class="action-card">
+                                <h4>SLA และป้ายกำกับ</h4>
+                                <label class="field"><span>กำหนดส่งหลักฐาน</span><input id="caseDueInput" type="datetime-local"></label>
+                                <div class="action-row"><button id="saveCaseDueButton" class="button button-primary" type="button">บันทึกกำหนด</button><button id="clearCaseDueButton" class="button button-ghost" type="button">ล้างกำหนด</button></div>
+                                <label class="field"><span>Tags (คั่นด้วย comma สูงสุด 10)</span><input id="caseTagsInput" type="text" maxlength="320" placeholder="เช่น โรงงาน1, เร่งด่วน"></label>
+                                <button id="saveCaseTagsButton" class="button button-ghost" type="button">บันทึก Tags</button>
+                            </article>
+                            <article class="action-card action-card-wide">
+                                <h4>บันทึกภายใน</h4>
+                                <label class="field"><span>เห็นเฉพาะ Safety Admin</span><textarea id="caseNoteInput" maxlength="2000" rows="3" placeholder="บันทึกผลการติดตามหรือข้อมูลสำหรับส่งต่องาน"></textarea></label>
+                                <button id="addCaseNoteButton" class="button button-primary" type="button">เพิ่มบันทึก</button>
+                                <div id="caseInternalNotes" class="detail-list action-history"></div>
+                            </article>
+                            <article class="action-card action-card-wide action-notification-card">
+                                <h4>ข้อความและการแจ้งเตือนผ่าน LINE</h4>
+                                <label class="field"><span>ข้อความเพิ่มเติม (ไม่บังคับ)</span><textarea id="caseMessageInput" maxlength="500" rows="3" placeholder="ระบบจะเติมเลขเคสและข้อความหลักให้อัตโนมัติ"></textarea></label>
+                                <div class="action-button-grid">
+                                    <button id="remindReporterButton" class="button button-ghost" type="button">เตือนผู้แจ้ง</button>
+                                    <button id="requestInfoButton" class="button button-ghost" type="button">ขอข้อมูลเพิ่ม</button>
+                                    <button id="requestEvidenceButton" class="button button-ghost" type="button">ขอหลักฐานเพิ่ม</button>
+                                    <button id="notifyTeamButton" class="button button-primary" type="button">แจ้งทีม Safety</button>
+                                </div>
+                                <p class="action-hint">ระบบไม่ retry อัตโนมัติจากหน้าเว็บ หาก LINE ล้มเหลวให้กดคำสั่งเดิมอีกครั้ง ระบบจะใช้ idempotency key เดิม</p>
+                                <div id="caseActionDeliveries" class="detail-list action-history"></div>
+                            </article>
+                        </div>
                     </section>
 
                     <div class="detail-two-column">

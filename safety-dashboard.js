@@ -44,6 +44,15 @@ const EVENT_LABELS = Object.freeze({
     CASE_CHAT_REQUESTED: 'ผู้แจ้งขอสนทนากับ Safety',
     CASE_CHAT_ACCEPTED: 'แอดมินรับการสนทนา',
     CASE_CHAT_CLOSED: 'ปิดการสนทนา',
+    DASHBOARD_CLAIM: 'รับผิดชอบเคสผ่าน Dashboard',
+    DASHBOARD_SET_RANK: 'ยืนยันระดับความเสี่ยง',
+    DASHBOARD_SET_DUE: 'กำหนด SLA หลักฐาน',
+    DASHBOARD_ADD_NOTE: 'เพิ่มบันทึกภายใน',
+    DASHBOARD_SET_TAGS: 'ปรับ Tags ของเคส',
+    DASHBOARD_REMIND_REPORTER: 'แจ้งเตือนผู้แจ้งจาก Dashboard',
+    DASHBOARD_REQUEST_INFO: 'ขอข้อมูลเพิ่มเติมจากผู้แจ้ง',
+    DASHBOARD_REQUEST_EVIDENCE: 'ขอหลักฐานเพิ่มเติมจากผู้แจ้ง',
+    DASHBOARD_NOTIFY_TEAM: 'แจ้งทีม Safety จาก Dashboard',
 });
 const MONTHS = Object.freeze(['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม']);
 const PAGE_SIZE = 20;
@@ -65,8 +74,11 @@ const state = {
     total: 0,
     busy: false,
     detailBusy: false,
+    actionBusy: false,
     detailCaseId: '',
+    detailData: null,
     detailReturnFocus: null,
+    pendingActionKeys: new Map(),
 };
 
 const element = (id) => document.getElementById(id);
@@ -425,13 +437,151 @@ function renderTimeline(items) {
     });
 }
 
+function toLocalDateTimeInput(value) {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    const bangkok = new Date(date.getTime() + (7 * 60 * 60 * 1000));
+    return bangkok.toISOString().slice(0, 16);
+}
+
+function setCaseActionNotice(message = '', tone = '') {
+    const notice = element('caseActionNotice');
+    notice.textContent = message;
+    notice.className = `action-notice ${tone}`.trim();
+    notice.hidden = !message;
+}
+
+function setCaseActionBusy(busy) {
+    state.actionBusy = busy;
+    element('caseActionState').textContent = busy ? 'กำลังดำเนินการ…' : 'พร้อมทำงาน';
+    [
+        'claimCaseButton', 'caseRankInput', 'saveCaseRankButton', 'caseDueInput',
+        'saveCaseDueButton', 'clearCaseDueButton', 'caseTagsInput', 'saveCaseTagsButton',
+        'caseNoteInput', 'addCaseNoteButton', 'caseMessageInput', 'remindReporterButton',
+        'requestInfoButton', 'requestEvidenceButton', 'notifyTeamButton',
+    ].forEach((id) => { element(id).disabled = busy; });
+}
+
+function renderInternalNotes(items) {
+    const container = element('caseInternalNotes');
+    container.replaceChildren();
+    if (!items.length) {
+        container.append(emptyDetail('ยังไม่มีบันทึกภายใน'));
+        return;
+    }
+    items.forEach((item) => {
+        const row = document.createElement('article');
+        row.className = 'detail-list-row';
+        const body = document.createElement('div');
+        const title = document.createElement('strong');
+        title.textContent = item.is_current_admin ? 'ฉัน' : `Safety Admin …${item.author_admin_suffix || ''}`;
+        const note = document.createElement('span');
+        note.textContent = item.note || '—';
+        const time = document.createElement('span');
+        time.textContent = formatDateTime(item.created_at);
+        body.append(title, note, time);
+        row.append(body);
+        container.append(row);
+    });
+}
+
+function renderActionDeliveries(items) {
+    const container = element('caseActionDeliveries');
+    container.replaceChildren();
+    if (!items.length) {
+        container.append(emptyDetail('ยังไม่มีประวัติการส่งข้อความจาก Dashboard'));
+        return;
+    }
+    items.forEach((item) => {
+        const row = document.createElement('article');
+        row.className = 'detail-list-row';
+        const body = document.createElement('div');
+        const title = document.createElement('strong');
+        title.textContent = EVENT_LABELS[`DASHBOARD_${item.action}`] || item.action;
+        const meta = document.createElement('span');
+        meta.textContent = `${formatDateTime(item.created_at)} · พยายาม ${formatNumber(item.attempts)} ครั้ง`;
+        body.append(title, meta);
+        if (item.message) {
+            const message = document.createElement('span');
+            message.textContent = compact(item.message, 500);
+            body.append(message);
+        }
+        row.append(body, makeBadge(item.status || 'UNKNOWN', reminderTone(item.status === 'COMPLETED' ? 'SENT' : item.status)));
+        if (item.error_detail) {
+            const error = document.createElement('p');
+            error.className = 'detail-inline-error';
+            error.textContent = compact(item.error_detail, 300);
+            row.append(error);
+        }
+        container.append(row);
+    });
+}
+
+function renderCaseActions(detail) {
+    const item = detail.case || {};
+    const terminal = ['RESOLVED', 'REJECTED_NOT_HAZARD', 'CANCELLED'].includes(item.status);
+    element('claimCaseButton').disabled = state.actionBusy || terminal || item.is_mine || Boolean(item.assigned_admin_suffix);
+    element('claimCaseButton').textContent = item.is_mine ? 'ฉันรับเคสนี้แล้ว' : item.assigned_admin_suffix ? `มีผู้รับแล้ว …${item.assigned_admin_suffix}` : terminal ? 'เคสปิดแล้ว' : 'รับเคสนี้';
+    element('caseRankInput').value = ['HIGH', 'MEDIUM', 'LOW'].includes(item.confirmed_rank) ? item.confirmed_rank : (['HIGH', 'MEDIUM', 'LOW'].includes(item.reported_rank) ? item.reported_rank : 'MEDIUM');
+    element('caseDueInput').value = toLocalDateTimeInput(item.evidence_due_at);
+    element('caseTagsInput').value = Array.isArray(item.tags) ? item.tags.join(', ') : '';
+    ['caseRankInput', 'saveCaseRankButton', 'caseDueInput', 'saveCaseDueButton', 'clearCaseDueButton', 'remindReporterButton', 'requestInfoButton', 'requestEvidenceButton', 'notifyTeamButton']
+        .forEach((id) => { element(id).disabled = state.actionBusy || terminal; });
+    element('remindReporterButton').disabled = state.actionBusy || terminal || item.status !== 'WAIT_CORRECTIVE_EVIDENCE';
+    renderInternalNotes(Array.isArray(detail.internal_notes) ? detail.internal_notes : []);
+    renderActionDeliveries(Array.isArray(detail.action_deliveries) ? detail.action_deliveries : []);
+}
+
+async function reloadCurrentCaseDetail() {
+    const caseId = state.detailCaseId;
+    if (!caseId) return;
+    const response = await apiRequest('detail', { case_id: caseId });
+    const payload = await response.json();
+    state.detailData = payload.detail || {};
+    renderCaseDetail(state.detailData);
+}
+
+async function performCaseAction(action, payload = {}, options = {}) {
+    if (state.actionBusy || !state.detailCaseId || !state.detailData?.case) return;
+    if (options.confirmMessage && !window.confirm(options.confirmMessage)) return;
+    const operationKey = `${state.detailCaseId}:${action}`;
+    const idempotencyKey = state.pendingActionKeys.get(operationKey) || crypto.randomUUID();
+    state.pendingActionKeys.set(operationKey, idempotencyKey);
+    setCaseActionBusy(true);
+    setCaseActionNotice();
+    try {
+        await apiAction({
+            case_id: state.detailCaseId,
+            action,
+            idempotency_key: idempotencyKey,
+            expected_updated_at: options.withStaleCheck ? state.detailData.case.updated_at : null,
+            payload,
+        });
+        state.pendingActionKeys.delete(operationKey);
+        setCaseActionNotice(options.successMessage || 'ดำเนินการสำเร็จ', 'action-notice-success');
+        if (action === 'ADD_NOTE') element('caseNoteInput').value = '';
+        if (['REMIND_REPORTER', 'REQUEST_INFO', 'REQUEST_EVIDENCE', 'NOTIFY_TEAM'].includes(action)) element('caseMessageInput').value = '';
+        await Promise.all([reloadCurrentCaseDetail(), loadCases(), loadSummary()]);
+    } catch (error) {
+        if ([400, 404, 409].includes(error?.status)) state.pendingActionKeys.delete(operationKey);
+        const conflict = error?.status === 409 ? 'ข้อมูลเคสเปลี่ยนไปแล้ว กรุณารีเฟรชรายละเอียดและลองอีกครั้ง' : '';
+        const retry = error?.status === 502 || error?.name === 'AbortError' ? ' การกดคำสั่งเดิมอีกครั้งจะใช้รหัสเดิมและไม่ส่งซ้ำ' : '';
+        setCaseActionNotice(`${conflict || error?.message || 'ดำเนินการไม่สำเร็จ'}${retry}`, 'action-notice-error');
+        if ([401, 403].includes(error?.status)) handleRequestError(error);
+    } finally {
+        setCaseActionBusy(false);
+        if (state.detailData) renderCaseActions(state.detailData);
+    }
+}
+
 function renderCaseDetail(detail) {
     const item = detail.case || {};
     element('detailCaseNumber').textContent = item.case_number || 'รายละเอียด Safety Case';
     const status = element('detailStatus');
     status.className = `badge ${statusTone(item.status)}`;
     status.textContent = STATUS_LABELS[item.status] || item.status || 'ไม่ทราบสถานะ';
-    element('detailUpdated').textContent = `ข้อมูล ณ ${formatDateTime(detail.generated_at)} · อ่านอย่างเดียว`;
+    element('detailUpdated').textContent = `ข้อมูล ณ ${formatDateTime(detail.generated_at)} · ทุก Action มี Audit Log`;
     renderDetailSummary(detail);
     renderDetailOverview(detail);
     renderEvidence(Array.isArray(detail.evidence) ? detail.evidence : []);
@@ -439,6 +589,7 @@ function renderCaseDetail(detail) {
     renderReward(detail.reward || null);
     renderChat(Array.isArray(detail.chat_messages) ? detail.chat_messages : [], Array.isArray(detail.chat_sessions) ? detail.chat_sessions : []);
     renderTimeline(Array.isArray(detail.events) ? detail.events : []);
+    renderCaseActions(detail);
 }
 
 async function openCaseDetail(caseId, trigger = null) {
@@ -458,7 +609,8 @@ async function openCaseDetail(caseId, trigger = null) {
     try {
         const response = await apiRequest('detail', { case_id: caseId });
         const payload = await response.json();
-        renderCaseDetail(payload.detail || {});
+        state.detailData = payload.detail || {};
+        renderCaseDetail(state.detailData);
         element('detailLoading').hidden = true;
         element('detailContent').hidden = false;
         element('detailNavigation').hidden = false;
@@ -478,6 +630,7 @@ function closeCaseDetail() {
     element('caseDetailOverlay').hidden = true;
     document.body.classList.remove('detail-open');
     state.detailCaseId = '';
+    state.detailData = null;
     if (state.detailReturnFocus instanceof HTMLElement) state.detailReturnFocus.focus();
     state.detailReturnFocus = null;
 }
@@ -513,6 +666,35 @@ async function apiRequest(view, extra = {}) {
             throw error;
         }
         return response;
+    } finally {
+        window.clearTimeout(timeout);
+    }
+}
+
+async function apiAction(body) {
+    const params = new URLSearchParams({ view: 'action' });
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), Number(config.actionTimeoutMs) || 35000);
+    try {
+        const response = await fetch(`${config.apiUrl}?${params}`, {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${state.token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(body),
+            cache: 'no-store',
+            signal: controller.signal,
+        });
+        let payload = {};
+        try { payload = await response.json(); } catch (_) { /* no response body */ }
+        if (!response.ok) {
+            const error = new Error(String(payload.error || `Action failed (${response.status})`));
+            error.status = response.status;
+            error.retryable = Boolean(payload.retryable);
+            throw error;
+        }
+        return payload;
     } finally {
         window.clearTimeout(timeout);
     }
@@ -946,6 +1128,31 @@ function bindEvents() {
     });
     element('refreshButton').addEventListener('click', loadDashboard);
     element('exportButton').addEventListener('click', exportCases);
+    element('claimCaseButton').addEventListener('click', () => performCaseAction('CLAIM', {}, { withStaleCheck: true, successMessage: 'รับผิดชอบเคสแล้ว' }));
+    element('saveCaseRankButton').addEventListener('click', () => performCaseAction('SET_RANK', { rank: element('caseRankInput').value }, { withStaleCheck: true, successMessage: 'บันทึกระดับความเสี่ยงแล้ว' }));
+    element('saveCaseDueButton').addEventListener('click', () => {
+        const value = element('caseDueInput').value;
+        if (!value) {
+            setCaseActionNotice('กรุณาเลือกวันและเวลาก่อนบันทึก', 'action-notice-error');
+            return;
+        }
+        const date = new Date(`${value}:00+07:00`);
+        if (Number.isNaN(date.getTime())) {
+            setCaseActionNotice('วันและเวลาไม่ถูกต้อง', 'action-notice-error');
+            return;
+        }
+        performCaseAction('SET_DUE', { due_at: date.toISOString() }, { withStaleCheck: true, successMessage: 'บันทึกกำหนดส่งหลักฐานแล้ว' });
+    });
+    element('clearCaseDueButton').addEventListener('click', () => performCaseAction('SET_DUE', { due_at: null }, { withStaleCheck: true, successMessage: 'ล้างกำหนดส่งหลักฐานแล้ว' }));
+    element('saveCaseTagsButton').addEventListener('click', () => {
+        const tags = [...new Set(element('caseTagsInput').value.split(',').map((tag) => tag.trim()).filter(Boolean))];
+        performCaseAction('SET_TAGS', { tags }, { withStaleCheck: true, successMessage: 'บันทึก Tags แล้ว' });
+    });
+    element('addCaseNoteButton').addEventListener('click', () => performCaseAction('ADD_NOTE', { note: element('caseNoteInput').value }, { successMessage: 'เพิ่มบันทึกภายในแล้ว' }));
+    element('remindReporterButton').addEventListener('click', () => performCaseAction('REMIND_REPORTER', { message: element('caseMessageInput').value }, { confirmMessage: 'ส่งข้อความเตือนผู้แจ้งผ่าน LINE ตอนนี้หรือไม่?', successMessage: 'ส่งข้อความเตือนผู้แจ้งแล้ว' }));
+    element('requestInfoButton').addEventListener('click', () => performCaseAction('REQUEST_INFO', { message: element('caseMessageInput').value }, { confirmMessage: 'ส่งคำขอข้อมูลเพิ่มเติมให้ผู้แจ้งผ่าน LINE ตอนนี้หรือไม่?', successMessage: 'ส่งคำขอข้อมูลเพิ่มเติมแล้ว' }));
+    element('requestEvidenceButton').addEventListener('click', () => performCaseAction('REQUEST_EVIDENCE', { message: element('caseMessageInput').value }, { confirmMessage: 'ส่งคำขอหลักฐานเพิ่มเติมให้ผู้แจ้งผ่าน LINE ตอนนี้หรือไม่?', successMessage: 'ส่งคำขอหลักฐานเพิ่มเติมแล้ว' }));
+    element('notifyTeamButton').addEventListener('click', () => performCaseAction('NOTIFY_TEAM', { message: element('caseMessageInput').value }, { confirmMessage: 'แจ้ง Safety Admin คนอื่นผ่าน LINE ตอนนี้หรือไม่?', successMessage: 'แจ้งทีม Safety แล้ว' }));
     element('previousPage').addEventListener('click', () => { state.offset = Math.max(0, state.offset - PAGE_SIZE); loadCases().catch(handleRequestError); });
     element('nextPage').addEventListener('click', () => { state.offset += PAGE_SIZE; loadCases().catch(handleRequestError); });
     element('retryLoginButton').addEventListener('click', () => window.location.reload());
