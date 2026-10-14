@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0b3b2e">
+    <meta name="referrer" content="no-referrer">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://static.line-scdn.net; style-src 'self'; connect-src 'self' https://api.line.me https://dqsfioiqwxuxpucwwhsv.supabase.co; img-src 'self' data: https:; font-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'self' https://access.line.me">
+    <title>Safety Case Dashboard | TSH Safety</title>
+    <link rel="stylesheet" href="safety-dashboard.css">
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js" defer></script>
+    <script src="safety-dashboard-config.js" defer></script>
+    <script src="safety-dashboard.js" defer></script>
+</head>
+<body>
+    <a class="skip-link" href="#dashboardContent">ข้ามไปยังเนื้อหาหลัก</a>
+
+    <div id="appLoading" class="app-gate" role="status" aria-live="polite">
+        <div class="gate-card">
+            <div class="loader" aria-hidden="true"></div>
+            <p class="eyebrow">TSH SAFETY</p>
+            <h1>กำลังตรวจสอบสิทธิ์</h1>
+            <p>เชื่อมต่อ LINE และระบบรายงานอย่างปลอดภัย…</p>
+        </div>
+    </div>
+
+    <div id="appError" class="app-gate" hidden>
+        <div class="gate-card gate-card-error">
+            <div class="gate-icon" aria-hidden="true">!</div>
+            <p class="eyebrow">SAFETY DASHBOARD</p>
+            <h1 id="gateErrorTitle">ไม่สามารถเปิด Dashboard ได้</h1>
+            <p id="gateErrorMessage">กรุณาลองใหม่อีกครั้ง</p>
+            <div class="gate-actions">
+                <button id="retryLoginButton" class="button button-primary" type="button">ลองอีกครั้ง</button>
+                <a class="button button-ghost" href="admin-portal.html">กลับ Admin Portal</a>
+            </div>
+        </div>
+    </div>
+
+    <div id="appShell" class="app-shell" hidden>
+        <header class="topbar">
+            <div class="topbar-inner">
+                <a class="brand" href="admin-portal.html" aria-label="กลับหน้า TSH Safety Admin Portal">
+                    <span class="brand-mark" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" role="img"><path d="M12 2 4.5 5v5.8c0 5.1 3.2 9.4 7.5 11.2 4.3-1.8 7.5-6.1 7.5-11.2V5L12 2Zm3.3 7.6-4.1 4.8a1 1 0 0 1-1.5.1l-2.2-2.1 1.4-1.4 1.4 1.3 3.5-4.1 1.5 1.4Z"/></svg>
+                    </span>
+                    <span>
+                        <strong>Safety Case</strong>
+                        <small>Operations Dashboard</small>
+                    </span>
+                </a>
+                <div class="admin-chip">
+                    <span class="admin-avatar" id="adminAvatar" aria-hidden="true">A</span>
+                    <span>
+                        <small>ผู้ดูแลระบบ</small>
+                        <strong id="adminName">Safety Admin</strong>
+                    </span>
+                </div>
+            </div>
+        </header>
+
+        <main id="dashboardContent" class="dashboard-container">
+            <section class="hero" aria-labelledby="dashboardTitle">
+                <div>
+                    <p class="eyebrow">SAFETY PERFORMANCE</p>
+                    <h1 id="dashboardTitle">ภาพรวม Safety Case</h1>
+                    <p id="periodDescription" class="hero-copy">ติดตามสถานะและผลการดำเนินงานของทีม Safety</p>
+                </div>
+                <div class="hero-actions">
+                    <button id="refreshButton" class="button button-ghost button-icon" type="button">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.7 6.3A8 8 0 1 0 20 12h-2a6 6 0 1 1-1.8-4.3L13 11h8V3l-3.3 3.3Z"/></svg>
+                        รีเฟรช
+                    </button>
+                    <button id="exportButton" class="button button-primary button-icon" type="button">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 3h2v10l3.5-3.5 1.4 1.4-5.9 5.9-5.9-5.9 1.4-1.4L11 13V3Zm-6 15h14v3H5v-3Z"/></svg>
+                        ดาวน์โหลด Excel (CSV)
+                    </button>
+                </div>
+            </section>
+
+            <section class="control-panel" aria-label="เลือกช่วงเวลารายงาน">
+                <div class="segmented-control" role="group" aria-label="ประเภทรายงาน">
+                    <button class="period-button is-active" type="button" data-period="month" aria-pressed="true">รายเดือน</button>
+                    <button class="period-button" type="button" data-period="year" aria-pressed="false">รายปี</button>
+                </div>
+                <label class="field">
+                    <span>ปี</span>
+                    <select id="yearSelect" aria-label="เลือกปี"></select>
+                </label>
+                <label id="monthField" class="field">
+                    <span>เดือน</span>
+                    <select id="monthSelect" aria-label="เลือกเดือน"></select>
+                </label>
+                <div class="sync-status" aria-live="polite">
+                    <span class="status-dot"></span>
+                    <span id="lastUpdated">รอข้อมูลล่าสุด</span>
+                </div>
+            </section>
+
+            <div id="pageNotice" class="notice" role="alert" hidden></div>
+
+            <section class="metrics-grid" aria-label="ตัวชี้วัดสำคัญ">
+                <article class="metric-card metric-total">
+                    <div class="metric-icon" aria-hidden="true">Σ</div>
+                    <div><span>เคสในช่วงเวลา</span><strong id="metricTotal">—</strong><small>รายการทั้งหมด</small></div>
+                </article>
+                <article class="metric-card metric-open">
+                    <div class="metric-icon" aria-hidden="true">●</div>
+                    <div><span>เคสเปิดค้าง</span><strong id="metricOpen">—</strong><small id="metricOpenContext">ในช่วงเวลาที่เลือก</small></div>
+                </article>
+                <article class="metric-card metric-resolved">
+                    <div class="metric-icon" aria-hidden="true">✓</div>
+                    <div><span>ปิดสำเร็จ</span><strong id="metricResolved">—</strong><small id="metricResolutionRate">อัตราปิด —</small></div>
+                </article>
+                <article class="metric-card metric-overdue">
+                    <div class="metric-icon" aria-hidden="true">!</div>
+                    <div><span>เกินกำหนดปัจจุบัน</span><strong id="metricOverdue">—</strong><small>ควรติดตามทันที</small></div>
+                </article>
+                <article class="metric-card metric-time">
+                    <div class="metric-icon" aria-hidden="true">◷</div>
+                    <div><span>เวลาปิดเฉลี่ย</span><strong id="metricAverageClose">—</strong><small>ชั่วโมงต่อเคส</small></div>
+                </article>
+            </section>
+
+            <section class="insight-grid">
+                <article class="panel trend-panel">
+                    <div class="panel-heading">
+                        <div><p class="eyebrow">CASE TREND</p><h2>แนวโน้มการแจ้งและปิดเคส</h2></div>
+                        <div class="legend" aria-label="คำอธิบายกราฟ"><span><i class="legend-total"></i>แจ้งใหม่</span><span><i class="legend-resolved"></i>ปิดสำเร็จ</span></div>
+                    </div>
+                    <div id="trendChart" class="trend-chart" role="img" aria-label="กราฟแนวโน้มจำนวน Safety Case"></div>
+                </article>
+
+                <article class="panel breakdown-panel">
+                    <div class="panel-heading"><div><p class="eyebrow">LIVE STATUS</p><h2>สถานะเคส</h2></div></div>
+                    <div id="statusBreakdown" class="breakdown-list"></div>
+                </article>
+            </section>
+
+            <section class="insight-grid insight-grid-small">
+                <article class="panel">
+                    <div class="panel-heading"><div><p class="eyebrow">RISK PROFILE</p><h2>ระดับความเสี่ยง</h2></div></div>
+                    <div id="rankBreakdown" class="breakdown-list"></div>
+                </article>
+                <article class="panel">
+                    <div class="panel-heading"><div><p class="eyebrow">RESOLUTION</p><h2>แนวทางดำเนินการ</h2></div></div>
+                    <div id="pathBreakdown" class="breakdown-list"></div>
+                </article>
+            </section>
+
+            <section class="panel cases-panel" aria-labelledby="caseListTitle">
+                <div class="panel-heading cases-heading">
+                    <div><p class="eyebrow">CASE REGISTER</p><h2 id="caseListTitle">รายการ Safety Case</h2><p id="caseCount" class="panel-subtitle">กำลังโหลดรายการ…</p></div>
+                    <div class="case-filters">
+                        <label class="field compact-field"><span>สถานะ</span><select id="statusFilter"><option value="">ทุกสถานะ</option></select></label>
+                        <label class="field compact-field"><span>ระดับ</span><select id="rankFilter"><option value="">ทุกระดับ</option><option value="HIGH">สูง</option><option value="MEDIUM">กลาง</option><option value="LOW">ต่ำ</option><option value="UNSPECIFIED">ไม่ระบุ</option></select></label>
+                    </div>
+                </div>
+
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr><th>เลขที่เคส</th><th>วันที่แจ้ง</th><th>สถานะ</th><th>ระดับ</th><th>รายละเอียด</th><th>ผู้รับเคส</th></tr></thead>
+                        <tbody id="caseTableBody"></tbody>
+                    </table>
+                </div>
+                <div id="caseCards" class="case-cards"></div>
+                <div id="emptyCases" class="empty-state" hidden><div aria-hidden="true">✓</div><strong>ไม่พบรายการในช่วงที่เลือก</strong><span>ลองเปลี่ยนเดือน ปี หรือตัวกรอง</span></div>
+                <nav class="pagination" aria-label="แบ่งหน้ารายการเคส">
+                    <button id="previousPage" class="button button-ghost" type="button">ก่อนหน้า</button>
+                    <span id="pageLabel">หน้า 1</span>
+                    <button id="nextPage" class="button button-ghost" type="button">ถัดไป</button>
+                </nav>
+            </section>
+        </main>
+
+        <footer class="footer">
+            <span>TSH Safety Management System</span>
+            <span>ข้อมูลสำหรับผู้ดูแลที่ได้รับอนุญาตเท่านั้น</span>
+        </footer>
+    </div>
+</body>
+</html>
