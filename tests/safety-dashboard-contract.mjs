@@ -126,6 +126,15 @@ if (/service[_-]?role|db[_-]?password|channel[_-]?secret/i.test(config)) {
     throw new Error('Public dashboard config appears to contain a secret field');
 }
 if (!html.includes("default-src 'self'")) throw new Error('Dashboard CSP is missing');
+if (!html.includes("connect-src 'self' https://api.line.me https://liffsdk.line-scdn.net https://dqsfioiqwxuxpucwwhsv.supabase.co")) {
+    throw new Error('Dashboard CSP does not allow the LIFF SDK runtime endpoint');
+}
+if (/content-security-policy[^>]+frame-ancestors/i.test(html)) {
+    throw new Error('frame-ancestors must be delivered as an HTTP header, not in a CSP meta element');
+}
+if (!html.includes('<script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js" defer></script>')) {
+    throw new Error('LIFF SDK must be loaded as UTF-8 from the official CDN');
+}
 if (/\.innerHTML\s*=/.test(script)) throw new Error('Dashboard must not render API data with innerHTML');
 if (!portal.includes('href="https://liff.line.me/2007053300-FmMHHcD7"')) throw new Error('Admin Portal is missing the LIFF Dashboard entry');
 
