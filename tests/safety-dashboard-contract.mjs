@@ -43,6 +43,7 @@ for (const id of [
     'analyticsHighRisk', 'analyticsHighRiskContext', 'closeTimeBreakdown',
     'reportTypeBreakdown', 'reminderPerformance', 'adminWorkload',
     'rewardCommunicationSummary',
+    'exportGovernanceStatus',
 ]) {
     if (!html.includes(`id="${id}"`)) throw new Error(`Dashboard HTML is missing #${id}`);
     if (!script.includes(`'${id}'`)) throw new Error(`Dashboard script does not bind #${id}`);
@@ -102,6 +103,7 @@ for (const marker of [
     'renderCommunicationCenter',
     'renderAnalytics',
     'renderAnalyticsUnavailable',
+    "response.headers.get('x-export-audit-id')",
     'detailRefreshTimer',
     "event.key === 'Escape'",
     "event.key === 'Tab'",
@@ -136,4 +138,5 @@ console.log('PASS Phase 11 responsive Case Actions, safe manual retry, internal 
 console.log('PASS Phase 12 evidence review, reward, not-hazard, typed case-number confirmation, and two-step closure UI contract');
 console.log('PASS Phase 13 Communication Center, templates, unread state, safe retry, active-session ownership, and responsive composer contract');
 console.log('PASS Phase 14 full analytics, SLA, closure speed, follow-up, reward, communication, workload, and reporting UI contract');
+console.log('PASS Phase 15 admin-only governance notice, masked export policy, and export audit receipt UI contract');
 console.log('PASS public frontend contains no privileged backend credentials');

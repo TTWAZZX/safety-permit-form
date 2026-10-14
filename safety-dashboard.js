@@ -1334,6 +1334,10 @@ async function exportCases() {
         link.click();
         link.remove();
         URL.revokeObjectURL(objectUrl);
+        const auditId = response.headers.get('x-export-audit-id') || '';
+        element('exportGovernanceStatus').textContent = auditId
+            ? `บันทึก Audit แล้ว · …${auditId.slice(-8)}`
+            : 'ดาวน์โหลดแล้ว · ระบบไม่ได้ส่ง Audit ID กลับมา';
         if (response.headers.get('x-export-truncated') === 'true') {
             setNotice('ไฟล์ถึงขีดจำกัด 5,000 รายการ กรุณาเลือกช่วงเวลาหรือตัวกรองให้แคบลง');
         }

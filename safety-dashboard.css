@@ -208,6 +208,12 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #49a979; box-shadow: 0 0 0 4px rgba(73,169,121,.13); }
 
 .notice { margin: 0 0 20px; padding: 13px 16px; border: 1px solid #f3c4c1; border-radius: 13px; background: #fff2f1; color: #8b2f2a; }
+.governance-strip { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; margin-top: -4px; padding: 12px 15px; border: 1px solid #c7dfd3; border-radius: 14px; background: linear-gradient(135deg, #f0f8f4, #fbfdfc); }
+.governance-icon { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 10px; background: var(--forest); color: #fff; font-weight: 800; }
+.governance-strip strong, .governance-strip span { display: block; }
+.governance-strip strong { color: var(--forest); font-size: .76rem; }
+.governance-strip div > span { margin-top: 2px; color: var(--muted); font-size: .68rem; }
+.governance-status { color: var(--forest); font-size: .68rem; font-weight: 750; text-align: right; white-space: nowrap; }
 .automation-health { margin-bottom: 18px; }
 .automation-health-heading { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 18px; }
 .automation-health-heading h2 { margin: 0; font-size: 1.15rem; }
@@ -590,6 +596,8 @@ tbody tr:last-child td { border-bottom: 0; }
     .composer-footer .button { width: 100%; }
     .section-heading { align-items: flex-start; flex-direction: column; }
     .analytics-kpi-grid, .analytics-summary-grid { grid-template-columns: 1fr 1fr; }
+    .governance-strip { grid-template-columns: auto 1fr; }
+    .governance-status { grid-column: 1 / -1; text-align: left; white-space: normal; }
 }
 
 @media (prefers-reduced-motion: reduce) {
