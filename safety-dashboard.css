@@ -437,6 +437,19 @@ tbody tr:last-child td { border-bottom: 0; }
 .chat-message p { margin: 4px 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: .82rem; }
 .chat-message time { display: block; margin-top: 5px; color: var(--muted); font-size: .65rem; text-align: right; }
 .chat-message .evidence-image-link { width: min(340px, 100%); margin-top: 7px; border-radius: 10px; }
+.communication-toolbar { display: grid; gap: 10px; margin-bottom: 14px; }
+.communication-session-card { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 16px; border: 1px solid #cfe0d8; border-radius: 14px; background: linear-gradient(135deg, #f2faf6, #f8fbf4); }
+.communication-session-card div > span, .communication-session-card strong, .communication-session-card small { display: block; }
+.communication-session-card div > span { color: var(--muted); font-size: .68rem; font-weight: 700; }
+.communication-session-card strong { margin-top: 3px; font-size: .88rem; }
+.communication-session-card small { margin-top: 3px; color: var(--muted); font-size: .7rem; }
+.unread-badge { flex: 0 0 auto; padding: 6px 10px; border-radius: 999px; background: #dff3e9; color: #086446; font-size: .7rem; font-weight: 800; }
+.communication-controls { justify-content: flex-end; }
+.communication-thread { min-height: 150px; margin: 4px 0 14px; padding: 14px; border: 1px solid var(--line); border-radius: 14px; background: #f7faf8; scroll-behavior: smooth; }
+.chat-composer { display: grid; gap: 10px; padding: 16px; border: 1px solid var(--line); border-radius: 14px; background: #fbfdfc; }
+.chat-composer textarea { width: 100%; min-height: 94px; resize: vertical; padding: 11px 12px; border: 1px solid var(--line); border-radius: 11px; background: #fff; color: var(--ink); font: inherit; }
+.composer-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.composer-footer span { color: var(--muted); font-size: .7rem; font-variant-numeric: tabular-nums; }
 .timeline { position: relative; display: grid; gap: 0; }
 .timeline::before { content: ''; position: absolute; top: 8px; bottom: 8px; left: 7px; width: 2px; background: var(--line); }
 .timeline-event { position: relative; display: grid; grid-template-columns: 16px 1fr; gap: 12px; padding: 0 0 18px; }
@@ -542,6 +555,10 @@ tbody tr:last-child td { border-bottom: 0; }
     .detail-section { padding: 16px; scroll-margin-top: 145px; }
     .detail-summary-grid, .evidence-grid { grid-template-columns: 1fr; }
     .chat-message { width: 90%; }
+    .communication-session-card { align-items: flex-start; flex-direction: column; }
+    .communication-controls .button { flex: 1 1 145px; }
+    .composer-footer { align-items: stretch; flex-direction: column; }
+    .composer-footer .button { width: 100%; }
 }
 
 @media (prefers-reduced-motion: reduce) {

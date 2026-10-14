@@ -31,6 +31,11 @@ for (const id of [
     'issueRewardButton', 'notHazardReasonInput', 'rejectNotHazardButton',
     'closeReasonInput', 'prepareCloseButton', 'closeConfirmation',
     'closeCaseNumberInput', 'confirmCloseButton',
+    'communicationState', 'communicationNotice', 'chatSessionStatus',
+    'chatSessionMeta', 'chatUnreadBadge', 'acceptChatButton',
+    'markChatReadButton', 'refreshConversationButton', 'closeChatButton',
+    'messageTemplateSelect', 'chatComposerInput', 'chatCharacterCount',
+    'sendChatMessageButton',
 ]) {
     if (!html.includes(`id="${id}"`)) throw new Error(`Dashboard HTML is missing #${id}`);
     if (!script.includes(`'${id}'`)) throw new Error(`Dashboard script does not bind #${id}`);
@@ -63,6 +68,10 @@ for (const marker of [
     "performCaseAction('CREATE_CLOSE_INTENT'",
     "performCaseAction('CONFIRM_CLOSE'",
     "performCaseAction('REJECT_NOT_HAZARD'",
+    "performCommunicationAction('ACCEPT_CHAT'",
+    "performCommunicationAction('SEND_CHAT_MESSAGE'",
+    "performCommunicationAction('CLOSE_CHAT'",
+    "performCommunicationAction('MARK_CHAT_READ'",
     "pendingActionKeys",
     "crypto.randomUUID()",
     "format: 'xlsx'",
@@ -82,6 +91,8 @@ for (const marker of [
     'renderReward',
     'renderChat',
     'renderTimeline',
+    'renderCommunicationCenter',
+    'detailRefreshTimer',
     "event.key === 'Escape'",
     "event.key === 'Tab'",
     "rel = 'noopener noreferrer'",
@@ -113,4 +124,5 @@ console.log('PASS Phase 9 work queue search, SLA, assignment, sorting, quick fil
 console.log('PASS Phase 10 responsive Case Detail 360, evidence gallery, chat, reminder, reward, and audit timeline UI contract');
 console.log('PASS Phase 11 responsive Case Actions, safe manual retry, internal notes, tags, SLA, and LINE notification UI contract');
 console.log('PASS Phase 12 evidence review, reward, not-hazard, typed case-number confirmation, and two-step closure UI contract');
+console.log('PASS Phase 13 Communication Center, templates, unread state, safe retry, active-session ownership, and responsive composer contract');
 console.log('PASS public frontend contains no privileged backend credentials');

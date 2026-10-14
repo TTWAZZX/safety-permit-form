@@ -61,6 +61,11 @@ const EVENT_LABELS = Object.freeze({
     DASHBOARD_ISSUE_REWARD: 'ออกรหัส Royal Point จาก Dashboard',
     DASHBOARD_CONFIRM_CLOSE: 'ยกเลิกเคสจาก Dashboard',
     DASHBOARD_REJECT_NOT_HAZARD: 'ยืนยันว่าไม่ใช่เหตุอันตรายจาก Dashboard',
+    DASHBOARD_ACCEPT_CHAT: 'รับการสนทนาจาก Dashboard',
+    DASHBOARD_SEND_CHAT_MESSAGE: 'ส่งข้อความจาก Communication Center',
+    DASHBOARD_CLOSE_CHAT: 'ปิดการสนทนาจาก Dashboard',
+    CASE_CHAT_MESSAGE_SENT: 'ส่งข้อความจาก Communication Center',
+    CASE_CHAT_READ_BY_ADMIN: 'Safety Admin อ่านข้อความแล้ว',
 });
 const MONTHS = Object.freeze(['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม']);
 const PAGE_SIZE = 20;
@@ -84,7 +89,9 @@ const state = {
     detailBusy: false,
     actionBusy: false,
     resolutionBusy: false,
+    communicationBusy: false,
     closeIntent: null,
+    detailRefreshTimer: null,
     detailCaseId: '',
     detailData: null,
     detailReturnFocus: null,
@@ -400,6 +407,100 @@ function renderChat(messages, sessions) {
         bubble.append(time);
         container.append(bubble);
     });
+    container.scrollTop = container.scrollHeight;
+}
+
+function setCommunicationNotice(message = '', tone = '') {
+    const notice = element('communicationNotice');
+    notice.textContent = message;
+    notice.className = `action-notice ${tone}`.trim();
+    notice.hidden = !message;
+}
+
+function setCommunicationBusy(busy) {
+    state.communicationBusy = busy;
+    element('communicationState').textContent = busy ? 'กำลังดำเนินการ…' : 'พร้อมใช้งาน';
+    [
+        'acceptChatButton', 'markChatReadButton', 'refreshConversationButton',
+        'closeChatButton', 'messageTemplateSelect', 'chatComposerInput',
+        'sendChatMessageButton',
+    ].forEach((id) => { element(id).disabled = busy; });
+}
+
+function renderCommunicationCenter(detail) {
+    const communication = detail.communication || {};
+    const session = communication.active_session || null;
+    const item = detail.case || {};
+    const terminal = ['RESOLVED', 'REJECTED_NOT_HAZARD', 'CANCELLED'].includes(item.status);
+    const expired = session?.expires_at && new Date(session.expires_at).getTime() <= Date.now();
+    const active = Boolean(session?.id) && session.status === 'OPEN' && !expired;
+    const mine = active && Boolean(session.accepted_by_current_admin);
+    const waiting = active && Boolean(session.is_waiting);
+    const unread = Math.max(0, Number(communication.unread_count) || 0);
+
+    const status = element('chatSessionStatus');
+    const meta = element('chatSessionMeta');
+    if (!session) {
+        status.textContent = 'ยังไม่มีห้องสนทนาเปิดอยู่';
+        meta.textContent = 'ผู้แจ้งสามารถเปิดคำขอสนทนาจาก LINE OA';
+    } else if (expired) {
+        status.textContent = 'ห้องสนทนาหมดอายุแล้ว';
+        meta.textContent = `หมดอายุ ${formatDateTime(session.expires_at)}`;
+    } else if (waiting) {
+        status.textContent = 'ผู้แจ้งกำลังรอ Safety Admin';
+        meta.textContent = `ร้องขอ ${formatDateTime(session.started_at)} · หมดอายุ ${formatDateTime(session.expires_at)}`;
+    } else if (mine) {
+        status.textContent = 'ฉันกำลังดูแลการสนทนานี้';
+        meta.textContent = `รับเมื่อ ${formatDateTime(session.accepted_at)} · หมดอายุ ${formatDateTime(session.expires_at)}`;
+    } else {
+        status.textContent = 'Safety Admin คนอื่นกำลังดูแล';
+        meta.textContent = `รับเมื่อ ${formatDateTime(session.accepted_at)} · อ่านได้อย่างเดียว`;
+    }
+
+    const badge = element('chatUnreadBadge');
+    badge.textContent = `${formatNumber(unread)} ยังไม่อ่าน`;
+    badge.hidden = unread === 0;
+    const busy = state.communicationBusy;
+    element('acceptChatButton').hidden = !waiting;
+    element('acceptChatButton').disabled = busy || terminal || !waiting;
+    element('markChatReadButton').disabled = busy || unread === 0 || !mine;
+    element('refreshConversationButton').disabled = busy;
+    element('closeChatButton').disabled = busy || terminal || !mine;
+    element('messageTemplateSelect').disabled = busy || terminal || !mine;
+    element('chatComposerInput').disabled = busy || terminal || !mine;
+    element('sendChatMessageButton').disabled = busy || terminal || !mine || !element('chatComposerInput').value.trim();
+}
+
+async function performCommunicationAction(action, payload = {}, options = {}) {
+    if (state.communicationBusy || state.actionBusy || state.resolutionBusy || !state.detailCaseId || !state.detailData?.case) return;
+    if (options.confirmMessage && !window.confirm(options.confirmMessage)) return;
+    const operationKey = `${state.detailCaseId}:${action}`;
+    const idempotencyKey = state.pendingActionKeys.get(operationKey) || crypto.randomUUID();
+    state.pendingActionKeys.set(operationKey, idempotencyKey);
+    setCommunicationBusy(true);
+    setCommunicationNotice();
+    try {
+        const response = await apiAction({
+            case_id: state.detailCaseId,
+            action,
+            idempotency_key: idempotencyKey,
+            expected_updated_at: state.detailData.case.updated_at,
+            payload,
+        });
+        state.pendingActionKeys.delete(operationKey);
+        if (typeof options.onSuccess === 'function') options.onSuccess(response.action || {});
+        setCommunicationNotice(options.successMessage || 'ดำเนินการสำเร็จ', 'action-notice-success');
+        await Promise.all([reloadCurrentCaseDetail(), loadCases(), loadSummary()]);
+    } catch (error) {
+        if ([400, 404, 409].includes(error?.status)) state.pendingActionKeys.delete(operationKey);
+        const conflict = error?.status === 409 ? 'สถานะห้องหรือเคสเปลี่ยนไปแล้ว กรุณารีเฟรชและลองใหม่' : '';
+        const retry = error?.status === 502 || error?.name === 'AbortError' ? ' กดคำสั่งเดิมอีกครั้งได้ ระบบจะใช้รหัสเดิมและไม่ส่งซ้ำ' : '';
+        setCommunicationNotice(`${conflict || error?.message || 'ดำเนินการไม่สำเร็จ'}${retry}`, 'action-notice-error');
+        if ([401, 403].includes(error?.status)) handleRequestError(error);
+    } finally {
+        setCommunicationBusy(false);
+        if (state.detailData) renderCommunicationCenter(state.detailData);
+    }
 }
 
 function readableEventDetail(detail) {
@@ -692,6 +793,7 @@ function renderCaseDetail(detail) {
     renderReminders(Array.isArray(detail.reminders) ? detail.reminders : []);
     renderReward(detail.reward || null);
     renderChat(Array.isArray(detail.chat_messages) ? detail.chat_messages : [], Array.isArray(detail.chat_sessions) ? detail.chat_sessions : []);
+    renderCommunicationCenter(detail);
     renderTimeline(Array.isArray(detail.events) ? detail.events : []);
     renderCaseActions(detail);
     renderResolutionActions(detail);
@@ -720,6 +822,11 @@ async function openCaseDetail(caseId, trigger = null) {
         element('detailLoading').hidden = true;
         element('detailContent').hidden = false;
         element('detailNavigation').hidden = false;
+        window.clearInterval(state.detailRefreshTimer);
+        state.detailRefreshTimer = window.setInterval(() => {
+            if (!state.detailCaseId || state.communicationBusy || document.hidden) return;
+            reloadCurrentCaseDetail().catch((error) => console.warn('Communication refresh failed', error));
+        }, 20000);
     } catch (error) {
         console.error('Case detail request failed', error);
         element('detailLoading').hidden = true;
@@ -733,6 +840,8 @@ async function openCaseDetail(caseId, trigger = null) {
 }
 
 function closeCaseDetail() {
+    window.clearInterval(state.detailRefreshTimer);
+    state.detailRefreshTimer = null;
     element('caseDetailOverlay').hidden = true;
     document.body.classList.remove('detail-open');
     state.detailCaseId = '';
@@ -1260,6 +1369,68 @@ function bindEvents() {
     element('requestInfoButton').addEventListener('click', () => performCaseAction('REQUEST_INFO', { message: element('caseMessageInput').value }, { confirmMessage: 'ส่งคำขอข้อมูลเพิ่มเติมให้ผู้แจ้งผ่าน LINE ตอนนี้หรือไม่?', successMessage: 'ส่งคำขอข้อมูลเพิ่มเติมแล้ว' }));
     element('requestEvidenceButton').addEventListener('click', () => performCaseAction('REQUEST_EVIDENCE', { message: element('caseMessageInput').value }, { confirmMessage: 'ส่งคำขอหลักฐานเพิ่มเติมให้ผู้แจ้งผ่าน LINE ตอนนี้หรือไม่?', successMessage: 'ส่งคำขอหลักฐานเพิ่มเติมแล้ว' }));
     element('notifyTeamButton').addEventListener('click', () => performCaseAction('NOTIFY_TEAM', { message: element('caseMessageInput').value }, { confirmMessage: 'แจ้ง Safety Admin คนอื่นผ่าน LINE ตอนนี้หรือไม่?', successMessage: 'แจ้งทีม Safety แล้ว' }));
+    element('messageTemplateSelect').addEventListener('change', (event) => {
+        if (!event.target.value) return;
+        element('chatComposerInput').value = event.target.value;
+        element('chatCharacterCount').textContent = `${event.target.value.length}/1000`;
+        event.target.value = '';
+        if (state.detailData) renderCommunicationCenter(state.detailData);
+        element('chatComposerInput').focus();
+    });
+    element('chatComposerInput').addEventListener('input', (event) => {
+        element('chatCharacterCount').textContent = `${event.target.value.length}/1000`;
+        if (state.detailData) renderCommunicationCenter(state.detailData);
+    });
+    element('refreshConversationButton').addEventListener('click', async () => {
+        if (state.communicationBusy) return;
+        setCommunicationBusy(true);
+        setCommunicationNotice();
+        try {
+            await reloadCurrentCaseDetail();
+            setCommunicationNotice('อัปเดตบทสนทนาล่าสุดแล้ว', 'action-notice-success');
+        } catch (error) {
+            setCommunicationNotice(error?.message || 'รีเฟรชบทสนทนาไม่สำเร็จ', 'action-notice-error');
+        } finally {
+            setCommunicationBusy(false);
+            if (state.detailData) renderCommunicationCenter(state.detailData);
+        }
+    });
+    element('acceptChatButton').addEventListener('click', () => {
+        const sessionId = state.detailData?.communication?.active_session?.id;
+        if (!sessionId) return setCommunicationNotice('ไม่พบคำขอสนทนาที่รอรับ', 'action-notice-error');
+        performCommunicationAction('ACCEPT_CHAT', { session_id: sessionId }, {
+            confirmMessage: 'รับการสนทนานี้หรือไม่? หลังรับ ข้อความ LINE ของคุณจะถูกส่งเข้าห้องเคสนี้จนกว่าจะปิดห้อง',
+            successMessage: 'รับการสนทนาแล้ว สามารถส่งข้อความถึงผู้แจ้งได้ทันที',
+        });
+    });
+    element('markChatReadButton').addEventListener('click', () => {
+        const sessionId = state.detailData?.communication?.active_session?.id;
+        if (!sessionId) return;
+        performCommunicationAction('MARK_CHAT_READ', { session_id: sessionId }, {
+            successMessage: 'ทำเครื่องหมายข้อความว่าอ่านแล้ว',
+        });
+    });
+    element('sendChatMessageButton').addEventListener('click', () => {
+        const sessionId = state.detailData?.communication?.active_session?.id;
+        const message = element('chatComposerInput').value.trim();
+        if (!sessionId) return setCommunicationNotice('ไม่มีห้องสนทนาที่เปิดอยู่', 'action-notice-error');
+        if (!message) return setCommunicationNotice('กรุณาพิมพ์ข้อความก่อนส่ง', 'action-notice-error');
+        performCommunicationAction('SEND_CHAT_MESSAGE', { session_id: sessionId, message }, {
+            successMessage: 'ส่งข้อความให้ผู้แจ้งแล้ว',
+            onSuccess: () => {
+                element('chatComposerInput').value = '';
+                element('chatCharacterCount').textContent = '0/1000';
+            },
+        });
+    });
+    element('closeChatButton').addEventListener('click', () => {
+        const sessionId = state.detailData?.communication?.active_session?.id;
+        if (!sessionId) return;
+        performCommunicationAction('CLOSE_CHAT', { session_id: sessionId }, {
+            confirmMessage: 'ปิดการสนทนานี้หรือไม่? ผู้แจ้งจะได้รับข้อความแจ้งว่าห้องถูกปิด',
+            successMessage: 'ปิดการสนทนาและคืนระบบ LINE OA เข้าสู่โหมดปกติแล้ว',
+        });
+    });
     element('approveEvidenceButton').addEventListener('click', () => {
         const evidenceId = element('reviewEvidenceInput').value;
         if (!evidenceId) return setResolutionNotice('ไม่มีหลักฐาน After ที่รอตรวจ', 'action-notice-error');

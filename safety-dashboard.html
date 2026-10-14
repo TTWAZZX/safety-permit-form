@@ -231,7 +231,7 @@
                     <a href="#detailActionsSection">จัดการเคส</a>
                     <a href="#detailResolutionSection">ตรวจและปิดเคส</a>
                     <a href="#detailEvidenceSection">หลักฐาน</a>
-                    <a href="#detailChatSection">การสนทนา</a>
+                    <a href="#detailChatSection">Communication Center</a>
                     <a href="#detailTimelineSection">Timeline</a>
                 </nav>
 
@@ -358,8 +358,30 @@
                     </div>
 
                     <section id="detailChatSection" class="detail-section">
-                        <div class="detail-section-heading"><div><p class="eyebrow">CASE CONVERSATION</p><h3>การสนทนาเฉพาะเคส</h3></div><span id="detailChatCount" class="detail-count">0 ข้อความ</span></div>
-                        <div id="detailChat" class="chat-thread"></div>
+                        <div class="detail-section-heading">
+                            <div><p class="eyebrow">COMMUNICATION CENTER</p><h3>ศูนย์สื่อสารประจำเคส</h3><p class="panel-subtitle">สนทนากับผู้แจ้งโดยผูกทุกข้อความกับเคสและ Audit Log</p></div>
+                            <span id="communicationState" class="detail-count" role="status" aria-live="polite">พร้อมใช้งาน</span>
+                        </div>
+                        <div id="communicationNotice" class="action-notice" role="alert" hidden></div>
+                        <div class="communication-toolbar">
+                            <div class="communication-session-card">
+                                <div><span>สถานะห้อง</span><strong id="chatSessionStatus">ยังไม่มีห้องสนทนา</strong><small id="chatSessionMeta">ผู้แจ้งสามารถเปิดคำขอสนทนาผ่าน LINE OA</small></div>
+                                <span id="chatUnreadBadge" class="unread-badge" hidden>0 ยังไม่อ่าน</span>
+                            </div>
+                            <div class="action-row communication-controls">
+                                <button id="acceptChatButton" class="button button-primary" type="button">รับการสนทนา</button>
+                                <button id="markChatReadButton" class="button button-ghost" type="button">ทำเครื่องหมายว่าอ่านแล้ว</button>
+                                <button id="refreshConversationButton" class="button button-ghost" type="button">รีเฟรชข้อความ</button>
+                                <button id="closeChatButton" class="button button-ghost button-danger" type="button">ปิดการสนทนา</button>
+                            </div>
+                        </div>
+                        <div id="detailChat" class="chat-thread communication-thread"></div>
+                        <div class="chat-composer">
+                            <label class="field"><span>ข้อความสำเร็จรูป</span><select id="messageTemplateSelect"><option value="">เลือกข้อความสำเร็จรูป…</option><option value="รับทราบข้อมูลแล้ว ทีม Safety กำลังตรวจสอบและจะอัปเดตให้ทราบครับ">รับทราบและกำลังตรวจสอบ</option><option value="กรุณาส่งรายละเอียดสถานที่และช่วงเวลาที่พบเหตุเพิ่มเติมครับ">ขอรายละเอียดสถานที่และเวลา</option><option value="กรุณาส่งภาพเพิ่มเติมที่เห็นสภาพโดยรอบและจุดเสี่ยงให้ชัดเจนครับ">ขอภาพเพิ่มเติม</option><option value="ทีม Safety ดำเนินการแล้ว กรุณาตรวจสอบและแจ้งกลับหากยังพบความเสี่ยงครับ">แจ้งให้ตรวจสอบผลการแก้ไข</option></select></label>
+                            <label class="field"><span>ข้อความถึงผู้แจ้ง</span><textarea id="chatComposerInput" maxlength="1000" rows="4" placeholder="พิมพ์ข้อความที่เกี่ยวข้องกับเคสนี้"></textarea></label>
+                            <div class="composer-footer"><span id="chatCharacterCount">0/1000</span><button id="sendChatMessageButton" class="button button-primary" type="button">ส่งข้อความผ่าน LINE</button></div>
+                            <p class="action-hint">ระบบบันทึกข้อความก่อนส่งและใช้รหัสเดิมเมื่อ retry จึงไม่สร้างข้อความหรือส่ง LINE ซ้ำ</p>
+                        </div>
                     </section>
 
                     <section id="detailTimelineSection" class="detail-section">
