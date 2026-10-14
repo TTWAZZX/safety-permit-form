@@ -69,6 +69,8 @@ const EVENT_LABELS = Object.freeze({
 });
 const MONTHS = Object.freeze(['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม']);
 const PAGE_SIZE = 20;
+const DASHBOARD_VIEWS = Object.freeze(['queue', 'overview', 'analytics', 'system']);
+const DASHBOARD_VIEW_STORAGE_KEY = 'safety-dashboard-active-view';
 
 const state = {
     token: '',
@@ -96,6 +98,7 @@ const state = {
     detailData: null,
     detailReturnFocus: null,
     pendingActionKeys: new Map(),
+    activeView: 'queue',
 };
 
 const element = (id) => document.getElementById(id);
@@ -124,6 +127,31 @@ function showDashboard() {
     element('appLoading').hidden = true;
     element('appError').hidden = true;
     element('appShell').hidden = false;
+}
+
+function storedDashboardView() {
+    try {
+        const stored = window.localStorage.getItem(DASHBOARD_VIEW_STORAGE_KEY);
+        return DASHBOARD_VIEWS.includes(stored) ? stored : 'queue';
+    } catch (_error) {
+        return 'queue';
+    }
+}
+
+function setDashboardView(view, { focus = false } = {}) {
+    const nextView = DASHBOARD_VIEWS.includes(view) ? view : 'queue';
+    state.activeView = nextView;
+    document.querySelectorAll('[data-dashboard-panel]').forEach((panel) => {
+        panel.hidden = panel.dataset.dashboardPanel !== nextView;
+    });
+    document.querySelectorAll('[data-dashboard-tab]').forEach((tab) => {
+        const active = tab.dataset.dashboardTab === nextView;
+        tab.classList.toggle('is-active', active);
+        tab.setAttribute('aria-selected', String(active));
+        tab.tabIndex = active ? 0 : -1;
+        if (active && focus) tab.focus({ preventScroll: true });
+    });
+    try { window.localStorage.setItem(DASHBOARD_VIEW_STORAGE_KEY, nextView); } catch (_error) { /* Storage can be unavailable in private contexts. */ }
 }
 
 function setNotice(message = '') {
@@ -1397,6 +1425,20 @@ function bindEvents() {
             button.classList.toggle('is-active', active);
         });
     };
+    document.querySelectorAll('[data-dashboard-tab]').forEach((tab) => {
+        tab.addEventListener('click', () => setDashboardView(tab.dataset.dashboardTab));
+        tab.addEventListener('keydown', (event) => {
+            if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+            event.preventDefault();
+            const currentIndex = DASHBOARD_VIEWS.indexOf(state.activeView);
+            let nextIndex = currentIndex;
+            if (event.key === 'ArrowRight') nextIndex = (currentIndex + 1) % DASHBOARD_VIEWS.length;
+            if (event.key === 'ArrowLeft') nextIndex = (currentIndex - 1 + DASHBOARD_VIEWS.length) % DASHBOARD_VIEWS.length;
+            if (event.key === 'Home') nextIndex = 0;
+            if (event.key === 'End') nextIndex = DASHBOARD_VIEWS.length - 1;
+            setDashboardView(DASHBOARD_VIEWS[nextIndex], { focus: true });
+        });
+    });
     document.querySelectorAll('.period-button').forEach((button) => {
         button.addEventListener('click', () => {
             state.period = button.dataset.period;
@@ -1655,6 +1697,7 @@ function bindEvents() {
 
 async function initialize() {
     populateControls();
+    setDashboardView(storedDashboardView());
     bindEvents();
     if (!config.liffId || config.liffId === 'REPLACE_WITH_NEW_LIFF_ID') {
         showGateError('รอตั้งค่า LIFF ID', 'สร้าง LIFF app สำหรับ Safety Dashboard แล้วใส่รหัสในไฟล์ safety-dashboard-config.js', false);

@@ -97,6 +97,27 @@
                 </div>
             </section>
 
+            <nav id="workspaceNavigation" class="workspace-navigation" aria-label="พื้นที่ทำงาน Safety Case">
+                <div class="workspace-tabs" role="tablist" aria-label="เลือกพื้นที่ทำงาน">
+                    <button id="workspaceTabQueue" class="workspace-tab is-active" type="button" role="tab" aria-selected="true" aria-controls="workspaceQueue" data-dashboard-tab="queue">
+                        <span class="workspace-tab-icon" aria-hidden="true">⌁</span>
+                        <span><strong>คิวงาน</strong><small>ค้นหาและจัดการเคส</small></span>
+                    </button>
+                    <button id="workspaceTabOverview" class="workspace-tab" type="button" role="tab" aria-selected="false" aria-controls="workspaceOverviewMetrics" data-dashboard-tab="overview" tabindex="-1">
+                        <span class="workspace-tab-icon" aria-hidden="true">◫</span>
+                        <span><strong>ภาพรวม</strong><small>KPI และแนวโน้ม</small></span>
+                    </button>
+                    <button id="workspaceTabAnalytics" class="workspace-tab" type="button" role="tab" aria-selected="false" aria-controls="workspaceAnalytics" data-dashboard-tab="analytics" tabindex="-1">
+                        <span class="workspace-tab-icon" aria-hidden="true">⌁</span>
+                        <span><strong>วิเคราะห์</strong><small>SLA และประสิทธิภาพ</small></span>
+                    </button>
+                    <button id="workspaceTabSystem" class="workspace-tab" type="button" role="tab" aria-selected="false" aria-controls="workspaceSystem" data-dashboard-tab="system" tabindex="-1">
+                        <span class="workspace-tab-icon" aria-hidden="true">⚙</span>
+                        <span><strong>ระบบอัตโนมัติ</strong><small>Reminder และ Webhook</small></span>
+                    </button>
+                </div>
+            </nav>
+
             <section class="governance-strip" aria-label="นโยบายการเข้าถึงและส่งออกรายงาน">
                 <div class="governance-icon" aria-hidden="true">✓</div>
                 <div>
@@ -108,7 +129,7 @@
 
             <div id="pageNotice" class="notice" role="alert" hidden></div>
 
-            <section class="automation-health panel" aria-labelledby="automationHealthTitle">
+            <section id="workspaceSystem" class="automation-health panel dashboard-view" data-dashboard-panel="system" role="tabpanel" aria-labelledby="workspaceTabSystem automationHealthTitle" hidden>
                 <div class="automation-health-heading">
                     <div>
                         <p class="eyebrow">AUTOMATION HEALTH</p>
@@ -127,7 +148,7 @@
                 <p id="automationHealthUpdated" class="panel-subtitle">รอข้อมูลสถานะล่าสุด</p>
             </section>
 
-            <section class="metrics-grid" aria-label="ตัวชี้วัดสำคัญ">
+            <section id="workspaceOverviewMetrics" class="metrics-grid dashboard-view" data-dashboard-panel="overview" role="tabpanel" aria-labelledby="workspaceTabOverview" aria-label="ตัวชี้วัดสำคัญ" hidden>
                 <article class="metric-card metric-total">
                     <div class="metric-icon" aria-hidden="true">Σ</div>
                     <div><span>เคสในช่วงเวลา</span><strong id="metricTotal">—</strong><small>รายการทั้งหมด</small></div>
@@ -150,7 +171,7 @@
                 </article>
             </section>
 
-            <section class="insight-grid">
+            <section class="insight-grid dashboard-view" data-dashboard-panel="overview" aria-label="แนวโน้มและสถานะเคส" hidden>
                 <article class="panel trend-panel">
                     <div class="panel-heading">
                         <div><p class="eyebrow">CASE TREND</p><h2>แนวโน้มการแจ้งและปิดเคส</h2></div>
@@ -165,7 +186,7 @@
                 </article>
             </section>
 
-            <section class="insight-grid insight-grid-small">
+            <section class="insight-grid insight-grid-small dashboard-view" data-dashboard-panel="overview" aria-label="ระดับความเสี่ยงและแนวทางดำเนินการ" hidden>
                 <article class="panel">
                     <div class="panel-heading"><div><p class="eyebrow">RISK PROFILE</p><h2>ระดับความเสี่ยง</h2></div></div>
                     <div id="rankBreakdown" class="breakdown-list"></div>
@@ -176,7 +197,7 @@
                 </article>
             </section>
 
-            <section class="analytics-section" aria-labelledby="analyticsTitle">
+            <section id="workspaceAnalytics" class="analytics-section dashboard-view" data-dashboard-panel="analytics" role="tabpanel" aria-labelledby="workspaceTabAnalytics analyticsTitle" hidden>
                 <div class="section-heading">
                     <div>
                         <p class="eyebrow">ANALYTICS &amp; REPORTING</p>
@@ -206,7 +227,7 @@
                 </div>
             </section>
 
-            <section class="panel cases-panel" aria-labelledby="caseListTitle">
+            <section id="workspaceQueue" class="panel cases-panel dashboard-view" data-dashboard-panel="queue" role="tabpanel" aria-labelledby="workspaceTabQueue caseListTitle">
                 <div class="panel-heading cases-heading">
                     <div><p class="eyebrow">LIVE WORK QUEUE</p><h2 id="caseListTitle">คิวงาน Safety Case</h2><p id="caseCount" class="panel-subtitle">กำลังโหลดคิวงาน…</p></div>
                     <div class="queue-updated"><span class="status-dot"></span><span id="queueUpdated">ข้อมูลปัจจุบัน</span></div>

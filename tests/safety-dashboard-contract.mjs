@@ -107,6 +107,10 @@ for (const marker of [
     'detailRefreshTimer',
     "event.key === 'Escape'",
     "event.key === 'Tab'",
+    "DASHBOARD_VIEWS",
+    "setDashboardView(storedDashboardView())",
+    "document.querySelectorAll('[data-dashboard-tab]')",
+    "window.localStorage.setItem(DASHBOARD_VIEW_STORAGE_KEY",
     "rel = 'noopener noreferrer'",
     "referrerPolicy = 'no-referrer'",
 ]) {
@@ -126,6 +130,19 @@ if (/service[_-]?role|db[_-]?password|channel[_-]?secret/i.test(config)) {
     throw new Error('Public dashboard config appears to contain a secret field');
 }
 if (!html.includes("default-src 'self'")) throw new Error('Dashboard CSP is missing');
+for (const id of [
+    'workspaceNavigation', 'workspaceTabQueue', 'workspaceTabOverview',
+    'workspaceTabAnalytics', 'workspaceTabSystem', 'workspaceQueue',
+    'workspaceOverviewMetrics', 'workspaceAnalytics', 'workspaceSystem',
+]) {
+    if (!html.includes(`id="${id}"`)) throw new Error(`Dashboard workspace is missing #${id}`);
+}
+if (!html.includes('data-dashboard-tab="queue"') || !html.includes('data-dashboard-panel="queue"')) {
+    throw new Error('Admin work queue workspace navigation is missing');
+}
+if (!html.includes('role="tablist"') || !html.includes('role="tabpanel"')) {
+    throw new Error('Dashboard workspace navigation accessibility roles are missing');
+}
 if (!html.includes("connect-src 'self' https://api.line.me https://liffsdk.line-scdn.net https://dqsfioiqwxuxpucwwhsv.supabase.co")) {
     throw new Error('Dashboard CSP does not allow the LIFF SDK runtime endpoint');
 }
