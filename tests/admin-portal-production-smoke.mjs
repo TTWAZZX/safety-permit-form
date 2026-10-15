@@ -27,6 +27,11 @@ for (const marker of ['PRIMARY WORKSPACE', 'id="moduleSearch"', 'id="portalRunti
     if (!html.includes(marker)) throw new Error(`Production Admin Portal HTML is missing ${marker}`);
 }
 if (html.includes('static.line-scdn.net')) throw new Error('Production Admin Portal initializes an unrelated LIFF app');
+const managerLinks = [...html.matchAll(/<a\b([^>]*href="safety-dashboard\.html\?view=portal"[^>]*)>/g)];
+if (managerLinks.length !== 2) throw new Error('Production Admin Portal is missing its two internal Content Manager shortcuts');
+if (managerLinks.some(([, attributes]) => /\btarget\s*=\s*["']_blank["']/i.test(attributes))) {
+    throw new Error('Production internal Content Manager shortcuts must open in the current tab');
+}
 for (const marker of ['id="portalModuleCreate"', 'id="portalModuleKey"', 'id="portalModuleTargetHint"']) {
     if (!dashboardHtml.includes(marker)) throw new Error(`Production Content Manager HTML is missing ${marker}`);
 }

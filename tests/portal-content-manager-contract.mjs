@@ -59,7 +59,11 @@ for (const config of [dashboardConfig, portalConfig]) {
 for (const marker of ['applySettings', 'renderModules', 'safeTargetUrl', 'portal-content:updated', 'AbortController']) {
     if (!portalLoader.includes(marker)) throw new Error(`Public Portal loader is missing ${marker}`);
 }
-if (!portalHtml.includes('https://liff.line.me/2007053300-FmMHHcD7?view=portal')) throw new Error('Admin Portal Content Manager link is missing');
+const managerLinks = [...portalHtml.matchAll(/<a\b([^>]*href="safety-dashboard\.html\?view=portal"[^>]*)>/g)];
+if (managerLinks.length !== 2) throw new Error('Admin Portal must expose both internal Content Manager shortcuts');
+if (managerLinks.some(([, attributes]) => /\btarget\s*=\s*["']_blank["']/i.test(attributes))) {
+    throw new Error('Internal Content Manager shortcuts must open in the current tab');
+}
 if (!portalHtml.includes('connect-src \'self\' https://dqsfioiqwxuxpucwwhsv.supabase.co')) throw new Error('Admin Portal CSP does not allow its content API');
 if (!dashboardHtml.includes("img-src 'self' data: blob: https:")) throw new Error('Content Manager CSP must allow local blob image previews');
 
