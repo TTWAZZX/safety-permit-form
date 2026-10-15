@@ -3,6 +3,16 @@
 (() => {
     const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
     const IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+    const PORTAL_CATEGORY_MASTER = Object.freeze({
+        safety: 'งานความปลอดภัย',
+        inspection: 'ตรวจสอบและตรวจประเมิน',
+        incident: 'แจ้งเหตุและติดตามเคส',
+        access: 'สิทธิ์ บุคคล และผู้รับเหมา',
+        training: 'อบรมและองค์ความรู้',
+        resource: 'ทรัพยากรและอุปกรณ์',
+        analytics: 'รายงานและแดชบอร์ด',
+        administration: 'บริหารระบบ',
+    });
     const config = window.SAFETY_DASHBOARD_CONFIG || {};
     const managerState = {
         loaded: false,
@@ -11,6 +21,9 @@
         modules: [],
         selectedModuleKey: '',
         creatingModule: false,
+        moduleKeyTouched: false,
+        searchTermsTouched: false,
+        iconAltTouched: false,
         localUrls: new Map(),
     };
     const byId = (id) => document.getElementById(id);
@@ -219,8 +232,49 @@
         hint.classList.toggle('is-error', isError);
     }
 
+    function uniqueModuleKey(rawName, category) {
+        const ascii = String(rawName || '')
+            .normalize('NFKD')
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '')
+            .slice(0, 72);
+        const fallback = `${category || 'portal'}-system`;
+        const base = ascii || fallback;
+        const used = new Set(managerState.modules.map((item) => item.module_key));
+        if (!used.has(base)) return base;
+        for (let suffix = 2; suffix <= 999; suffix += 1) {
+            const candidate = `${base.slice(0, Math.max(1, 79 - String(suffix).length))}-${suffix}`;
+            if (!used.has(candidate)) return candidate;
+        }
+        return `${fallback}-${Date.now()}`.slice(0, 80);
+    }
+
+    function nextSortOrder() {
+        const used = new Set(managerState.modules.map((item) => Number(item.sort_order)).filter(Number.isInteger));
+        const highest = Math.max(0, ...used);
+        const preferred = Math.ceil(highest / 10) * 10 + 10;
+        if (preferred <= 1000 && !used.has(preferred)) return preferred;
+        for (let value = 10; value <= 1000; value += 10) if (!used.has(value)) return value;
+        for (let value = 1; value <= 1000; value += 1) if (!used.has(value)) return value;
+        return 1000;
+    }
+
+    function applyAutomaticModuleDefaults() {
+        if (!managerState.creatingModule) return;
+        const name = byId('portalModuleDisplayName').value.trim();
+        const category = byId('portalModuleCategory').value;
+        const categoryLabel = PORTAL_CATEGORY_MASTER[category] || category;
+        if (!managerState.moduleKeyTouched) inputValue('portalModuleKey', uniqueModuleKey(name, category));
+        if (!managerState.searchTermsTouched) inputValue('portalModuleSearchTerms', name ? `${name} ${categoryLabel}` : categoryLabel);
+        if (!managerState.iconAltTouched) inputValue('portalModuleIconAlt', name ? `ไอคอน ${name}` : `ไอคอน ${categoryLabel}`);
+    }
+
     function startCreateModule() {
         managerState.creatingModule = true;
+        managerState.moduleKeyTouched = false;
+        managerState.searchTermsTouched = false;
+        managerState.iconAltTouched = false;
         managerState.selectedModuleKey = '';
         document.querySelectorAll('.portal-module-choice').forEach((button) => button.classList.remove('is-active'));
         byId('portalModuleForm').reset();
@@ -230,20 +284,24 @@
         byId('portalModuleEditorName').textContent = 'สร้างระบบใหม่';
         byId('portalModuleRevision').textContent = 'บันทึกข้อมูลก่อน แล้วจึงอัปโหลดไอคอน';
         byId('portalModuleKey').disabled = false;
-        inputValue('portalModuleKey', '');
+        inputValue('portalModuleKey', 'safety-system');
         inputValue('portalModuleCategory', 'safety');
         inputValue('portalModuleLinkType', 'external');
-        inputValue('portalModuleSortOrder', Math.min(1000, Math.max(1, ...managerState.modules.map((item) => Number(item.sort_order) || 0)) + 10));
+        inputValue('portalModuleSortOrder', nextSortOrder());
         byId('portalModuleEnabled').checked = true;
         byId('portalModuleCancel').hidden = false;
         byId('portalModuleSave').disabled = false;
         byId('portalModuleSave').textContent = 'สร้างระบบ';
+        applyAutomaticModuleDefaults();
         updateTargetHint();
-        byId('portalModuleKey').focus();
+        byId('portalModuleDisplayName').focus();
     }
 
     function selectModule(moduleKey) {
         managerState.creatingModule = false;
+        managerState.moduleKeyTouched = true;
+        managerState.searchTermsTouched = true;
+        managerState.iconAltTouched = true;
         managerState.selectedModuleKey = moduleKey;
         document.querySelectorAll('.portal-module-choice').forEach((button) => {
             button.classList.toggle('is-active', button.dataset.moduleKey === moduleKey);
@@ -482,9 +540,14 @@
             updateTargetHint();
         });
         byId('portalModuleKey').addEventListener('input', (event) => {
+            managerState.moduleKeyTouched = true;
             event.target.value = event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
             event.target.setCustomValidity('');
         });
+        byId('portalModuleDisplayName').addEventListener('input', applyAutomaticModuleDefaults);
+        byId('portalModuleCategory').addEventListener('change', applyAutomaticModuleDefaults);
+        byId('portalModuleSearchTerms').addEventListener('input', () => { managerState.searchTermsTouched = true; });
+        byId('portalModuleIconAlt').addEventListener('input', () => { managerState.iconAltTouched = true; });
         ['portalBrandName', 'portalBrandSubtitle', 'portalHeroEyebrow', 'portalHeroTitle', 'portalHeroHighlight', 'portalHeroDescription', 'portalPrimaryColor', 'portalAccentColor'].forEach((id) => {
             byId(id).addEventListener('input', updateLivePreview);
         });

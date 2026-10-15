@@ -2,7 +2,16 @@
 
 (() => {
     const config = window.ADMIN_PORTAL_CONFIG || {};
-    const CATEGORY_LABELS = Object.freeze({ safety: 'ความปลอดภัย', access: 'สิทธิ์และบุคคล', resource: 'ทรัพยากร' });
+    const CATEGORY_LABELS = Object.freeze({
+        safety: 'งานความปลอดภัย',
+        inspection: 'ตรวจสอบและตรวจประเมิน',
+        incident: 'แจ้งเหตุและติดตามเคส',
+        access: 'สิทธิ์ บุคคล และผู้รับเหมา',
+        training: 'อบรมและองค์ความรู้',
+        resource: 'ทรัพยากรและอุปกรณ์',
+        analytics: 'รายงานและแดชบอร์ด',
+        administration: 'บริหารระบบ',
+    });
     const MODULE_KEY_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
     const MAX_DYNAMIC_MODULES = 50;
     const cardStyles = new Map();

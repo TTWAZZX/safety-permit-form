@@ -36,8 +36,14 @@ for (const marker of [
     "action: 'CREATE_MODULE'", "url.origin !== portalBase.origin",
     'config.portalAssetBaseUrl', 'url.origin === base.origin',
     'url.pathname.startsWith(base.pathname)',
+    'PORTAL_CATEGORY_MASTER', 'uniqueModuleKey', 'nextSortOrder',
+    'applyAutomaticModuleDefaults', 'moduleKeyTouched', 'searchTermsTouched', 'iconAltTouched',
 ]) {
     if (!managerScript.includes(marker)) throw new Error(`Content Manager logic is missing ${marker}`);
+}
+for (const category of ['safety', 'inspection', 'incident', 'access', 'training', 'resource', 'analytics', 'administration']) {
+    if (!dashboardHtml.includes(`option value="${category}"`)) throw new Error(`Category master is missing ${category}`);
+    if (!managerScript.includes(`${category}:`)) throw new Error(`Automatic category master is missing ${category}`);
 }
 if (/\.innerHTML\s*=/.test(managerScript + portalLoader)) throw new Error('Portal content must not render API data with innerHTML');
 for (const marker of ["'portal'", 'requestedDashboardView', "new CustomEvent('portal-manager:open')", "new CustomEvent('safety-dashboard:authenticated')"]) {
