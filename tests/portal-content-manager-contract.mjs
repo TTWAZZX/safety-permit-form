@@ -45,7 +45,7 @@ for (const config of [dashboardConfig, portalConfig]) {
     if (!config.includes('/functions/v1/admin-portal-content')) throw new Error('Portal content API endpoint is missing');
     if (/service[_-]?role|db[_-]?password|channel[_-]?secret/i.test(config)) throw new Error('Public config contains a privileged field');
 }
-for (const marker of ['applySettings', 'applyModule', 'safeTargetUrl', 'portal-content:updated', 'AbortController']) {
+for (const marker of ['applySettings', 'renderModules', 'safeTargetUrl', 'portal-content:updated', 'AbortController']) {
     if (!portalLoader.includes(marker)) throw new Error(`Public Portal loader is missing ${marker}`);
 }
 if (!portalHtml.includes('https://liff.line.me/2007053300-FmMHHcD7?view=portal')) throw new Error('Admin Portal Content Manager link is missing');

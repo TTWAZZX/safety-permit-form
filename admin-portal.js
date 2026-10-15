@@ -124,10 +124,11 @@ function bindEvents() {
         applyFilters();
         element('moduleSearch').focus();
     });
-    document.querySelectorAll('[data-category-filter]').forEach((button) => button.addEventListener('click', () => setCategory(button.dataset.categoryFilter)));
     document.querySelectorAll('[data-focus-search]').forEach((button) => button.addEventListener('click', focusModuleSearch));
     document.addEventListener('click', (event) => {
         if (!(event.target instanceof Element)) return;
+        const category = event.target.closest('[data-category-filter]');
+        if (category) return setCategory(category.dataset.categoryFilter);
         const favorite = event.target.closest('[data-favorite]');
         if (favorite) return toggleFavorite(favorite.dataset.favorite);
         const link = event.target.closest('[data-module-link]');
@@ -154,5 +155,5 @@ window.addEventListener('portal-content:updated', () => {
     state.favorites = state.favorites.filter((id) => moduleRecord(id));
     state.recents = state.recents.filter((id) => moduleRecord(id)).slice(0, MAX_RECENTS);
     renderShortcuts();
-    applyFilters();
+    setCategory('all');
 });
