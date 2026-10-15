@@ -12,6 +12,7 @@ const checks = [
     ['tests/admin-portal-fullscreen-contract.mjs'],
     ['tests/admin-portal-dynamic-contract.mjs'],
     ['tests/portal-content-manager-contract.mjs'],
+    ['tests/portal-module-favicon-contract.mjs'],
     ['tests/portal-automation-contract.mjs'],
     ['tests/safety-dashboard-contract.mjs'],
 ];
