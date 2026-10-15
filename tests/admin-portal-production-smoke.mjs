@@ -14,8 +14,9 @@ async function fetchText(path) {
     return response.text();
 }
 
-const [html, css, portalScript, contentScript, managerScript, portalConfig, dashboardConfig] = await Promise.all([
-    fetchText('admin-portal.html'), fetchText('admin-portal.css'), fetchText('admin-portal.js'),
+const [html, dashboardHtml, css, portalScript, contentScript, managerScript, portalConfig, dashboardConfig] = await Promise.all([
+    fetchText('admin-portal.html'), fetchText('safety-dashboard.html'),
+    fetchText('admin-portal.css'), fetchText('admin-portal.js'),
     fetchText('admin-portal-content.js'), fetchText('portal-content-manager.js'),
     fetchText('admin-portal-config.js'), fetchText('safety-dashboard-config.js'),
 ]);
@@ -24,12 +25,15 @@ for (const marker of ['PRIMARY WORKSPACE', 'id="moduleSearch"', 'id="portalRunti
     if (!html.includes(marker)) throw new Error(`Production Admin Portal HTML is missing ${marker}`);
 }
 if (html.includes('static.line-scdn.net')) throw new Error('Production Admin Portal initializes an unrelated LIFF app');
+for (const marker of ['id="portalModuleCreate"', 'id="portalModuleKey"', 'id="portalModuleTargetHint"']) {
+    if (!dashboardHtml.includes(marker)) throw new Error(`Production Content Manager HTML is missing ${marker}`);
+}
 if (!css.includes('env(safe-area-inset-bottom)') || !css.includes('.sidebar-note.is-fallback')) throw new Error('Production CSS hardening is incomplete');
 if (!portalScript.includes('MAX_STORED_ITEMS = 8')) throw new Error('Production JavaScript is missing bounded storage hardening');
 for (const marker of ['MAX_DYNAMIC_MODULES = 50', 'MODULE_KEY_PATTERN', 'setFavicon', 'restoreFallback', 'createFeaturedCard', 'renderCategoryFilters', "credentials: 'omit'", "referrerPolicy: 'no-referrer'"]) {
     if (!contentScript.includes(marker)) throw new Error(`Production dynamic renderer is missing ${marker}`);
 }
-for (const marker of ['MAX_IMAGE_BYTES = 5 * 1024 * 1024', 'expected_revision', 'AbortController', 'URL.revokeObjectURL']) {
+for (const marker of ['MAX_IMAGE_BYTES = 5 * 1024 * 1024', 'expected_revision', 'AbortController', 'URL.revokeObjectURL', "action: 'CREATE_MODULE'", 'normalizedTargetUrl']) {
     if (!managerScript.includes(marker)) throw new Error(`Production Content Manager is missing ${marker}`);
 }
 for (const config of [portalConfig, dashboardConfig]) {

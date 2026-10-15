@@ -10,6 +10,7 @@
         settings: null,
         modules: [],
         selectedModuleKey: '',
+        creatingModule: false,
         localUrls: new Map(),
     };
     const byId = (id) => document.getElementById(id);
@@ -68,8 +69,9 @@
             });
             const payload = await response.json().catch(() => ({}));
             if (!response.ok) {
-                const conflict = response.status === 409 ? 'ข้อมูลถูกแก้จากอีกหน้าหนึ่ง กรุณาโหลดข้อมูลใหม่ก่อนบันทึก' : '';
-                throw new Error(conflict || payload.error || `Portal API ตอบกลับ ${response.status}`);
+                const duplicateModule = payload.error === 'Module key already exists' ? 'รหัสระบบนี้ถูกใช้แล้ว กรุณาใช้รหัสอื่น' : '';
+                const conflict = response.status === 409 && !duplicateModule ? 'ข้อมูลถูกแก้จากอีกหน้าหนึ่ง กรุณาโหลดข้อมูลใหม่ก่อนบันทึก' : '';
+                throw new Error(duplicateModule || conflict || payload.error || `Portal API ตอบกลับ ${response.status}`);
             }
             return payload;
         } catch (error) {
@@ -199,7 +201,49 @@
         return managerState.modules.find((item) => item.module_key === managerState.selectedModuleKey) || null;
     }
 
+    function clearModuleFile() {
+        const input = byId('portalModuleIconFile');
+        const localUrl = managerState.localUrls.get(input.id);
+        if (localUrl) URL.revokeObjectURL(localUrl);
+        managerState.localUrls.delete(input.id);
+        input.value = '';
+        byId('portalModuleIconUpload').disabled = true;
+    }
+
+    function updateTargetHint(message = '', isError = false) {
+        const linkType = byId('portalModuleLinkType').value;
+        const hint = byId('portalModuleTargetHint');
+        hint.textContent = message || (linkType === 'internal'
+            ? 'หน้าใน Portal ใช้ชื่อไฟล์ เช่น guard-admin.html (วาง URL ของ Portal เต็มรูปแบบได้ ระบบจะแปลงให้)'
+            : 'ลิงก์ภายนอกหรือ LIFF ต้องขึ้นต้นด้วย https://');
+        hint.classList.toggle('is-error', isError);
+    }
+
+    function startCreateModule() {
+        managerState.creatingModule = true;
+        managerState.selectedModuleKey = '';
+        document.querySelectorAll('.portal-module-choice').forEach((button) => button.classList.remove('is-active'));
+        byId('portalModuleForm').reset();
+        clearModuleFile();
+        setImage('portalModuleIconPreview', 'portalModuleIconPlaceholder', '');
+        byId('portalModuleIconPlaceholder').textContent = 'NEW';
+        byId('portalModuleEditorName').textContent = 'สร้างระบบใหม่';
+        byId('portalModuleRevision').textContent = 'บันทึกข้อมูลก่อน แล้วจึงอัปโหลดไอคอน';
+        byId('portalModuleKey').disabled = false;
+        inputValue('portalModuleKey', '');
+        inputValue('portalModuleCategory', 'safety');
+        inputValue('portalModuleLinkType', 'external');
+        inputValue('portalModuleSortOrder', Math.min(1000, Math.max(1, ...managerState.modules.map((item) => Number(item.sort_order) || 0)) + 10));
+        byId('portalModuleEnabled').checked = true;
+        byId('portalModuleCancel').hidden = false;
+        byId('portalModuleSave').disabled = false;
+        byId('portalModuleSave').textContent = 'สร้างระบบ';
+        updateTargetHint();
+        byId('portalModuleKey').focus();
+    }
+
     function selectModule(moduleKey) {
+        managerState.creatingModule = false;
         managerState.selectedModuleKey = moduleKey;
         document.querySelectorAll('.portal-module-choice').forEach((button) => {
             button.classList.toggle('is-active', button.dataset.moduleKey === moduleKey);
@@ -207,6 +251,9 @@
         const module = selectedModule();
         byId('portalModuleSave').disabled = !module;
         if (!module) return;
+        clearModuleFile();
+        byId('portalModuleKey').disabled = true;
+        inputValue('portalModuleKey', module.module_key);
         inputValue('portalModuleDisplayName', module.display_name);
         inputValue('portalModuleCategory', module.category);
         inputValue('portalModuleDescription', module.description);
@@ -221,6 +268,9 @@
         byId('portalModuleRevision').textContent = `Revision ${module.revision} · ${module.module_key}`;
         setImage('portalModuleIconPreview', 'portalModuleIconPlaceholder', safeAssetUrl(module.icon_asset));
         byId('portalModuleIconPlaceholder').textContent = String(module.display_name || module.module_key).slice(0, 3).toUpperCase();
+        byId('portalModuleCancel').hidden = true;
+        byId('portalModuleSave').textContent = 'บันทึกข้อมูลระบบ';
+        updateTargetHint();
     }
 
     function applyContent(payload) {
@@ -283,13 +333,34 @@
         await loadManager(true);
     }
 
+    function normalizedTargetUrl(rawValue, linkType) {
+        const raw = String(rawValue || '').trim();
+        if (linkType === 'internal') {
+            if (/^[A-Za-z0-9][A-Za-z0-9._/-]*\.html(?:[?#][^\s]*)?$/.test(raw)) return raw;
+            let url;
+            try { url = new URL(raw); } catch (_error) { throw new Error('หน้าใน Portal ต้องเป็นชื่อไฟล์ .html หรือ URL ของ Portal นี้'); }
+            const portalBase = new URL('.', window.location.href);
+            if (url.protocol !== 'https:' || url.origin !== portalBase.origin || !url.pathname.startsWith(portalBase.pathname)) {
+                throw new Error('URL นี้อยู่นอก Portal กรุณาเลือกรูปแบบ “ลิงก์ภายนอก / LIFF”');
+            }
+            const relative = `${url.pathname.slice(portalBase.pathname.length)}${url.search}${url.hash}`;
+            if (!/^[A-Za-z0-9][A-Za-z0-9._/-]*\.html(?:[?#][^\s]*)?$/.test(relative)) throw new Error('หน้าใน Portal ต้องลงท้ายด้วย .html');
+            return relative;
+        }
+        let url;
+        try { url = new URL(raw); } catch (_error) { throw new Error('ลิงก์ภายนอกต้องเป็น URL ที่สมบูรณ์'); }
+        if (url.protocol !== 'https:' || url.username || url.password) throw new Error('ลิงก์ภายนอกต้องเป็น https:// และห้ามมีชื่อผู้ใช้หรือรหัสผ่าน');
+        return url.href;
+    }
+
     function modulePatch() {
+        const linkType = byId('portalModuleLinkType').value;
         return {
             display_name: byId('portalModuleDisplayName').value.trim(),
             description: byId('portalModuleDescription').value.trim(),
             category: byId('portalModuleCategory').value.trim(),
-            target_url: byId('portalModuleTargetUrl').value.trim(),
-            link_type: byId('portalModuleLinkType').value,
+            target_url: normalizedTargetUrl(byId('portalModuleTargetUrl').value, linkType),
+            link_type: linkType,
             search_terms: byId('portalModuleSearchTerms').value.trim(),
             icon_alt: byId('portalModuleIconAlt').value.trim(),
             sort_order: Number(byId('portalModuleSortOrder').value),
@@ -301,16 +372,37 @@
     async function saveModule(event) {
         event.preventDefault();
         const module = selectedModule();
-        if (!module || !event.currentTarget.reportValidity()) return;
-        setBusy(true);
-        showNotice(`กำลังบันทึก ${module.display_name}…`);
+        const creating = managerState.creatingModule;
+        if ((!module && !creating) || !event.currentTarget.reportValidity()) return;
+        const moduleKey = creating ? byId('portalModuleKey').value.trim().toLowerCase() : module.module_key;
+        if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(moduleKey)) {
+            byId('portalModuleKey').setCustomValidity('ใช้ได้เฉพาะตัวพิมพ์เล็ก ตัวเลข และขีดกลาง');
+            byId('portalModuleKey').reportValidity();
+            return;
+        }
+        byId('portalModuleKey').setCustomValidity('');
+        let patch;
         try {
-            await portalRequest({ body: {
-                action: 'UPDATE_MODULE', request_id: requestId(), module_key: module.module_key,
-                expected_revision: module.revision, patch: modulePatch(),
-            } });
+            patch = modulePatch();
+            byId('portalModuleTargetUrl').setCustomValidity('');
+            updateTargetHint();
+        } catch (error) {
+            byId('portalModuleTargetUrl').setCustomValidity(error.message);
+            byId('portalModuleTargetUrl').reportValidity();
+            updateTargetHint(error.message, true);
+            return;
+        }
+        setBusy(true);
+        showNotice(creating ? 'กำลังสร้างระบบใหม่…' : `กำลังบันทึก ${module.display_name}…`);
+        try {
+            const body = creating
+                ? { action: 'CREATE_MODULE', request_id: requestId(), module_key: moduleKey, module: patch }
+                : { action: 'UPDATE_MODULE', request_id: requestId(), module_key: module.module_key, expected_revision: module.revision, patch };
+            await portalRequest({ body });
+            managerState.selectedModuleKey = moduleKey;
+            managerState.creatingModule = false;
             managerState.loaded = false;
-            showNotice('บันทึกข้อมูลระบบเรียบร้อย กำลังโหลดข้อมูลล่าสุด…');
+            showNotice(creating ? 'สร้างระบบเรียบร้อย หลังโหลดข้อมูลแล้วสามารถอัปโหลดไอคอนได้' : 'บันทึกข้อมูลระบบเรียบร้อย กำลังโหลดข้อมูลล่าสุด…');
         } catch (error) {
             showNotice(error.message || 'บันทึกข้อมูลระบบไม่สำเร็จ', true);
             setBusy(false);
@@ -383,6 +475,16 @@
         byId('portalManagerReload').addEventListener('click', () => loadManager(true));
         byId('portalSettingsForm').addEventListener('submit', saveSettings);
         byId('portalModuleForm').addEventListener('submit', saveModule);
+        byId('portalModuleCreate').addEventListener('click', startCreateModule);
+        byId('portalModuleCancel').addEventListener('click', () => selectModule(managerState.modules[0]?.module_key || ''));
+        byId('portalModuleLinkType').addEventListener('change', () => {
+            byId('portalModuleTargetUrl').setCustomValidity('');
+            updateTargetHint();
+        });
+        byId('portalModuleKey').addEventListener('input', (event) => {
+            event.target.value = event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
+            event.target.setCustomValidity('');
+        });
         ['portalBrandName', 'portalBrandSubtitle', 'portalHeroEyebrow', 'portalHeroTitle', 'portalHeroHighlight', 'portalHeroDescription', 'portalPrimaryColor', 'portalAccentColor'].forEach((id) => {
             byId(id).addEventListener('input', updateLivePreview);
         });

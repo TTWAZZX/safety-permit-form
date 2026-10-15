@@ -15,7 +15,8 @@ const [dashboardHtml, dashboardScript, managerScript, managerCss, dashboardConfi
 for (const id of [
     'workspaceTabPortal', 'workspacePortal', 'portalSettingsForm', 'portalLivePreview',
     'portalLogoFile', 'portalHeroFile', 'portalModuleList', 'portalModuleForm',
-    'portalModuleIconFile', 'portalManagerNotice',
+    'portalModuleIconFile', 'portalManagerNotice', 'portalModuleCreate',
+    'portalModuleKey', 'portalModuleCancel', 'portalModuleTargetHint',
 ]) {
     if (!dashboardHtml.includes(`id="${id}"`)) throw new Error(`Content Manager HTML is missing #${id}`);
 }
@@ -27,10 +28,12 @@ for (const marker of [
     if (!dashboardHtml.includes(marker)) throw new Error(`Content Manager HTML is missing ${marker}`);
 }
 for (const marker of [
-    "'GET_ADMIN_CONTENT'", "'UPDATE_SETTINGS'", "'UPDATE_MODULE'", '?action=UPLOAD_ASSET',
+    "'GET_ADMIN_CONTENT'", "'UPDATE_SETTINGS'", "'UPDATE_MODULE'", "'CREATE_MODULE'", '?action=UPLOAD_ASSET',
     'FormData', 'MAX_IMAGE_BYTES = 5 * 1024 * 1024', 'crypto.randomUUID()',
     'expected_revision', 'AbortController', 'window.liff?.getAccessToken',
     "response.status === 409", "URL.createObjectURL", "URL.revokeObjectURL",
+    'startCreateModule', 'normalizedTargetUrl', 'managerState.creatingModule',
+    "action: 'CREATE_MODULE'", "url.origin !== portalBase.origin",
     'config.portalAssetBaseUrl', 'url.origin === base.origin',
     'url.pathname.startsWith(base.pathname)',
 ]) {
@@ -40,7 +43,7 @@ if (/\.innerHTML\s*=/.test(managerScript + portalLoader)) throw new Error('Porta
 for (const marker of ["'portal'", 'requestedDashboardView', "new CustomEvent('portal-manager:open')", "new CustomEvent('safety-dashboard:authenticated')"]) {
     if (!dashboardScript.includes(marker)) throw new Error(`Dashboard integration is missing ${marker}`);
 }
-for (const marker of ['@media(max-width:640px)', '@media(max-width:900px)', ':focus', 'min-height:44px']) {
+for (const marker of ['@media(max-width:640px)', '@media(max-width:900px)', ':focus', 'min-height:44px', '.portal-section-actions', '.portal-field-hint.is-error']) {
     if (!managerCss.includes(marker)) throw new Error(`Content Manager responsive/accessibility CSS is missing ${marker}`);
 }
 for (const config of [dashboardConfig, portalConfig]) {

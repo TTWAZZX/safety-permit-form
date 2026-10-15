@@ -198,25 +198,26 @@
                 </section>
 
                 <section class="portal-modules-card" aria-labelledby="portalModulesTitle">
-                    <div class="portal-section-heading"><div><span class="portal-step">03</span><h3 id="portalModulesTitle">ระบบและไอคอน</h3></div><p>เลือกทีละระบบเพื่อแก้ชื่อ รายละเอียด ลิงก์ ลำดับ และสถานะการแสดงผล</p></div>
+                    <div class="portal-section-heading"><div><span class="portal-step">03</span><h3 id="portalModulesTitle">ระบบและไอคอน</h3></div><div class="portal-section-actions"><p>แก้ไขระบบเดิม หรือสร้างระบบใหม่แล้วอัปโหลดไอคอนจากหน้านี้ได้เลย</p><button id="portalModuleCreate" class="button button-ghost" type="button">+ เพิ่มระบบใหม่</button></div></div>
                     <div class="portal-module-layout">
                         <div id="portalModuleList" class="portal-module-list" role="list" aria-label="รายการระบบใน Portal"></div>
                         <form id="portalModuleForm" class="portal-module-form" novalidate>
                             <div class="portal-module-form-heading"><div class="portal-module-icon-preview"><img id="portalModuleIconPreview" alt="ตัวอย่างไอคอนระบบ" hidden><span id="portalModuleIconPlaceholder">APP</span></div><div><strong id="portalModuleEditorName">เลือกระบบที่ต้องการแก้ไข</strong><span id="portalModuleRevision">Revision —</span></div></div>
                             <div class="portal-form-grid">
-                                <label class="portal-field"><span>ชื่อระบบ</span><input id="portalModuleDisplayName" name="display_name" maxlength="120" required></label>
-                                <label class="portal-field"><span>หมวดหมู่</span><input id="portalModuleCategory" name="category" maxlength="80" required></label>
-                                <label class="portal-field portal-field-wide"><span>รายละเอียด</span><textarea id="portalModuleDescription" name="description" maxlength="600" rows="3" required></textarea></label>
-                                <label class="portal-field portal-field-wide"><span>ลิงก์ปลายทาง</span><input id="portalModuleTargetUrl" name="target_url" type="url" maxlength="500" required></label>
+                                <label id="portalModuleKeyField" class="portal-field portal-field-wide"><span>รหัสระบบ (ตัวพิมพ์เล็ก ตัวเลข และขีดกลาง)</span><input id="portalModuleKey" name="module_key" maxlength="80" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" autocomplete="off" placeholder="เช่น training-center" required disabled></label>
+                                <label class="portal-field"><span>ชื่อระบบ</span><input id="portalModuleDisplayName" name="display_name" maxlength="100" required></label>
+                                <label class="portal-field"><span>หมวดหมู่</span><select id="portalModuleCategory" name="category" required><option value="safety">งานความปลอดภัย</option><option value="access">สิทธิ์และบุคคล</option><option value="resource">ทรัพยากร</option></select></label>
+                                <label class="portal-field portal-field-wide"><span>รายละเอียด</span><textarea id="portalModuleDescription" name="description" maxlength="500" rows="3" required></textarea></label>
+                                <label class="portal-field portal-field-wide"><span>ลิงก์ปลายทาง</span><input id="portalModuleTargetUrl" name="target_url" type="text" maxlength="500" required><small id="portalModuleTargetHint" class="portal-field-hint">ลิงก์ภายนอกต้องขึ้นต้นด้วย https://</small></label>
                                 <label class="portal-field"><span>รูปแบบลิงก์</span><select id="portalModuleLinkType" name="link_type"><option value="external">ลิงก์ภายนอก / LIFF</option><option value="internal">หน้าใน Portal</option></select></label>
-                                <label class="portal-field"><span>ลำดับ</span><input id="portalModuleSortOrder" name="sort_order" type="number" min="0" max="9999" required></label>
+                                <label class="portal-field"><span>ลำดับ</span><input id="portalModuleSortOrder" name="sort_order" type="number" min="1" max="1000" required></label>
                                 <label class="portal-field portal-field-wide"><span>คำค้นหา</span><input id="portalModuleSearchTerms" name="search_terms" maxlength="300"></label>
-                                <label class="portal-field portal-field-wide"><span>คำอธิบายไอคอน</span><input id="portalModuleIconAlt" name="icon_alt" maxlength="180"></label>
+                                <label class="portal-field portal-field-wide"><span>คำอธิบายไอคอน</span><input id="portalModuleIconAlt" name="icon_alt" maxlength="160"></label>
                                 <label class="portal-check"><input id="portalModuleFeatured" name="is_featured" type="checkbox"><span>แสดงเป็นระบบเด่น</span></label>
                                 <label class="portal-check"><input id="portalModuleEnabled" name="is_enabled" type="checkbox"><span>เปิดแสดงบน Portal</span></label>
                             </div>
                             <div class="portal-module-upload"><input id="portalModuleIconFile" type="file" accept="image/jpeg,image/png,image/webp"><label class="portal-file-button" for="portalModuleIconFile">เลือกไอคอนใหม่</label><button id="portalModuleIconUpload" class="button button-ghost" type="button" disabled>อัปโหลดไอคอน</button></div>
-                            <div class="portal-form-actions"><button id="portalModuleSave" class="button button-primary" type="submit" disabled>บันทึกข้อมูลระบบ</button></div>
+                            <div class="portal-form-actions"><button id="portalModuleCancel" class="button button-ghost" type="button" hidden>ยกเลิก</button><button id="portalModuleSave" class="button button-primary" type="submit" disabled>บันทึกข้อมูลระบบ</button></div>
                         </form>
                     </div>
                 </section>
