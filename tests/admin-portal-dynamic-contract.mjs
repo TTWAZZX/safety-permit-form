@@ -21,6 +21,9 @@ for (const marker of [
     'renderModules', 'module.is_enabled', 'module.is_featured', 'a.sort_order',
     'validContent', "new CustomEvent('portal-content:updated'", 'AbortController',
     'noopener noreferrer', "linkType === 'internal'", "url.protocol !== 'https:'",
+    'MAX_DYNAMIC_MODULES = 50', 'MODULE_KEY_PATTERN', 'seen.has(key)',
+    "credentials: 'omit'", "referrerPolicy: 'no-referrer'", 'url.username || url.password',
+    'url.origin === base.origin', 'url.pathname.startsWith(base.pathname)',
 ]) {
     if (!contentScript.includes(marker)) throw new Error(`Dynamic Portal loader is missing ${marker}`);
 }
@@ -31,7 +34,7 @@ for (const marker of [
     if (!portalScript.includes(marker)) throw new Error(`Portal runtime integration is missing ${marker}`);
 }
 if (/\.innerHTML\s*=/.test(contentScript)) throw new Error('Dynamic Portal must not render API content with innerHTML');
-if (!config.includes('/functions/v1/admin-portal-content')) throw new Error('Dynamic Portal content endpoint is missing');
+if (!config.includes('/functions/v1/admin-portal-content') || !config.includes('/storage/v1/object/public/admin-portal-assets/')) throw new Error('Dynamic Portal endpoint or managed asset base is missing');
 if (/service[_-]?role|db[_-]?password|channel[_-]?secret/i.test(config + contentScript)) throw new Error('Dynamic Portal public files contain a privileged field');
 for (const marker of ['.sidebar-note.is-loading', '.sidebar-note.is-fallback', '@keyframes portal-card-in']) {
     if (!css.includes(marker)) throw new Error(`Dynamic Portal state styling is missing ${marker}`);

@@ -31,6 +31,8 @@ for (const marker of [
     'FormData', 'MAX_IMAGE_BYTES = 5 * 1024 * 1024', 'crypto.randomUUID()',
     'expected_revision', 'AbortController', 'window.liff?.getAccessToken',
     "response.status === 409", "URL.createObjectURL", "URL.revokeObjectURL",
+    'config.portalAssetBaseUrl', 'url.origin === base.origin',
+    'url.pathname.startsWith(base.pathname)',
 ]) {
     if (!managerScript.includes(marker)) throw new Error(`Content Manager logic is missing ${marker}`);
 }
@@ -42,7 +44,7 @@ for (const marker of ['@media(max-width:640px)', '@media(max-width:900px)', ':fo
     if (!managerCss.includes(marker)) throw new Error(`Content Manager responsive/accessibility CSS is missing ${marker}`);
 }
 for (const config of [dashboardConfig, portalConfig]) {
-    if (!config.includes('/functions/v1/admin-portal-content')) throw new Error('Portal content API endpoint is missing');
+    if (!config.includes('/functions/v1/admin-portal-content') || !config.includes('/storage/v1/object/public/admin-portal-assets/')) throw new Error('Portal content API endpoint or managed asset base is missing');
     if (/service[_-]?role|db[_-]?password|channel[_-]?secret/i.test(config)) throw new Error('Public config contains a privileged field');
 }
 for (const marker of ['applySettings', 'renderModules', 'safeTargetUrl', 'portal-content:updated', 'AbortController']) {

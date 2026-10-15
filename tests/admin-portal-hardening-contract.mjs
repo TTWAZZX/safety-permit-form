@@ -1,10 +1,14 @@
 import { readFile } from 'node:fs/promises';
 
 const root = new URL('../', import.meta.url);
-const [html, css, script] = await Promise.all([
+const [html, css, script, contentScript, contentConfig, managerScript, dashboardConfig] = await Promise.all([
     readFile(new URL('admin-portal.html', root), 'utf8'),
     readFile(new URL('admin-portal.css', root), 'utf8'),
     readFile(new URL('admin-portal.js', root), 'utf8'),
+    readFile(new URL('admin-portal-content.js', root), 'utf8'),
+    readFile(new URL('admin-portal-config.js', root), 'utf8'),
+    readFile(new URL('portal-content-manager.js', root), 'utf8'),
+    readFile(new URL('safety-dashboard-config.js', root), 'utf8'),
 ]);
 
 const csp = html.match(/http-equiv="Content-Security-Policy" content="([^"]+)"/)?.[1] || '';
@@ -17,6 +21,10 @@ for (const directive of [
 if (/<script(?![^>]+src=)/i.test(html)) throw new Error('Admin Portal must not contain inline scripts');
 if (/\son[a-z]+\s*=/i.test(html)) throw new Error('Admin Portal must not contain inline event handlers');
 if (/https?:\/\/[^"]*(?:service_role|apikey|secret)/i.test(html + script)) throw new Error('Possible privileged credential in public frontend');
+const publicFrontend = [html, script, contentScript, contentConfig, managerScript, dashboardConfig].join('\n');
+if (/service[_-]?role|db[_-]?password|channel[_-]?secret/i.test(publicFrontend)) throw new Error('Possible privileged credential in public frontend');
+if (/eyJ[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}/.test(publicFrontend)) throw new Error('Possible JWT embedded in public frontend');
+if (/script-src[^;]*(?:'unsafe-inline'|'unsafe-eval')/.test(csp)) throw new Error('Admin Portal script CSP must not allow unsafe inline/eval execution');
 if (script.includes('CSS.escape(')) throw new Error('Portal must not depend on CSS.escape for stored module IDs');
 
 const moduleIds = [...html.matchAll(/data-module-id="([^"]+)"/g)].map((match) => match[1]);

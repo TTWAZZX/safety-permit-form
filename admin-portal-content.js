@@ -3,6 +3,8 @@
 (() => {
     const config = window.ADMIN_PORTAL_CONFIG || {};
     const CATEGORY_LABELS = Object.freeze({ safety: 'ความปลอดภัย', access: 'สิทธิ์และบุคคล', resource: 'ทรัพยากร' });
+    const MODULE_KEY_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+    const MAX_DYNAMIC_MODULES = 50;
     const cardStyles = new Map();
     const fallbackIcons = new Map();
     const fallbackBrands = [];
@@ -21,16 +23,25 @@
     function safeAssetUrl(asset) {
         try {
             const url = new URL(String(asset?.public_url || ''));
-            return url.protocol === 'https:' ? url.href : '';
+            const base = new URL(String(config.assetBaseUrl || ''));
+            return url.protocol === 'https:'
+                && url.origin === base.origin
+                && url.pathname.startsWith(base.pathname)
+                && !url.username
+                && !url.password
+                ? url.href
+                : '';
         } catch (_error) { return ''; }
     }
 
     function safeTargetUrl(value, linkType) {
         try {
             const raw = String(value || '').trim();
+            if (!raw || raw.length > 800) return '';
             if (linkType === 'internal' && !/^[A-Za-z0-9][A-Za-z0-9._/-]*\.html(?:[?#][^\s]*)?$/.test(raw)) return '';
             const url = new URL(raw, window.location.href);
             if (url.protocol !== 'https:') return '';
+            if (url.username || url.password) return '';
             if (linkType === 'internal' && url.origin !== window.location.origin) return '';
             return url.href;
         } catch (_error) { return ''; }
@@ -57,6 +68,8 @@
             const image = document.createElement('img');
             image.className = 'portal-brand-image';
             image.alt = '';
+            image.decoding = 'async';
+            image.referrerPolicy = 'no-referrer';
             image.onload = () => slot.replaceChildren(image);
             image.onerror = () => restoreBrand(slot);
             image.src = url;
@@ -85,6 +98,8 @@
             const image = document.createElement('img');
             image.className = 'portal-hero-image';
             image.alt = '';
+            image.decoding = 'async';
+            image.referrerPolicy = 'no-referrer';
             image.onerror = () => image.remove();
             image.src = heroUrl;
             document.querySelector('#portalHome > .portal-hero-image')?.remove();
@@ -103,6 +118,9 @@
         const image = document.createElement('img');
         image.className = 'portal-module-icon-image';
         image.alt = module.icon_alt || '';
+        image.loading = 'lazy';
+        image.decoding = 'async';
+        image.referrerPolicy = 'no-referrer';
         image.onerror = () => {
             image.remove();
             if (fallback) slot.append(fallback);
@@ -232,7 +250,13 @@
     }
 
     function renderModules(rawModules) {
-        const modules = rawModules.filter((module) => module && typeof module === 'object' && module.is_enabled && module.module_key && module.display_name)
+        const seen = new Set();
+        const modules = rawModules.filter((module) => {
+            const key = String(module?.module_key || '');
+            if (!module || typeof module !== 'object' || !module.is_enabled || !MODULE_KEY_PATTERN.test(key) || !module.display_name || seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        }).slice(0, MAX_DYNAMIC_MODULES)
             .sort((a, b) => Number(a.sort_order) - Number(b.sort_order) || String(a.module_key).localeCompare(String(b.module_key)));
         const featured = modules.find((module) => module.is_featured) || modules[0] || null;
         const featuredSection = document.getElementById('primaryWorkspace');
@@ -271,7 +295,10 @@
         const controller = new AbortController();
         const timer = window.setTimeout(() => controller.abort(), Number(config.requestTimeoutMs) || 8000);
         try {
-            const response = await fetch(config.contentApiUrl, { headers: { Accept: 'application/json' }, signal: controller.signal, cache: 'no-store' });
+            const response = await fetch(config.contentApiUrl, {
+                headers: { Accept: 'application/json' }, signal: controller.signal,
+                cache: 'no-store', credentials: 'omit', referrerPolicy: 'no-referrer',
+            });
             if (!response.ok) throw new Error(`Content API ${response.status}`);
             const content = await response.json();
             if (!validContent(content)) throw new Error('Invalid Portal content payload');

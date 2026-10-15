@@ -83,7 +83,14 @@
     function safeAssetUrl(asset) {
         try {
             const url = new URL(String(asset?.public_url || ''));
-            return url.protocol === 'https:' ? url.href : '';
+            const base = new URL(String(config.portalAssetBaseUrl || ''));
+            return url.protocol === 'https:'
+                && url.origin === base.origin
+                && url.pathname.startsWith(base.pathname)
+                && !url.username
+                && !url.password
+                ? url.href
+                : '';
         } catch (_error) {
             return '';
         }
@@ -354,6 +361,9 @@
         showNotice('กำลังอัปโหลดรูปภาพ…');
         try {
             await portalRequest({ formData: form, timeoutMs: 30000 });
+            const localUrl = managerState.localUrls.get(inputId);
+            if (localUrl) URL.revokeObjectURL(localUrl);
+            managerState.localUrls.delete(inputId);
             input.value = '';
             const uploadButton = assetKind === 'logo' ? byId('portalLogoUpload') : assetKind === 'hero' ? byId('portalHeroUpload') : byId('portalModuleIconUpload');
             uploadButton.disabled = true;
