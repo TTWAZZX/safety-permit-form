@@ -2,8 +2,8 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#064e3b">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#063b2d">
     <meta name="referrer" content="no-referrer">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data:; font-src 'self'; object-src 'none'; frame-src 'none'; worker-src 'none'; manifest-src 'self'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
     <title>TSH Safety Admin Portal</title>
@@ -14,75 +14,75 @@
 <body>
     <a class="skip-link" href="#portalContent">ข้ามไปยังเนื้อหาหลัก</a>
 
-    <header class="topbar">
-        <div class="shell topbar-inner">
-            <a class="brand" href="admin-portal.html" aria-label="หน้าแรก TSH Safety Admin Portal">
+    <div class="portal-app">
+        <aside class="sidebar" aria-label="เมนูหลัก">
+            <a class="sidebar-brand" href="#portalHome" aria-label="หน้าแรก TSH Safety Admin Portal">
                 <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2 4.5 5v5.8c0 5.1 3.2 9.4 7.5 11.2 4.3-1.8 7.5-6.1 7.5-11.2V5L12 2Zm3.3 7.6-4.1 4.8a1 1 0 0 1-1.5.1l-2.2-2.1 1.4-1.4 1.4 1.3 3.5-4.1 1.5 1.4Z"/></svg></span>
                 <span><strong>TSH Safety</strong><small>Admin Portal</small></span>
             </a>
-            <div class="admin-identity" aria-label="ศูนย์ผู้ดูแลระบบ">
-                <span class="admin-avatar" aria-hidden="true">AP</span>
-                <span><small>ศูนย์ผู้ดูแล</small><strong>Admin Portal</strong></span>
-            </div>
+
+            <nav class="sidebar-nav">
+                <p>WORKSPACE</p>
+                <a class="is-active" href="#portalHome"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3V10.5Z"/></svg><span>หน้าหลัก</span></a>
+                <a href="#primaryWorkspace"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6v2h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4V3Zm2 2h2V4h-2v1Zm-3 5v2h8v-2H8Zm0 5v2h5v-2H8Z"/></svg><span>Safety Case</span></a>
+                <a href="#systemDirectory"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3h6v6H4V3Zm10 0h6v6h-6V3ZM4 13h6v8H4v-8Zm10 0h6v8h-6v-8Z"/></svg><span>ระบบทั้งหมด</span></a>
+                <button type="button" data-focus-search><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 20-4.4-4.4a8 8 0 1 0-1.4 1.4l4.4 4.4L21 20ZM5 11a6 6 0 1 1 12 0 6 6 0 0 1-12 0Z"/></svg><span>ค้นหาระบบ</span><kbd>/</kbd></button>
+            </nav>
+
+            <div class="sidebar-note"><span class="status-dot" aria-hidden="true"></span><div><strong>Portal พร้อมใช้งาน</strong><small>ไม่มีข้อมูลข้ามระบบ</small></div></div>
+            <div class="sidebar-admin"><span class="admin-avatar" aria-hidden="true">AP</span><span><small>ศูนย์ผู้ดูแล</small><strong>Admin Portal</strong></span></div>
+        </aside>
+
+        <div class="portal-workspace">
+            <header class="mobile-header">
+                <a class="mobile-brand" href="#portalHome"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2 4.5 5v5.8c0 5.1 3.2 9.4 7.5 11.2 4.3-1.8 7.5-6.1 7.5-11.2V5L12 2Zm3.3 7.6-4.1 4.8a1 1 0 0 1-1.5.1l-2.2-2.1 1.4-1.4 1.4 1.3 3.5-4.1 1.5 1.4Z"/></svg></span><span><strong>TSH Safety</strong><small>Admin Portal</small></span></a>
+                <button type="button" class="mobile-search-button" data-focus-search aria-label="ค้นหาระบบ"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 20-4.4-4.4a8 8 0 1 0-1.4 1.4l4.4 4.4L21 20ZM5 11a6 6 0 1 1 12 0 6 6 0 0 1-12 0Z"/></svg></button>
+            </header>
+
+            <main id="portalContent" class="portal-main">
+                <section id="portalHome" class="hero" aria-labelledby="portalTitle">
+                    <div class="hero-content"><p class="eyebrow">SAFETY OPERATIONS CENTER</p><h1 id="portalTitle">ทุกระบบความปลอดภัย<br><span>อยู่ในที่เดียว</span></h1><p>เข้าถึงเครื่องมือของทีม Safety ได้รวดเร็วบนทุกหน้าจอ พร้อมทางลัดสำหรับงานที่ใช้เป็นประจำ</p><div class="hero-actions"><a class="hero-primary" href="#primaryWorkspace">เริ่มจัดการ Safety Case <span aria-hidden="true">↓</span></a><button class="hero-secondary" type="button" data-focus-search>ค้นหาระบบ</button></div></div>
+                    <div class="hero-visual" aria-hidden="true"><div class="visual-orbit orbit-one"></div><div class="visual-orbit orbit-two"></div><div class="visual-shield"><svg viewBox="0 0 24 24"><path d="M12 2 4.5 5v5.8c0 5.1 3.2 9.4 7.5 11.2 4.3-1.8 7.5-6.1 7.5-11.2V5L12 2Zm3.3 7.6-4.1 4.8a1 1 0 0 1-1.5.1l-2.2-2.1 1.4-1.4 1.4 1.3 3.5-4.1 1.5 1.4Z"/></svg></div><span class="visual-pill pill-one">Safety First</span><span class="visual-pill pill-two">8 Systems</span><span class="visual-pill pill-three">Admin Workspace</span></div>
+                </section>
+
+                <section id="primaryWorkspace" class="featured-section" data-module-section aria-labelledby="featuredTitle">
+                    <div class="section-heading"><div><p class="eyebrow">PRIMARY WORKSPACE</p><h2 id="featuredTitle">งานหลักของแอดมิน</h2></div><span class="section-count">Safety Case</span></div>
+                    <article class="featured-card" data-module-card data-module-id="safety-case" data-category="safety" data-search="safety case dashboard เคส ความปลอดภัย คิวงาน รายงาน สถิติ excel">
+                        <div class="featured-icon module-icon icon-safety" data-module-icon-slot="safety-case" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 3h6v2h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4V3Zm2 2h2V4h-2v1Zm-3 5v2h8v-2H8Zm0 5v2h5v-2H8Z"/></svg></div>
+                        <div class="featured-copy"><span class="module-kicker">OPERATIONS DASHBOARD</span><h3>Safety Case Dashboard</h3><p>ตรวจคิวงาน เปิดรายละเอียดเคส 360° ติดต่อผู้แจ้ง จัดการหลักฐาน ปิดเคส และดาวน์โหลดรายงาน</p><ul class="capability-list" aria-label="ความสามารถหลัก"><li>คิวงานและค้นหา</li><li>Case Detail 360°</li><li>Communication</li><li>Excel Report</li></ul></div>
+                        <div class="featured-actions"><button class="favorite-button" type="button" data-favorite="safety-case" aria-label="เพิ่ม Safety Case Dashboard ในรายการโปรด" aria-pressed="false"><span aria-hidden="true">☆</span></button><a class="primary-link" data-module-link="safety-case" href="https://liff.line.me/2007053300-FmMHHcD7" target="_blank" rel="noopener noreferrer">เปิด Dashboard <span aria-hidden="true">↗</span><span class="sr-only"> เปิดในแท็บใหม่</span></a></div>
+                    </article>
+                </section>
+
+                <section id="personalShortcuts" class="shortcut-section" aria-labelledby="shortcutTitle" hidden>
+                    <div class="section-heading"><div><p class="eyebrow">QUICK ACCESS</p><h2 id="shortcutTitle">ทางลัดของฉัน</h2></div></div>
+                    <div class="shortcut-columns"><div id="favoriteBlock" hidden><h3>รายการโปรด</h3><div id="favoriteLinks" class="shortcut-list"></div></div><div id="recentBlock" hidden><h3>ใช้งานล่าสุด</h3><div id="recentLinks" class="shortcut-list"></div></div></div>
+                </section>
+
+                <section id="systemDirectory" class="directory-section" aria-labelledby="systemsTitle">
+                    <div class="directory-header"><div><p class="eyebrow">SYSTEM DIRECTORY</p><h2 id="systemsTitle">ระบบทั้งหมด</h2><p>เลือกเครื่องมือให้ตรงกับงาน หรือค้นหาด้วยชื่อระบบ</p></div><span id="moduleResultsStatus" class="result-status" role="status" aria-live="polite">8 ระบบ</span></div>
+                    <div class="directory-tools">
+                        <label class="search-field" for="moduleSearch"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 20-4.4-4.4a8 8 0 1 0-1.4 1.4l4.4 4.4L21 20ZM5 11a6 6 0 1 1 12 0 6 6 0 0 1-12 0Z"/></svg><span class="sr-only">ค้นหาระบบ</span><input id="moduleSearch" type="search" autocomplete="off" placeholder="ค้นหาชื่อระบบหรืองานที่ต้องการ…"><button id="clearModuleSearch" type="button" hidden>ล้าง</button></label>
+                        <div class="category-filters" role="group" aria-label="กรองตามประเภทระบบ"><button class="filter-button is-active" type="button" data-category-filter="all" aria-pressed="true">ทั้งหมด</button><button class="filter-button" type="button" data-category-filter="safety" aria-pressed="false">ความปลอดภัย</button><button class="filter-button" type="button" data-category-filter="access" aria-pressed="false">สิทธิ์และบุคคล</button><button class="filter-button" type="button" data-category-filter="resource" aria-pressed="false">ทรัพยากร</button></div>
+                    </div>
+
+                    <div class="module-grid">
+                        <article class="module-card card-violation" data-module-card data-module-id="violation" data-category="safety" data-search="violation report รายงานผิดระเบียบ ผู้กระทำซ้ำ ปิดเคส จป"><div class="card-top"><div class="module-icon" data-module-icon-slot="violation" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2 2 20h20L12 2Zm0 6 5 9H7l5-9Zm-1 3v3h2v-3h-2Zm0 4v2h2v-2h-2Z"/></svg></div><button class="favorite-button" type="button" data-favorite="violation" aria-label="เพิ่ม Violation Report ในรายการโปรด" aria-pressed="false"><span aria-hidden="true">☆</span></button></div><span class="module-category">SAFETY</span><h3>Violation Report</h3><p>ติดตามรายงานผิดระเบียบ ตรวจผู้กระทำซ้ำ และปิดเคสตาม Workflow ของ จป.</p><a class="module-link" data-module-link="violation" href="admin_guard_violation.html">เข้าสู่ระบบ <span aria-hidden="true">→</span></a></article>
+                        <article class="module-card card-spot" data-module-card data-module-id="safety-spot" data-category="safety" data-search="safety spot จุดเสี่ยง แจ้งซ่อม hazard reporting โรงงาน"><div class="card-top"><div class="module-icon" data-module-icon-slot="safety-spot" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2a8 8 0 0 0-8 8c0 5.5 8 12 8 12s8-6.5 8-12a8 8 0 0 0-8-8Zm0 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6Z"/></svg></div><button class="favorite-button" type="button" data-favorite="safety-spot" aria-label="เพิ่ม Safety Spot ในรายการโปรด" aria-pressed="false"><span aria-hidden="true">☆</span></button></div><span class="module-category">SAFETY</span><h3>Safety Spot</h3><p>รายงานจุดเสี่ยงและแจ้งซ่อมบำรุงด้านความปลอดภัยภายในพื้นที่โรงงาน</p><a class="module-link" data-module-link="safety-spot" href="https://liff.line.me/2007053300-9xLKdwZp" target="_blank" rel="noopener noreferrer">เข้าสู่ระบบ <span aria-hidden="true">↗</span><span class="sr-only"> เปิดในแท็บใหม่</span></a></article>
+                        <article class="module-card card-slipper" data-module-card data-module-id="slipper" data-category="access" data-search="slipper permit รองเท้าแตะ อนุมัติ พนักงาน รายงาน"><div class="card-top"><div class="module-icon" data-module-icon-slot="slipper" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 3c3 2 5 5 6 9l7 3c1 .4 2 1.5 2 2.7V20H2v-3c0-2 1-3 3-4l2-1V3Zm2 4v7l-3 1c-1 .4-2 1-2 2.2V18h15v-.3c0-.3-.2-.6-.6-.8l-7.2-3.1-.2-1C10.6 10.7 10 8.7 9 7Z"/></svg></div><button class="favorite-button" type="button" data-favorite="slipper" aria-label="เพิ่ม Slipper Permit ในรายการโปรด" aria-pressed="false"><span aria-hidden="true">☆</span></button></div><span class="module-category">PEOPLE</span><h3>Slipper Permit</h3><p>จัดการและอนุมัติคำขอสวมรองเท้าแตะ พร้อม Dashboard และรายงาน</p><a class="module-link" data-module-link="slipper" href="admin_slipper_permit.html">เข้าสู่ระบบ <span aria-hidden="true">→</span></a></article>
+                        <article class="module-card card-guard" data-module-card data-module-id="security-pass" data-category="access" data-search="securitypass admin รปภ guard panel เข้าออก ตรวจสอบสิทธิ์ พนักงาน"><div class="card-top"><div class="module-icon" data-module-icon-slot="security-pass" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5.2 3.3 9.2 8 11 4.7-1.8 8-5.8 8-11V5l-8-3Zm0 5a3 3 0 1 1 0 6 3 3 0 0 1 0-6Zm-4 10c.8-2 2.2-3 4-3s3.2 1 4 3c-1.1 1.2-2.4 2.1-4 2.8-1.6-.7-2.9-1.6-4-2.8Z"/></svg></div><button class="favorite-button" type="button" data-favorite="security-pass" aria-label="เพิ่ม SecurityPass Admin ในรายการโปรด" aria-pressed="false"><span aria-hidden="true">☆</span></button></div><span class="module-category">ACCESS</span><h3>SecurityPass Admin</h3><p>จัดการการเข้า–ออก และตรวจสอบสิทธิ์พนักงานสำหรับเจ้าหน้าที่ รปภ.</p><a class="module-link" data-module-link="security-pass" href="guard-admin.html">เข้าสู่ระบบ <span aria-hidden="true">→</span></a></article>
+                        <article class="module-card card-gate" data-module-card data-module-id="gatepass" data-category="access" data-search="ctr gatepass contractor ผู้รับเหมา เข้าออก พื้นที่"><div class="card-top"><div class="module-icon" data-module-icon-slot="gatepass" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 2h14v20H3V2Zm2 2v16h10V4H5Zm12 5h4v13h-4v-2h2v-9h-2V9ZM7 7h6v2H7V7Zm0 4h6v2H7v-2Zm0 4h4v2H7v-2Z"/></svg></div><button class="favorite-button" type="button" data-favorite="gatepass" aria-label="เพิ่ม CTR GatePass ในรายการโปรด" aria-pressed="false"><span aria-hidden="true">☆</span></button></div><span class="module-category">CONTRACTOR</span><h3>CTR GatePass</h3><p>ควบคุมการเข้า–ออกพื้นที่สำหรับผู้รับเหมาและติดตามสถานะการทำงาน</p><a class="module-link" data-module-link="gatepass" href="https://safetypass-enterprise.vercel.app/" target="_blank" rel="noopener noreferrer">เข้าสู่ระบบ <span aria-hidden="true">↗</span><span class="sr-only"> เปิดในแท็บใหม่</span></a></article>
+                        <article class="module-card card-ppe" data-module-card data-module-id="ppe" data-category="resource" data-search="ppe stock inventory คลัง อุปกรณ์คุ้มครอง ความปลอดภัย"><div class="card-top"><div class="module-icon" data-module-icon-slot="ppe" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 4h16v5H4V4Zm1 7h14l-1 11H6L5 11Zm4 2v6h2v-6H9Zm4 0v6h2v-6h-2ZM6 2h12v2H6V2Z"/></svg></div><button class="favorite-button" type="button" data-favorite="ppe" aria-label="เพิ่ม PPE Stock ในรายการโปรด" aria-pressed="false"><span aria-hidden="true">☆</span></button></div><span class="module-category">INVENTORY</span><h3>PPE Stock</h3><p>บริหารคลังอุปกรณ์คุ้มครองความปลอดภัยส่วนบุคคลและรายการเบิกจ่าย</p><a class="module-link" data-module-link="ppe" href="https://tsh-ppe-stock.vercel.app/" target="_blank" rel="noopener noreferrer">เข้าสู่ระบบ <span aria-hidden="true">↗</span><span class="sr-only"> เปิดในแท็บใหม่</span></a></article>
+                        <article class="module-card card-royal" data-module-card data-module-id="royal-point" data-category="resource" data-search="safety royal point คะแนน พฤติกรรม แลก ของรางวัล reward"><div class="card-top"><div class="module-icon" data-module-icon-slot="royal-point" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 2h10v3h3v5c0 3-2 5-5 5.8V18h3v2H6v-2h3v-2.2C6 15 4 13 4 10V5h3V2Zm2 2v7c0 1.7 1.3 3 3 3s3-1.3 3-3V4H9ZM6 7v3c0 1.4.7 2.6 1.8 3.3A5 5 0 0 1 7 11V7H6Zm11 0v4a5 5 0 0 1-.8 2.3A3.8 3.8 0 0 0 18 10V7h-1Z"/></svg></div><button class="favorite-button" type="button" data-favorite="royal-point" aria-label="เพิ่ม Safety Royal Point ในรายการโปรด" aria-pressed="false"><span aria-hidden="true">☆</span></button></div><span class="module-category">REWARD</span><h3>Safety Royal Point</h3><p>สะสมคะแนนพฤติกรรมความปลอดภัยและบริหารโครงการแลกรับของรางวัล</p><a class="module-link" data-module-link="royal-point" href="https://liff.line.me/2007053300-QoEvbXyn" target="_blank" rel="noopener noreferrer">เข้าสู่ระบบ <span aria-hidden="true">↗</span><span class="sr-only"> เปิดในแท็บใหม่</span></a></article>
+                    </div>
+                </section>
+
+                <div id="moduleEmptyState" class="empty-state" hidden><div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 20-4.4-4.4a8 8 0 1 0-1.4 1.4l4.4 4.4L21 20ZM5 11a6 6 0 1 1 12 0 6 6 0 0 1-12 0Z"/></svg><strong>ไม่พบระบบที่ค้นหา</strong><span>ลองใช้คำค้นอื่นหรือเลือก “ทั้งหมด”</span></div></div>
+                <footer class="portal-footer"><strong>© 2026 TSH Safety Management System</strong><span>Safety, Health and Environment Dept.</span></footer>
+            </main>
+
+            <nav class="mobile-bottom-nav" aria-label="เมนูมือถือ"><a href="#portalHome"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3V10.5Z"/></svg><span>หน้าหลัก</span></a><a href="#primaryWorkspace"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6v2h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4V3Z"/></svg><span>Safety Case</span></a><a href="#systemDirectory"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3h6v6H4V3Zm10 0h6v6h-6V3ZM4 13h6v8H4v-8Zm10 0h6v8h-6v-8Z"/></svg><span>ระบบ</span></a><button type="button" data-focus-search><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 20-4.4-4.4a8 8 0 1 0-1.4 1.4l4.4 4.4L21 20Z"/></svg><span>ค้นหา</span></button></nav>
         </div>
-    </header>
-
-    <main id="portalContent" class="shell portal-main">
-        <section class="welcome" aria-labelledby="portalTitle">
-            <div><p class="eyebrow">SAFETY OPERATIONS</p><h1 id="portalTitle">ศูนย์รวมระบบจัดการความปลอดภัย</h1><p>ค้นหาและเข้าสู่ระบบที่ต้องใช้ได้จากจุดเดียว โดยไม่แสดงข้อมูลสำคัญข้ามระบบ</p></div>
-            <div class="portal-state"><span aria-hidden="true"></span>Portal พร้อมใช้งาน</div>
-        </section>
-
-        <section class="featured-section" data-module-section aria-labelledby="featuredTitle">
-            <div class="section-heading"><div><p class="eyebrow">PRIMARY WORKSPACE</p><h2 id="featuredTitle">จัดการ Safety Case</h2></div><span class="featured-label">งานหลักของแอดมิน</span></div>
-            <article class="featured-card" data-module-card data-module-id="safety-case" data-category="safety" data-search="safety case dashboard เคส ความปลอดภัย คิวงาน รายงาน สถิติ excel">
-                <div class="module-code module-code-safety" aria-hidden="true">SC</div>
-                <div class="featured-copy"><h3>Safety Case Dashboard</h3><p>ตรวจคิวงาน เปิดรายละเอียดเคส 360° ติดต่อผู้แจ้ง จัดการหลักฐาน ปิดเคส และดาวน์โหลดรายงาน</p><ul class="capability-list" aria-label="ความสามารถหลัก"><li>คิวงานและค้นหา</li><li>Case Detail 360°</li><li>รายงาน Excel</li></ul></div>
-                <div class="featured-actions"><button class="favorite-button" type="button" data-favorite="safety-case" aria-label="เพิ่ม Safety Case Dashboard ในรายการโปรด" aria-pressed="false"><span aria-hidden="true">☆</span></button><a class="primary-link external-link" data-module-link="safety-case" href="https://liff.line.me/2007053300-FmMHHcD7" target="_blank" rel="noopener noreferrer">เปิด Dashboard <span aria-hidden="true">↗</span><span class="sr-only"> เปิดในแท็บใหม่</span></a></div>
-            </article>
-        </section>
-
-        <section class="portal-tools" aria-labelledby="toolsTitle">
-            <div class="section-heading compact-heading"><div><p class="eyebrow">SYSTEM DIRECTORY</p><h2 id="toolsTitle">ค้นหาระบบ</h2></div><span id="moduleResultsStatus" class="result-status" role="status" aria-live="polite">8 ระบบ</span></div>
-            <div class="search-row">
-                <label class="search-field" for="moduleSearch"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 20-4.4-4.4a8 8 0 1 0-1.4 1.4l4.4 4.4L21 20ZM5 11a6 6 0 1 1 12 0 6 6 0 0 1-12 0Z"/></svg><span class="sr-only">ค้นหาระบบ</span><input id="moduleSearch" type="search" autocomplete="off" placeholder="ค้นหาชื่อระบบหรืองานที่ต้องการ…"><button id="clearModuleSearch" type="button" hidden>ล้าง</button></label>
-                <div class="category-filters" role="group" aria-label="กรองตามประเภทระบบ"><button class="filter-button is-active" type="button" data-category-filter="all" aria-pressed="true">ทั้งหมด</button><button class="filter-button" type="button" data-category-filter="safety" aria-pressed="false">งานความปลอดภัย</button><button class="filter-button" type="button" data-category-filter="access" aria-pressed="false">สิทธิ์และบุคคล</button><button class="filter-button" type="button" data-category-filter="resource" aria-pressed="false">ทรัพยากร</button></div>
-            </div>
-        </section>
-
-        <section id="personalShortcuts" class="shortcut-section" aria-labelledby="shortcutTitle" hidden>
-            <div class="section-heading compact-heading"><div><p class="eyebrow">QUICK ACCESS</p><h2 id="shortcutTitle">ทางลัดของฉัน</h2></div></div>
-            <div class="shortcut-columns"><div id="favoriteBlock" hidden><h3>รายการโปรด</h3><div id="favoriteLinks" class="shortcut-list"></div></div><div id="recentBlock" hidden><h3>ใช้งานล่าสุด</h3><div id="recentLinks" class="shortcut-list"></div></div></div>
-        </section>
-
-        <section class="module-section" data-module-section aria-labelledby="safetyModulesTitle">
-            <div class="section-heading"><div><p class="eyebrow">SAFETY OPERATIONS</p><h2 id="safetyModulesTitle">งานความปลอดภัย</h2></div><span>2 ระบบ</span></div>
-            <div class="module-grid">
-                <article class="module-card" data-module-card data-module-id="violation" data-category="safety" data-search="violation report รายงานผิดระเบียบ ผู้กระทำซ้ำ ปิดเคส จป"><div class="card-top"><span class="module-code module-code-violation" aria-hidden="true">VR</span><button class="favorite-button" type="button" data-favorite="violation" aria-label="เพิ่ม Violation Report ในรายการโปรด" aria-pressed="false"><span aria-hidden="true">☆</span></button></div><h3>Violation Report</h3><p>ติดตามรายงานผิดระเบียบ ตรวจผู้กระทำซ้ำ และปิดเคสตาม Workflow ของ จป.</p><a class="module-link" data-module-link="violation" href="admin_guard_violation.html">เข้าสู่ระบบ <span aria-hidden="true">→</span></a></article>
-                <article class="module-card" data-module-card data-module-id="safety-spot" data-category="safety" data-search="safety spot จุดเสี่ยง แจ้งซ่อม hazard reporting โรงงาน"><div class="card-top"><span class="module-code module-code-spot" aria-hidden="true">SS</span><button class="favorite-button" type="button" data-favorite="safety-spot" aria-label="เพิ่ม Safety Spot ในรายการโปรด" aria-pressed="false"><span aria-hidden="true">☆</span></button></div><h3>Safety Spot</h3><p>รายงานจุดเสี่ยงและแจ้งซ่อมบำรุงด้านความปลอดภัยภายในพื้นที่โรงงาน</p><a class="module-link external-link" data-module-link="safety-spot" href="https://liff.line.me/2007053300-9xLKdwZp" target="_blank" rel="noopener noreferrer">เข้าสู่ระบบ <span aria-hidden="true">↗</span><span class="sr-only"> เปิดในแท็บใหม่</span></a></article>
-            </div>
-        </section>
-
-        <section class="module-section" data-module-section aria-labelledby="accessModulesTitle">
-            <div class="section-heading"><div><p class="eyebrow">ACCESS &amp; PEOPLE</p><h2 id="accessModulesTitle">สิทธิ์และบุคคล</h2></div><span>3 ระบบ</span></div>
-            <div class="module-grid">
-                <article class="module-card" data-module-card data-module-id="slipper" data-category="access" data-search="slipper permit รองเท้าแตะ อนุมัติ พนักงาน รายงาน"><div class="card-top"><span class="module-code module-code-slipper" aria-hidden="true">SP</span><button class="favorite-button" type="button" data-favorite="slipper" aria-label="เพิ่ม Slipper Permit ในรายการโปรด" aria-pressed="false"><span aria-hidden="true">☆</span></button></div><h3>Slipper Permit</h3><p>จัดการและอนุมัติคำขอสวมรองเท้าแตะ พร้อม Dashboard และรายงาน</p><a class="module-link" data-module-link="slipper" href="admin_slipper_permit.html">เข้าสู่ระบบ <span aria-hidden="true">→</span></a></article>
-                <article class="module-card" data-module-card data-module-id="security-pass" data-category="access" data-search="securitypass admin รปภ guard panel เข้าออก ตรวจสอบสิทธิ์ พนักงาน"><div class="card-top"><span class="module-code module-code-guard" aria-hidden="true">SG</span><button class="favorite-button" type="button" data-favorite="security-pass" aria-label="เพิ่ม SecurityPass Admin ในรายการโปรด" aria-pressed="false"><span aria-hidden="true">☆</span></button></div><h3>SecurityPass Admin</h3><p>จัดการการเข้า–ออก และตรวจสอบสิทธิ์พนักงานสำหรับเจ้าหน้าที่ รปภ.</p><a class="module-link" data-module-link="security-pass" href="guard-admin.html">เข้าสู่ระบบ <span aria-hidden="true">→</span></a></article>
-                <article class="module-card" data-module-card data-module-id="gatepass" data-category="access" data-search="ctr gatepass contractor ผู้รับเหมา เข้าออก พื้นที่"><div class="card-top"><span class="module-code module-code-gate" aria-hidden="true">GP</span><button class="favorite-button" type="button" data-favorite="gatepass" aria-label="เพิ่ม CTR GatePass ในรายการโปรด" aria-pressed="false"><span aria-hidden="true">☆</span></button></div><h3>CTR GatePass</h3><p>ควบคุมการเข้า–ออกพื้นที่สำหรับผู้รับเหมาและติดตามสถานะการทำงาน</p><a class="module-link external-link" data-module-link="gatepass" href="https://safetypass-enterprise.vercel.app/" target="_blank" rel="noopener noreferrer">เข้าสู่ระบบ <span aria-hidden="true">↗</span><span class="sr-only"> เปิดในแท็บใหม่</span></a></article>
-            </div>
-        </section>
-
-        <section class="module-section" data-module-section aria-labelledby="resourceModulesTitle">
-            <div class="section-heading"><div><p class="eyebrow">RESOURCES &amp; ENGAGEMENT</p><h2 id="resourceModulesTitle">ทรัพยากรและแรงจูงใจ</h2></div><span>2 ระบบ</span></div>
-            <div class="module-grid">
-                <article class="module-card" data-module-card data-module-id="ppe" data-category="resource" data-search="ppe stock inventory คลัง อุปกรณ์คุ้มครอง ความปลอดภัย"><div class="card-top"><span class="module-code module-code-ppe" aria-hidden="true">PPE</span><button class="favorite-button" type="button" data-favorite="ppe" aria-label="เพิ่ม PPE Stock ในรายการโปรด" aria-pressed="false"><span aria-hidden="true">☆</span></button></div><h3>PPE Stock</h3><p>บริหารคลังอุปกรณ์คุ้มครองความปลอดภัยส่วนบุคคลและรายการเบิกจ่าย</p><a class="module-link external-link" data-module-link="ppe" href="https://tsh-ppe-stock.vercel.app/" target="_blank" rel="noopener noreferrer">เข้าสู่ระบบ <span aria-hidden="true">↗</span><span class="sr-only"> เปิดในแท็บใหม่</span></a></article>
-                <article class="module-card" data-module-card data-module-id="royal-point" data-category="resource" data-search="safety royal point คะแนน พฤติกรรม แลก ของรางวัล reward"><div class="card-top"><span class="module-code module-code-royal" aria-hidden="true">RP</span><button class="favorite-button" type="button" data-favorite="royal-point" aria-label="เพิ่ม Safety Royal Point ในรายการโปรด" aria-pressed="false"><span aria-hidden="true">☆</span></button></div><h3>Safety Royal Point</h3><p>สะสมคะแนนพฤติกรรมความปลอดภัยและบริหารโครงการแลกรับของรางวัล</p><a class="module-link external-link" data-module-link="royal-point" href="https://liff.line.me/2007053300-QoEvbXyn" target="_blank" rel="noopener noreferrer">เข้าสู่ระบบ <span aria-hidden="true">↗</span><span class="sr-only"> เปิดในแท็บใหม่</span></a></article>
-            </div>
-        </section>
-
-        <div id="moduleEmptyState" class="empty-state" hidden><div><strong>ไม่พบระบบที่ค้นหา</strong><span>ลองใช้คำค้นอื่นหรือเลือก “ทั้งหมด”</span></div></div>
-    </main>
-
-    <footer class="portal-footer"><div class="shell"><strong>© 2026 TSH Safety Management System</strong><span>Developed &amp; Maintained by Safety, Health and Environment Dept.</span></div></footer>
+    </div>
 </body>
 </html>

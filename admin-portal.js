@@ -107,6 +107,14 @@ function setCategory(category) {
     applyFilters();
 }
 
+function focusModuleSearch() {
+    const directory = element('systemDirectory');
+    const search = element('moduleSearch');
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    directory.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+    window.setTimeout(() => search.focus({ preventScroll: true }), reduceMotion ? 0 : 350);
+}
+
 function bindEvents() {
     element('moduleSearch').addEventListener('input', (event) => { state.query = event.target.value; applyFilters(); });
     element('clearModuleSearch').addEventListener('click', () => {
@@ -116,6 +124,7 @@ function bindEvents() {
         element('moduleSearch').focus();
     });
     document.querySelectorAll('[data-category-filter]').forEach((button) => button.addEventListener('click', () => setCategory(button.dataset.categoryFilter)));
+    document.querySelectorAll('[data-focus-search]').forEach((button) => button.addEventListener('click', focusModuleSearch));
     document.addEventListener('click', (event) => {
         if (!(event.target instanceof Element)) return;
         const favorite = event.target.closest('[data-favorite]');
@@ -126,7 +135,7 @@ function bindEvents() {
     document.addEventListener('keydown', (event) => {
         if (event.key === '/' && !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) {
             event.preventDefault();
-            element('moduleSearch').focus();
+            focusModuleSearch();
         }
     });
 }

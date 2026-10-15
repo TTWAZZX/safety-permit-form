@@ -11,11 +11,12 @@ const [html, css, script] = await Promise.all([
     fetchText('admin-portal.html'), fetchText('admin-portal.css'), fetchText('admin-portal.js'),
 ]);
 
-for (const marker of ['PRIMARY WORKSPACE', 'id="moduleSearch"', 'Content-Security-Policy']) {
+for (const marker of ['PRIMARY WORKSPACE', 'id="moduleSearch"', 'Content-Security-Policy', 'class="portal-app"', 'class="sidebar"', 'class="mobile-bottom-nav"']) {
     if (!html.includes(marker)) throw new Error(`Production Admin Portal HTML is missing ${marker}`);
 }
 if (html.includes('static.line-scdn.net')) throw new Error('Production Admin Portal still initializes an unrelated LIFF app');
 if (!css.includes('env(safe-area-inset-bottom)')) throw new Error('Production CSS is missing mobile safe-area support');
+if (!css.includes('grid-template-columns:repeat(4, minmax(0, 1fr))')) throw new Error('Production CSS is missing the full-screen four-column grid');
 if (!script.includes('MAX_STORED_ITEMS = 8')) throw new Error('Production JavaScript is missing bounded storage hardening');
 
 console.log(`PASS Phase 16F Production smoke: ${baseUrl}/admin-portal.html`);
