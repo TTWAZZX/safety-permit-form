@@ -5,12 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#064e3b">
     <meta name="referrer" content="no-referrer">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://static.line-scdn.net; style-src 'self'; connect-src 'self' https://api.line.me https://liffsdk.line-scdn.net; img-src 'self' data: https:; font-src 'self'; base-uri 'none'; form-action 'none'">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data:; font-src 'self'; object-src 'none'; frame-src 'none'; worker-src 'none'; manifest-src 'self'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
     <title>TSH Safety Admin Portal</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="admin-portal.css">
-    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js" defer></script>
-    <script src="safety-dashboard-config.js" defer></script>
     <script src="admin-portal.js" defer></script>
 </head>
 <body>
@@ -22,9 +20,9 @@
                 <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2 4.5 5v5.8c0 5.1 3.2 9.4 7.5 11.2 4.3-1.8 7.5-6.1 7.5-11.2V5L12 2Zm3.3 7.6-4.1 4.8a1 1 0 0 1-1.5.1l-2.2-2.1 1.4-1.4 1.4 1.3 3.5-4.1 1.5 1.4Z"/></svg></span>
                 <span><strong>TSH Safety</strong><small>Admin Portal</small></span>
             </a>
-            <div class="admin-identity" aria-label="ข้อมูลผู้ดูแลระบบ">
-                <span class="admin-avatar" aria-hidden="true"><span id="portalAvatarFallback">A</span><img id="portalAvatarImage" alt="" referrerpolicy="no-referrer" hidden></span>
-                <span><small>ผู้ดูแลระบบ</small><strong id="portalAdminName">Safety Admin</strong></span>
+            <div class="admin-identity" aria-label="ศูนย์ผู้ดูแลระบบ">
+                <span class="admin-avatar" aria-hidden="true">AP</span>
+                <span><small>ศูนย์ผู้ดูแล</small><strong>Admin Portal</strong></span>
             </div>
         </div>
     </header>
@@ -32,7 +30,7 @@
     <main id="portalContent" class="shell portal-main">
         <section class="welcome" aria-labelledby="portalTitle">
             <div><p class="eyebrow">SAFETY OPERATIONS</p><h1 id="portalTitle">ศูนย์รวมระบบจัดการความปลอดภัย</h1><p>ค้นหาและเข้าสู่ระบบที่ต้องใช้ได้จากจุดเดียว โดยไม่แสดงข้อมูลสำคัญข้ามระบบ</p></div>
-            <div class="portal-state"><span aria-hidden="true"></span>พร้อมใช้งาน</div>
+            <div class="portal-state"><span aria-hidden="true"></span>Portal พร้อมใช้งาน</div>
         </section>
 
         <section class="featured-section" data-module-section aria-labelledby="featuredTitle">

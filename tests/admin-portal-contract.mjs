@@ -14,7 +14,6 @@ for (const id of ['portalContent', 'portalTitle']) {
     if (!html.includes(`id="${id}"`)) throw new Error(`Admin Portal HTML is missing #${id}`);
 }
 for (const id of [
-    'portalAvatarFallback', 'portalAvatarImage', 'portalAdminName',
     'moduleSearch', 'clearModuleSearch', 'moduleResultsStatus', 'personalShortcuts',
     'favoriteBlock', 'favoriteLinks', 'recentBlock', 'recentLinks', 'moduleEmptyState',
 ]) {
@@ -31,8 +30,8 @@ for (const moduleId of ['safety-case', 'violation', 'safety-spot', 'slipper', 's
 }
 for (const marker of [
     'FAVORITES_KEY', 'RECENTS_KEY', 'MAX_RECENTS = 4', 'applyFilters', 'toggleFavorite',
-    'rememberRecent', 'hydrateOptionalLineProfile', 'window.liff.getProfile()',
-    "url.protocol === 'https:'", "event.key === '/'",
+    'rememberRecent', 'MAX_STORED_ITEMS = 8', 'MAX_MODULE_ID_LENGTH = 64',
+    "event.target instanceof Element", "event.key === '/'",
 ]) {
     if (!script.includes(marker)) throw new Error(`Admin Portal script is missing ${marker}`);
 }
@@ -41,9 +40,10 @@ for (const marker of [':focus-visible', 'prefers-reduced-motion', '@media (max-w
 }
 if (!html.includes('href="https://liff.line.me/2007053300-FmMHHcD7"')) throw new Error('Safety Case LIFF entry is missing');
 if (!html.includes('Content-Security-Policy')) throw new Error('Admin Portal CSP is missing');
+if (html.includes('static.line-scdn.net') || html.includes('safety-dashboard-config.js')) throw new Error('Admin Portal must not initialize the Safety Dashboard LIFF app');
 if (html.includes('bootstrap@') || html.includes('fonts.googleapis.com')) throw new Error('Admin Portal must not depend on Bootstrap or Google Fonts');
 
 const externalLinks = [...html.matchAll(/<a[^>]+target="_blank"[^>]*>/g)].map((match) => match[0]);
 if (!externalLinks.length || externalLinks.some((link) => !link.includes('rel="noopener noreferrer"'))) throw new Error('Every external new-tab link must use noopener noreferrer');
 
-console.log('PASS Phase 16 Admin Portal command center, search, grouping, favorites, recents, optional LINE profile, responsive, accessibility, and link-security contract');
+console.log('PASS Phase 16 Admin Portal command center, search, grouping, favorites, recents, responsive, accessibility, and link-security contract');

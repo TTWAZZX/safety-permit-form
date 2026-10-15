@@ -3,13 +3,16 @@
 const FAVORITES_KEY = 'tsh-admin-portal-favorites';
 const RECENTS_KEY = 'tsh-admin-portal-recents';
 const MAX_RECENTS = 4;
+const MAX_STORED_ITEMS = 8;
+const MAX_MODULE_ID_LENGTH = 64;
 const element = (id) => document.getElementById(id);
 const state = { query: '', category: 'all', favorites: [], recents: [] };
 
 function readStoredList(key) {
     try {
         const value = JSON.parse(window.localStorage.getItem(key) || '[]');
-        return Array.isArray(value) ? value.filter((item) => typeof item === 'string') : [];
+        if (!Array.isArray(value)) return [];
+        return [...new Set(value.filter((item) => typeof item === 'string' && item.length <= MAX_MODULE_ID_LENGTH))].slice(0, MAX_STORED_ITEMS);
     } catch (_error) { return []; }
 }
 
@@ -20,9 +23,8 @@ function writeStoredList(key, value) {
 function moduleCards() { return [...document.querySelectorAll('[data-module-card]')]; }
 
 function moduleRecord(id) {
-    const escapedId = CSS.escape(id);
-    const card = document.querySelector(`[data-module-id="${escapedId}"]`);
-    const link = document.querySelector(`[data-module-link="${escapedId}"]`);
+    const card = moduleCards().find((item) => item.dataset.moduleId === id);
+    const link = [...document.querySelectorAll('[data-module-link]')].find((item) => item.dataset.moduleLink === id && !item.classList.contains('shortcut-link'));
     if (!card || !link) return null;
     return { id, title: card.querySelector('h3')?.textContent?.trim() || id, href: link.href, external: link.target === '_blank' };
 }
@@ -105,38 +107,6 @@ function setCategory(category) {
     applyFilters();
 }
 
-function safePictureUrl(value) {
-    try {
-        const url = new URL(String(value || ''));
-        return url.protocol === 'https:' ? url.href : '';
-    } catch (_error) { return ''; }
-}
-
-function renderProfile(profile = {}) {
-    const displayName = String(profile.displayName || 'Safety Admin').trim() || 'Safety Admin';
-    const image = element('portalAvatarImage');
-    const fallback = element('portalAvatarFallback');
-    const pictureUrl = safePictureUrl(profile.pictureUrl);
-    element('portalAdminName').textContent = displayName;
-    fallback.textContent = displayName.slice(0, 1).toUpperCase();
-    if (!pictureUrl) return;
-    image.onload = () => { image.hidden = false; fallback.hidden = true; };
-    image.onerror = () => { image.hidden = true; fallback.hidden = false; image.removeAttribute('src'); };
-    image.src = pictureUrl;
-}
-
-async function hydrateOptionalLineProfile() {
-    const liffId = window.SAFETY_DASHBOARD_CONFIG?.liffId;
-    if (!window.liff || !liffId) return;
-    try {
-        await window.liff.init({ liffId });
-        if (!window.liff.isLoggedIn()) return;
-        renderProfile(await window.liff.getProfile());
-    } catch (error) {
-        console.warn('Optional LINE profile is unavailable; using the safe fallback', error);
-    }
-}
-
 function bindEvents() {
     element('moduleSearch').addEventListener('input', (event) => { state.query = event.target.value; applyFilters(); });
     element('clearModuleSearch').addEventListener('click', () => {
@@ -147,6 +117,7 @@ function bindEvents() {
     });
     document.querySelectorAll('[data-category-filter]').forEach((button) => button.addEventListener('click', () => setCategory(button.dataset.categoryFilter)));
     document.addEventListener('click', (event) => {
+        if (!(event.target instanceof Element)) return;
         const favorite = event.target.closest('[data-favorite]');
         if (favorite) return toggleFavorite(favorite.dataset.favorite);
         const link = event.target.closest('[data-module-link]');
@@ -166,7 +137,6 @@ function initialize() {
     bindEvents();
     renderShortcuts();
     applyFilters();
-    hydrateOptionalLineProfile();
 }
 
 window.addEventListener('DOMContentLoaded', initialize);

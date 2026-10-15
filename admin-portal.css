@@ -6,7 +6,7 @@
 }
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
-body { margin: 0; min-height: 100vh; background: radial-gradient(circle at 85% 0, #e1f5df 0, transparent 30rem), var(--page); color: var(--ink); font-family: "Noto Sans Thai", "Leelawadee UI", Tahoma, sans-serif; }
+body { margin: 0; min-height: 100vh; overflow-x: clip; background: radial-gradient(circle at 85% 0, #e1f5df 0, transparent 30rem), var(--page); color: var(--ink); font-family: "Noto Sans Thai", "Leelawadee UI", Tahoma, sans-serif; }
 button, input { font: inherit; }
 button, a { -webkit-tap-highlight-color: transparent; }
 [hidden] { display: none !important; }
@@ -25,9 +25,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .brand small, .admin-identity small { color: var(--muted); font-size: .7rem; }
 .admin-identity { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .admin-identity strong { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .88rem; }
-.admin-avatar { position: relative; overflow: hidden; display: grid; place-items: center; width: 38px; height: 38px; flex: 0 0 38px; border-radius: 50%; background: var(--mint); color: var(--forest); font-weight: 850; }
-.admin-avatar > * { grid-area: 1 / 1; }
-.admin-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.admin-avatar { position: relative; overflow: hidden; display: grid; place-items: center; width: 38px; height: 38px; flex: 0 0 38px; border-radius: 50%; background: var(--mint); color: var(--forest); font-size: .72rem; font-weight: 850; }
 
 .portal-main { padding: 42px 0 70px; }
 .welcome { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 28px; }
@@ -54,7 +52,8 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .module-code-gate { background: #dcfce7; color: #15803d; }
 .module-code-ppe { background: #fef3c7; color: #b45309; }
 .module-code-royal { background: #e0e7ff; color: #4338ca; }
-.featured-copy h3, .module-card h3 { margin: 0; color: var(--ink); }
+.featured-copy, .module-card { min-width: 0; }
+.featured-copy h3, .module-card h3 { margin: 0; overflow-wrap: anywhere; color: var(--ink); }
 .featured-copy h3 { font-size: 1.45rem; }
 .featured-copy > p { margin: 8px 0 12px; color: var(--muted); }
 .capability-list { display: flex; flex-wrap: wrap; gap: 7px; margin: 0; padding: 0; list-style: none; }
@@ -91,7 +90,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .module-card:hover { transform: translateY(-3px); border-color: #b2d5c8; box-shadow: 0 16px 34px rgba(15, 55, 43, .09); }
 .card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
 .module-card h3 { font-size: 1.06rem; }
-.module-card > p { flex: 1; margin: 8px 0 20px; color: var(--muted); font-size: .88rem; line-height: 1.65; }
+.module-card > p { flex: 1; margin: 8px 0 20px; overflow-wrap: anywhere; color: var(--muted); font-size: .88rem; line-height: 1.65; }
 .module-link { width: 100%; padding: 0 14px; border: 1px solid var(--line); background: var(--surface-soft); color: var(--forest); }
 .module-link:hover { border-color: var(--forest); background: var(--forest); color: #fff; }
 .empty-state { display: grid; place-items: center; min-height: 220px; margin-top: 22px; border: 1px dashed #b8cac2; border-radius: 20px; color: var(--muted); text-align: center; }
@@ -115,7 +114,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
     .topbar-inner { min-height: 64px; }
     .brand small, .admin-identity small { display: none; }
     .admin-identity strong { max-width: 105px; }
-    .portal-main { padding-top: 28px; }
+    .portal-main { padding-top: 28px; padding-bottom: calc(48px + env(safe-area-inset-bottom)); }
     .welcome { align-items: flex-start; flex-direction: column; }
     .portal-state { align-self: flex-start; }
     .section-heading { align-items: flex-start; }
@@ -127,5 +126,6 @@ button, a { -webkit-tap-highlight-color: transparent; }
     .category-filters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .module-grid, .shortcut-columns { grid-template-columns: 1fr; }
     .module-card { min-height: 0; }
+    .primary-link, .module-link, .filter-button, .favorite-button { min-height: 44px; }
     .portal-footer .shell { flex-direction: column; gap: 5px; }
 }
