@@ -8,9 +8,10 @@ const [quality, production, smoke] = await Promise.all([
 ]);
 
 for (const [name, workflow] of [['quality', quality], ['production smoke', production]]) {
-    if (!workflow.includes('permissions:\n  contents: read')) throw new Error(`${name} workflow must use read-only repository permissions`);
-    if (!workflow.includes('timeout-minutes: 5')) throw new Error(`${name} workflow must have a bounded timeout`);
-    if (!workflow.includes('actions/checkout@v4') || !workflow.includes('actions/setup-node@v4')) throw new Error(`${name} workflow is missing pinned major actions`);
+    const normalized = workflow.replaceAll('\r\n', '\n');
+    if (!normalized.includes('permissions:\n  contents: read')) throw new Error(`${name} workflow must use read-only repository permissions`);
+    if (!normalized.includes('timeout-minutes: 5')) throw new Error(`${name} workflow must have a bounded timeout`);
+    if (!normalized.includes('actions/checkout@v4') || !normalized.includes('actions/setup-node@v4')) throw new Error(`${name} workflow is missing pinned major actions`);
 }
 
 if (!quality.includes('node tests/run-phase16f.mjs')) throw new Error('Quality workflow must run the complete Phase 16F suite');

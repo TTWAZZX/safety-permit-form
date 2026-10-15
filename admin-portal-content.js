@@ -76,6 +76,28 @@
         });
     }
 
+    function setFavicon(url, mimeType) {
+        const favicon = document.getElementById('portalFavicon');
+        if (!favicon) return;
+        const restoreFallback = () => {
+            favicon.href = favicon.dataset.fallbackHref || 'favicon.svg';
+            favicon.type = favicon.dataset.fallbackType || 'image/svg+xml';
+        };
+        if (!url) {
+            restoreFallback();
+            return;
+        }
+        const image = new Image();
+        image.referrerPolicy = 'no-referrer';
+        image.onload = () => {
+            if (/^(?:image\/png|image\/jpeg|image\/webp)$/i.test(String(mimeType || ''))) favicon.type = String(mimeType).toLowerCase();
+            else favicon.removeAttribute('type');
+            favicon.href = url;
+        };
+        image.onerror = restoreFallback;
+        image.src = url;
+    }
+
     function applySettings(settings) {
         document.querySelectorAll('.sidebar-brand strong, .mobile-brand strong').forEach((node) => { node.textContent = settings.brand_name || 'TSH Safety'; });
         document.querySelectorAll('.sidebar-brand small, .mobile-brand small').forEach((node) => { node.textContent = settings.brand_subtitle || 'Admin Portal'; });
@@ -92,7 +114,9 @@
         if (/^#[0-9A-F]{6}$/i.test(settings.primary_color || '')) document.documentElement.style.setProperty('--forest', settings.primary_color);
         if (/^#[0-9A-F]{6}$/i.test(settings.accent_color || '')) document.documentElement.style.setProperty('--forest-2', settings.accent_color);
         document.title = `${settings.brand_name || 'TSH Safety'} ${settings.brand_subtitle || 'Admin Portal'}`;
-        setBrandAsset(safeAssetUrl(settings.logo_asset));
+        const logoUrl = safeAssetUrl(settings.logo_asset);
+        setBrandAsset(logoUrl);
+        setFavicon(logoUrl, settings.logo_asset?.mime_type);
         const heroUrl = safeAssetUrl(settings.hero_asset);
         if (heroUrl) {
             const image = document.createElement('img');

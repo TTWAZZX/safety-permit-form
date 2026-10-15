@@ -52,5 +52,6 @@ for (const marker of ['applySettings', 'renderModules', 'safeTargetUrl', 'portal
 }
 if (!portalHtml.includes('https://liff.line.me/2007053300-FmMHHcD7?view=portal')) throw new Error('Admin Portal Content Manager link is missing');
 if (!portalHtml.includes('connect-src \'self\' https://dqsfioiqwxuxpucwwhsv.supabase.co')) throw new Error('Admin Portal CSP does not allow its content API');
+if (!dashboardHtml.includes("img-src 'self' data: blob: https:")) throw new Error('Content Manager CSP must allow local blob image previews');
 
 console.log('PASS Phase 16D authenticated Content Manager, uploads, live preview, responsive UI, deep link, and public Portal content contract');

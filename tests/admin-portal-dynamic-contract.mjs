@@ -10,6 +10,7 @@ const [html, css, portalScript, contentScript, config] = await Promise.all([
 ]);
 
 for (const id of [
+    'portalFavicon',
     'portalRuntimeStatus', 'portalRuntimeStatusTitle', 'portalRuntimeStatusDetail',
     'portalModuleCountPill', 'featuredModuleName', 'portalCategoryFilters', 'portalModuleGrid',
 ]) {
@@ -17,7 +18,7 @@ for (const id of [
 }
 for (const marker of [
     'captureFallbackVisuals', 'safeAssetUrl', 'safeTargetUrl', 'setRuntimeStatus',
-    'applySettings', 'createFeaturedCard', 'createModuleCard', 'renderCategoryFilters',
+    'applySettings', 'setFavicon', 'restoreFallback', 'createFeaturedCard', 'createModuleCard', 'renderCategoryFilters',
     'renderModules', 'module.is_enabled', 'module.is_featured', 'a.sort_order',
     'validContent', "new CustomEvent('portal-content:updated'", 'AbortController',
     'noopener noreferrer', "linkType === 'internal'", "url.protocol !== 'https:'",
@@ -34,6 +35,7 @@ for (const marker of [
     if (!portalScript.includes(marker)) throw new Error(`Portal runtime integration is missing ${marker}`);
 }
 if (/\.innerHTML\s*=/.test(contentScript)) throw new Error('Dynamic Portal must not render API content with innerHTML');
+if (!html.includes('data-fallback-href="favicon.svg"') || !html.includes('data-fallback-type="image/svg+xml"')) throw new Error('Dynamic favicon fallback is missing');
 if (!config.includes('/functions/v1/admin-portal-content') || !config.includes('/storage/v1/object/public/admin-portal-assets/')) throw new Error('Dynamic Portal endpoint or managed asset base is missing');
 if (/service[_-]?role|db[_-]?password|channel[_-]?secret/i.test(config + contentScript)) throw new Error('Dynamic Portal public files contain a privileged field');
 for (const marker of ['.sidebar-note.is-loading', '.sidebar-note.is-fallback', '@keyframes portal-card-in']) {
