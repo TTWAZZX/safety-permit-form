@@ -440,6 +440,7 @@ tbody tr:last-child td { border-bottom: 0; }
 .detail-section { scroll-margin-top: 155px; padding: 22px; border: 1px solid var(--line); border-radius: 18px; background: #fff; box-shadow: 0 10px 35px rgba(23, 54, 44, .055); }
 .detail-section-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
 .detail-section-heading h3 { margin: 0; font-size: 1.05rem; }
+.detail-heading-statuses { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
 .detail-count { padding: 5px 9px; border-radius: 999px; background: #edf3f0; color: var(--muted); font-size: .7rem; font-weight: 750; white-space: nowrap; }
 .detail-summary-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
 .detail-value { min-height: 78px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 13px; background: #f8fbf9; }

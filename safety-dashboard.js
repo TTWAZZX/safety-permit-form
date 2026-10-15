@@ -415,16 +415,18 @@ function renderReward(reward) {
     appendProse(container, 'วันที่ออก', formatDateTime(reward.issued_at));
 }
 
-function renderChat(messages, sessions) {
+function renderChat(messages = [], sessions = []) {
+    const chatMessages = Array.isArray(messages) ? messages : [];
+    const chatSessions = Array.isArray(sessions) ? sessions : [];
     const container = element('detailChat');
     container.replaceChildren();
-    element('detailChatCount').textContent = `${formatNumber(messages.length)} ข้อความ`;
-    if (!messages.length) {
-        const status = sessions[0]?.status ? `สถานะห้องล่าสุด: ${sessions[0].status}` : 'เคสนี้ยังไม่มีการสนทนา';
+    element('detailChatCount').textContent = `${formatNumber(chatMessages.length)} ข้อความ`;
+    if (!chatMessages.length) {
+        const status = chatSessions[0]?.status ? `สถานะห้องล่าสุด: ${chatSessions[0].status}` : 'เคสนี้ยังไม่มีการสนทนา';
         container.append(emptyDetail(status));
         return;
     }
-    messages.forEach((item) => {
+    chatMessages.forEach((item) => {
         const bubble = document.createElement('article');
         bubble.className = `chat-message ${item.sender_type === 'SAFETY_ADMIN' ? 'chat-admin' : 'chat-reporter'}`;
         const sender = document.createElement('strong');

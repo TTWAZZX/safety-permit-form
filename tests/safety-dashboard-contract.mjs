@@ -21,7 +21,7 @@ for (const id of [
     'caseDetailOverlay', 'caseDetailPanel', 'closeCaseDetail',
     'detailLoading', 'detailError', 'detailContent', 'detailCaseNumber',
     'detailSummaryGrid', 'detailHazard', 'detailAi', 'detailEvidence',
-    'detailReminders', 'detailReward', 'detailChat', 'detailTimeline',
+    'detailReminders', 'detailReward', 'detailChat', 'detailChatCount', 'detailTimeline',
     'claimCaseButton', 'caseRankInput',
     'caseDueInput', 'caseTagsInput', 'caseNoteInput', 'caseMessageInput',
     'caseInternalNotes', 'caseActionDeliveries',
@@ -47,6 +47,13 @@ for (const id of [
 ]) {
     if (!html.includes(`id="${id}"`)) throw new Error(`Dashboard HTML is missing #${id}`);
     if (!script.includes(`'${id}'`)) throw new Error(`Dashboard script does not bind #${id}`);
+}
+
+// Every static DOM lookup must have a matching element. This prevents one
+// missing badge or control from aborting the entire Case Detail renderer.
+const boundElementIds = [...script.matchAll(/\belement\('([^']+)'\)/g)].map((match) => match[1]);
+for (const id of new Set(boundElementIds)) {
+    if (!html.includes(`id="${id}"`)) throw new Error(`Dashboard script binds missing HTML element #${id}`);
 }
 if (!html.includes('id="detailActionsSection"')) throw new Error('Dashboard HTML is missing #detailActionsSection');
 if (!html.includes('id="detailResolutionSection"')) throw new Error('Dashboard HTML is missing #detailResolutionSection');

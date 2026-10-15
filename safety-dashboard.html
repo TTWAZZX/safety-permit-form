@@ -7,6 +7,7 @@
     <meta name="referrer" content="no-referrer">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://static.line-scdn.net; style-src 'self'; connect-src 'self' https://api.line.me https://liffsdk.line-scdn.net https://dqsfioiqwxuxpucwwhsv.supabase.co; img-src 'self' data: https:; font-src 'self'; base-uri 'none'; form-action 'none'">
     <title>Safety Case Dashboard | TSH Safety</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="safety-dashboard.css">
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js" defer></script>
     <script src="safety-dashboard-config.js" defer></script>
@@ -421,7 +422,10 @@
                     <section id="detailChatSection" class="detail-section">
                         <div class="detail-section-heading">
                             <div><p class="eyebrow">COMMUNICATION CENTER</p><h3>ศูนย์สื่อสารประจำเคส</h3><p class="panel-subtitle">สนทนากับผู้แจ้งโดยผูกทุกข้อความกับเคสและ Audit Log</p></div>
-                            <span id="communicationState" class="detail-count" role="status" aria-live="polite">พร้อมใช้งาน</span>
+                            <div class="detail-heading-statuses">
+                                <span id="detailChatCount" class="detail-count">0 ข้อความ</span>
+                                <span id="communicationState" class="detail-count" role="status" aria-live="polite">พร้อมใช้งาน</span>
+                            </div>
                         </div>
                         <div id="communicationNotice" class="action-notice" role="alert" hidden></div>
                         <div class="communication-toolbar">
