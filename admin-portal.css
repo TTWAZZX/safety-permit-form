@@ -22,3 +22,11 @@ body { overflow-x: clip; }
 @media (max-width: 640px) { .module-grid { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 .portal-brand-image{width:100%;height:100%;object-fit:cover;border-radius:inherit}.portal-hero-image{position:absolute;inset:0;z-index:-2;width:100%;height:100%;object-fit:cover;opacity:.22}.module-icon .portal-module-icon-image{width:100%;height:100%;object-fit:cover;border-radius:inherit}.portal-content-warning{position:fixed;z-index:80;right:18px;bottom:18px;max-width:360px;padding:11px 14px;border:1px solid #ecd28d;border-radius:12px;background:#fff8df;color:#73530b;box-shadow:var(--shadow);font-size:.72rem}.sidebar-note.is-loading .status-dot{background:#f0bd45;box-shadow:0 0 0 4px rgba(240,189,69,.14)}.sidebar-note.is-fallback .status-dot{background:#ff9f43;box-shadow:0 0 0 4px rgba(255,159,67,.14)}.portal-runtime-meta{color:var(--muted);font-size:.7rem}.module-card.is-dynamic,.featured-card.is-dynamic{animation:portal-card-in .25s ease both}@keyframes portal-card-in{from{opacity:.35;transform:translateY(5px)}to{opacity:1;transform:none}}
+
+/* Compact the featured workspace and let uploaded icons fill their visual frame. */
+.featured-card{gap:clamp(16px,1.6vw,24px);padding:clamp(20px,2vw,30px)}
+.featured-icon{width:74px;height:74px;border-radius:21px}
+.featured-copy>p{margin-block:7px 11px;line-height:1.55}
+.module-icon{overflow:hidden}
+.module-icon .portal-module-icon-image{transform:scale(1.06)}
+@media(max-width:640px){.featured-icon{width:66px;height:66px;border-radius:19px}}

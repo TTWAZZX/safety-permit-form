@@ -18,7 +18,10 @@
     }
 
     function isCurrentInternalModule(module) {
-        if (!module || module.link_type !== 'internal' || !module.target_url) return false;
+        if (!module) return false;
+        const declaredKey = document.documentElement.dataset.portalModuleKey;
+        if (declaredKey) return module.module_key === declaredKey;
+        if (module.link_type !== 'internal' || !module.target_url) return false;
         try {
             const pageDirectory = new URL('.', window.location.href);
             const target = new URL(String(module.target_url), pageDirectory);
@@ -50,7 +53,7 @@
                 target.src = href;
                 target.alt = displayName ? `โลโก้ ${displayName}` : 'โลโก้ระบบ';
                 target.referrerPolicy = 'no-referrer';
-                target.style.objectFit = 'contain';
+                target.classList.add('portal-managed-module-logo');
                 return;
             }
             const image = document.createElement('img');
@@ -58,14 +61,27 @@
             image.alt = displayName ? `โลโก้ ${displayName}` : 'โลโก้ระบบ';
             image.referrerPolicy = 'no-referrer';
             image.decoding = 'async';
-            image.style.width = '100%';
-            image.style.height = '100%';
-            image.style.objectFit = 'contain';
-            image.style.display = 'block';
-            target.style.overflow = 'hidden';
+            image.className = 'portal-managed-module-logo';
             target.replaceChildren(image);
         });
         return targets.length > 0;
+    }
+
+    function addAdminPortalShortcut() {
+        if (document.querySelector('[data-admin-portal-shortcut]')) return;
+        const link = document.createElement('a');
+        link.className = 'portal-admin-shortcut';
+        link.dataset.adminPortalShortcut = 'true';
+        link.href = new URL('admin-portal.html', new URL('.', window.location.href)).href;
+        link.setAttribute('aria-label', 'กลับหน้า Admin Portal');
+        const icon = document.createElement('span');
+        icon.className = 'portal-admin-shortcut__icon';
+        icon.setAttribute('aria-hidden', 'true');
+        icon.textContent = '⌂';
+        const label = document.createElement('span');
+        label.textContent = 'กลับ Admin Portal';
+        link.append(icon, label);
+        document.body.append(link);
     }
 
     async function syncInternalModuleFavicon() {
@@ -94,5 +110,6 @@
         }
     }
 
+    addAdminPortalShortcut();
     syncInternalModuleFavicon();
 })();

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="th" data-portal-module-key="safety-case">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,12 +8,14 @@
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://static.line-scdn.net; style-src 'self'; connect-src 'self' https://api.line.me https://liffsdk.line-scdn.net https://dqsfioiqwxuxpucwwhsv.supabase.co; img-src 'self' data: blob: https:; font-src 'self'; base-uri 'none'; form-action 'none'">
     <title>Safety Case Dashboard | TSH Safety</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="portal-module-favicon.css">
     <link rel="stylesheet" href="safety-dashboard.css">
     <link rel="stylesheet" href="portal-content-manager.css">
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js" defer></script>
     <script src="safety-dashboard-config.js" defer></script>
     <script src="safety-dashboard.js" defer></script>
     <script src="portal-content-manager.js" defer></script>
+    <script src="portal-module-favicon.js" defer></script>
 </head>
 <body>
     <a class="skip-link" href="#dashboardContent">ข้ามไปยังเนื้อหาหลัก</a>
@@ -44,7 +46,7 @@
         <header class="topbar">
             <div class="topbar-inner">
                 <a class="brand" href="admin-portal.html" aria-label="กลับหน้า TSH Safety Admin Portal">
-                    <span class="brand-mark" aria-hidden="true">
+                    <span class="brand-mark" aria-hidden="true" data-portal-module-logo>
                         <svg viewBox="0 0 24 24" role="img"><path d="M12 2 4.5 5v5.8c0 5.1 3.2 9.4 7.5 11.2 4.3-1.8 7.5-6.1 7.5-11.2V5L12 2Zm3.3 7.6-4.1 4.8a1 1 0 0 1-1.5.1l-2.2-2.1 1.4-1.4 1.4 1.3 3.5-4.1 1.5 1.4Z"/></svg>
                     </span>
                     <span>

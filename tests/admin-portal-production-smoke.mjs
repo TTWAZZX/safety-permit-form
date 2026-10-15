@@ -14,11 +14,11 @@ async function fetchText(path) {
     return response.text();
 }
 
-const [html, dashboardHtml, css, portalScript, contentScript, managerScript, moduleFaviconScript, violationHtml, slipperHtml, securityPassHtml, portalConfig, dashboardConfig] = await Promise.all([
+const [html, dashboardHtml, css, portalScript, contentScript, managerScript, moduleFaviconScript, moduleFaviconCss, violationHtml, slipperHtml, securityPassHtml, portalConfig, dashboardConfig] = await Promise.all([
     fetchText('admin-portal.html'), fetchText('safety-dashboard.html'),
     fetchText('admin-portal.css'), fetchText('admin-portal.js'),
     fetchText('admin-portal-content.js'), fetchText('portal-content-manager.js'),
-    fetchText('portal-module-favicon.js'), fetchText('admin_guard_violation.html'),
+    fetchText('portal-module-favicon.js'), fetchText('portal-module-favicon.css'), fetchText('admin_guard_violation.html'),
     fetchText('admin_slipper_permit.html'), fetchText('guard-admin.html'),
     fetchText('admin-portal-config.js'), fetchText('safety-dashboard-config.js'),
 ]);
@@ -38,9 +38,11 @@ for (const marker of ['MAX_DYNAMIC_MODULES = 50', 'MODULE_KEY_PATTERN', 'setFavi
 for (const marker of ['MAX_IMAGE_BYTES = 5 * 1024 * 1024', 'expected_revision', 'AbortController', 'URL.revokeObjectURL', "action: 'CREATE_MODULE'", 'normalizedTargetUrl']) {
     if (!managerScript.includes(marker)) throw new Error(`Production Content Manager is missing ${marker}`);
 }
-for (const marker of ["module.link_type !== 'internal'", 'target.pathname === window.location.pathname', 'module.icon_asset || payload?.settings?.logo_asset', 'applyModuleLogos(asset, module.display_name)', "document.querySelectorAll('[data-portal-module-logo]')"]) {
+for (const marker of ["module.link_type !== 'internal'", 'target.pathname === window.location.pathname', 'module.icon_asset || payload?.settings?.logo_asset', 'applyModuleLogos(asset, module.display_name)', "document.querySelectorAll('[data-portal-module-logo]')", 'document.documentElement.dataset.portalModuleKey', 'addAdminPortalShortcut()']) {
     if (!moduleFaviconScript.includes(marker)) throw new Error(`Production internal favicon loader is missing ${marker}`);
 }
+if (!moduleFaviconCss.includes('.portal-admin-shortcut') || !moduleFaviconCss.includes('safe-area-inset-bottom')) throw new Error('Production internal navigation shortcut styles are missing');
+if (!dashboardHtml.includes('data-portal-module-key="safety-case"') || !dashboardHtml.includes('src="portal-module-favicon.js"')) throw new Error('Production Safety Case module branding binding is missing');
 for (const page of [violationHtml, slipperHtml, securityPassHtml]) {
     if (!page.includes('src="portal-module-favicon.js"')) throw new Error('Production internal page does not load the module favicon manager');
     if ((page.match(/data-portal-module-logo/g) || []).length < 2) throw new Error('Production internal page is missing managed logo slots');
