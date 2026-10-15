@@ -15,6 +15,10 @@ for (const marker of [
     'target.origin === window.location.origin',
     'target.pathname === window.location.pathname',
     'module.icon_asset || payload?.settings?.logo_asset',
+    'applyModuleLogos(asset, module.display_name)',
+    "document.querySelectorAll('[data-portal-module-logo]')",
+    "document.querySelectorAll('link[rel~=\"icon\"]')",
+    'document.head.append(link)',
     "credentials: 'omit'",
     "referrerPolicy: 'no-referrer'",
     "cache: 'no-store'",
@@ -28,6 +32,8 @@ for (const marker of [
 for (const [name, html] of Object.entries({ violation, slipper, securityPass })) {
     if (!html.includes('src="portal-module-favicon.js"')) throw new Error(`${name} does not load the internal favicon manager`);
     if (!html.includes('rel="icon" href="favicon.svg"')) throw new Error(`${name} does not retain a local favicon fallback`);
+    const logoSlots = html.match(/data-portal-module-logo/g) || [];
+    if (logoSlots.length < 2) throw new Error(`${name} must expose login and application logo slots`);
 }
 
 for (const externalPage of ['admin-portal.html', 'safety-dashboard.html']) {

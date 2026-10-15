@@ -38,11 +38,12 @@ for (const marker of ['MAX_DYNAMIC_MODULES = 50', 'MODULE_KEY_PATTERN', 'setFavi
 for (const marker of ['MAX_IMAGE_BYTES = 5 * 1024 * 1024', 'expected_revision', 'AbortController', 'URL.revokeObjectURL', "action: 'CREATE_MODULE'", 'normalizedTargetUrl']) {
     if (!managerScript.includes(marker)) throw new Error(`Production Content Manager is missing ${marker}`);
 }
-for (const marker of ["module.link_type !== 'internal'", 'target.pathname === window.location.pathname', 'module.icon_asset || payload?.settings?.logo_asset']) {
+for (const marker of ["module.link_type !== 'internal'", 'target.pathname === window.location.pathname', 'module.icon_asset || payload?.settings?.logo_asset', 'applyModuleLogos(asset, module.display_name)', "document.querySelectorAll('[data-portal-module-logo]')"]) {
     if (!moduleFaviconScript.includes(marker)) throw new Error(`Production internal favicon loader is missing ${marker}`);
 }
 for (const page of [violationHtml, slipperHtml, securityPassHtml]) {
     if (!page.includes('src="portal-module-favicon.js"')) throw new Error('Production internal page does not load the module favicon manager');
+    if ((page.match(/data-portal-module-logo/g) || []).length < 2) throw new Error('Production internal page is missing managed logo slots');
 }
 for (const config of [portalConfig, dashboardConfig]) {
     if (!config.includes('/functions/v1/admin-portal-content') || !config.includes('/storage/v1/object/public/admin-portal-assets/')) {
