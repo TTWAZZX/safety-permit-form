@@ -10,6 +10,7 @@ const [html, script, config, portal] = await Promise.all([
 
 for (const id of [
     'appLoading', 'appError', 'appShell', 'yearSelect', 'monthSelect',
+    'adminAvatarImage', 'adminAvatarFallback', 'adminName',
     'metricTotal', 'metricOpen', 'metricResolved', 'metricOverdue',
     'trendChart', 'statusBreakdown', 'rankBreakdown', 'pathBreakdown',
     'caseTableBody', 'caseCards', 'exportButton',
@@ -60,6 +61,10 @@ if (!html.includes('id="detailResolutionSection"')) throw new Error('Dashboard H
 
 for (const marker of [
     "liff.init({ liffId: config.liffId })",
+    'const profile = await window.liff.getProfile()',
+    'safeProfilePictureUrl',
+    'renderAdminProfile(profile)',
+    'profile?.pictureUrl',
     'window.liff.getAccessToken()',
     'Authorization: `Bearer ${state.token}`',
     "apiRequest('summary')",

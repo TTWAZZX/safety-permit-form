@@ -105,6 +105,40 @@ const state = {
 const element = (id) => document.getElementById(id);
 const config = window.SAFETY_DASHBOARD_CONFIG || {};
 
+function safeProfilePictureUrl(value) {
+    try {
+        const url = new URL(String(value || ''));
+        return url.protocol === 'https:' ? url.href : '';
+    } catch (_error) {
+        return '';
+    }
+}
+
+function renderAdminProfile(profile = {}) {
+    const displayName = String(profile?.displayName || 'Safety Admin').trim() || 'Safety Admin';
+    const avatar = element('adminAvatarImage');
+    const fallback = element('adminAvatarFallback');
+    const pictureUrl = safeProfilePictureUrl(profile?.pictureUrl);
+
+    element('adminName').textContent = displayName;
+    fallback.textContent = displayName.slice(0, 1).toUpperCase();
+    fallback.hidden = false;
+    avatar.hidden = true;
+    avatar.removeAttribute('src');
+
+    if (!pictureUrl) return;
+    avatar.onload = () => {
+        avatar.hidden = false;
+        fallback.hidden = true;
+    };
+    avatar.onerror = () => {
+        avatar.hidden = true;
+        fallback.hidden = false;
+        avatar.removeAttribute('src');
+    };
+    avatar.src = pictureUrl;
+}
+
 function bangkokDateParts() {
     const parts = new Intl.DateTimeFormat('en-CA', {
         timeZone: 'Asia/Bangkok', year: 'numeric', month: 'numeric',
@@ -1752,9 +1786,7 @@ async function initialize() {
         if (!state.token) throw new Error('LINE access token is unavailable');
         try {
             const profile = await window.liff.getProfile();
-            const displayName = String(profile?.displayName || 'Safety Admin');
-            element('adminName').textContent = displayName;
-            element('adminAvatar').textContent = displayName.slice(0, 1).toUpperCase();
+            renderAdminProfile(profile);
         } catch (profileError) {
             console.warn('LINE profile is unavailable', profileError);
         }
