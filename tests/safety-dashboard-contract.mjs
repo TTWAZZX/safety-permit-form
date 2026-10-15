@@ -128,7 +128,7 @@ for (const marker of [
     "event.key === 'Escape'",
     "event.key === 'Tab'",
     "DASHBOARD_VIEWS",
-    "setDashboardView(storedDashboardView())",
+    "setDashboardView(requestedDashboardView())",
     "document.querySelectorAll('[data-dashboard-tab]')",
     "window.localStorage.setItem(DASHBOARD_VIEW_STORAGE_KEY",
     "scope: 'ALL'",
@@ -154,7 +154,7 @@ if (!html.includes("default-src 'self'")) throw new Error('Dashboard CSP is miss
 for (const id of [
     'workspaceNavigation', 'workspaceTabQueue', 'workspaceTabOverview',
     'workspaceTabAnalytics', 'workspaceTabSystem', 'workspaceQueue',
-    'workspaceOverviewMetrics', 'workspaceAnalytics', 'workspaceSystem',
+    'workspaceTabPortal', 'workspaceOverviewMetrics', 'workspaceAnalytics', 'workspaceSystem', 'workspacePortal',
 ]) {
     if (!html.includes(`id="${id}"`)) throw new Error(`Dashboard workspace is missing #${id}`);
 }

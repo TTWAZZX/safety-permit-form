@@ -21,3 +21,4 @@ body { overflow-x: clip; }
 @media (max-width: 820px) { .portal-main { padding-bottom: calc(96px + env(safe-area-inset-bottom)); } }
 @media (max-width: 640px) { .module-grid { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+.portal-brand-image{width:100%;height:100%;object-fit:cover;border-radius:inherit}.portal-hero-image{position:absolute;inset:0;z-index:-2;width:100%;height:100%;object-fit:cover;opacity:.22}.module-icon .portal-module-icon-image{width:100%;height:100%;object-fit:cover;border-radius:inherit}.portal-content-warning{position:fixed;z-index:80;right:18px;bottom:18px;max-width:360px;padding:11px 14px;border:1px solid #ecd28d;border-radius:12px;background:#fff8df;color:#73530b;box-shadow:var(--shadow);font-size:.72rem}

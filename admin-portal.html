@@ -5,11 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#063b2d">
     <meta name="referrer" content="no-referrer">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data:; font-src 'self'; object-src 'none'; frame-src 'none'; worker-src 'none'; manifest-src 'self'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://dqsfioiqwxuxpucwwhsv.supabase.co; img-src 'self' data: https:; font-src 'self'; object-src 'none'; frame-src 'none'; worker-src 'none'; manifest-src 'self'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
     <title>TSH Safety Admin Portal</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="admin-portal.css">
+    <script src="admin-portal-config.js" defer></script>
     <script src="admin-portal.js" defer></script>
+    <script src="admin-portal-content.js" defer></script>
 </head>
 <body>
     <a class="skip-link" href="#portalContent">ข้ามไปยังเนื้อหาหลัก</a>
@@ -26,6 +28,7 @@
                 <a class="is-active" href="#portalHome"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3V10.5Z"/></svg><span>หน้าหลัก</span></a>
                 <a href="#primaryWorkspace"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6v2h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4V3Zm2 2h2V4h-2v1Zm-3 5v2h8v-2H8Zm0 5v2h5v-2H8Z"/></svg><span>Safety Case</span></a>
                 <a href="#systemDirectory"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3h6v6H4V3Zm10 0h6v6h-6V3ZM4 13h6v8H4v-8Zm10 0h6v8h-6v-8Z"/></svg><span>ระบบทั้งหมด</span></a>
+                <a href="https://liff.line.me/2007053300-FmMHHcD7?view=portal" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v4H4V4Zm0 6h10v10H4V10Zm12 0h4v10h-4V10ZM7 13v4h4v-4H7Z"/></svg><span>จัดการหน้า Portal</span></a>
                 <button type="button" data-focus-search><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 20-4.4-4.4a8 8 0 1 0-1.4 1.4l4.4 4.4L21 20ZM5 11a6 6 0 1 1 12 0 6 6 0 0 1-12 0Z"/></svg><span>ค้นหาระบบ</span><kbd>/</kbd></button>
             </nav>
 
@@ -41,7 +44,7 @@
 
             <main id="portalContent" class="portal-main">
                 <section id="portalHome" class="hero" aria-labelledby="portalTitle">
-                    <div class="hero-content"><p class="eyebrow">SAFETY OPERATIONS CENTER</p><h1 id="portalTitle">ทุกระบบความปลอดภัย<br><span>อยู่ในที่เดียว</span></h1><p>เข้าถึงเครื่องมือของทีม Safety ได้รวดเร็วบนทุกหน้าจอ พร้อมทางลัดสำหรับงานที่ใช้เป็นประจำ</p><div class="hero-actions"><a class="hero-primary" href="#primaryWorkspace">เริ่มจัดการ Safety Case <span aria-hidden="true">↓</span></a><button class="hero-secondary" type="button" data-focus-search>ค้นหาระบบ</button></div></div>
+                    <div class="hero-content"><p class="eyebrow">SAFETY OPERATIONS CENTER</p><h1 id="portalTitle">ทุกระบบความปลอดภัย<br><span>อยู่ในที่เดียว</span></h1><p>เข้าถึงเครื่องมือของทีม Safety ได้รวดเร็วบนทุกหน้าจอ พร้อมทางลัดสำหรับงานที่ใช้เป็นประจำ</p><div class="hero-actions"><a class="hero-primary" href="#primaryWorkspace">เริ่มจัดการ Safety Case <span aria-hidden="true">↓</span></a><button class="hero-secondary" type="button" data-focus-search>ค้นหาระบบ</button><a class="hero-secondary" href="https://liff.line.me/2007053300-FmMHHcD7?view=portal" target="_blank" rel="noopener noreferrer">แก้ไขหน้า Portal ↗</a></div></div>
                     <div class="hero-visual" aria-hidden="true"><div class="visual-orbit orbit-one"></div><div class="visual-orbit orbit-two"></div><div class="visual-shield"><svg viewBox="0 0 24 24"><path d="M12 2 4.5 5v5.8c0 5.1 3.2 9.4 7.5 11.2 4.3-1.8 7.5-6.1 7.5-11.2V5L12 2Zm3.3 7.6-4.1 4.8a1 1 0 0 1-1.5.1l-2.2-2.1 1.4-1.4 1.4 1.3 3.5-4.1 1.5 1.4Z"/></svg></div><span class="visual-pill pill-one">Safety First</span><span class="visual-pill pill-two">8 Systems</span><span class="visual-pill pill-three">Admin Workspace</span></div>
                 </section>
 

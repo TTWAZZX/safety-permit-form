@@ -84,9 +84,10 @@ function applyFilters() {
     const normalizedQuery = state.query.trim().toLocaleLowerCase('th-TH');
     let visible = 0;
     moduleCards().forEach((card) => {
+        const enabled = card.dataset.portalEnabled !== 'false';
         const categoryMatch = state.category === 'all' || card.dataset.category === state.category;
         const searchMatch = !normalizedQuery || String(card.dataset.search || '').toLocaleLowerCase('th-TH').includes(normalizedQuery);
-        card.hidden = !(categoryMatch && searchMatch);
+        card.hidden = !(enabled && categoryMatch && searchMatch);
         if (!card.hidden) visible += 1;
     });
     document.querySelectorAll('[data-module-section]').forEach((section) => {
@@ -149,3 +150,9 @@ function initialize() {
 }
 
 window.addEventListener('DOMContentLoaded', initialize);
+window.addEventListener('portal-content:updated', () => {
+    state.favorites = state.favorites.filter((id) => moduleRecord(id));
+    state.recents = state.recents.filter((id) => moduleRecord(id)).slice(0, MAX_RECENTS);
+    renderShortcuts();
+    applyFilters();
+});

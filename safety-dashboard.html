@@ -9,9 +9,11 @@
     <title>Safety Case Dashboard | TSH Safety</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="safety-dashboard.css">
+    <link rel="stylesheet" href="portal-content-manager.css">
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js" defer></script>
     <script src="safety-dashboard-config.js" defer></script>
     <script src="safety-dashboard.js" defer></script>
+    <script src="portal-content-manager.js" defer></script>
 </head>
 <body>
     <a class="skip-link" href="#dashboardContent">ข้ามไปยังเนื้อหาหลัก</a>
@@ -119,6 +121,10 @@
                         <span class="workspace-tab-icon" aria-hidden="true">⚙</span>
                         <span><strong>ระบบอัตโนมัติ</strong><small>Reminder และ Webhook</small></span>
                     </button>
+                    <button id="workspaceTabPortal" class="workspace-tab" type="button" role="tab" aria-selected="false" aria-controls="workspacePortal" data-dashboard-tab="portal" tabindex="-1">
+                        <span class="workspace-tab-icon" aria-hidden="true">✦</span>
+                        <span><strong>จัดการ Portal</strong><small>ข้อความ สี โลโก้ และไอคอน</small></span>
+                    </button>
                 </div>
             </nav>
 
@@ -132,6 +138,89 @@
             </section>
 
             <div id="pageNotice" class="notice" role="alert" hidden></div>
+
+            <section id="workspacePortal" class="portal-manager dashboard-view" data-dashboard-panel="portal" role="tabpanel" aria-labelledby="workspaceTabPortal portalManagerTitle" hidden>
+                <div class="portal-manager-heading">
+                    <div>
+                        <p class="eyebrow">CONTENT MANAGER</p>
+                        <h2 id="portalManagerTitle">จัดการหน้า Admin Portal</h2>
+                        <p>แก้ข้อความ สี รูปแบรนด์ และข้อมูลระบบที่แสดงบนหน้า Portal โดยไม่ต้องแก้โค้ด</p>
+                    </div>
+                    <div class="portal-manager-heading-actions">
+                        <span id="portalManagerUpdated" class="portal-manager-updated">ยังไม่ได้โหลดข้อมูล</span>
+                        <button id="portalManagerReload" class="button button-ghost" type="button">โหลดข้อมูลใหม่</button>
+                        <a class="button button-primary" href="admin-portal.html" target="_blank" rel="noopener noreferrer">ดูหน้า Portal ↗</a>
+                    </div>
+                </div>
+
+                <div id="portalManagerNotice" class="portal-manager-notice" role="status" aria-live="polite" hidden></div>
+
+                <div class="portal-manager-grid">
+                    <form id="portalSettingsForm" class="portal-editor-card" novalidate>
+                        <div class="portal-editor-card-heading">
+                            <div><span class="portal-step">01</span><h3>ข้อความและสีหลัก</h3></div>
+                            <span id="portalSettingsRevision" class="revision-badge">Revision —</span>
+                        </div>
+                        <div class="portal-form-grid">
+                            <label class="portal-field portal-field-wide"><span>ชื่อแบรนด์</span><input id="portalBrandName" name="brand_name" maxlength="80" required></label>
+                            <label class="portal-field portal-field-wide"><span>คำอธิบายใต้ชื่อ</span><input id="portalBrandSubtitle" name="brand_subtitle" maxlength="120" required></label>
+                            <label class="portal-field"><span>Eyebrow</span><input id="portalHeroEyebrow" name="hero_eyebrow" maxlength="80" required></label>
+                            <label class="portal-field"><span>หัวเรื่องหลัก</span><input id="portalHeroTitle" name="hero_title" maxlength="160" required></label>
+                            <label class="portal-field portal-field-wide"><span>ข้อความเน้น</span><input id="portalHeroHighlight" name="hero_highlight" maxlength="120" required></label>
+                            <label class="portal-field portal-field-wide"><span>คำอธิบายหน้าแรก</span><textarea id="portalHeroDescription" name="hero_description" maxlength="600" rows="4" required></textarea></label>
+                            <label class="portal-field portal-color-field"><span>สีหลัก</span><span class="color-control"><input id="portalPrimaryColorPicker" type="color" aria-label="เลือกสีหลัก"><input id="portalPrimaryColor" name="primary_color" pattern="#[0-9A-Fa-f]{6}" maxlength="7" required></span></label>
+                            <label class="portal-field portal-color-field"><span>สีเน้น</span><span class="color-control"><input id="portalAccentColorPicker" type="color" aria-label="เลือกสีเน้น"><input id="portalAccentColor" name="accent_color" pattern="#[0-9A-Fa-f]{6}" maxlength="7" required></span></label>
+                        </div>
+                        <div class="portal-form-actions"><button id="portalSettingsSave" class="button button-primary" type="submit">บันทึกข้อความและสี</button></div>
+                    </form>
+
+                    <aside class="portal-preview-card" aria-labelledby="portalPreviewTitle">
+                        <div class="portal-preview-label"><span>LIVE PREVIEW</span><strong id="portalPreviewTitle">ตัวอย่างหน้า Portal</strong></div>
+                        <div id="portalLivePreview" class="portal-live-preview">
+                            <div class="portal-preview-brand"><span id="portalPreviewLogo" class="portal-preview-logo">TSH</span><div><strong id="portalPreviewBrandName">TSH Safety</strong><small id="portalPreviewBrandSubtitle">Admin Portal</small></div></div>
+                            <div class="portal-preview-copy"><small id="portalPreviewEyebrow">SAFETY OPERATIONS</small><h3><span id="portalPreviewHeroTitle">ศูนย์รวมระบบ</span> <em id="portalPreviewHighlight">จัดการความปลอดภัย</em></h3><p id="portalPreviewDescription">ตัวอย่างข้อความหน้าแรก</p></div>
+                        </div>
+                    </aside>
+                </div>
+
+                <section class="portal-assets-card" aria-labelledby="portalAssetsTitle">
+                    <div class="portal-section-heading"><div><span class="portal-step">02</span><h3 id="portalAssetsTitle">รูปแบรนด์</h3></div><p>รองรับ JPG, PNG, WebP ขนาดไม่เกิน 5 MB · รูปที่อัปโหลดเป็นสื่อสาธารณะสำหรับหน้า Portal</p></div>
+                    <div class="portal-asset-grid">
+                        <article class="portal-asset-editor">
+                            <div class="portal-asset-preview portal-logo-preview"><img id="portalLogoPreview" alt="ตัวอย่างโลโก้ Portal" hidden><span id="portalLogoPlaceholder">LOGO</span></div>
+                            <div><h4>โลโก้ Portal</h4><p>แนะนำรูปจัตุรัส พื้นหลังโปร่งใส</p><label class="portal-file-button" for="portalLogoFile">เลือกรูปโลโก้</label><input id="portalLogoFile" type="file" accept="image/jpeg,image/png,image/webp"><button id="portalLogoUpload" class="button button-primary" type="button" disabled>อัปโหลดโลโก้</button></div>
+                        </article>
+                        <article class="portal-asset-editor">
+                            <div class="portal-asset-preview portal-hero-preview"><img id="portalHeroPreview" alt="ตัวอย่างภาพ Hero" hidden><span id="portalHeroPlaceholder">HERO IMAGE</span></div>
+                            <div><h4>ภาพ Hero</h4><p>แนะนำภาพแนวนอน 1600 × 900 px</p><label class="portal-file-button" for="portalHeroFile">เลือกภาพ Hero</label><input id="portalHeroFile" type="file" accept="image/jpeg,image/png,image/webp"><button id="portalHeroUpload" class="button button-primary" type="button" disabled>อัปโหลดภาพ Hero</button></div>
+                        </article>
+                    </div>
+                </section>
+
+                <section class="portal-modules-card" aria-labelledby="portalModulesTitle">
+                    <div class="portal-section-heading"><div><span class="portal-step">03</span><h3 id="portalModulesTitle">ระบบและไอคอน</h3></div><p>เลือกทีละระบบเพื่อแก้ชื่อ รายละเอียด ลิงก์ ลำดับ และสถานะการแสดงผล</p></div>
+                    <div class="portal-module-layout">
+                        <div id="portalModuleList" class="portal-module-list" role="list" aria-label="รายการระบบใน Portal"></div>
+                        <form id="portalModuleForm" class="portal-module-form" novalidate>
+                            <div class="portal-module-form-heading"><div class="portal-module-icon-preview"><img id="portalModuleIconPreview" alt="ตัวอย่างไอคอนระบบ" hidden><span id="portalModuleIconPlaceholder">APP</span></div><div><strong id="portalModuleEditorName">เลือกระบบที่ต้องการแก้ไข</strong><span id="portalModuleRevision">Revision —</span></div></div>
+                            <div class="portal-form-grid">
+                                <label class="portal-field"><span>ชื่อระบบ</span><input id="portalModuleDisplayName" name="display_name" maxlength="120" required></label>
+                                <label class="portal-field"><span>หมวดหมู่</span><input id="portalModuleCategory" name="category" maxlength="80" required></label>
+                                <label class="portal-field portal-field-wide"><span>รายละเอียด</span><textarea id="portalModuleDescription" name="description" maxlength="600" rows="3" required></textarea></label>
+                                <label class="portal-field portal-field-wide"><span>ลิงก์ปลายทาง</span><input id="portalModuleTargetUrl" name="target_url" type="url" maxlength="500" required></label>
+                                <label class="portal-field"><span>รูปแบบลิงก์</span><select id="portalModuleLinkType" name="link_type"><option value="external">ลิงก์ภายนอก / LIFF</option><option value="internal">หน้าใน Portal</option></select></label>
+                                <label class="portal-field"><span>ลำดับ</span><input id="portalModuleSortOrder" name="sort_order" type="number" min="0" max="9999" required></label>
+                                <label class="portal-field portal-field-wide"><span>คำค้นหา</span><input id="portalModuleSearchTerms" name="search_terms" maxlength="300"></label>
+                                <label class="portal-field portal-field-wide"><span>คำอธิบายไอคอน</span><input id="portalModuleIconAlt" name="icon_alt" maxlength="180"></label>
+                                <label class="portal-check"><input id="portalModuleFeatured" name="is_featured" type="checkbox"><span>แสดงเป็นระบบเด่น</span></label>
+                                <label class="portal-check"><input id="portalModuleEnabled" name="is_enabled" type="checkbox"><span>เปิดแสดงบน Portal</span></label>
+                            </div>
+                            <div class="portal-module-upload"><input id="portalModuleIconFile" type="file" accept="image/jpeg,image/png,image/webp"><label class="portal-file-button" for="portalModuleIconFile">เลือกไอคอนใหม่</label><button id="portalModuleIconUpload" class="button button-ghost" type="button" disabled>อัปโหลดไอคอน</button></div>
+                            <div class="portal-form-actions"><button id="portalModuleSave" class="button button-primary" type="submit" disabled>บันทึกข้อมูลระบบ</button></div>
+                        </form>
+                    </div>
+                </section>
+            </section>
 
             <section id="workspaceSystem" class="automation-health panel dashboard-view" data-dashboard-panel="system" role="tabpanel" aria-labelledby="workspaceTabSystem automationHealthTitle" hidden>
                 <div class="automation-health-heading">

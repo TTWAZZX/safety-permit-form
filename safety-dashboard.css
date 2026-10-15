@@ -223,7 +223,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
     box-shadow: 0 12px 32px rgba(23, 54, 44, .08);
     backdrop-filter: blur(16px);
 }
-.workspace-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; }
+.workspace-tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 7px; }
 .workspace-tab {
     display: flex;
     align-items: center;

@@ -69,7 +69,7 @@ const EVENT_LABELS = Object.freeze({
 });
 const MONTHS = Object.freeze(['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม']);
 const PAGE_SIZE = 20;
-const DASHBOARD_VIEWS = Object.freeze(['queue', 'overview', 'analytics', 'system']);
+const DASHBOARD_VIEWS = Object.freeze(['queue', 'overview', 'analytics', 'system', 'portal']);
 const DASHBOARD_VIEW_STORAGE_KEY = 'safety-dashboard-active-view';
 
 const state = {
@@ -173,6 +173,11 @@ function storedDashboardView() {
     }
 }
 
+function requestedDashboardView() {
+    const requested = new URLSearchParams(window.location.search).get('view');
+    return DASHBOARD_VIEWS.includes(requested) ? requested : storedDashboardView();
+}
+
 function setDashboardView(view, { focus = false } = {}) {
     const nextView = DASHBOARD_VIEWS.includes(view) ? view : 'queue';
     state.activeView = nextView;
@@ -187,6 +192,7 @@ function setDashboardView(view, { focus = false } = {}) {
         if (active && focus) tab.focus({ preventScroll: true });
     });
     try { window.localStorage.setItem(DASHBOARD_VIEW_STORAGE_KEY, nextView); } catch (_error) { /* Storage can be unavailable in private contexts. */ }
+    if (nextView === 'portal') window.dispatchEvent(new CustomEvent('portal-manager:open'));
 }
 
 function setNotice(message = '') {
@@ -1762,7 +1768,7 @@ function bindEvents() {
 
 async function initialize() {
     populateControls();
-    setDashboardView(storedDashboardView());
+    setDashboardView(requestedDashboardView());
     bindEvents();
     if (!config.liffId || config.liffId === 'REPLACE_WITH_NEW_LIFF_ID') {
         showGateError('รอตั้งค่า LIFF ID', 'สร้าง LIFF app สำหรับ Safety Dashboard แล้วใส่รหัสในไฟล์ safety-dashboard-config.js', false);
@@ -1791,6 +1797,7 @@ async function initialize() {
             console.warn('LINE profile is unavailable', profileError);
         }
         showDashboard();
+        window.dispatchEvent(new CustomEvent('safety-dashboard:authenticated'));
         await loadDashboard();
     } catch (error) {
         console.error('Safety Dashboard initialization failed', error);
