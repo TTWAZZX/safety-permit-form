@@ -1,109 +1,589 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="th">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="theme-color" content="#063b2d">
-    <meta name="referrer" content="no-referrer">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://static.line-scdn.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https://api.line.me https://liffsdk.line-scdn.net https://dqsfioiqwxuxpucwwhsv.supabase.co; img-src 'self' data: blob: https://dqsfioiqwxuxpucwwhsv.supabase.co; font-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#063b2d" />
+    <meta name="referrer" content="no-referrer" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' https://static.line-scdn.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https://api.line.me https://liffsdk.line-scdn.net https://dqsfioiqwxuxpucwwhsv.supabase.co; img-src 'self' data: blob: https://profile.line-scdn.net https://dqsfioiqwxuxpucwwhsv.supabase.co; font-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests"
+    />
     <title>Johnny Control Center | TSH Safety</title>
-    <link rel="icon" href="favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="system-monitor.css">
-    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js" defer></script>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="system-monitor.css" />
+    <script
+      charset="utf-8"
+      src="https://static.line-scdn.net/liff/edge/2/sdk.js"
+      defer
+    ></script>
     <script src="system-monitor-config.js" defer></script>
     <script src="system-monitor.js" defer></script>
-</head>
-<body>
+  </head>
+  <body>
     <a class="skip-link" href="#mainContent">ข้ามไปยังเนื้อหา</a>
 
     <section id="appLoading" class="app-gate" role="status" aria-live="polite">
-        <div class="gate-card"><div class="loader"></div><p class="eyebrow">JOHNNY CONTROL CENTER</p><h1>กำลังตรวจสอบสิทธิ์</h1><p id="loadingMessage">เชื่อมต่อ LINE และระบบมอนิเตอร์อย่างปลอดภัย…</p></div>
+      <div class="gate-card">
+        <div class="loader"></div>
+        <p class="eyebrow">JOHNNY CONTROL CENTER</p>
+        <h1>กำลังตรวจสอบสิทธิ์</h1>
+        <p id="loadingMessage">เชื่อมต่อ LINE และระบบมอนิเตอร์อย่างปลอดภัย…</p>
+      </div>
     </section>
     <section id="appError" class="app-gate" hidden>
-        <div class="gate-card gate-error"><span class="gate-icon">!</span><p class="eyebrow">SYSTEM MONITOR</p><h1 id="errorTitle">เปิดระบบไม่สำเร็จ</h1><p id="errorMessage">กรุณาลองใหม่อีกครั้ง</p><div class="gate-actions"><button id="retryButton" class="button primary" type="button">ลองอีกครั้ง</button><a class="button ghost" href="admin-portal.html">กลับ Admin Portal</a></div></div>
+      <div class="gate-card gate-error">
+        <span class="gate-icon">!</span>
+        <p class="eyebrow">SYSTEM MONITOR</p>
+        <h1 id="errorTitle">เปิดระบบไม่สำเร็จ</h1>
+        <p id="errorMessage">กรุณาลองใหม่อีกครั้ง</p>
+        <div class="gate-actions">
+          <button id="retryButton" class="button primary" type="button">
+            ลองอีกครั้ง</button
+          ><a class="button ghost" href="admin-portal.html"
+            >กลับ Admin Portal</a
+          >
+        </div>
+      </div>
     </section>
 
     <div id="appShell" class="app-shell" hidden>
-        <aside class="sidebar">
-            <a class="brand" href="admin-portal.html"><span class="brand-mark">J</span><span><strong>Johnny Control</strong><small>Safety Operations</small></span></a>
-            <nav id="sideNavigation" aria-label="ส่วนของ Control Center">
-                <button class="nav-button is-active" data-view="overview"><span>⌂</span>ภาพรวมระบบ</button>
-                <button class="nav-button" data-view="storage"><span>▧</span>Storage Explorer</button>
-                <button class="nav-button" data-view="retention"><span>◷</span>Retention &amp; Hold</button>
-                <button class="nav-button" data-view="line"><span>◉</span>LINE Usage</button>
-                <button class="nav-button" data-view="richmenu"><span>▦</span>Rich Menu Studio</button>
-                <button class="nav-button" data-view="health"><span>⌁</span>System Health</button>
-                <button class="nav-button" data-view="audit"><span>≡</span>Audit Log</button>
-            </nav>
-            <div class="sidebar-status"><span id="globalStatusDot" class="status-dot"></span><div><strong id="globalStatus">กำลังตรวจระบบ</strong><small id="globalUpdated">รอข้อมูลล่าสุด</small></div></div>
-            <a class="back-link" href="admin-portal.html">← กลับ Admin Portal</a>
-        </aside>
-
-        <div class="workspace">
-            <header class="topbar">
-                <button id="mobileMenuButton" class="icon-button mobile-menu" type="button" aria-label="เปิดเมนู">☰</button>
-                <div><p class="eyebrow">TSH SAFETY OPERATIONS</p><h1 id="pageTitle">ภาพรวมระบบ</h1></div>
-                <div class="top-actions"><button id="refreshButton" class="button ghost" type="button">↻ รีเฟรช</button><div class="admin-chip"><img id="adminImage" alt="" hidden><span id="adminFallback">A</span><div><small>ผู้ดูแลระบบ</small><strong id="adminName">Safety Admin</strong></div></div></div>
-            </header>
-
-            <main id="mainContent">
-                <div id="pageNotice" class="notice" role="status" aria-live="polite" hidden></div>
-
-                <section id="view-overview" class="view is-active" data-panel="overview">
-                    <div class="hero-panel"><div><p class="eyebrow">LIVE OPERATIONS</p><h2>มองเห็นระบบสำคัญในหน้าจอเดียว</h2><p>Storage, รูปหลักฐาน, LINE Message, Rich Menu และงานอัตโนมัติ โดยไม่เปิดเผย Secret ให้ Browser</p></div><div id="dryRunBadge" class="mode-badge">กำลังตรวจโหมด Cleanup</div></div>
-                    <div id="alertStrip" class="alert-strip" hidden></div>
-                    <div id="overviewCards" class="metric-grid skeleton-grid" aria-live="polite"></div>
-                    <div class="two-column">
-                        <article class="panel"><div class="panel-heading"><div><p class="eyebrow">STORAGE BY BUCKET</p><h3>พื้นที่จัดเก็บ</h3></div></div><div id="bucketUsage" class="list-state">กำลังโหลด…</div></article>
-                        <article class="panel"><div class="panel-heading"><div><p class="eyebrow">UPCOMING RETENTION</p><h3>รูปใกล้ถึงกำหนด</h3></div><button class="text-button" data-go="retention">ดูทั้งหมด →</button></div><div id="upcomingSummary" class="list-state">กำลังโหลด…</div></article>
-                    </div>
-                </section>
-
-                <section id="view-storage" class="view" data-panel="storage" hidden>
-                    <div class="section-heading"><div><p class="eyebrow">PRIVATE EVIDENCE</p><h2>Storage Explorer</h2><p>แสดงเฉพาะ bucket <code>safety-case-evidence</code> ผ่าน Signed URL อายุ 10 นาที</p></div></div>
-                    <form id="storageFilters" class="toolbar"><label>ค้นหา<input id="storageSearch" type="search" maxlength="80" placeholder="Case ID หรือชื่อไฟล์"></label><label>สถานะ<select id="storageStatus"><option value="">ทั้งหมด</option><option>ACTIVE</option><option>PROCESSING</option><option>FAILED</option><option>UNTRACKED</option></select></label><button class="button primary" type="submit">ค้นหา</button></form>
-                    <div id="storageSummary" class="result-summary"></div><div id="storageGrid" class="media-grid"></div><div id="storagePagination" class="pagination"></div>
-                </section>
-
-                <section id="view-retention" class="view" data-panel="retention" hidden>
-                    <div class="section-heading action-heading"><div><p class="eyebrow">RETENTION GOVERNANCE</p><h2>รูปใกล้หมดอายุและ Legal Hold</h2><p>การกด Dry Run จะตรวจรายการเท่านั้นและไม่ลบไฟล์</p></div><button id="runDryRunButton" class="button warning" type="button">ทดลอง Dry Run ตอนนี้</button></div>
-                    <div id="retentionStats" class="metric-grid compact"></div><div class="panel table-panel"><div class="table-wrap"><table><thead><tr><th>เคส</th><th>ประเภท</th><th>สถานะ</th><th>ขนาด</th><th>กำหนดลบ</th><th>Legal Hold</th><th>ดำเนินการ</th></tr></thead><tbody id="retentionRows"></tbody></table></div></div>
-                </section>
-
-                <section id="view-line" class="view" data-panel="line" hidden>
-                    <div class="section-heading"><div><p class="eyebrow">LINE MESSAGING API</p><h2>ข้อความที่ใช้ในเดือนนี้</h2><p>ยอดรวมจาก LINE รวมข้อความที่ส่งผ่าน Official Account Manager; สถิติรายวันอาจล่าช้าประมาณหนึ่งวัน</p></div></div>
-                    <div id="lineQuotaPanel" class="quota-panel list-state">กำลังโหลด…</div><div class="panel table-panel"><div class="panel-heading"><div><p class="eyebrow">LAST 7 DAYS</p><h3>แยกตามช่องทางส่ง</h3></div></div><div class="table-wrap"><table><thead><tr><th>วันที่ (LINE/JST)</th><th>Reply</th><th>Push</th><th>Broadcast</th><th>Multicast</th><th>สถานะ</th></tr></thead><tbody id="lineDailyRows"></tbody></table></div></div>
-                </section>
-
-                <section id="view-richmenu" class="view" data-panel="richmenu" hidden>
-                    <div class="section-heading action-heading"><div><p class="eyebrow">VERSIONED RELEASES</p><h2>Rich Menu Studio</h2><p>ดู Legacy เดิม สร้าง Draft ตรวจสอบ Publish และ Rollback พร้อม Audit</p></div><button id="importLegacyButton" class="button ghost" type="button">นำ Legacy เข้าเป็น Baseline</button></div>
-                    <div class="governance-banner"><strong>Production Guard</strong><span>การ Publish และ Rollback ต้องพิมพ์คำยืนยันอีกครั้ง ส่วนการนำเข้า Legacy ไม่เปลี่ยนเมนูที่ผู้ใช้เห็น</span></div>
-                    <div class="studio-layout">
-                        <form id="richMenuForm" class="panel editor-panel">
-                            <div class="panel-heading"><div><p class="eyebrow">NEW VERSION</p><h3>สร้าง Rich Menu Draft</h3></div></div>
-                            <label>ชื่อเมนู<input id="menuName" maxlength="300" required placeholder="เช่น Main Menu November"></label>
-                            <label>ข้อความบนแถบแชท<input id="menuChatBar" maxlength="14" required value="เมนูหลัก"></label>
-                            <div class="field-row"><label>ความสูง<select id="menuHeight"><option value="1686">Large 2500 × 1686</option><option value="843">Compact 2500 × 843</option></select></label><label>ภาพ PNG/JPEG ≤ 1 MB<input id="menuImage" type="file" accept="image/png,image/jpeg" required></label></div>
-                            <label>พื้นที่ปุ่ม (JSON)<textarea id="menuAreas" rows="12" spellcheck="false" required>[{"bounds":{"x":0,"y":0,"width":833,"height":843},"action":{"type":"message","label":"รายงาน","text":"รายงานจุดเสี่ยง"}}]</textarea></label>
-                            <div class="form-actions"><button id="previewMenuButton" class="button ghost" type="button">แสดง Preview</button><button class="button primary" type="submit">บันทึก Draft</button></div>
-                        </form>
-                        <article class="panel preview-panel"><div class="panel-heading"><div><p class="eyebrow">PREVIEW</p><h3>ตัวอย่างพื้นที่กด</h3></div></div><div id="menuPreview" class="menu-preview"><div class="preview-empty">เลือกภาพแล้วกด “แสดง Preview”</div></div><p class="hint">Preview ใช้ตรวจตำแหน่งเบื้องต้น ระบบจะ Validate ซ้ำกับ LINE ก่อน Publish</p></article>
-                    </div>
-                    <div class="panel"><div class="panel-heading"><div><p class="eyebrow">MANAGED HISTORY</p><h3>เวอร์ชันที่ Control Center จัดการ</h3></div></div><div id="managedMenus" class="version-grid list-state">กำลังโหลด…</div></div>
-                    <div class="panel"><div class="panel-heading"><div><p class="eyebrow">LEGACY DISCOVERY</p><h3>Rich Menu เดิมที่ยังพบใน LINE</h3></div></div><div id="legacyMenus" class="version-grid list-state">กำลังโหลด…</div></div>
-                </section>
-
-                <section id="view-health" class="view" data-panel="health" hidden>
-                    <div class="section-heading"><div><p class="eyebrow">AUTOMATION &amp; WEBHOOK</p><h2>System Health</h2><p>สถานะ Reminder, Webhook, retry backlog และ Storage Cleanup</p></div></div><div id="healthCards" class="metric-grid"></div><div class="panel"><div class="panel-heading"><h3>รายละเอียดจากระบบ</h3></div><pre id="healthDetails" class="json-view"></pre></div>
-                </section>
-
-                <section id="view-audit" class="view" data-panel="audit" hidden>
-                    <div class="section-heading"><div><p class="eyebrow">APPEND-ONLY HISTORY</p><h2>Audit Log</h2><p>ประวัติคำสั่งที่ดำเนินการผ่าน Johnny Control Center</p></div></div><div class="panel table-panel"><div class="table-wrap"><table><thead><tr><th>วันเวลา</th><th>ผู้ดำเนินการ</th><th>Action</th><th>รายการ</th><th>รายละเอียด</th></tr></thead><tbody id="auditRows"></tbody></table></div></div>
-                </section>
-            </main>
+      <aside class="sidebar">
+        <a class="brand" href="admin-portal.html"
+          ><span class="brand-mark">J</span
+          ><span
+            ><strong>Johnny Control</strong
+            ><small>Safety Operations</small></span
+          ></a
+        >
+        <nav id="sideNavigation" aria-label="ส่วนของ Control Center">
+          <button class="nav-button is-active" data-view="overview">
+            <span>⌂</span>ภาพรวมระบบ
+          </button>
+          <button class="nav-button" data-view="storage">
+            <span>▧</span>Storage Explorer
+          </button>
+          <button class="nav-button" data-view="retention">
+            <span>◷</span>Retention &amp; Hold
+          </button>
+          <button class="nav-button" data-view="line">
+            <span>◉</span>LINE Usage
+          </button>
+          <button class="nav-button" data-view="richmenu">
+            <span>▦</span>Rich Menu Studio
+          </button>
+          <button class="nav-button" data-view="health">
+            <span>⌁</span>System Health
+          </button>
+          <button class="nav-button" data-view="audit">
+            <span>≡</span>Audit Log
+          </button>
+        </nav>
+        <div class="sidebar-status">
+          <span id="globalStatusDot" class="status-dot"></span>
+          <div>
+            <strong id="globalStatus">กำลังตรวจระบบ</strong
+            ><small id="globalUpdated">รอข้อมูลล่าสุด</small>
+          </div>
         </div>
+        <a class="back-link" href="admin-portal.html">← กลับ Admin Portal</a>
+      </aside>
+
+      <div class="workspace">
+        <header class="topbar">
+          <button
+            id="mobileMenuButton"
+            class="icon-button mobile-menu"
+            type="button"
+            aria-label="เปิดเมนู"
+          >
+            ☰
+          </button>
+          <div>
+            <p class="eyebrow">TSH SAFETY OPERATIONS</p>
+            <h1 id="pageTitle">ภาพรวมระบบ</h1>
+          </div>
+          <div class="top-actions">
+            <button id="refreshButton" class="button ghost" type="button">
+              ↻ รีเฟรช
+            </button>
+            <div class="admin-chip">
+              <img id="adminImage" alt="" hidden /><span id="adminFallback"
+                >A</span
+              >
+              <div>
+                <small>ผู้ดูแลระบบ</small
+                ><strong id="adminName">Safety Admin</strong>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <main id="mainContent">
+          <div
+            id="pageNotice"
+            class="notice"
+            role="status"
+            aria-live="polite"
+            hidden
+          ></div>
+
+          <section
+            id="view-overview"
+            class="view is-active"
+            data-panel="overview"
+          >
+            <div class="hero-panel">
+              <div>
+                <p class="eyebrow">LIVE OPERATIONS</p>
+                <h2>มองเห็นระบบสำคัญในหน้าจอเดียว</h2>
+                <p>
+                  Storage, รูปหลักฐาน, LINE Message, Rich Menu และงานอัตโนมัติ
+                  โดยไม่เปิดเผย Secret ให้ Browser
+                </p>
+              </div>
+              <div id="dryRunBadge" class="mode-badge">
+                กำลังตรวจโหมด Cleanup
+              </div>
+            </div>
+            <div id="alertStrip" class="alert-strip" hidden></div>
+            <div
+              id="overviewCards"
+              class="metric-grid skeleton-grid"
+              aria-live="polite"
+            ></div>
+            <div class="two-column">
+              <article class="panel">
+                <div class="panel-heading">
+                  <div>
+                    <p class="eyebrow">STORAGE BY BUCKET</p>
+                    <h3>พื้นที่จัดเก็บ</h3>
+                  </div>
+                </div>
+                <div id="bucketUsage" class="list-state">กำลังโหลด…</div>
+              </article>
+              <article class="panel">
+                <div class="panel-heading">
+                  <div>
+                    <p class="eyebrow">UPCOMING RETENTION</p>
+                    <h3>รูปใกล้ถึงกำหนด</h3>
+                  </div>
+                  <button class="text-button" data-go="retention">
+                    ดูทั้งหมด →
+                  </button>
+                </div>
+                <div id="upcomingSummary" class="list-state">กำลังโหลด…</div>
+              </article>
+            </div>
+          </section>
+
+          <section id="view-storage" class="view" data-panel="storage" hidden>
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">PRIVATE EVIDENCE</p>
+                <h2>Storage Explorer</h2>
+                <p>
+                  แสดงเฉพาะ bucket <code>safety-case-evidence</code> ผ่าน Signed
+                  URL อายุ 10 นาที
+                </p>
+              </div>
+            </div>
+            <form id="storageFilters" class="toolbar">
+              <label
+                >ค้นหา<input
+                  id="storageSearch"
+                  type="search"
+                  maxlength="80"
+                  placeholder="Case ID หรือชื่อไฟล์" /></label
+              ><label
+                >สถานะ<select id="storageStatus">
+                  <option value="">ทั้งหมด</option>
+                  <option>ACTIVE</option>
+                  <option>PROCESSING</option>
+                  <option>FAILED</option>
+                  <option>UNTRACKED</option>
+                </select></label
+              ><button class="button primary" type="submit">ค้นหา</button>
+            </form>
+            <div id="storageSummary" class="result-summary"></div>
+            <div id="storageGrid" class="media-grid"></div>
+            <div id="storagePagination" class="pagination"></div>
+          </section>
+
+          <section
+            id="view-retention"
+            class="view"
+            data-panel="retention"
+            hidden
+          >
+            <div class="section-heading action-heading">
+              <div>
+                <p class="eyebrow">RETENTION GOVERNANCE</p>
+                <h2>รูปใกล้หมดอายุและ Legal Hold</h2>
+                <p>การกด Dry Run จะตรวจรายการเท่านั้นและไม่ลบไฟล์</p>
+              </div>
+              <button id="runDryRunButton" class="button warning" type="button">
+                ทดลอง Dry Run ตอนนี้
+              </button>
+            </div>
+            <div id="retentionStats" class="metric-grid compact"></div>
+            <div class="panel table-panel">
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>เคส</th>
+                      <th>ประเภท</th>
+                      <th>สถานะ</th>
+                      <th>ขนาด</th>
+                      <th>กำหนดลบ</th>
+                      <th>Legal Hold</th>
+                      <th>ดำเนินการ</th>
+                    </tr>
+                  </thead>
+                  <tbody id="retentionRows"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <section id="view-line" class="view" data-panel="line" hidden>
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">LINE MESSAGING API</p>
+                <h2>ข้อความที่ใช้ในเดือนนี้</h2>
+                <p>
+                  ยอดรวมจาก LINE รวมข้อความที่ส่งผ่าน Official Account Manager;
+                  สถิติรายวันอาจล่าช้าประมาณหนึ่งวัน
+                </p>
+              </div>
+            </div>
+            <div id="lineQuotaPanel" class="quota-panel list-state">
+              กำลังโหลด…
+            </div>
+            <div class="panel table-panel">
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow">LAST 7 DAYS</p>
+                  <h3>แยกตามช่องทางส่ง</h3>
+                </div>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>วันที่ (LINE/JST)</th>
+                      <th>Reply</th>
+                      <th>Push</th>
+                      <th>Broadcast</th>
+                      <th>Multicast</th>
+                      <th>สถานะ</th>
+                    </tr>
+                  </thead>
+                  <tbody id="lineDailyRows"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <section id="view-richmenu" class="view" data-panel="richmenu" hidden>
+            <div class="section-heading action-heading">
+              <div>
+                <p class="eyebrow">VERSIONED RELEASES</p>
+                <h2>Rich Menu Studio</h2>
+                <p>
+                  ดู Legacy เดิม สร้าง Draft ตรวจสอบ Publish และ Rollback พร้อม
+                  Audit
+                </p>
+              </div>
+              <button
+                id="importLegacyButton"
+                class="button ghost"
+                type="button"
+              >
+                นำ Legacy เข้าเป็น Baseline
+              </button>
+            </div>
+            <div class="governance-banner">
+              <strong>Production Guard</strong
+              ><span
+                >การ Publish และ Rollback ต้องพิมพ์คำยืนยันอีกครั้ง
+                ส่วนการนำเข้า Legacy ไม่เปลี่ยนเมนูที่ผู้ใช้เห็น</span
+              >
+            </div>
+            <form id="richMenuForm" class="rich-menu-builder">
+              <section class="panel builder-settings">
+                <div class="panel-heading">
+                  <div>
+                    <p class="eyebrow">MENU SET</p>
+                    <h3>สร้าง Rich Menu แบบ 2 หน้า</h3>
+                    <p class="hint">
+                      แก้ไขภาพและพฤติกรรมของทุกปุ่มจากหน้านี้ได้
+                      ไม่ต้องแก้โค้ดหลังบ้าน
+                    </p>
+                  </div>
+                </div>
+                <div class="field-row">
+                  <label
+                    >ชื่อชุดเมนู<input
+                      id="menuSetName"
+                      maxlength="120"
+                      required
+                      placeholder="เช่น Main Menu November" /></label
+                  ><label
+                    >หน้าเริ่มต้น<select id="menuDefaultPage">
+                      <option value="page-1">หน้า 1</option>
+                      <option value="page-2">หน้า 2</option>
+                    </select></label
+                  >
+                </div>
+                <div
+                  id="menuPageTabs"
+                  class="page-tabs"
+                  role="tablist"
+                  aria-label="เลือกหน้า Rich Menu"
+                ></div>
+              </section>
+              <div class="studio-layout builder-layout">
+                <section class="panel editor-panel">
+                  <div class="panel-heading">
+                    <div>
+                      <p class="eyebrow">PAGE EDITOR</p>
+                      <h3 id="menuPageHeading">ตั้งค่าหน้า 1</h3>
+                    </div>
+                    <span id="menuPageStatus" class="badge"
+                      >ยังไม่เลือกภาพ</span
+                    >
+                  </div>
+                  <div class="field-row">
+                    <label
+                      >ชื่อหน้า<input
+                        id="menuPageName"
+                        maxlength="300"
+                        required /></label
+                    ><label
+                      >ข้อความบนแถบแชท<input
+                        id="menuChatBar"
+                        maxlength="14"
+                        required
+                    /></label>
+                  </div>
+                  <div class="field-row">
+                    <label
+                      >Page key<input
+                        id="menuPageKey"
+                        maxlength="30"
+                        required
+                        pattern="[a-z][a-z0-9-]{0,29}" /></label
+                    ><label
+                      >Alias สำหรับสลับหน้า<input
+                        id="menuAlias"
+                        maxlength="32"
+                        required
+                        pattern="[A-Za-z0-9_-]{1,32}"
+                    /></label>
+                  </div>
+                  <div class="field-row">
+                    <label
+                      >ความสูง<select id="menuHeight">
+                        <option value="1686">Large 2500 × 1686</option>
+                        <option value="843">Compact 2500 × 843</option>
+                      </select></label
+                    ><label
+                      >ภาพ PNG/JPEG ≤ 1 MB<input
+                        id="menuImage"
+                        type="file"
+                        accept="image/png,image/jpeg"
+                    /></label>
+                  </div>
+                  <div>
+                    <span class="field-label"
+                      >เลือกพื้นที่ปุ่มเพื่อกำหนดการทำงาน</span
+                    >
+                    <div
+                      id="menuAreaGrid"
+                      class="area-grid"
+                      aria-label="พื้นที่ปุ่ม Rich Menu"
+                    ></div>
+                  </div>
+                  <fieldset class="action-editor">
+                    <legend id="menuActionLegend">ปุ่มที่ 1</legend>
+                    <div class="field-row">
+                      <label
+                        >เมื่อกดแล้ว<select id="menuActionType">
+                          <option value="none">ไม่ทำงาน</option>
+                          <option value="uri">เปิดลิงก์ / LIFF</option>
+                          <option value="message">ส่งข้อความ</option>
+                          <option value="postback">ส่ง Postback</option>
+                          <option value="richmenuswitch">
+                            สลับหน้า Rich Menu
+                          </option>
+                        </select></label
+                      ><label
+                        >ชื่อปุ่ม (สำหรับ Accessibility)<input
+                          id="menuActionLabel"
+                          maxlength="20"
+                      /></label>
+                    </div>
+                    <label id="menuActionValueWrap"
+                      >ค่าที่ส่ง / URL<input
+                        id="menuActionValue"
+                        maxlength="1000" /></label
+                    ><label id="menuActionTargetWrap" hidden
+                      >หน้าปลายทาง<select id="menuActionTarget">
+                        <option value="page-1">หน้า 1</option>
+                        <option value="page-2">หน้า 2</option>
+                      </select></label
+                    >
+                  </fieldset>
+                  <details class="advanced-json">
+                    <summary>โหมดขั้นสูง: ตรวจและแก้ JSON ของหน้านี้</summary>
+                    <textarea
+                      id="menuAreas"
+                      rows="12"
+                      spellcheck="false"
+                    ></textarea
+                    ><button
+                      id="applyMenuJson"
+                      class="button ghost"
+                      type="button"
+                    >
+                      นำ JSON ไปใช้
+                    </button>
+                  </details>
+                  <div class="form-actions builder-actions">
+                    <button
+                      id="previewMenuButton"
+                      class="button ghost"
+                      type="button"
+                    >
+                      รีเฟรช Preview</button
+                    ><button class="button primary" type="submit">
+                      บันทึกชุด Draft
+                    </button>
+                  </div>
+                </section>
+                <article class="panel preview-panel">
+                  <div class="panel-heading">
+                    <div>
+                      <p class="eyebrow">INTERACTIVE PREVIEW</p>
+                      <h3>ทดลองกดก่อนบันทึก</h3>
+                    </div>
+                    <span class="badge">ไม่กระทบ Production</span>
+                  </div>
+                  <div
+                    id="previewPageTabs"
+                    class="page-tabs compact"
+                    aria-label="เลือกหน้า Preview"
+                  ></div>
+                  <div id="menuPreview" class="menu-preview">
+                    <div class="preview-empty">
+                      เลือกภาพของหน้านี้เพื่อดู Preview
+                    </div>
+                  </div>
+                  <div
+                    id="previewActionResult"
+                    class="preview-result"
+                    aria-live="polite"
+                  >
+                    กดพื้นที่บนภาพเพื่อดูว่าจะเกิดอะไรขึ้น
+                  </div>
+                  <p class="hint">
+                    Preview จำลองการเปิดลิงก์ ส่งข้อความ Postback และสลับหน้า
+                    โดยไม่ส่งคำสั่งไป LINE จริง
+                  </p>
+                </article>
+              </div>
+            </form>
+            <div class="panel">
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow">MANAGED HISTORY</p>
+                  <h3>เวอร์ชันที่ Control Center จัดการ</h3>
+                </div>
+              </div>
+              <div id="managedMenus" class="version-grid list-state">
+                กำลังโหลด…
+              </div>
+            </div>
+            <div class="panel">
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow">LEGACY DISCOVERY</p>
+                  <h3>Rich Menu เดิมที่ยังพบใน LINE</h3>
+                </div>
+              </div>
+              <div id="legacyMenus" class="version-grid list-state">
+                กำลังโหลด…
+              </div>
+            </div>
+          </section>
+
+          <section id="view-health" class="view" data-panel="health" hidden>
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">AUTOMATION &amp; WEBHOOK</p>
+                <h2>System Health</h2>
+                <p>
+                  สถานะ Reminder, Webhook, retry backlog และ Storage Cleanup
+                </p>
+              </div>
+            </div>
+            <div id="healthCards" class="metric-grid"></div>
+            <div id="healthServices" class="health-grid"></div>
+            <details class="panel diagnostics">
+              <summary>ข้อมูลวินิจฉัยสำหรับผู้ดูแลระบบ</summary>
+              <pre id="healthDetails" class="json-view"></pre>
+            </details>
+          </section>
+
+          <section id="view-audit" class="view" data-panel="audit" hidden>
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">APPEND-ONLY HISTORY</p>
+                <h2>Audit Log</h2>
+                <p>ประวัติคำสั่งที่ดำเนินการผ่าน Johnny Control Center</p>
+              </div>
+            </div>
+            <div class="panel table-panel">
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>วันเวลา</th>
+                      <th>ผู้ดำเนินการ</th>
+                      <th>Action</th>
+                      <th>รายการ</th>
+                      <th>รายละเอียด</th>
+                    </tr>
+                  </thead>
+                  <tbody id="auditRows"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
     </div>
 
-    <dialog id="confirmDialog" class="confirm-dialog"><form method="dialog"><p class="eyebrow">CONFIRM ACTION</p><h2 id="confirmTitle">ยืนยันการดำเนินการ</h2><p id="confirmMessage"></p><label id="confirmPhraseWrap" hidden>พิมพ์ข้อความยืนยัน<input id="confirmPhraseInput" autocomplete="off"></label><div class="dialog-actions"><button class="button ghost" value="cancel">ยกเลิก</button><button id="confirmAccept" class="button danger" value="confirm">ยืนยัน</button></div></form></dialog>
-</body>
+    <dialog id="confirmDialog" class="confirm-dialog">
+      <form method="dialog">
+        <p class="eyebrow">CONFIRM ACTION</p>
+        <h2 id="confirmTitle">ยืนยันการดำเนินการ</h2>
+        <p id="confirmMessage"></p>
+        <label id="confirmPhraseWrap" hidden
+          >พิมพ์ข้อความยืนยัน<input id="confirmPhraseInput" autocomplete="off"
+        /></label>
+        <div class="dialog-actions">
+          <button class="button ghost" value="cancel">ยกเลิก</button
+          ><button id="confirmAccept" class="button danger" value="confirm">
+            ยืนยัน
+          </button>
+        </div>
+      </form>
+    </dialog>
+  </body>
 </html>

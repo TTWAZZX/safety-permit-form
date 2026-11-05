@@ -110,7 +110,9 @@ function shouldOpenJohnnyControlCenter() {
 }
 
 function openJohnnyControlCenter() {
-    window.location.replace(new URL('system-monitor.html', window.location.href).href);
+    const destination = new URL('system-monitor.html', window.location.href);
+    destination.searchParams.set('liff', '1');
+    window.location.replace(destination.href);
 }
 
 function safeProfilePictureUrl(value) {
