@@ -407,14 +407,200 @@
     const limit = Number(payload.quota?.value || 0),
       used = Number(payload.consumption?.totalUsage || 0),
       percent = payload.percentage == null ? null : Number(payload.percentage);
+    const nowParts = Object.fromEntries(
+      new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Tokyo",
+        year: "numeric",
+        month: "numeric",
+        day: "numeric",
+      })
+        .formatToParts(new Date())
+        .filter((part) => part.type !== "literal")
+        .map((part) => [part.type, Number(part.value)]),
+    );
+    const daysInMonth = new Date(
+      Date.UTC(nowParts.year, nowParts.month, 0),
+    ).getUTCDate();
+    const averagePerDay = nowParts.day ? used / nowParts.day : 0;
+    const projected = Math.round(averagePerDay * daysInMonth);
+    const remaining = Math.max(0, limit - used);
     el("lineQuotaPanel").innerHTML =
-      `<div class="quota-number"><div><small>ใช้ไปแล้วในเดือนนี้</small><strong>${used.toLocaleString("th-TH")} / ${limit ? limit.toLocaleString("th-TH") : "ไม่จำกัด"}</strong></div><span>${percent == null ? "Unlimited" : `${percent.toFixed(1)}%`}</span></div><div class="quota-bar"><span style="width:${Math.min(100, percent || 0)}%;${percent >= 95 ? "background:#d64545" : percent >= 85 ? "background:#e58d1b" : ""}"></span></div><p>${percent != null && percent >= 70 ? `⚠ ถึงระดับแจ้งเตือน ${percent >= 95 ? "95%" : percent >= 85 ? "85%" : "70%"}` : "สถานะการใช้งานปกติ"} · Reply message ไม่ถูกนับในโควตาแบบเดียวกับ Push/Broadcast</p>`;
-    el("lineDailyRows").innerHTML = (payload.daily || [])
+      `<div class="quota-number"><div><small>ใช้ไปแล้วในเดือนนี้ (ค่าประมาณจาก LINE)</small><strong>${used.toLocaleString("th-TH")} / ${limit ? limit.toLocaleString("th-TH") : "ไม่จำกัด"}</strong></div><span>${percent == null ? "Unlimited" : `${percent.toFixed(1)}%`}</span></div><div class="quota-bar"><span style="width:${Math.min(100, percent || 0)}%;${percent >= 95 ? "background:#d64545" : percent >= 85 ? "background:#e58d1b" : ""}"></span></div><p>${percent != null && percent >= 70 ? `⚠ ถึงระดับแจ้งเตือน ${percent >= 95 ? "95%" : percent >= 85 ? "85%" : "70%"}` : "สถานะการใช้งานปกติ"} · จำนวนข้อความคิดตามผู้รับ ไม่ใช่จำนวน bubble</p>`;
+    el("lineForecastCards").innerHTML = [
+      metric(
+        "คงเหลือเดือนนี้",
+        limit ? remaining.toLocaleString("th-TH") : "ไม่จำกัด",
+        limit
+          ? `${Math.max(0, daysInMonth - nowParts.day)} วันก่อนสิ้นเดือน`
+          : "แพ็กเกจไม่จำกัด",
+      ),
+      metric(
+        "เฉลี่ยต่อวัน",
+        Math.round(averagePerDay).toLocaleString("th-TH"),
+        `คำนวณจากวันที่ 1-${nowParts.day}`,
+      ),
+      metric(
+        "ประมาณการสิ้นเดือน",
+        projected.toLocaleString("th-TH"),
+        limit
+          ? `${((projected / Math.max(limit, 1)) * 100).toFixed(1)}% ของ quota`
+          : "ใช้แนวโน้มปัจจุบัน",
+        limit && projected > limit
+          ? "danger"
+          : projected > limit * 0.85
+            ? "warn"
+            : "",
+      ),
+      metric(
+        "สถานะ quota",
+        payload.quota?.type === "limited"
+          ? "LIMITED"
+          : String(payload.quota?.type || "UNKNOWN").toUpperCase(),
+        percent == null
+          ? "LINE ไม่ส่งเปอร์เซ็นต์"
+          : `${percent.toFixed(1)}% ถูกใช้แล้ว`,
+        alertLevel(percent || 0),
+      ),
+    ].join("");
+
+    const followers = payload.followers || {};
+    const followerReady = followers.status === "ready";
+    const followerCount = Number(followers.followers || 0);
+    const blocks = Number(followers.blocks || 0);
+    el("lineFollowerDate").textContent =
+      `${followers.date || "—"} · ${followers.status || "unavailable"}`;
+    el("lineFollowerDate").className =
+      `badge ${followerReady ? "" : "warning"}`;
+    el("lineAudienceCards").innerHTML = [
+      metric(
+        "เพิ่มเพื่อนสะสม",
+        followerReady ? followerCount.toLocaleString("th-TH") : "รอข้อมูล",
+        "นับการเพิ่มครั้งแรก",
+      ),
+      metric(
+        "Targeted Reach",
+        followerReady
+          ? Number(followers.targetedReaches || 0).toLocaleString("th-TH")
+          : "รอข้อมูล",
+        "ผู้ใช้ที่ LINE ระบุกลุ่มเป้าหมายได้",
+      ),
+      metric(
+        "Blocks",
+        followerReady ? blocks.toLocaleString("th-TH") : "รอข้อมูล",
+        followerReady && followerCount
+          ? `${((blocks / followerCount) * 100).toFixed(1)}% ของผู้เพิ่มเพื่อนสะสม`
+          : "LINE ยังประมวลผล",
+      ),
+      metric(
+        "ข้อมูลผู้ติดตาม",
+        followerReady
+          ? "READY"
+          : String(followers.status || "UNAVAILABLE").toUpperCase(),
+        "สถิติ LINE/JST",
+        followerReady ? "" : "warn",
+      ),
+    ].join("");
+
+    const daily = Array.isArray(payload.daily) ? payload.daily : [];
+    const readyDays = daily.filter((day) => day.status === "ready");
+    const sum = (key) =>
+      readyDays.reduce((total, day) => total + Number(day[key] || 0), 0);
+    const apiBroadcast = sum("apiBroadcast"),
+      oaCampaign = sum("broadcast") + sum("targeting") + sum("stepMessage");
+    el("lineReadySummary").textContent =
+      `${readyDays.length}/${daily.length} วันพร้อมใช้`;
+    el("lineReadySummary").className =
+      `badge ${readyDays.length === daily.length ? "" : "warning"}`;
+    el("lineChannelCards").innerHTML = [
+      metric(
+        "Reply API",
+        sum("apiReply").toLocaleString("th-TH"),
+        "ตอบ webhook ด้วย reply token",
+      ),
+      metric(
+        "Push API",
+        sum("apiPush").toLocaleString("th-TH"),
+        "ส่งหา user/group โดยตรง",
+      ),
+      metric(
+        "Multicast API",
+        sum("apiMulticast").toLocaleString("th-TH"),
+        "ส่งหารายชื่อ user หลายคน",
+      ),
+      metric(
+        "Broadcast API",
+        apiBroadcast.toLocaleString("th-TH"),
+        "ส่งจาก Messaging API",
+      ),
+      metric(
+        "Narrowcast API",
+        sum("apiNarrowcast").toLocaleString("th-TH"),
+        "ส่งตาม audience/attribute",
+      ),
+      metric(
+        "OA Campaign",
+        oaCampaign.toLocaleString("th-TH"),
+        "All friends + Targeting + Step",
+      ),
+      metric(
+        "Automation",
+        (sum("autoResponse") + sum("welcomeResponse")).toLocaleString("th-TH"),
+        "Auto-response + Welcome",
+      ),
+      metric(
+        "Chat & External",
+        (
+          sum("chat") +
+          sum("ccAutoReply") +
+          sum("ccManualReply") +
+          sum("thirdPartyChatTool")
+        ).toLocaleString("th-TH"),
+        "OA Chat + Chat Plus + third party",
+      ),
+    ].join("");
+
+    const displayCount = (day, key) =>
+      day.status === "ready"
+        ? Number(day[key] || 0).toLocaleString("th-TH")
+        : "—";
+    const statusBadge = (day) =>
+      `<span class="badge ${day.status !== "ready" ? "warning" : ""}">${escapeHtml(day.status || "unknown")}</span>`;
+    el("lineApiRows").innerHTML = daily
       .map(
         (day) =>
-          `<tr><td data-label="วันที่ (LINE/JST)">${escapeHtml(day.date)}</td><td data-label="Reply">${Number(day.apiReply || 0).toLocaleString("th-TH")}</td><td data-label="Push">${Number(day.apiPush || 0).toLocaleString("th-TH")}</td><td data-label="Broadcast">${Number(day.apiBroadcast || 0).toLocaleString("th-TH")}</td><td data-label="Multicast">${Number(day.apiMulticast || 0).toLocaleString("th-TH")}</td><td data-label="สถานะ"><span class="badge ${day.status !== "ready" ? "warning" : ""}">${escapeHtml(day.status || "unknown")}</span></td></tr>`,
+          `<tr><td data-label="วันที่ (LINE/JST)">${escapeHtml(day.date)}</td><td data-label="Reply">${displayCount(day, "apiReply")}</td><td data-label="Push">${displayCount(day, "apiPush")}</td><td data-label="Multicast">${displayCount(day, "apiMulticast")}</td><td data-label="Broadcast API">${displayCount(day, "apiBroadcast")}</td><td data-label="Narrowcast">${displayCount(day, "apiNarrowcast")}</td><td data-label="สถานะ">${statusBadge(day)}</td></tr>`,
       )
       .join("");
+    const breakdown = (day, entries) =>
+      day.status === "ready"
+        ? `<div class="line-breakdown">${entries.map(([label, key]) => `<span><small>${label}</small><strong>${displayCount(day, key)}</strong></span>`).join("")}</div>`
+        : "—";
+    el("lineOaRows").innerHTML = daily
+      .map(
+        (day) =>
+          `<tr><td data-label="วันที่ (LINE/JST)">${escapeHtml(day.date)}</td><td data-label="แคมเปญ OA">${breakdown(
+            day,
+            [
+              ["All friends", "broadcast"],
+              ["Targeting", "targeting"],
+              ["Step", "stepMessage"],
+            ],
+          )}</td><td data-label="ตอบกลับอัตโนมัติ">${breakdown(day, [
+            ["Auto", "autoResponse"],
+            ["Welcome", "welcomeResponse"],
+          ])}</td><td data-label="Chat">${breakdown(day, [
+            ["OA Chat", "chat"],
+            ["Chat+ Auto", "ccAutoReply"],
+            ["Chat+ Manual", "ccManualReply"],
+          ])}</td><td data-label="ช่องทางเสริม">${breakdown(day, [
+            ["Third party", "thirdPartyChatTool"],
+            ["Notification", "pnpNoticeMessage"],
+            ["Call to LINE", "pnpCallToLine"],
+          ])}</td><td data-label="สถานะ">${statusBadge(day)}</td></tr>`,
+      )
+      .join("");
+    el("lineDataNotice").innerHTML =
+      `<strong>ขอบเขตข้อมูล</strong><span>ยอดเดือนปัจจุบันจาก quota/consumption รวมข้อความผ่าน Official Account Manager และเป็นค่าประมาณ ส่วนตารางรายวันแสดงทุกช่องที่ LINE ส่งกลับมา ค่า “unready” หมายถึง LINE ยังประมวลผล ไม่ใช่ยอดศูนย์ · อัปเดต ${formatDate(payload.generated_at)}${payload.cached ? " (ข้อมูล cache ไม่เกิน 15 นาที)" : ""}</span>`;
   }
 
   function versionCard(item, legacy = false) {
@@ -743,8 +929,17 @@
           `<option value="${escapeHtml(page.alias_id)}">หน้า ${index + 1}: ${escapeHtml(page.alias_id)}</option>`,
       )
       .join("");
-    el("menuDefaultPage").innerHTML = state.menuPages.map((page, index) => `<option value="${escapeHtml(page.page_key)}">หน้า ${index + 1}: ${escapeHtml(page.page_key)}</option>`).join("");
-    el("menuDefaultPage").value = state.menuPages.some((page) => page.page_key === selectedDefault) ? selectedDefault : state.menuPages[0].page_key;
+    el("menuDefaultPage").innerHTML = state.menuPages
+      .map(
+        (page, index) =>
+          `<option value="${escapeHtml(page.page_key)}">หน้า ${index + 1}: ${escapeHtml(page.page_key)}</option>`,
+      )
+      .join("");
+    el("menuDefaultPage").value = state.menuPages.some(
+      (page) => page.page_key === selectedDefault,
+    )
+      ? selectedDefault
+      : state.menuPages[0].page_key;
   }
 
   function renderActionEditor() {
@@ -893,8 +1088,10 @@
   function imageDimensions(url) {
     return new Promise((resolve, reject) => {
       const image = new Image();
-      image.onload = () => resolve({ width: image.naturalWidth, height: image.naturalHeight });
-      image.onerror = () => reject(new Error("อ่านขนาดภาพ Rich Menu ไม่สำเร็จ"));
+      image.onload = () =>
+        resolve({ width: image.naturalWidth, height: image.naturalHeight });
+      image.onerror = () =>
+        reject(new Error("อ่านขนาดภาพ Rich Menu ไม่สำเร็จ"));
       image.src = url;
     });
   }
@@ -911,8 +1108,12 @@
       const uploads = [];
       for (const [index, page] of state.menuPages.entries()) {
         const dimensions = await imageDimensions(page.objectUrl);
-        if (dimensions.width !== 2500 || dimensions.height !== page.height) throw new Error(`ภาพหน้า ${index + 1} ต้องมีขนาด 2500 × ${page.height} px (ไฟล์นี้ ${dimensions.width} × ${dimensions.height} px)`);
-        if (!page.actions.some(Boolean)) throw new Error(`หน้า ${index + 1} ต้องมีปุ่มอย่างน้อย 1 พื้นที่`);
+        if (dimensions.width !== 2500 || dimensions.height !== page.height)
+          throw new Error(
+            `ภาพหน้า ${index + 1} ต้องมีขนาด 2500 × ${page.height} px (ไฟล์นี้ ${dimensions.width} × ${dimensions.height} px)`,
+          );
+        if (!page.actions.some(Boolean))
+          throw new Error(`หน้า ${index + 1} ต้องมีปุ่มอย่างน้อย 1 พื้นที่`);
         uploads.push((await uploadMenuImage(page.file)).image);
       }
       const menuSet = {
@@ -1139,11 +1340,25 @@
         renderMenuBuilder();
       }),
     );
-    el("menuPageKey").addEventListener("change", () => { syncPageFields(); renderMenuBuilder(); });
+    el("menuPageKey").addEventListener("change", () => {
+      syncPageFields();
+      renderMenuBuilder();
+    });
     el("menuAlias").addEventListener("change", () => {
-      const page = state.menuPages[state.menuPageIndex], previousAlias = page.alias_id, nextAlias = el("menuAlias").value.trim();
-      state.menuPages.forEach((candidate) => candidate.actions.forEach((action) => { if (action?.type === "richmenuswitch" && action.richMenuAliasId === previousAlias) action.richMenuAliasId = nextAlias; }));
-      syncPageFields(); renderMenuBuilder();
+      const page = state.menuPages[state.menuPageIndex],
+        previousAlias = page.alias_id,
+        nextAlias = el("menuAlias").value.trim();
+      state.menuPages.forEach((candidate) =>
+        candidate.actions.forEach((action) => {
+          if (
+            action?.type === "richmenuswitch" &&
+            action.richMenuAliasId === previousAlias
+          )
+            action.richMenuAliasId = nextAlias;
+        }),
+      );
+      syncPageFields();
+      renderMenuBuilder();
     });
     [
       "menuActionType",

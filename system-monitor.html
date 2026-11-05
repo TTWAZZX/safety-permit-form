@@ -254,21 +254,49 @@
             <div class="section-heading">
               <div>
                 <p class="eyebrow">LINE MESSAGING API</p>
-                <h2>ข้อความที่ใช้ในเดือนนี้</h2>
+                <h2>LINE Message Operations Insights</h2>
                 <p>
-                  ยอดรวมจาก LINE รวมข้อความที่ส่งผ่าน Official Account Manager;
-                  สถิติรายวันอาจล่าช้าประมาณหนึ่งวัน
+                  ครบทั้ง Messaging API, Official Account Manager, Chat
+                  และระบบตอบกลับอัตโนมัติ โดยข้อมูลรายวันของ LINE
+                  อาจล่าช้าประมาณหนึ่งวัน
                 </p>
               </div>
             </div>
             <div id="lineQuotaPanel" class="quota-panel list-state">
               กำลังโหลด…
             </div>
+            <div id="lineForecastCards" class="metric-grid compact"></div>
+            <div class="panel">
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow">AUDIENCE HEALTH</p>
+                  <h3>ฐานผู้ติดตามและการเข้าถึง</h3>
+                </div>
+                <span id="lineFollowerDate" class="badge">กำลังโหลด</span>
+              </div>
+              <div
+                id="lineAudienceCards"
+                class="metric-grid compact line-metrics"
+              ></div>
+            </div>
+            <div class="panel">
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow">CHANNEL MIX · LAST 7 DAYS</p>
+                  <h3>สรุปช่องทางส่งที่ LINE คำนวณเสร็จแล้ว</h3>
+                </div>
+                <span id="lineReadySummary" class="badge">กำลังโหลด</span>
+              </div>
+              <div
+                id="lineChannelCards"
+                class="metric-grid line-channel-grid"
+              ></div>
+            </div>
             <div class="panel table-panel">
               <div class="panel-heading">
                 <div>
-                  <p class="eyebrow">LAST 7 DAYS</p>
-                  <h3>แยกตามช่องทางส่ง</h3>
+                  <p class="eyebrow">MESSAGING API · LAST 7 DAYS</p>
+                  <h3>Reply, Push, Broadcast, Multicast และ Narrowcast</h3>
                 </div>
               </div>
               <div class="table-wrap">
@@ -278,15 +306,40 @@
                       <th>วันที่ (LINE/JST)</th>
                       <th>Reply</th>
                       <th>Push</th>
-                      <th>Broadcast</th>
                       <th>Multicast</th>
+                      <th>Broadcast API</th>
+                      <th>Narrowcast</th>
                       <th>สถานะ</th>
                     </tr>
                   </thead>
-                  <tbody id="lineDailyRows"></tbody>
+                  <tbody id="lineApiRows"></tbody>
                 </table>
               </div>
             </div>
+            <div class="panel table-panel">
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow">OA MANAGER &amp; SERVICE CHANNELS</p>
+                  <h3>แคมเปญ, ระบบอัตโนมัติ, Chat และช่องทางเสริม</h3>
+                </div>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>วันที่ (LINE/JST)</th>
+                      <th>แคมเปญ OA</th>
+                      <th>ตอบกลับอัตโนมัติ</th>
+                      <th>Chat</th>
+                      <th>ช่องทางเสริม</th>
+                      <th>สถานะ</th>
+                    </tr>
+                  </thead>
+                  <tbody id="lineOaRows"></tbody>
+                </table>
+              </div>
+            </div>
+            <div id="lineDataNotice" class="governance-banner line-note"></div>
           </section>
 
           <section id="view-richmenu" class="view" data-panel="richmenu" hidden>
