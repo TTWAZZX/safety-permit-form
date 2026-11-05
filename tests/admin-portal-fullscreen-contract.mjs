@@ -16,7 +16,7 @@ for (const marker of [
 }
 
 const iconSlots = [...html.matchAll(/data-module-icon-slot="([^"]+)"/g)].map((match) => match[1]);
-if (iconSlots.length !== 8 || new Set(iconSlots).size !== 8) throw new Error('Every portal module requires one unique visual icon slot');
+if (iconSlots.length !== 9 || new Set(iconSlots).size !== 9) throw new Error('Every portal module requires one unique visual icon slot');
 if (html.includes('class="module-code')) throw new Error('Initial-only module placeholders must not return');
 
 for (const marker of [

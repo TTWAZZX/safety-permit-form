@@ -28,7 +28,7 @@ if (/script-src[^;]*(?:'unsafe-inline'|'unsafe-eval')/.test(csp)) throw new Erro
 if (script.includes('CSS.escape(')) throw new Error('Portal must not depend on CSS.escape for stored module IDs');
 
 const moduleIds = [...html.matchAll(/data-module-id="([^"]+)"/g)].map((match) => match[1]);
-if (moduleIds.length !== 8 || new Set(moduleIds).size !== moduleIds.length) throw new Error('Portal requires eight unique module IDs');
+if (moduleIds.length !== 9 || new Set(moduleIds).size !== moduleIds.length) throw new Error('Portal requires nine unique module IDs');
 for (const href of [...html.matchAll(/href="(https?:\/\/[^"]+)"/g)].map((match) => match[1])) {
     if (!href.startsWith('https://')) throw new Error(`External link must use HTTPS: ${href}`);
 }
