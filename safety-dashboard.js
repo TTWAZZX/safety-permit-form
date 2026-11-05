@@ -105,6 +105,14 @@ const state = {
 const element = (id) => document.getElementById(id);
 const config = window.SAFETY_DASHBOARD_CONFIG || {};
 
+function shouldOpenJohnnyControlCenter() {
+    return new URLSearchParams(window.location.search).get('target') === 'system-monitor';
+}
+
+function openJohnnyControlCenter() {
+    window.location.replace(new URL('system-monitor.html', window.location.href).href);
+}
+
 function safeProfilePictureUrl(value) {
     try {
         const url = new URL(String(value || ''));
@@ -1786,6 +1794,10 @@ async function initialize() {
         await window.liff.init({ liffId: config.liffId });
         if (!window.liff.isLoggedIn()) {
             window.liff.login({ redirectUri: window.location.href });
+            return;
+        }
+        if (shouldOpenJohnnyControlCenter()) {
+            openJohnnyControlCenter();
             return;
         }
         state.token = window.liff.getAccessToken() || '';

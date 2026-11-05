@@ -228,7 +228,12 @@
         try {
             if (!config.liffId || !config.apiUrl) throw new Error('Frontend configuration is incomplete');
             await liff.init({ liffId: config.liffId });
-            if (!liff.isLoggedIn()) { liff.login({ redirectUri: window.location.href.split('#')[0] }); return; }
+            if (!liff.isLoggedIn()) {
+                const liffEntry = new URL(`https://liff.line.me/${encodeURIComponent(config.liffId)}`);
+                liffEntry.searchParams.set('target', 'system-monitor');
+                window.location.replace(liffEntry.href);
+                return;
+            }
             state.token = liff.getAccessToken() || ''; if (!state.token) throw new Error('ไม่พบ LINE access token');
             el('loadingMessage').textContent = 'กำลังโหลดสถานะระบบ…'; const payload = await api('overview'); state.overview = payload; state.loaded.add('overview');
             el('adminName').textContent = payload.admin?.displayName || 'Safety Admin'; el('adminFallback').textContent = (payload.admin?.displayName || 'A').slice(0, 1).toUpperCase();
