@@ -14,6 +14,9 @@
     menuPageIndex: 0,
     menuAreaIndex: 0,
     previewPageIndex: 0,
+    productionPageIndex: 0,
+    productionMenus: [],
+    productionImages: new Map(),
     menuPages: [
       {
         page_key: "page-1",
@@ -206,6 +209,46 @@
       if (!response.ok)
         throw new Error(payload.error || `HTTP ${response.status}`);
       return payload;
+    } finally {
+      window.clearTimeout(timeout);
+    }
+  }
+
+  async function apiBlob(view, params = {}, timeoutMs) {
+    const controller = new AbortController();
+    const timeout = window.setTimeout(
+      () => controller.abort(),
+      timeoutMs || Number(config.richMenuTimeoutMs) || 30000,
+    );
+    const url = new URL(config.apiUrl);
+    url.searchParams.set("view", view);
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== "" && value != null) url.searchParams.set(key, value);
+    });
+    try {
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${state.token}`,
+          Accept: "image/png,image/jpeg",
+        },
+        signal: controller.signal,
+        cache: "no-store",
+        credentials: "omit",
+        referrerPolicy: "no-referrer",
+      });
+      if (!response.ok) {
+        let message = `HTTP ${response.status}`;
+        try {
+          message = (await response.json()).error || message;
+        } catch {
+          /* keep HTTP fallback */
+        }
+        throw new Error(message);
+      }
+      const blob = await response.blob();
+      if (!["image/png", "image/jpeg"].includes(blob.type) || !blob.size)
+        throw new Error("Backend ส่งภาพ Rich Menu ไม่ถูกต้อง");
+      return blob;
     } finally {
       window.clearTimeout(timeout);
     }
@@ -603,6 +646,159 @@
       `<strong>ขอบเขตข้อมูล</strong><span>ยอดเดือนปัจจุบันจาก quota/consumption รวมข้อความผ่าน Official Account Manager และเป็นค่าประมาณ ส่วนตารางรายวันแสดงทุกช่องที่ LINE ส่งกลับมา ค่า “unready” หมายถึง LINE ยังประมวลผล ไม่ใช่ยอดศูนย์ · อัปเดต ${formatDate(payload.generated_at)}${payload.cached ? " (ข้อมูล cache ไม่เกิน 15 นาที)" : ""}</span>`;
   }
 
+  function productionActionDescription(action = {}) {
+    if (action.type === "uri") return `เปิดลิงก์ ${action.uri || "—"}`;
+    if (action.type === "message") return `ส่งข้อความ “${action.text || "—"}”`;
+    if (action.type === "postback") return `ส่ง Postback “${action.data || "—"}”`;
+    if (action.type === "richmenuswitch")
+      return `สลับไป Alias ${action.richMenuAliasId || "—"}`;
+    return `Action ${action.type || "ไม่ทราบประเภท"}`;
+  }
+
+  function renderProductionMenu() {
+    const menus = state.productionMenus;
+    const tabs = el("productionMenuTabs");
+    const preview = el("productionMenuPreview");
+    const meta = el("productionMenuMeta");
+    const list = el("productionActionList");
+    const cloneButton = el("cloneProductionButton");
+    if (!menus.length) {
+      tabs.innerHTML = "";
+      preview.innerHTML = '<div class="preview-empty">ไม่พบ Rich Menu ที่ใช้งานอยู่จาก LINE</div>';
+      meta.innerHTML = "";
+      list.innerHTML = '<li class="empty">ไม่มีข้อมูลพื้นที่กด</li>';
+      el("productionMenuStatus").textContent = "ไม่พบเมนู";
+      cloneButton.disabled = true;
+      return;
+    }
+    state.productionPageIndex = Math.min(state.productionPageIndex, menus.length - 1);
+    const menu = menus[state.productionPageIndex];
+    const menuId = String(menu.richMenuId || "");
+    const image = state.productionImages.get(menuId);
+    const height = Number(menu.size?.height || 1686);
+    const width = Number(menu.size?.width || 2500);
+    const areas = Array.isArray(menu.areas) ? menu.areas : [];
+    tabs.innerHTML = menus
+      .map(
+        (item, index) =>
+          `<button class="page-tab ${index === state.productionPageIndex ? "is-active" : ""}" type="button" role="tab" aria-selected="${index === state.productionPageIndex}" data-production-page="${index}">${item.is_default ? "หน้าเริ่มต้น" : `หน้า ${index + 1}`} · ${escapeHtml(item.name || item.aliases?.[0] || "Rich Menu")}</button>`,
+      )
+      .join("");
+    preview.style.aspectRatio = `${width}/${height}`;
+    preview.innerHTML = image?.url
+      ? `<img src="${image.url}" alt="Rich Menu Production ${escapeHtml(menu.name || "")}">` +
+        areas
+          .map((area, index) => {
+            const bounds = area?.bounds || {};
+            const left = (Number(bounds.x || 0) / width) * 100;
+            const top = (Number(bounds.y || 0) / height) * 100;
+            const areaWidth = (Number(bounds.width || 0) / width) * 100;
+            const areaHeight = (Number(bounds.height || 0) / height) * 100;
+            return `<button type="button" class="preview-area production-preview-area" data-production-action="${index}" style="left:${left}%;top:${top}%;width:${areaWidth}%;height:${areaHeight}%" aria-label="ดูปุ่ม ${index + 1}: ${escapeHtml(area?.action?.label || area?.action?.type || "action")}"><span>${index + 1}</span></button>`;
+          })
+          .join("")
+      : `<div class="preview-empty">${image?.error ? escapeHtml(image.error) : "กำลังอ่านภาพจาก LINE…"}</div>`;
+    meta.innerHTML = `<dl><dt>สถานะ</dt><dd>${menu.is_default ? '<span class="badge">DEFAULT</span>' : '<span class="badge">ALIAS</span>'}</dd><dt>ชื่อ</dt><dd>${escapeHtml(menu.name || "—")}</dd><dt>ขนาด</dt><dd>${width.toLocaleString()} × ${height.toLocaleString()} px</dd><dt>Alias</dt><dd>${menu.aliases?.length ? menu.aliases.map(escapeHtml).join(", ") : "—"}</dd><dt>LINE ID</dt><dd><code>${escapeHtml(menuId)}</code></dd></dl>`;
+    list.innerHTML = areas.length
+      ? areas
+          .map(
+            (area, index) =>
+              `<li><button type="button" data-production-action="${index}"><strong>ปุ่ม ${index + 1} · ${escapeHtml(area?.action?.label || area?.action?.type || "Action")}</strong><span>${escapeHtml(productionActionDescription(area?.action))}</span></button></li>`,
+          )
+          .join("")
+      : '<li class="empty">ไม่พบพื้นที่กดในเมนูนี้</li>';
+    const allImagesReady = menus.every((item) => state.productionImages.get(String(item.richMenuId || ""))?.blob);
+    cloneButton.disabled = !allImagesReady || menus.length > 4;
+    cloneButton.title = menus.length > 4 ? "Editor รองรับสูงสุด 4 หน้า" : "";
+    el("productionMenuStatus").textContent = `${menus.length} หน้า · ${areas.length} ปุ่มในหน้านี้`;
+  }
+
+  function showProductionAction(index) {
+    const menu = state.productionMenus[state.productionPageIndex];
+    const area = Array.isArray(menu?.areas) ? menu.areas[index] : null;
+    if (!area) return;
+    const bounds = area.bounds || {};
+    el("productionActionResult").textContent =
+      `ปุ่ม ${index + 1}: ${productionActionDescription(area.action)} · พื้นที่ x ${bounds.x}, y ${bounds.y}, กว้าง ${bounds.width}, สูง ${bounds.height}`;
+  }
+
+  async function loadProductionMenus(rawMenus) {
+    state.productionImages.forEach((item) => {
+      if (item.url) URL.revokeObjectURL(item.url);
+    });
+    state.productionImages.clear();
+    state.productionMenus = Array.isArray(rawMenus) ? rawMenus.slice(0, 20) : [];
+    state.productionPageIndex = 0;
+    renderProductionMenu();
+    await Promise.allSettled(
+      state.productionMenus.map(async (menu) => {
+        const menuId = String(menu.richMenuId || "");
+        try {
+          const blob = await apiBlob("rich-menu-image", { rich_menu_id: menuId });
+          state.productionImages.set(menuId, {
+            blob,
+            url: URL.createObjectURL(blob),
+          });
+        } catch (error) {
+          state.productionImages.set(menuId, {
+            error: error.message || "โหลดภาพจาก LINE ไม่สำเร็จ",
+          });
+        }
+        renderProductionMenu();
+      }),
+    );
+  }
+
+  function actionsFromProductionMenu(menu) {
+    const actions = emptyActions();
+    const height = Number(menu.size?.height || 1686);
+    (Array.isArray(menu.areas) ? menu.areas : []).forEach((area) => {
+      const bounds = area?.bounds || {};
+      const centerX = Number(bounds.x || 0) + Number(bounds.width || 0) / 2;
+      const centerY = Number(bounds.y || 0) + Number(bounds.height || 0) / 2;
+      const column = Math.min(2, Math.max(0, Math.floor(centerX / (2500 / 3))));
+      const row = Math.min(2, Math.max(0, Math.floor(centerY / (height / 3))));
+      actions[row * 3 + column] = area?.action || null;
+    });
+    return actions;
+  }
+
+  function cloneProductionToDraft() {
+    const menus = state.productionMenus;
+    if (!menus.length || menus.length > 4) return;
+    const pages = menus.map((menu, index) => {
+      const menuId = String(menu.richMenuId || "");
+      const image = state.productionImages.get(menuId);
+      const mime = image?.blob?.type === "image/jpeg" ? "image/jpeg" : "image/png";
+      const extension = mime === "image/jpeg" ? "jpg" : "png";
+      const alias = String(menu.aliases?.[0] || `production-page-${index + 1}`);
+      const file = new File([image.blob], `production-${index + 1}.${extension}`, { type: mime });
+      return {
+        page_key: `page-${index + 1}`,
+        alias_id: alias,
+        name: String(menu.name || `Production Page ${index + 1}`),
+        chatBarText: String(menu.chatBarText || `เมนู ${index + 1}`).slice(0, 14),
+        height: Number(menu.size?.height || 1686),
+        file,
+        objectUrl: URL.createObjectURL(file),
+        actions: actionsFromProductionMenu(menu),
+      };
+    });
+    state.menuPages.forEach((page) => {
+      if (page.objectUrl) URL.revokeObjectURL(page.objectUrl);
+    });
+    state.menuPages = pages;
+    state.menuPageIndex = 0;
+    state.menuAreaIndex = 0;
+    state.previewPageIndex = 0;
+    el("menuSetName").value = `สำเนา Production ${new Date().toLocaleDateString("th-TH")}`;
+    const defaultIndex = Math.max(0, menus.findIndex((menu) => menu.is_default));
+    renderMenuBuilder();
+    el("menuDefaultPage").value = pages[defaultIndex].page_key;
+    el("richMenuForm").scrollIntoView({ behavior: "smooth", block: "start" });
+    notice("คัดลอกภาพ ปุ่ม และ Action จาก Production เข้า Editor แล้ว · ยังไม่บันทึกและไม่กระทบเมนูจริง");
+  }
+
   function versionCard(item, legacy = false) {
     const status = legacy
       ? item.is_default
@@ -643,6 +839,7 @@
       ? payload.legacy.map((item) => versionCard(item, true)).join("")
       : '<div class="empty">ไม่พบ Legacy ที่ยังไม่ถูกนำเข้า</div>';
     el("importLegacyButton").disabled = !payload.legacy?.length;
+    await loadProductionMenus(payload.production);
   }
 
   async function loadHealth(force = false) {
@@ -1297,6 +1494,14 @@
       const previewAction = event.target.closest("[data-preview-action]");
       if (previewAction)
         simulatePreview(Number(previewAction.dataset.previewAction));
+      const productionPage = event.target.closest("[data-production-page]");
+      if (productionPage) {
+        state.productionPageIndex = Number(productionPage.dataset.productionPage);
+        renderProductionMenu();
+      }
+      const productionAction = event.target.closest("[data-production-action]");
+      if (productionAction)
+        showProductionAction(Number(productionAction.dataset.productionAction));
       const page = event.target.closest("[data-page]");
       if (page) {
         state.storageOffset = Math.max(
@@ -1334,6 +1539,7 @@
       }
     });
     el("richMenuForm").addEventListener("submit", saveDraft);
+    el("cloneProductionButton").addEventListener("click", cloneProductionToDraft);
     ["menuPageName", "menuChatBar", "menuHeight"].forEach((id) =>
       el(id).addEventListener("change", () => {
         syncPageFields();

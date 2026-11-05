@@ -373,6 +373,45 @@
                 ส่วนการนำเข้า Legacy ไม่เปลี่ยนเมนูที่ผู้ใช้เห็น</span
               >
             </div>
+            <section class="panel production-menu-panel" aria-labelledby="productionMenuTitle">
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow">CURRENT PRODUCTION</p>
+                  <h3 id="productionMenuTitle">Rich Menu ที่ผู้ใช้กำลังเห็น</h3>
+                  <p class="hint">
+                    ภาพและพื้นที่กดอ่านตรงจาก LINE แบบ Read-only ใช้ตรวจของเดิมก่อนสร้าง Draft ใหม่
+                  </p>
+                </div>
+                <span id="productionMenuStatus" class="badge">กำลังโหลด…</span>
+              </div>
+              <div
+                id="productionMenuTabs"
+                class="page-tabs"
+                role="tablist"
+                aria-label="เลือกหน้า Rich Menu Production"
+              ></div>
+              <div class="production-menu-layout">
+                <div>
+                  <div id="productionMenuPreview" class="menu-preview production-menu-preview">
+                    <div class="preview-empty">กำลังอ่านภาพจาก LINE…</div>
+                  </div>
+                  <div id="productionActionResult" class="preview-result" aria-live="polite">
+                    กดพื้นที่บนภาพเพื่อดูรายละเอียด action โดยไม่มีการส่งคำสั่งจริง
+                  </div>
+                </div>
+                <aside class="production-menu-details">
+                  <div id="productionMenuMeta" class="production-menu-meta"></div>
+                  <h4>ปุ่มและการทำงานปัจจุบัน</h4>
+                  <ol id="productionActionList" class="production-action-list"></ol>
+                  <button id="cloneProductionButton" class="button primary" type="button" disabled>
+                    นำชุด Production มาเริ่ม Draft
+                  </button>
+                  <p class="hint">
+                    ขั้นตอนนี้คัดลอกเข้า Editor เท่านั้น ยังไม่บันทึก ไม่ Publish และไม่เปลี่ยนเมนูจริง
+                  </p>
+                </aside>
+              </div>
+            </section>
             <form id="richMenuForm" class="rich-menu-builder">
               <section class="panel builder-settings">
                 <div class="panel-heading">

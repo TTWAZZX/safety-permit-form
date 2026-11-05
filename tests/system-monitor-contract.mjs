@@ -65,6 +65,10 @@ if (
   throw new Error("Control Center LIFF bridge marker is missing");
 }
 for (const builderElement of [
+  "productionMenuPreview",
+  "productionMenuTabs",
+  "productionActionList",
+  "cloneProductionButton",
   "menuPageTabs",
   "menuAreaGrid",
   "menuActionType",
@@ -73,6 +77,17 @@ for (const builderElement of [
 ]) {
   if (!html.includes(`id="${builderElement}"`))
     throw new Error(`Rich Menu visual builder is missing ${builderElement}`);
+}
+for (const productionBehavior of [
+  'apiBlob("rich-menu-image"',
+  "renderProductionMenu",
+  "showProductionAction",
+  "cloneProductionToDraft",
+  "actionsFromProductionMenu",
+  "คัดลอกภาพ ปุ่ม และ Action จาก Production เข้า Editor แล้ว",
+]) {
+  if (!js.includes(productionBehavior))
+    throw new Error(`Rich Menu Production preview is missing ${productionBehavior}`);
 }
 for (const insightElement of [
   "lineForecastCards",

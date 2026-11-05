@@ -702,6 +702,93 @@ td .button {
 .governance-banner span {
   color: var(--muted);
 }
+.production-menu-panel {
+  border-color: #aad8ca;
+  background: linear-gradient(145deg, #ffffff 0%, #f3fbf8 100%);
+}
+.production-menu-panel .panel-heading .hint {
+  margin: 6px 0 0;
+}
+.production-menu-layout {
+  display: grid;
+  grid-template-columns: minmax(480px, 1.25fr) minmax(300px, 0.75fr);
+  gap: 18px;
+  align-items: start;
+  margin-top: 16px;
+}
+.production-menu-preview {
+  border: 1px solid #bcd8cf;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.55);
+}
+.production-preview-area {
+  background: rgba(3, 57, 44, 0.14);
+}
+.production-preview-area span {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: rgba(3, 57, 44, 0.82);
+  color: #fff;
+}
+.production-menu-details {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+.production-menu-details h4 {
+  margin: 4px 0 0;
+}
+.production-menu-meta dl {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px 12px;
+  margin: 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+}
+.production-menu-meta dt {
+  color: var(--muted);
+}
+.production-menu-meta dd {
+  margin: 0;
+  font-weight: 750;
+  overflow-wrap: anywhere;
+}
+.production-action-list {
+  display: grid;
+  gap: 7px;
+  max-height: 360px;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+}
+.production-action-list button {
+  width: 100%;
+  display: grid;
+  gap: 3px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+.production-action-list button:hover,
+.production-action-list button:focus-visible {
+  border-color: var(--green-600);
+  background: var(--mint);
+}
+.production-action-list span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  overflow-wrap: anywhere;
+}
 .rich-menu-builder {
   display: grid;
   gap: 0;
@@ -988,6 +1075,9 @@ code {
   .builder-layout {
     grid-template-columns: 1fr;
   }
+  .production-menu-layout {
+    grid-template-columns: 1fr;
+  }
   #lineForecastCards,
   .line-metrics,
   .line-channel-grid {
@@ -1138,5 +1228,17 @@ code {
   }
   .page-tab {
     width: 100%;
+  }
+  .production-menu-panel {
+    padding: 16px;
+  }
+  .production-menu-meta dl {
+    grid-template-columns: 1fr;
+  }
+  .production-menu-meta dd {
+    margin-bottom: 5px;
+  }
+  .production-action-list {
+    max-height: none;
   }
 }
