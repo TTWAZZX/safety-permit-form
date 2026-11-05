@@ -16,6 +16,26 @@
         window.setTimeout(() => { if (node.textContent === message) node.hidden = true; }, 7000);
     }
 
+    function renderAdminProfile(admin = {}) {
+        const displayName = String(admin.displayName || 'Safety Admin').trim() || 'Safety Admin';
+        const image = el('adminImage');
+        const fallback = el('adminFallback');
+        let pictureUrl = '';
+        try {
+            const candidate = new URL(String(admin.pictureUrl || ''));
+            if (candidate.protocol === 'https:') pictureUrl = candidate.href;
+        } catch (_) { /* keep the text fallback */ }
+
+        el('adminName').textContent = displayName;
+        fallback.textContent = displayName.slice(0, 1).toUpperCase();
+        fallback.hidden = false;
+        image.hidden = true;
+        image.removeAttribute('src');
+        image.onload = () => { image.hidden = false; fallback.hidden = true; };
+        image.onerror = () => { image.hidden = true; fallback.hidden = false; image.removeAttribute('src'); };
+        if (pictureUrl) image.src = pictureUrl;
+    }
+
     async function api(view, options = {}) {
         const controller = new AbortController();
         const timeout = window.setTimeout(() => controller.abort(), options.timeout || Number(config.requestTimeoutMs) || 15000);
@@ -236,8 +256,7 @@
             }
             state.token = liff.getAccessToken() || ''; if (!state.token) throw new Error('ไม่พบ LINE access token');
             el('loadingMessage').textContent = 'กำลังโหลดสถานะระบบ…'; const payload = await api('overview'); state.overview = payload; state.loaded.add('overview');
-            el('adminName').textContent = payload.admin?.displayName || 'Safety Admin'; el('adminFallback').textContent = (payload.admin?.displayName || 'A').slice(0, 1).toUpperCase();
-            if (payload.admin?.pictureUrl) { el('adminImage').src = payload.admin.pictureUrl; el('adminImage').hidden = false; el('adminFallback').hidden = true; }
+            renderAdminProfile(payload.admin);
             el('appLoading').hidden = true; el('appShell').hidden = false; state.loaded.delete('overview'); await loadOverview(true);
         } catch (error) {
             el('appLoading').hidden = true; el('appError').hidden = false; el('errorTitle').textContent = /Forbidden|403/.test(error.message) ? 'ไม่มีสิทธิ์เข้าถึง' : 'เปิด Control Center ไม่สำเร็จ'; el('errorMessage').textContent = error.message || 'กรุณาลองใหม่';

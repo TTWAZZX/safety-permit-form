@@ -24,6 +24,9 @@ if (!js.includes("liffEntry.searchParams.set('target', 'system-monitor')") || !j
 if (!dashboard.includes("get('target') === 'system-monitor'") || !dashboard.includes("new URL('system-monitor.html', window.location.href)")) {
   throw new Error('Safety Dashboard is missing the allowlisted Control Center LIFF bridge');
 }
+for (const profileBehavior of ['renderAdminProfile(payload.admin)', 'image.onerror', "candidate.protocol === 'https:'", "image.removeAttribute('src')"]) {
+  if (!js.includes(profileBehavior)) throw new Error(`Control Center profile fallback is missing ${profileBehavior}`);
+}
 if (js.includes('liff.login({ redirectUri: window.location.href')) {
   throw new Error('Control Center must not request an unregistered LIFF callback URL');
 }
