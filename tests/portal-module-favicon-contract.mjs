@@ -1,13 +1,14 @@
 import { readFile } from 'node:fs/promises';
 
 const root = new URL('../', import.meta.url);
-const [script, styles, violation, slipper, securityPass, safetyCase] = await Promise.all([
+const [script, styles, violation, slipper, securityPass, safetyCase, johnnyControl] = await Promise.all([
     readFile(new URL('portal-module-favicon.js', root), 'utf8'),
     readFile(new URL('portal-module-favicon.css', root), 'utf8'),
     readFile(new URL('admin_guard_violation.html', root), 'utf8'),
     readFile(new URL('admin_slipper_permit.html', root), 'utf8'),
     readFile(new URL('guard-admin.html', root), 'utf8'),
     readFile(new URL('safety-dashboard.html', root), 'utf8'),
+    readFile(new URL('system-monitor.html', root), 'utf8'),
 ]);
 
 for (const marker of [
@@ -20,6 +21,7 @@ for (const marker of [
     'applyModuleLogos(asset, module.display_name)',
     'document.documentElement.dataset.portalModuleKey',
     'addAdminPortalShortcut()',
+    "dataset.portalAdminShortcut !== 'false'",
     "label.textContent = 'กลับ Admin Portal'",
     "document.querySelectorAll('[data-portal-module-logo]')",
     "document.querySelectorAll('link[rel~=\"icon\"]')",
@@ -44,6 +46,12 @@ for (const [name, html] of Object.entries({ violation, slipper, securityPass }))
 
 if (!safetyCase.includes('data-portal-module-key="safety-case"') || !safetyCase.includes('src="portal-module-favicon.js"') || !safetyCase.includes('data-portal-module-logo')) {
     throw new Error('Safety Case must explicitly bind its LIFF-backed module icon to its local dashboard page');
+}
+if (!johnnyControl.includes('data-portal-module-key="johnny-control-center"')
+    || !johnnyControl.includes('data-portal-admin-shortcut="false"')
+    || !johnnyControl.includes('src="portal-module-favicon.js"')
+    || !johnnyControl.includes('data-portal-module-logo')) {
+    throw new Error('Johnny Control Center must use its managed module icon without duplicating the Portal shortcut');
 }
 for (const marker of ['.portal-admin-shortcut', 'env(safe-area-inset-bottom)', '@media(max-width:640px)', '@media print']) {
     if (!styles.includes(marker)) throw new Error(`Shared internal navigation styles are missing ${marker}`);

@@ -110,6 +110,6 @@
         }
     }
 
-    addAdminPortalShortcut();
+    if (document.documentElement.dataset.portalAdminShortcut !== 'false') addAdminPortalShortcut();
     syncInternalModuleFavicon();
 })();

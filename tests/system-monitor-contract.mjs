@@ -6,8 +6,9 @@ const files = await Promise.all([
   readFile(new URL("../system-monitor-config.js", import.meta.url), "utf8"),
   readFile(new URL("../admin-portal.html", import.meta.url), "utf8"),
   readFile(new URL("../safety-dashboard.js", import.meta.url), "utf8"),
+  readFile(new URL("../portal-module-favicon.js", import.meta.url), "utf8"),
 ]);
-const [html, js, config, portal, dashboard] = files;
+const [html, js, config, portal, dashboard, moduleBranding] = files;
 
 for (const tab of [
   "overview",
@@ -99,6 +100,24 @@ for (const deliveryField of [
 }
 if (!html.includes("https://profile.line-scdn.net"))
   throw new Error("LINE profile image CSP source missing");
+for (const brandingMarker of [
+  'data-portal-module-key="johnny-control-center"',
+  'data-portal-admin-shortcut="false"',
+  'data-portal-module-logo',
+  'src="portal-module-favicon.js"',
+  'href="portal-module-favicon.css"',
+]) {
+  if (!html.includes(brandingMarker))
+    throw new Error(`Control Center managed branding is missing ${brandingMarker}`);
+}
+for (const sharedBrandingBehavior of [
+  "module.icon_asset || payload?.settings?.logo_asset",
+  "applyModuleLogos(asset, module.display_name)",
+  "dataset.portalAdminShortcut !== 'false'",
+]) {
+  if (!moduleBranding.includes(sharedBrandingBehavior))
+    throw new Error(`Shared module branding is missing ${sharedBrandingBehavior}`);
+}
 for (const profileBehavior of [
   "renderAdminProfile(payload.admin)",
   "image.onerror",
