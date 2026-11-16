@@ -781,6 +781,7 @@
         height: Number(menu.size?.height || 1686),
         file,
         objectUrl: URL.createObjectURL(file),
+        usesProductionImage: true,
         actions: actionsFromProductionMenu(menu),
       };
     });
@@ -791,12 +792,12 @@
     state.menuPageIndex = 0;
     state.menuAreaIndex = 0;
     state.previewPageIndex = 0;
-    el("menuSetName").value = `สำเนา Production ${new Date().toLocaleDateString("th-TH")}`;
+    el("menuSetName").value = `แก้ไข Production ${new Date().toLocaleDateString("th-TH")}`;
     const defaultIndex = Math.max(0, menus.findIndex((menu) => menu.is_default));
     renderMenuBuilder();
     el("menuDefaultPage").value = pages[defaultIndex].page_key;
     el("richMenuForm").scrollIntoView({ behavior: "smooth", block: "start" });
-    notice("คัดลอกภาพ ปุ่ม และ Action จาก Production เข้า Editor แล้ว · ยังไม่บันทึกและไม่กระทบเมนูจริง");
+    notice("พร้อมแก้ไข Production แล้ว · ระบบใช้ภาพเดิมให้อัตโนมัติ คุณแก้เฉพาะลิงก์หรือ Action ได้ จากนั้นบันทึก Validate และ Publish");
   }
 
   function versionCard(item, legacy = false) {
@@ -1168,7 +1169,9 @@
     el("menuHeight").value = String(page.height);
     el("menuImage").value = "";
     el("menuPageStatus").textContent = page.file
-      ? `${page.file.name} · ${formatBytes(page.file.size)}`
+      ? page.usesProductionImage
+        ? `ใช้ภาพ Production เดิม · ${formatBytes(page.file.size)}`
+        : `${page.file.name} · ${formatBytes(page.file.size)}`
       : "ยังไม่เลือกภาพ";
     el("menuAreaGrid").innerHTML = page.actions
       .map(
@@ -1598,6 +1601,7 @@
       if (page.objectUrl) URL.revokeObjectURL(page.objectUrl);
       page.file = file;
       page.objectUrl = URL.createObjectURL(file);
+      page.usesProductionImage = false;
       state.previewPageIndex = state.menuPageIndex;
       renderMenuBuilder();
     });
