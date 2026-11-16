@@ -42,7 +42,7 @@
           {
             type: "uri",
             label: "Report 2",
-            uri: "https://dev.tshpcl.com/safety/tsh-safety-core/",
+            uri: "https://uat.tshpcl.com/safety/tsh-safety-core/",
           },
           null,
           null,
@@ -50,7 +50,7 @@
           {
             type: "uri",
             label: "LIFF 1",
-            uri: "https://liff.line.me/2007053300-9xLKdwZp",
+            uri: "https://liff.line.me/2007053300-REH5VxSz",
           },
           {
             type: "uri",
@@ -1186,7 +1186,7 @@
     previewMenu();
   }
 
-  function updateCurrentAction() {
+  function updateCurrentAction({ render = true } = {}) {
     const type = el("menuActionType").value;
     let next = null;
     const label = el("menuActionLabel").value.trim();
@@ -1203,7 +1203,20 @@
         data: `switch_to_${el("menuActionTarget").value.replace(/[^a-z0-9]/gi, "_")}`,
       };
     state.menuPages[state.menuPageIndex].actions[state.menuAreaIndex] = next;
-    renderMenuBuilder();
+    if (render) {
+      renderMenuBuilder();
+      return;
+    }
+    const summary = el("menuAreaGrid").querySelector(
+      `[data-menu-area="${state.menuAreaIndex}"] small`,
+    );
+    if (summary) summary.textContent = actionSummary(next);
+    el("menuAreas").value = JSON.stringify(
+      menuConfigForPage(state.menuPages[state.menuPageIndex]).areas,
+      null,
+      2,
+    );
+    previewMenu();
   }
 
   function menuConfigForPage(page) {
@@ -1566,12 +1579,14 @@
       syncPageFields();
       renderMenuBuilder();
     });
-    [
-      "menuActionType",
-      "menuActionLabel",
-      "menuActionValue",
-      "menuActionTarget",
-    ].forEach((id) => el(id).addEventListener("change", updateCurrentAction));
+    ["menuActionType", "menuActionTarget"].forEach((id) =>
+      el(id).addEventListener("change", updateCurrentAction),
+    );
+    ["menuActionLabel", "menuActionValue"].forEach((id) =>
+      el(id).addEventListener("input", () =>
+        updateCurrentAction({ render: false }),
+      ),
+    );
     el("menuImage").addEventListener("change", (event) => {
       const file = event.target.files[0];
       if (!file) return;
