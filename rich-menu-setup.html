@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>Rich Menu Production Setup</title>
+  <style>
+    body{font-family:system-ui,sans-serif;background:#f3f7f6;color:#15342d;margin:0;display:grid;min-height:100vh;place-items:center}
+    main{background:#fff;border:1px solid #cfe1dc;border-radius:18px;box-shadow:0 18px 50px #15342d1a;max-width:560px;padding:32px;margin:20px}
+    h1{margin:0 0 12px;font-size:26px}p{line-height:1.6;color:#4a645e}strong{color:#a33a22}
+    button{border:0;border-radius:12px;background:#087f63;color:#fff;font-size:16px;font-weight:700;padding:14px 20px;cursor:pointer;width:100%}
+    button:hover{background:#066c55}.note{font-size:13px;margin-top:14px}
+  </style>
+</head>
+<body><main>
+  <h1>Rich Menu Production Setup</h1>
+  <p>ระบบจะสร้าง Rich Menu หน้า 1 และหน้า 2 รุ่นใหม่ ตั้งหน้า 1 เป็นค่าเริ่มต้น และย้ายผู้ใช้ที่ยังผูกกับเมนูรุ่นเก่าแบบ Batch</p>
+  <p><strong>กรุณากดเพียงครั้งเดียว</strong> จากนั้นกรอกชื่อผู้ใช้และรหัสผ่าน แล้วรอผลลัพธ์สำเร็จ</p>
+  <form method="post" action="https://dqsfioiqwxuxpucwwhsv.supabase.co/functions/v1/setup-rich-menu">
+    <button type="submit">ยืนยันสร้างและอัปเดต Rich Menu</button>
+  </form>
+  <p class="note">การเปิดหรือรีเฟรชหน้านี้จะไม่สั่งเปลี่ยน Rich Menu จนกว่าจะกดปุ่มยืนยัน</p>
+</main></body>
+</html>
