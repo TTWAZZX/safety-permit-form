@@ -428,6 +428,12 @@ textarea {
 .action-heading {
   align-items: center;
 }
+.heading-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
 .text-button {
   background: transparent;
   color: var(--green-800);
@@ -1131,6 +1137,13 @@ code {
   .action-heading {
     align-items: flex-start;
     flex-direction: column;
+  }
+  .heading-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .heading-actions .button {
+    flex: 1 1 220px;
   }
   .toolbar {
     align-items: stretch;
