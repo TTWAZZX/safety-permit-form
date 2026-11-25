@@ -153,6 +153,13 @@
             color: #38bdf8;
         }
 
+        .header-day td { background-color: #fff7ed; color: #92400e; }
+        .header-night td { background-color: #eef2ff; color: #3730a3; }
+        [data-theme="dark"] .header-day td { background-color: #3b2b1f; color: #fcd34d; }
+        [data-theme="dark"] .header-night td { background-color: #242441; color: #c7d2fe; }
+        .attendance-late { color: #b91c1c !important; }
+        [data-theme="dark"] .attendance-late { color: #fca5a5 !important; }
+
         .sortable-ghost { background-color: var(--table-hover-bg) !important; opacity: 0.8; border: 2px dashed var(--primary-color); }
         #attendanceTbody tr:not(.group-header) { cursor: grab; }
         #attendanceTbody tr:not(.group-header):active { cursor: grabbing; }
@@ -184,6 +191,7 @@
             }
 
             .print-only { display: block !important; }
+            [data-theme] #attendanceTable .attendance-late { color: #000 !important; }
             .hide-in-print { display: none !important; } /* ซ่อนคนลา/ขาดใน PDF */
 
             /* สลับการแสดงผลเลขลำดับ */
@@ -386,13 +394,13 @@
                             </div>
                             <div class="col-sm-6">
                                 <div class="kpi-card" style="border-left-color: #f59e0b;">
-                                    <div><small class="text-muted fw-bold"><i class="bi bi-sun me-1"></i> กะเช้า (Day Shift)</small><h2 class="mb-0 fw-bold text-warning mt-1" id="kpi-morning">0</h2></div>
+                                    <div><small class="text-muted fw-bold"><i class="bi bi-sun me-1"></i> กะเช้า (Day Shift)</small><h2 class="mb-0 fw-bold text-warning mt-1" id="kpi-morning">0</h2><small class="attendance-late fw-bold" id="kpi-morning-late">มาสาย 0 รายการ</small></div>
                                     <div class="kpi-icon bg-warning bg-opacity-10 text-warning"><i class="bi bi-brightness-high"></i></div>
                                 </div>
                             </div>
                             <div class="col-sm-6">
                                 <div class="kpi-card" style="border-left-color: #334155;">
-                                    <div><small class="text-muted fw-bold"><i class="bi bi-moon-stars me-1"></i> กะดึก (Night Shift)</small><h2 class="mb-0 fw-bold mt-1" style="color: #334155;" id="kpi-night">0</h2></div>
+                                    <div><small class="text-muted fw-bold"><i class="bi bi-moon-stars me-1"></i> กะดึก (Night Shift)</small><h2 class="mb-0 fw-bold mt-1" style="color: #334155;" id="kpi-night">0</h2><small class="attendance-late fw-bold" id="kpi-night-late">มาสาย 0 รายการ</small></div>
                                     <div class="kpi-icon bg-secondary bg-opacity-10 text-secondary"><i class="bi bi-moon"></i></div>
                                 </div>
                             </div>
@@ -702,6 +710,7 @@
     </div>
 </div>
 
+<script src="guard-attendance.js"></script>
 <script>
 // ================= CONFIG =================
 const SUPABASE_URL = 'https://dqsfioiqwxuxpucwwhsv.supabase.co';
@@ -953,9 +962,7 @@ async function loadAttendance() {
     let printCounter = 1; 
 
     finalRows.forEach(row => {
-        let shiftGroup = '-';
-        if (row.shift && row.shift.includes('เช้า')) shiftGroup = 'เช้า';
-        else if (row.shift && row.shift.includes('ดึก')) shiftGroup = 'ดึก';
+        const shiftGroup = getGuardShift(row.shift);
 
         // เช็คว่าขึ้นกลุ่มใหม่หรือไม่
         if (row.work_date !== currentDate || shiftGroup !== currentShiftGroup) {
@@ -969,14 +976,15 @@ async function loadAttendance() {
                 printCounter = 1; 
             }
             
-            const shiftClass = shiftGroup === 'เช้า' ? 'header-day' : (shiftGroup === 'ดึก' ? 'header-night' : '');
-            const shiftIcon = shiftGroup === 'เช้า' ? '<i class="bi bi-sun-fill text-warning me-1"></i>' : (shiftGroup === 'ดึก' ? '<i class="bi bi-moon-stars-fill text-info me-1"></i>' : '📅');
-            const shiftTime = shiftGroup === 'เช้า' ? '(06:00 - 18:00)' : (shiftGroup === 'ดึก' ? '(18:00 - 06:00)' : '');
+            const shift = guardShifts[shiftGroup];
+            const shiftClass = shiftGroup === 'morning' ? 'header-day' : shiftGroup === 'night' ? 'header-night' : '';
+            const shiftIcon = shiftGroup === 'morning' ? '<i class="bi bi-sun-fill me-1"></i>' : shiftGroup === 'night' ? '<i class="bi bi-moon-stars-fill me-1"></i>' : '📅';
+            const shiftLabel = shift ? `${shift.label} (${shift.startsAt} - ${shift.endsAt})` : 'ไม่ระบุกะ';
             
             tbody.innerHTML += `
                 <tr class="group-header no-sort ${shiftClass}">
                     <td colspan="9" class="text-start fs-6 border-0">
-                        ${shiftIcon} <span>วันที่: ${formatDateThai(row.work_date)} | กะ${shiftGroup} ${shiftTime}</span>
+                        ${shiftIcon} <span>วันที่: ${formatDateThai(row.work_date)} | ${shiftLabel}</span>
                     </td>
                 </tr>
             `;
@@ -1002,8 +1010,7 @@ async function loadAttendance() {
     const switches = document.querySelectorAll('[id^="colSwitch_"]');
     switches.forEach((sw, idx) => toggleColumn(idx, sw.checked));
 
-    updateKPIs(attendanceData.length, attendanceData.filter(r => r.shift?.includes('เช้า')).length,
-               attendanceData.filter(r => r.shift?.includes('ดึก')).length, attendanceData.filter(r => r.remark_type !== 'ปกติ').length);
+    updateKPIs(attendanceData);
 
     if (sortableInstance) sortableInstance.destroy();
     sortableInstance = new Sortable(tbody, {
@@ -1032,6 +1039,11 @@ function renderRow(row, tbody, isAbsentDummy, hideInPrint, webCounter, printCoun
     // 🔥 ปรับให้ชื่อคนแทนต่อท้าย และย่อขนาดตัวอักษรให้เล็กลงอีก 2 ระดับ
     const remarkDetailHtml = detailText ? ` <span class="text-muted ms-1" style="font-weight: normal; font-size: 0.8em;">${detailText}</span>` : '';
 
+    const lateMinutes = getGuardLateness(row.shift, row.time_in, row.remark_type);
+    const timeInClass = lateMinutes > 0 ? 'attendance-late' : lateMinutes === 0 ? 'text-success' : 'text-muted';
+    const lateLabel = lateMinutes > 0 ? ` <span class="attendance-late fw-bold">มาสาย ${lateMinutes} นาที</span>` : '';
+    const remarkType = lateLabel && row.remark_type === 'ปกติ' ? '' : (row.remark_type || '');
+
     const rowClasses = ['data-row'];
     if (isAbsentDummy) rowClasses.push('bg-light', 'opacity-75');
     if (hideInPrint) rowClasses.push('hide-in-print');
@@ -1046,9 +1058,9 @@ function renderRow(row, tbody, isAbsentDummy, hideInPrint, webCounter, printCoun
             <td data-col="shift">${row.shift}</td>
             <td data-col="id_card"><span class="badge bg-light text-dark border">${row.id_card}</span></td>
             <td data-col="name" class="fw-bold">${profileImg}${row.fullname}</td>
-            <td data-col="time_in" class="text-center fw-bold text-success">${row.time_in || '-'}</td>
+            <td data-col="time_in" class="text-center fw-bold ${timeInClass}">${row.time_in || '-'}</td>
             <td data-col="time_out" class="text-center fw-bold text-danger">${row.time_out || '-'}</td>
-            <td data-col="remark">${row.remark_type}${remarkDetailHtml}</td>
+            <td data-col="remark">${remarkType}${remarkDetailHtml}${lateLabel}</td>
             <td data-col="action" class="text-center no-print">
                 <button onclick="openRecordModal('${row.id}')" class="btn btn-sm btn-light border text-primary px-3 rounded-pill"><i class="bi bi-pencil-square"></i></button>
             </td>
@@ -1077,7 +1089,16 @@ function saveRowOrder() {
     }, 500);
 }
 
-function updateKPIs(total, morning, night, issue) {
+function updateKPIs(rows) {
+    const total = rows.length;
+    const morningRows = rows.filter(row => getGuardShift(row.shift) === 'morning');
+    const nightRows = rows.filter(row => getGuardShift(row.shift) === 'night');
+    const morning = morningRows.length;
+    const night = nightRows.length;
+    const issue = rows.filter(row => row.remark_type !== 'ปกติ').length;
+    const isLate = row => getGuardLateness(row.shift, row.time_in, row.remark_type) > 0;
+    document.getElementById('kpi-morning-late').innerText = `มาสาย ${morningRows.filter(isLate).length} รายการ`;
+    document.getElementById('kpi-night-late').innerText = `มาสาย ${nightRows.filter(isLate).length} รายการ`;
     document.getElementById('kpi-total').innerText = total;
     document.getElementById('kpi-morning').innerText = morning;
     document.getElementById('kpi-night').innerText = night;
