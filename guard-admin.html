@@ -186,12 +186,17 @@
             <i class="bi bi-shield-lock" style="font-size: 4rem;"></i>
         </div>
         <h3 class="fw-bold mb-1">SafetyPass Admin</h3>
-        <p class="text-muted small mb-4">Enterprise Security Management</p>
-        <div class="input-group mb-4 shadow-sm rounded-3">
+        <p class="text-muted small mb-3">รายงานลงเวลา รปภ.</p>
+        <p id="guardAdminLoginStatus" class="small text-muted mb-3" role="status"></p>
+        <form id="guardAdminLoginForm" autocomplete="off">
+        <label id="guardAdminPinLabel" for="guardAdminAccessCode" class="form-label small fw-bold">PIN กลางสำหรับเอกสารแนบ</label>
+        <div id="guardAdminPinField" class="input-group mb-4 shadow-sm rounded-3">
             <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-key"></i></span>
-            <input type="password" id="adminPin" class="form-control border-start-0 ps-0 form-control-lg" placeholder="PIN ผู้ดูแลระบบ" inputmode="numeric" maxlength="32" autocomplete="off" onkeypress="if(event.key === 'Enter') checkLogin()">
+            <input type="password" id="guardAdminAccessCode" class="form-control border-start-0 ps-0 form-control-lg" inputmode="numeric" maxlength="32" autocomplete="new-password" aria-describedby="guardAdminLoginStatus">
         </div>
-        <button id="guardAdminLoginButton" onclick="checkLogin()" class="btn btn-gradient w-100 py-3 fs-5 rounded-3"><i class="bi bi-box-arrow-in-right me-2"></i> เข้าสู่ระบบ</button>
+        <button id="guardAdminLoginButton" type="submit" class="btn report-primary w-100">เข้าสู่ระบบ</button>
+        </form>
+        <a class="workspace-login-return d-block text-center small mt-3" href="admin-portal.html">กลับ Admin Portal</a>
     </div>
 </div>
 
@@ -638,11 +643,28 @@ window.onload = () => {
     initColumnSelector();
     guardAdminToken = sessionStorage.getItem('guardAdminLoginToken') || '';
     sessionStorage.removeItem('guardAdminLoginToken');
-    if (!guardAdminToken) {
-        document.getElementById('adminPin').disabled = true;
-        document.getElementById('guardAdminLoginButton').textContent = 'เข้าสู่ระบบด้วย LINE';
-    }
+    document.getElementById('guardAdminAccessCode').value = '';
+    document.getElementById('guardAdminLoginForm').addEventListener('submit', event => {
+        event.preventDefault();
+        checkLogin();
+    });
+    renderGuardAdminLogin();
 };
+
+function renderGuardAdminLogin(message = '', error = false) {
+    const verified = Boolean(guardAdminToken);
+    const input = document.getElementById('guardAdminAccessCode');
+    const status = document.getElementById('guardAdminLoginStatus');
+    input.disabled = !verified;
+    document.getElementById('guardAdminPinLabel').classList.toggle('d-none', !verified);
+    document.getElementById('guardAdminPinField').classList.toggle('d-none', !verified);
+    document.getElementById('guardAdminLoginButton').textContent = verified ? 'ยืนยัน PIN' : 'เข้าสู่ระบบด้วย LINE';
+    status.classList.toggle('text-danger', error);
+    status.classList.toggle('text-muted', !error);
+    status.textContent = message || (verified
+        ? 'ยืนยัน LINE แล้ว กรุณากรอก PIN ตัวเลข 10–32 หลัก ตัวเดียวกับที่ใช้เปิดเอกสารแนบ'
+        : 'เข้าสู่ระบบ LINE ก่อนยืนยัน PIN');
+}
 
 async function guardAdminRequest(action, data = {}) {
     const response = await fetch(SUPABASE_URL + '/functions/v1/legacy-safety-access', {
@@ -653,9 +675,16 @@ async function guardAdminRequest(action, data = {}) {
     });
     if (response.status === 401) {
         guardAdminToken = '';
-        throw new Error('เซสชัน LINE หมดอายุ กรุณาโหลดหน้าใหม่เพื่อเข้าสู่ระบบ');
+        throw new Error('เซสชัน LINE หมดอายุ กรุณาเข้าสู่ระบบ LINE อีกครั้ง');
     }
-    if (response.status === 403) throw new Error('PIN ผู้ดูแลระบบไม่ถูกต้อง');
+    if (response.status === 403) {
+        const failure = await response.json().catch(() => null);
+        if (failure?.error === 'Invalid admin PIN') {
+            throw new Error('PIN ไม่ตรงกับที่ตั้งใน Supabase กรุณาพิมพ์ PIN กลางสำหรับเอกสารแนบอีกครั้ง');
+        }
+        throw new Error('เซิร์ฟเวอร์ไม่อนุญาตคำขอจากหน้านี้');
+    }
+    if (response.status === 503) throw new Error('ระบบยังตั้งค่า LINE หรือ PIN บนเซิร์ฟเวอร์ไม่ครบ');
     if (response.status === 409) throw new Error('ข้อมูลถูกเปลี่ยนแล้ว กรุณารีเฟรชรายงานแล้วลองอีกครั้ง');
     if (response.status === 429) throw new Error('ส่งคำขอหลายครั้ง กรุณารอสักครู่');
     if (!response.ok) throw new Error('เซิร์ฟเวอร์บันทึกหรือโหลดข้อมูลไม่สำเร็จ');
@@ -667,22 +696,27 @@ async function checkLogin() {
         window.location.assign(new URL('safety-dashboard.html?guard_admin=1', window.location.href));
         return;
     }
-    const input = document.getElementById('adminPin');
+    const input = document.getElementById('guardAdminAccessCode');
     const button = document.getElementById('guardAdminLoginButton');
     if (button.disabled) return;
-    guardAdminPin = input.value;
+    const pin = input.value.trim();
+    if (!/^[0-9]{10,32}$/.test(pin)) {
+        renderGuardAdminLogin('กรุณากรอก PIN กลางเป็นตัวเลข 10–32 หลัก', true);
+        input.focus();
+        return;
+    }
+    guardAdminPin = pin;
     input.value = '';
+    renderGuardAdminLogin('กำลังตรวจสอบ PIN…');
     button.disabled = true;
     try {
         await guardAdminRequest('guard-admin-login');
         await unlockDashboard();
     } catch (error) {
         guardAdminPin = '';
-        if (!guardAdminToken) {
-            input.disabled = true;
-            button.textContent = 'เข้าสู่ระบบด้วย LINE';
-        }
-        Swal.fire('เข้าสู่ระบบไม่สำเร็จ', error.message, 'error');
+        input.value = '';
+        renderGuardAdminLogin(error.message, true);
+        if (guardAdminToken) input.focus();
     } finally {
         button.disabled = false;
     }

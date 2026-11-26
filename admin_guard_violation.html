@@ -227,8 +227,9 @@
     </style>
     <script src="safety-dashboard-config.js"></script>
     <script src="legacy-safety-attachments.js"></script>
+    <link rel="stylesheet" href="admin-workspace.css" media="screen">
 </head>
-<body>
+<body class="admin-workspace violation-admin">
     <div id="loginScreen">
         <div class="login-box">
             <div class="text-center mb-4">
@@ -250,11 +251,12 @@
                 <span data-i18n="rememberAdmin">จดจำการเข้าสู่ระบบ 8 ชั่วโมง</span>
             </label>
             <button class="btn btn-dark w-100 fw-bold py-3" onclick="checkLogin()" data-i18n="loginButton">เข้าสู่ระบบ</button>
+        <a class="workspace-login-return d-block text-center small mt-3" href="admin-portal.html">กลับ Admin Portal</a>
         </div>
     </div>
 
     <div id="mainApp">
-        <div class="topbar">
+        <div class="topbar workspace-header">
             <div class="container-fluid px-4 py-3 d-flex flex-wrap gap-3 align-items-center justify-content-between">
                 <div>
                     <h4 class="fw-bold mb-0 d-flex align-items-center"><span class="d-inline-flex align-items-center justify-content-center me-2 rounded-2" style="width:32px;height:32px;" data-portal-module-logo><i class="bi bi-clipboard-pulse text-danger"></i></span><span data-i18n="appTitle">Guard Violation Admin</span></h4>
@@ -266,12 +268,13 @@
                         <button type="button" class="lang-btn" data-lang-btn="en" onclick="setLanguage('en')">EN</button>
                     </div>
                     <button class="btn btn-outline-secondary fw-bold" id="btnRefresh" onclick="fetchReports()"><i class="bi bi-arrow-clockwise me-1"></i><span data-i18n="refresh">Refresh</span></button>
+                    <a href="admin-portal.html" class="btn workspace-portal"><i class="bi bi-house" aria-hidden="true"></i> Admin Portal</a>
                     <button class="btn btn-success fw-bold" onclick="exportToExcel()"><i class="bi bi-file-earmark-excel-fill me-1"></i><span data-i18n="excel">Excel</span></button>
                 </div>
             </div>
         </div>
 
-        <div class="container-fluid px-4 py-4">
+        <div class="container-fluid workspace-main">
             <div class="d-flex flex-wrap gap-2 mb-3">
                 <button class="admin-tab active" id="tabReports" onclick="switchAdminView('reports')">
                     <i class="bi bi-clipboard-data me-1"></i><span data-i18n="reportsTab">รายงาน</span>
@@ -283,10 +286,10 @@
 
             <section id="viewReports" class="view-section active">
             <div class="row g-3 mb-3">
-                <div class="col-md-3"><div class="panel kpi-card"><div class="d-flex justify-content-between align-items-start"><div><div class="kpi-label" data-i18n="totalCases">เคสทั้งหมด</div><div class="kpi-value" id="kpiTotal">0</div></div><i class="bi bi-collection kpi-icon"></i></div></div></div>
-                <div class="col-md-3"><div class="panel kpi-card kpi-open"><div class="d-flex justify-content-between align-items-start"><div><div class="kpi-label" data-i18n="openCases">รอปิดเคส</div><div class="kpi-value text-warning" id="kpiOpen">0</div></div><i class="bi bi-hourglass-split kpi-icon"></i></div></div></div>
-                <div class="col-md-3"><div class="panel kpi-card kpi-repeat"><div class="d-flex justify-content-between align-items-start"><div><div class="kpi-label" data-i18n="repeatOffender">ผู้กระทำซ้ำ</div><div class="kpi-value text-danger" id="kpiRepeat">0</div></div><i class="bi bi-arrow-repeat kpi-icon"></i></div></div></div>
-                <div class="col-md-3"><div class="panel kpi-card kpi-urgent"><div class="d-flex justify-content-between align-items-start"><div><div class="kpi-label" data-i18n="urgentCases">เคสเร่งด่วน</div><div class="kpi-value text-info" id="kpiUrgent">0</div></div><i class="bi bi-exclamation-triangle kpi-icon"></i></div></div></div>
+                <div class="col-6 col-md-3"><div class="panel kpi-card"><div class="d-flex justify-content-between align-items-start"><div><div class="kpi-label" data-i18n="totalCases">เคสทั้งหมด</div><div class="kpi-value" id="kpiTotal">0</div></div><i class="bi bi-collection kpi-icon"></i></div></div></div>
+                <div class="col-6 col-md-3"><div class="panel kpi-card kpi-open"><div class="d-flex justify-content-between align-items-start"><div><div class="kpi-label" data-i18n="openCases">รอปิดเคส</div><div class="kpi-value text-warning" id="kpiOpen">0</div></div><i class="bi bi-hourglass-split kpi-icon"></i></div></div></div>
+                <div class="col-6 col-md-3"><div class="panel kpi-card kpi-repeat"><div class="d-flex justify-content-between align-items-start"><div><div class="kpi-label" data-i18n="repeatOffender">ผู้กระทำซ้ำ</div><div class="kpi-value text-danger" id="kpiRepeat">0</div></div><i class="bi bi-arrow-repeat kpi-icon"></i></div></div></div>
+                <div class="col-6 col-md-3"><div class="panel kpi-card kpi-urgent"><div class="d-flex justify-content-between align-items-start"><div><div class="kpi-label" data-i18n="urgentCases">เคสเร่งด่วน</div><div class="kpi-value text-info" id="kpiUrgent">0</div></div><i class="bi bi-exclamation-triangle kpi-icon"></i></div></div></div>
             </div>
 
             <div class="panel mb-3">

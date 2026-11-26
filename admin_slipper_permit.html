@@ -271,8 +271,9 @@
     </style>
     <script src="safety-dashboard-config.js"></script>
     <script src="legacy-safety-attachments.js"></script>
+    <link rel="stylesheet" href="admin-workspace.css" media="screen">
 </head>
-<body>
+<body class="admin-workspace slipper-admin">
 
     <div id="loginScreen">
         <div class="login-box">
@@ -280,21 +281,22 @@
                 <i class="bi bi-shield-lock-fill text-primary" style="font-size: 40px;"></i>
             </div>
             <h3 class="fw-bold mb-1">Admin Slipper Permit</h3>
-            <p class="small text-white-50 mb-4">TSH Safety Management System</p>
-            <input type="password" id="adminPassword" class="form-control form-control-lg text-center mb-4 rounded-pill" placeholder="Enter Password" onkeypress="if(event.key === 'Enter') checkLogin()">
+            <p class="small text-muted mb-4">จัดการใบอนุญาตยืมรองเท้า</p>
+            <input type="password" id="adminPassword" class="form-control form-control-lg text-center mb-4 rounded-pill" placeholder="รหัสผ่านผู้ดูแลระบบ" onkeypress="if(event.key === 'Enter') checkLogin()">
             <button class="btn btn-light w-100 rounded-pill fw-bold py-3 text-primary shadow" onclick="checkLogin()">
-                Login to Dashboard <i class="bi bi-arrow-right-circle-fill ms-2"></i>
+                เข้าสู่ระบบ <i class="bi bi-arrow-right-circle-fill ms-2"></i>
             </button>
+        <a class="workspace-login-return d-block text-center small mt-3" href="admin-portal.html">กลับ Admin Portal</a>
         </div>
     </div>
 
     <div id="mainApp">
-        <div class="admin-navbar d-flex justify-content-between align-items-center">
+        <div class="admin-navbar workspace-header d-flex justify-content-between align-items-center">
             <div class="d-flex align-items-center">
                 <img src="https://lh3.googleusercontent.com/d/1EsL7DUI9c10m9E7M9KClukV6BI_2-HSm" width="46" height="46" class="me-3 rounded-3 shadow-sm" style="object-fit:contain;" alt="โลโก้ Admin Slipper Permit" data-portal-module-logo>
                 <div>
                     <h4 class="mb-0 brand-text">Admin Slipper Permit</h4>
-                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary rounded-pill px-3 py-1 mt-1"><i class="bi bi-person-check-fill me-1"></i>Super Admin Mode</span>
+                    <span class="small text-muted">จัดการใบอนุญาตยืมรองเท้า</span>
                 </div>
             </div>
             
@@ -304,7 +306,8 @@
             </ul>
 
             <div class="d-flex align-items-center gap-2">
-                <span id="lastUpdate" class="small fw-bold text-muted me-2"></span>
+                <span id="lastUpdate" class="small text-muted"></span>
+                <a href="admin-portal.html" class="btn workspace-portal"><i class="bi bi-house" aria-hidden="true"></i> Admin Portal</a>
                 <button class="btn btn-danger btn-sm fw-bold rounded-pill px-3 shadow-sm" onclick="viewBlacklist()">
                     <i class="bi bi-person-fill-slash"></i> Blacklist
                 </button>
@@ -314,7 +317,7 @@
             </div>
         </div>
 
-        <div class="container-fluid px-4 pb-5 mt-4">
+        <div class="container-fluid workspace-main">
             
             <div id="view-dashboard" class="view-section active">
                 <div class="section-label"><i class="bi bi-activity me-1"></i>ภาพรวมสถานะ</div>
@@ -776,7 +779,7 @@
             else if (req.status === 'Returning') badge = `<span class="badge bg-info text-dark px-2 py-1">กำลังคืน</span>`;
             else if (req.status === 'Rejected' || req.status === 'Cancelled') badge = `<span class="badge bg-secondary px-2 py-1">${req.status === 'Rejected' ? 'ไม่อนุมัติ' : 'ยกเลิก'}</span>`;
 
-            tbody.innerHTML += `<tr><td class="fw-bold text-dark">${moment(req.request_date).format('DD/MM/YYYY')}</td><td><div class="d-flex align-items-center"><img src="${img}" class="rounded-circle me-3 border" width="40" height="40" style="object-fit:cover;"><div><div class="fw-bold text-dark">${req.fullname}</div><div class="small text-muted">${req.emp_id}</div></div></div></td><td><span class="small text-muted">${req.section}</span></td><td><span class="badge bg-primary rounded-pill px-3">${req.card_no}</span></td><td>${badge}</td><td><button class="btn btn-sm btn-outline-primary fw-bold rounded-pill px-3" onclick="showUserFullHistory('${req.emp_id}')"><i class="bi bi-search me-1"></i>ดูประวัติ</button></td></tr>`;
+            tbody.innerHTML += `<tr class="workspace-record"><td data-label="วันที่" class="fw-bold text-dark">${moment(req.request_date).format('DD/MM/YYYY')}</td><td><div class="d-flex align-items-center"><img src="${img}" class="rounded-circle me-3 border" width="40" height="40" style="object-fit:cover;"><div><div class="fw-bold text-dark">${req.fullname}</div><div class="small text-muted">${req.emp_id}</div></div></div></td><td><span class="small text-muted">${req.section}</span></td><td><span class="badge bg-primary rounded-pill px-3">${req.card_no}</span></td><td>${badge}</td><td><button class="btn btn-sm btn-outline-primary fw-bold rounded-pill px-3" onclick="showUserFullHistory('${req.emp_id}')"><i class="bi bi-search me-1"></i>ดูประวัติ</button></td></tr>`;
         });
     }
 

@@ -1,0 +1,122 @@
+:root {
+    --workspace-ink: #172c2f;
+    --workspace-muted: #52696d;
+    --workspace-line: #dce5e5;
+    --workspace-surface: #fff;
+    --workspace-bg: #f3f7f7;
+    --workspace-tint: #e6f3ee;
+    --workspace-accent: #006b61;
+    --workspace-gutter: clamp(20px, 2.5vw, 48px);
+}
+
+.admin-workspace {
+    background: var(--workspace-bg);
+    color: var(--workspace-ink);
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+.admin-workspace .workspace-main {
+    width: 100%;
+    max-width: 1920px;
+    margin-inline: auto;
+    padding: 20px max(var(--workspace-gutter), env(safe-area-inset-right)) 32px
+        max(var(--workspace-gutter), env(safe-area-inset-left));
+}
+
+.admin-workspace .workspace-header {
+    background: var(--workspace-surface);
+    border-bottom: 1px solid var(--workspace-line);
+    box-shadow: 0 1px 3px #1226280a;
+    backdrop-filter: none;
+}
+
+.admin-workspace .workspace-header > .container-fluid {
+    padding-inline: var(--workspace-gutter) !important;
+    max-width: 1920px;
+}
+.slipper-admin .workspace-header { padding: 12px var(--workspace-gutter); gap: 12px; }
+
+.admin-workspace .workspace-header h4 { font-size: clamp(1rem, 2vw, 1.35rem); font-weight: 800; }
+.admin-workspace .brand-text { color: var(--workspace-ink); background: none; -webkit-text-fill-color: currentColor; }
+.admin-workspace .workspace-portal { white-space: nowrap; }
+.workspace-login-return { color: var(--workspace-accent, #006b61); }
+.admin-workspace .portal-admin-shortcut { display: none; }
+
+.admin-workspace :is(.panel, .premium-card, .login-box) {
+    background: var(--workspace-surface);
+    border: 1px solid var(--workspace-line);
+    border-radius: 13px;
+    box-shadow: 0 1px 3px #1226280a;
+}
+
+.admin-workspace :is(.panel, .premium-card) { padding: clamp(12px, 1.45vw, 20px); min-width: 0; }
+.admin-workspace :is(.kpi-card, .stat-card) { height: 100%; min-height: 90px; }
+.admin-workspace .stat-card { border-left-width: 4px; }
+.admin-workspace .stat-card:hover { transform: none; box-shadow: none; }
+.admin-workspace :is(.kpi-label, .small-muted, .section-label) { color: var(--workspace-muted); }
+.admin-workspace .section-label { letter-spacing: .035em; }
+.admin-workspace .kpi-item { background: var(--workspace-bg); }
+
+.admin-workspace #loginScreen {
+    background: radial-gradient(ellipse at top, #e1f0eb, var(--workspace-bg) 68%);
+    padding: 16px;
+    backdrop-filter: none;
+}
+.admin-workspace .login-box { color: var(--workspace-ink); width: min(100%, 420px); padding: clamp(18px, 4vw, 36px); backdrop-filter: none; }
+.admin-workspace .login-box input:not([type="checkbox"]),
+.admin-workspace .workspace-main :is(.form-control, .form-select) {
+    background-color: var(--workspace-bg);
+    border-color: var(--workspace-line);
+    min-height: 44px;
+    border-radius: 8px;
+}
+.admin-workspace .login-box input:not([type="checkbox"]) { border: 1px solid var(--workspace-line); }
+.admin-workspace #loginScreen button[onclick="checkLogin()"],
+.admin-workspace .admin-tab.active,
+.admin-workspace .nav-pills-custom .nav-link.active {
+    background: var(--workspace-accent);
+    border-color: var(--workspace-accent);
+    color: #fff !important;
+    box-shadow: none !important;
+}
+.admin-workspace .workspace-portal, .admin-workspace .admin-tab { border: 1px solid var(--workspace-line); border-radius: 8px; }
+.admin-workspace .workspace-portal:hover { background: var(--workspace-tint); color: var(--workspace-accent); }
+.admin-workspace .nav-pills-custom .nav-link { margin: 0; padding: 8px 12px; white-space: nowrap; }
+.admin-workspace .workspace-header :is(a, button) { min-height: 42px; }
+.admin-workspace :is(button, a, input, select):focus-visible { outline: 2px solid var(--workspace-accent); outline-offset: 2px; }
+
+.slipper-admin .grid-container { grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 12px; }
+.slipper-admin .card-slot { min-width: 0; }
+.slipper-admin .chart-container { height: clamp(190px, 27vw, 295px); }
+
+@media (max-width: 767px) {
+    :root { --workspace-gutter: 12px; }
+    .admin-workspace .workspace-main { padding-top: 12px; }
+    .admin-workspace .workspace-header { position: static; }
+    .admin-workspace .workspace-header .container-fluid { gap: 8px !important; padding-block: 12px !important; }
+    .admin-workspace .workspace-header :is(a, button) { min-height: 44px; }
+    .admin-workspace :is(.workspace-header, .workspace-main) .btn { white-space: normal; }
+    .admin-workspace .workspace-header > .d-flex:last-child { flex-wrap: wrap; max-width: 100%; }
+    .slipper-admin #lastUpdate { flex: 1 0 100%; }
+    .slipper-admin .nav-pills-custom { order: 3; display: grid; grid-template-columns: 1fr 1fr; width: 100%; gap: 6px; }
+    .slipper-admin .nav-pills-custom .nav-link { text-align: center; white-space: normal; height: 100%; }
+    .slipper-admin .grid-container { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    .slipper-admin .card-slot { padding-inline: 4px; }
+    .violation-admin .filter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .violation-admin .filter-field.search { grid-column: 1 / -1; }
+    .violation-admin .filter-field { min-width: 0; }
+    .violation-admin .table tbody td { overflow-wrap: anywhere; }
+    .slipper-admin #historyTable thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+    .slipper-admin #historyTable, .slipper-admin #historyTableBody { display: block; width: 100%; }
+    .slipper-admin #historyTableBody .workspace-record {
+        display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px;
+        border: 1px solid var(--workspace-line); border-radius: 9px; margin-bottom: 8px; padding: 8px;
+    }
+    .slipper-admin #historyTableBody .workspace-record td { display: block; min-width: 0; padding: 4px; border: 0; overflow-wrap: anywhere; }
+    .slipper-admin .workspace-record td:nth-child(2) { grid-row: 1; grid-column: 1 / -1; }
+    .slipper-admin .workspace-record td:nth-child(6) .btn { min-height: 44px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .admin-workspace .premium-card { transition: none; }
+}
