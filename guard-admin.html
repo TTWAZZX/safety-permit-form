@@ -189,9 +189,9 @@
         <p class="text-muted small mb-4">Enterprise Security Management</p>
         <div class="input-group mb-4 shadow-sm rounded-3">
             <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-key"></i></span>
-            <input type="password" id="adminPin" class="form-control border-start-0 ps-0 form-control-lg" placeholder="กรุณาระบุรหัสผ่าน PIN" onkeypress="if(event.key === 'Enter') checkLogin()">
+            <input type="password" id="adminPin" class="form-control border-start-0 ps-0 form-control-lg" placeholder="PIN ผู้ดูแลระบบ" inputmode="numeric" maxlength="32" autocomplete="off" onkeypress="if(event.key === 'Enter') checkLogin()">
         </div>
-        <button onclick="checkLogin()" class="btn btn-gradient w-100 py-3 fs-5 rounded-3"><i class="bi bi-box-arrow-in-right me-2"></i> เข้าสู่ระบบ</button>
+        <button id="guardAdminLoginButton" onclick="checkLogin()" class="btn btn-gradient w-100 py-3 fs-5 rounded-3"><i class="bi bi-box-arrow-in-right me-2"></i> เข้าสู่ระบบ</button>
     </div>
 </div>
 
@@ -313,6 +313,7 @@
                             <div class="report-detail-actions">
                                 <button type="button" onclick="document.getElementById('rosterFile').click()" class="btn report-secondary">นำเข้าตารางเวร</button>
                                 <button type="button" onclick="downloadRosterTemplate()" class="btn report-secondary">ไฟล์ตัวอย่าง</button>
+                                <button type="button" id="importLocalRosterButton" onclick="importLocalRoster()" class="btn report-secondary d-none">นำเข้าตารางเวรจากเครื่องนี้</button>
                                 <button type="button" id="clearRosterButton" onclick="clearRoster()" class="btn report-secondary report-logout d-none">ล้างตารางเวร</button>
                                 <button type="button" onclick="openPenaltyModal()" class="btn report-secondary">แก้ไขยอดหักเงิน</button>
                                 <input type="file" id="rosterFile" accept=".xlsx,.csv" hidden onchange="importRoster(this)">
@@ -548,7 +549,7 @@
             <div class="modal-body">
                 <div class="mb-3">
                     <label class="form-label fw-bold text-dark">ระบุชื่อเดือนที่ต้องการพิมพ์</label>
-                    <input type="text" id="input_month_year" class="form-control" placeholder="เช่น มกราคม 2569">
+                    <input type="month" id="input_month_year" class="form-control" readonly>
                 </div>
                 
                 <h6 class="fw-bold text-danger mt-4">1. ขาดจุด/ทิ้งจุด (หัวหน้าชุด รปภ.)</h6>
@@ -603,9 +604,9 @@ const SUPABASE_URL = 'https://dqsfioiqwxuxpucwwhsv.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxc2Zpb2lxd3h1eHB1Y3d3aHN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1OTk1NjUsImV4cCI6MjA4NDE3NTU2NX0.L_u0Ff3uHofxiimEs6ySFB4TPNtOWiKeSu3KFoVcA1U';
 
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-const ADMIN_PIN = "safety1234"; 
-
-let sortableInstance = null;
+let guardAdminToken = '';
+let guardAdminPin = '';
+const penaltyDefaults = { chief_rate: 786.67, chief_times: 0, guard_rate: 739.17, guard_times: 0, late_rate: 100, late_hours: 0 };
 let activeReport = null;
 let savedPenaltyMonth = null;
 let reportRequest = 0;
@@ -632,27 +633,63 @@ const Toast = Swal.mixin({
 });
 
 // ================= INIT =================
-window.onload = async () => {
+window.onload = () => {
     initTheme();
-    initColumnSelector(); 
-    if(sessionStorage.getItem('isAdminLoggedIn') === 'true') {
-        unlockDashboard();
+    initColumnSelector();
+    guardAdminToken = sessionStorage.getItem('guardAdminLoginToken') || '';
+    sessionStorage.removeItem('guardAdminLoginToken');
+    if (!guardAdminToken) {
+        document.getElementById('adminPin').disabled = true;
+        document.getElementById('guardAdminLoginButton').textContent = 'เข้าสู่ระบบด้วย LINE';
     }
 };
 
-function checkLogin() {
-    const pin = document.getElementById('adminPin').value;
-    if(pin === ADMIN_PIN) {
-        sessionStorage.setItem('isAdminLoggedIn', 'true');
-        unlockDashboard();
-    } else {
-        Swal.fire({ icon: 'error', title: 'รหัสผ่านไม่ถูกต้อง', confirmButtonColor: '#dc3545' });
-        document.getElementById('adminPin').value = '';
+async function guardAdminRequest(action, data = {}) {
+    const response = await fetch(SUPABASE_URL + '/functions/v1/legacy-safety-access', {
+        method: 'POST', cache: 'no-store',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + guardAdminToken },
+        body: JSON.stringify({ ...data, action, pin: guardAdminPin }),
+        signal: AbortSignal.timeout(20000)
+    });
+    if (response.status === 401) {
+        guardAdminToken = '';
+        throw new Error('เซสชัน LINE หมดอายุ กรุณาโหลดหน้าใหม่เพื่อเข้าสู่ระบบ');
+    }
+    if (response.status === 403) throw new Error('PIN ผู้ดูแลระบบไม่ถูกต้อง');
+    if (response.status === 409) throw new Error('ข้อมูลถูกเปลี่ยนแล้ว กรุณารีเฟรชรายงานแล้วลองอีกครั้ง');
+    if (response.status === 429) throw new Error('ส่งคำขอหลายครั้ง กรุณารอสักครู่');
+    if (!response.ok) throw new Error('เซิร์ฟเวอร์บันทึกหรือโหลดข้อมูลไม่สำเร็จ');
+    return await response.json();
+}
+
+async function checkLogin() {
+    if (!guardAdminToken) {
+        window.location.assign(new URL('safety-dashboard.html?guard_admin=1', window.location.href));
+        return;
+    }
+    const input = document.getElementById('adminPin');
+    const button = document.getElementById('guardAdminLoginButton');
+    if (button.disabled) return;
+    guardAdminPin = input.value;
+    input.value = '';
+    button.disabled = true;
+    try {
+        await guardAdminRequest('guard-admin-login');
+        await unlockDashboard();
+    } catch (error) {
+        guardAdminPin = '';
+        if (!guardAdminToken) {
+            input.disabled = true;
+            button.textContent = 'เข้าสู่ระบบด้วย LINE';
+        }
+        Swal.fire('เข้าสู่ระบบไม่สำเร็จ', error.message, 'error');
+    } finally {
+        button.disabled = false;
     }
 }
 
 function logout() {
-    sessionStorage.removeItem('isAdminLoggedIn');
+    guardAdminToken = guardAdminPin = '';
     location.reload();
 }
 
@@ -666,15 +703,15 @@ async function unlockDashboard() {
     
     try {
         await loadFilterNames(); 
-        await loadAttendance();
+        if (!(await loadAttendance())) throw new Error('โหลดรายงานไม่สำเร็จ');
         await loadMasterTables();
-        await initPenaltyTable(); // 🌟 ดึงข้อมูล Penalty มาแสดงตอนโหลดหน้าเว็บ
         
         document.getElementById('loadingScreen').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
     } catch (err) {
         document.getElementById('loadingScreen').style.display = 'none';
-        Swal.fire('ข้อผิดพลาด', 'โหลดข้อมูลไม่สำเร็จ', 'error');
+        document.getElementById('loginScreen').style.display = 'flex';
+        throw err;
     }
 }
 
@@ -787,7 +824,10 @@ async function loadAttendance() {
             records.push(...data);
             if (data.length < pageSize) break;
         }
-        activeReport = { month, days, records };
+        const monthly = await guardAdminRequest('guard-admin-month', { month });
+        if (request !== reportRequest) return;
+        activeReport = { month, days, records, ...monthly };
+        renderPenaltyTable(monthly.penalty, month);
         renderAttendanceReport();
         Swal.close();
         return true;
@@ -802,7 +842,7 @@ function renderAttendanceReport() {
     const name = document.getElementById('filterName').value;
     const shift = document.getElementById('filterShift').value;
     const status = document.getElementById('filterStatus').value;
-    const roster = readGuardRoster(month);
+    const roster = activeReport.roster;
     const reportRows = buildGuardReport(records, roster, Date.now());
     const personRows = reportRows.filter(row => name === 'ALL' || row.fullname === name);
     if (!roster.length && name !== 'ALL' && shift === 'ALL') {
@@ -924,7 +964,7 @@ function renderLateSummary(summary) {
     }
 }
 
-function readGuardRoster(month) {
+function readLocalGuardRoster(month) {
     try {
         const roster = JSON.parse(localStorage.getItem('guard_roster_' + month));
         return Array.isArray(roster) ? roster : [];
@@ -935,9 +975,11 @@ function readGuardRoster(month) {
 
 function updateRosterStatus(month, count) {
     document.getElementById('rosterStatus').textContent = count
-        ? `ตารางเวรเดือน ${month}: ${count} เวร · เก็บในเบราว์เซอร์นี้`
-        : `เดือน ${month} ยังไม่มีตารางเวรในเบราว์เซอร์นี้ · นำเข้า Excel หรือ CSV เพื่อเทียบเวรที่ขาดงาน`;
+        ? `ตารางเวรเดือน ${month}: ${count} เวร · ฐานข้อมูลกลาง`
+        : `เดือน ${month} ยังไม่มีตารางเวรในฐานข้อมูลกลาง · นำเข้า Excel หรือ CSV เพื่อเทียบเวรที่ขาดงาน`;
     document.getElementById('clearRosterButton').classList.toggle('d-none', !count);
+    document.getElementById('importLocalRosterButton').classList.toggle('d-none',
+        activeReport.revision !== null || !readLocalGuardRoster(month).length);
 }
 
 async function importRoster(input) {
@@ -957,30 +999,55 @@ async function importRoster(input) {
         ]);
         const names = [...document.getElementById('filterName').options].filter(option => option.value !== 'ALL').map(option => option.value);
         const roster = parseGuardRoster(rows, month, names);
-        if (readGuardRoster(month).length) {
+        const report = activeReport;
+        if (report?.month !== month) throw new Error('กรุณาโหลดรายงานของเดือนที่เลือกก่อน');
+        if (report.roster.length) {
             const result = await Swal.fire({ title: 'แทนที่ตารางเวรเดือน ' + month + '?',
                 icon: 'question', showCancelButton: true, confirmButtonText: 'แทนที่', cancelButtonText: 'ยกเลิก' });
             if (!result.isConfirmed) return;
         }
-        localStorage.setItem('guard_roster_' + month, JSON.stringify(roster));
-        if (activeReport?.month === month) renderAttendanceReport();
-        else if (document.getElementById('filterMonth').value === month) await loadAttendance();
+        await saveGuardRoster(report, roster);
     } catch (error) {
         Swal.fire('นำเข้าตารางเวรไม่สำเร็จ', error.message, 'error');
     }
 }
 
 async function clearRoster() {
-    const month = activeReport?.month;
-    if (!month) return;
+    const report = activeReport;
+    if (!report) return;
+    const { month } = report;
     const { isConfirmed } = await Swal.fire({ title: 'ล้างตารางเวรเดือน ' + month + '?', icon: 'question',
         showCancelButton: true, confirmButtonText: 'ล้างตารางเวร', cancelButtonText: 'ยกเลิก' });
     if (!isConfirmed) return;
     try {
-        localStorage.removeItem('guard_roster_' + month);
-        renderAttendanceReport();
+        await saveGuardRoster(report, []);
     } catch (error) {
         Swal.fire('ล้างตารางเวรไม่สำเร็จ', error.message, 'error');
+    }
+}
+
+async function saveGuardRoster(report, entries) {
+    const { month, revision } = report;
+    const updated = await guardAdminRequest('guard-admin-roster', { month, revision, entries });
+    if (activeReport === report) {
+        report.roster = entries;
+        report.revision = updated.revision;
+        renderAttendanceReport();
+    }
+}
+
+async function importLocalRoster() {
+    const report = activeReport;
+    if (!report || report.revision !== null) return;
+    const entries = readLocalGuardRoster(report.month);
+    if (!entries.length) return;
+    const { isConfirmed } = await Swal.fire({ title: 'นำตารางเวรเดือน ' + report.month + ' ขึ้นฐานข้อมูลกลาง?',
+        showCancelButton: true, confirmButtonText: 'นำเข้า', cancelButtonText: 'ยกเลิก' });
+    if (!isConfirmed) return;
+    try {
+        await saveGuardRoster(report, entries);
+    } catch (error) {
+        Swal.fire('นำเข้าตารางเวรไม่สำเร็จ', error.message, 'error');
     }
 }
 
@@ -1081,16 +1148,16 @@ async function openRecordModal(rowId = null) {
     // ดึงรายชื่อพนักงานมาใส่ Dropdown
     const nameOptions = Array.from(document.getElementById('filterName').options)
         .filter(opt => opt.value !== 'ALL')
-        .map(opt => `<option value="${opt.value}">${opt.text}</option>`).join('');
+        .map(opt => `<option value="${escapeReportText(opt.value)}">${escapeReportText(opt.text)}</option>`).join('');
 
     // 🟢 ดึงรหัสบัตรจาก Master Data ในฐานข้อมูลมาใส่ Dropdown
     const { data: cardData } = await db.from('security_card_master').select('card_number').order('card_number');
-    const cardOptions = cardData ? cardData.map(c => `<option value="${c.card_number}" ${c.card_number === rowData.id_card ? 'selected' : ''}>${c.card_number}</option>`).join('') : '';
+    const cardOptions = cardData ? cardData.map(c => `<option value="${escapeReportText(c.card_number)}" ${c.card_number === rowData.id_card ? 'selected' : ''}>${escapeReportText(c.card_number)}</option>`).join('') : '';
 
     // สร้าง HTML ฟอร์ม
     const html = `
         <div class="row text-start g-2 mt-2">
-            <div class="col-6"><label class="small fw-bold text-muted">วันที่</label><input id="m-date" type="date" class="form-control" value="${rowData.work_date}"></div>
+            <div class="col-6"><label class="small fw-bold text-muted">วันที่</label><input id="m-date" type="date" class="form-control" value="${escapeReportText(rowData.work_date)}"></div>
             <div class="col-6"><label class="small fw-bold text-muted">กะการทำงาน</label>
                 <select id="m-shift" class="form-select">
                     <option value="กะเช้า (06:00 - 18:00)" ${rowData.shift?.includes('เช้า') ? 'selected':''}>กะเช้า (06:00 - 18:00)</option>
@@ -1100,7 +1167,7 @@ async function openRecordModal(rowId = null) {
             <div class="col-12 mt-2"><label class="small fw-bold text-muted">ชื่อพนักงาน</label>
                 <select id="m-name" class="form-select">
                     <option value="">-- เลือกพนักงาน --</option>
-                    ${nameOptions.replace(`value="${rowData.fullname}"`, `value="${rowData.fullname}" selected`)}
+                    ${nameOptions.replace(`value="${escapeReportText(rowData.fullname)}"`, `value="${escapeReportText(rowData.fullname)}" selected`)}
                 </select>
             </div>
             
@@ -1111,8 +1178,8 @@ async function openRecordModal(rowId = null) {
                 </select>
             </div>
 
-            <div class="col-6 mt-2"><label class="small fw-bold text-muted">เวลาเข้า (IN)</label><input id="m-in" type="text" class="form-control text-center text-success fw-bold" placeholder="--:--" maxlength="5" inputmode="numeric" oninput="formatTime(this)" value="${rowData.time_in || ''}"></div>
-            <div class="col-6 mt-2"><label class="small fw-bold text-muted">เวลาออก (OUT)</label><input id="m-out" type="text" class="form-control text-center text-danger fw-bold" placeholder="--:--" maxlength="5" inputmode="numeric" oninput="formatTime(this)" value="${rowData.time_out || ''}"></div>
+            <div class="col-6 mt-2"><label class="small fw-bold text-muted">เวลาเข้า (IN)</label><input id="m-in" type="text" class="form-control text-center text-success fw-bold" placeholder="--:--" maxlength="5" inputmode="numeric" oninput="formatTime(this)" value="${escapeReportText(rowData.time_in?.slice(0, 5))}"></div>
+            <div class="col-6 mt-2"><label class="small fw-bold text-muted">เวลาออก (OUT)</label><input id="m-out" type="text" class="form-control text-center text-danger fw-bold" placeholder="--:--" maxlength="5" inputmode="numeric" oninput="formatTime(this)" value="${escapeReportText(rowData.time_out?.slice(0, 5))}"></div>
             <div class="col-6 mt-2"><label class="small fw-bold text-muted">สถานะ</label>
                 <select id="m-type" class="form-select">
                     <option value="ปกติ" ${rowData.remark_type === 'ปกติ' ? 'selected':''}>ปกติ</option>
@@ -1126,10 +1193,10 @@ async function openRecordModal(rowId = null) {
             </div>
             <div class="col-6 mt-2">
                 <label class="small fw-bold text-muted" id="m-detail-label">หมายเหตุ</label>
-                <input id="m-detail" type="text" class="form-control" value="${rowData.remark_detail === '-' ? '' : (rowData.remark_detail || '')}" placeholder="พิมพ์หมายเหตุ...">
+                <input id="m-detail" type="text" class="form-control" value="${escapeReportText(rowData.remark_detail === '-' ? '' : rowData.remark_detail)}" placeholder="พิมพ์หมายเหตุ...">
                 <select id="m-substitute" class="form-select d-none">
                     <option value="">-- เลือกคนที่ถูกแทน --</option>
-                    ${nameOptions.replace(`value="${rowData.remark_detail}"`, `value="${rowData.remark_detail}" selected`)}
+                    ${nameOptions.replace(`value="${escapeReportText(rowData.remark_detail)}"`, `value="${escapeReportText(rowData.remark_detail)}" selected`)}
                 </select>
             </div>
         </div>`;
@@ -1186,58 +1253,35 @@ async function openRecordModal(rowId = null) {
         }
     });
 
-    // ================= ลอจิกบันทึกและลบข้อมูล =================
     if (isDenied) {
-        Swal.fire({ title: 'ยืนยันการลบ?', text: "ข้อมูลนี้จะหายไปจากระบบทันที", icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545', confirmButtonText: 'ลบข้อมูล' })
-        .then(async (result) => {
-            if (result.isConfirmed) {
-                Swal.fire({ title: 'กำลังลบข้อมูล...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
-                const deletedRow = window.currentAttendanceData?.find(r => String(r.id) === String(rowId));
-                await db.from('guard_attendance').delete().eq('id', rowId);
-                await writeLog('DELETE', rowId,
-                    `ลบรายการ: ${deletedRow?.fullname || '-'} วันที่ ${deletedRow?.work_date || '-'} กะ${deletedRow?.shift || '-'}`,
-                    deletedRow || null, null
-                );
-                await Swal.fire({ icon: 'success', title: 'ลบเรียบร้อย', timer: 1000, showConfirmButton: false });
-                loadAttendance();
-            }
+        const { isConfirmed } = await Swal.fire({ title: 'ยืนยันการลบ?', text: 'รายการจะถูกลบจากรายงาน',
+            icon: 'warning', showCancelButton: true, confirmButtonText: 'ลบข้อมูล' });
+        if (!isConfirmed) return;
+    } else if (!formValues) {
+        return;
+    }
+    if (!isDenied && (!formValues.work_date || !formValues.fullname)) {
+        return Swal.fire('ข้อมูลไม่ครบ', 'กรุณาใส่วันที่และเลือกชื่อพนักงาน', 'warning');
+    }
+    if (!isDenied && formValues.remark_type.includes('แทน') && !formValues.remark_detail) {
+        return Swal.fire('ข้อมูลไม่ครบ', 'กรุณาเลือกชื่อคนที่ถูกแทน', 'warning');
+    }
+    const operation = isDenied ? 'delete' : isEdit ? 'update' : 'insert';
+    Swal.fire({ title: 'กำลังบันทึก…', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+    try {
+        await guardAdminRequest('guard-admin-mutate', {
+            operation, id: rowId, expectedUpdatedAt: rowData.updated_at ?? null, data: formValues ?? null
         });
-    } else if (formValues) {
-        if (!formValues.work_date || !formValues.fullname) return Swal.fire('แจ้งเตือน', 'กรุณาใส่วันที่และเลือกชื่อพนักงาน', 'warning');
-        if (formValues.remark_type.includes('แทน') && !formValues.remark_detail) return Swal.fire('แจ้งเตือน', 'กรุณาเลือกชื่อคนที่ถูกแทน', 'warning');
-        
-        Swal.fire({ title: 'กำลังบันทึกข้อมูล...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
-        
-        if (isEdit) {
-            const beforeRow = window.currentAttendanceData?.find(r => String(r.id) === String(rowId));
-            const { error } = await db.from('guard_attendance').update({ ...formValues, updated_at: new Date(), updated_by: 'Admin' }).eq('id', rowId);
-            if (error) {
-                Swal.fire('Error', error.message, 'error');
-            } else {
-                await writeLog('UPDATE', rowId,
-                    `แก้ไข: ${formValues.fullname} วันที่ ${formValues.work_date} กะ${formValues.shift}`,
-                    beforeRow || null, formValues
-                );
-                await Swal.fire({ icon: 'success', title: 'อัปเดตเรียบร้อย', timer: 1000, showConfirmButton: false });
-                loadAttendance();
-            }
-        } else {
-            const { error } = await db.from('guard_attendance').insert([{ ...formValues, status: 'Active', updated_by: 'Admin' }]);
-            if (error) {
-                Swal.fire('Error', error.message, 'error');
-            } else {
-                await writeLog('INSERT', 'new',
-                    `เพิ่ม: ${formValues.fullname} วันที่ ${formValues.work_date} กะ${formValues.shift}`,
-                    null, formValues
-                );
-                await Swal.fire({ icon: 'success', title: 'เพิ่มข้อมูลเรียบร้อย', timer: 1000, showConfirmButton: false });
-                loadAttendance();
-            }
-        }
+        await Swal.fire({ icon: 'success', title: isDenied ? 'ลบเรียบร้อย' : 'บันทึกเรียบร้อย',
+            timer: 1000, showConfirmButton: false });
+        await loadAttendance();
+    } catch (error) {
+        Swal.fire('ดำเนินการไม่สำเร็จ', error.message, 'error');
     }
 }
 
 // ================= EXPORT =================
+
 async function exportPDF() {
     if (!activeReport) return;
     await document.fonts.ready;
@@ -1254,9 +1298,8 @@ function prepareAttendancePrint() {
     const monthFormat = calendar => new Intl.DateTimeFormat('th-TH', {
         timeZone: 'Asia/Bangkok', month: 'long', year: 'numeric', calendar
     }).format(monthDate);
-    const normalize = text => text?.trim().replace(/\s+/g, ' ');
     const fullMonth = name === 'ALL' && shift === 'ALL' && status === 'ALL';
-    const hasPenalty = [month, monthFormat('buddhist'), monthFormat('gregory')].includes(normalize(savedPenaltyMonth));
+    const hasPenalty = savedPenaltyMonth === month;
     document.getElementById('printPenaltyEmpty').textContent = 'ยังไม่มีข้อมูลสรุปการปรับหักค่าบริการสำหรับเดือน ' + monthFormat('buddhist');
     document.getElementById('reportPrintDate').textContent = new Date().toLocaleDateString('th-TH', { timeZone: 'Asia/Bangkok' });
 
@@ -1399,8 +1442,25 @@ async function loadMasterTables() {
     const { data: cards } = await db.from('security_card_master').select('*').order('card_number');
     const { data: persons } = await db.from('security_personnel_master').select('*').order('fullname');
 
-    document.getElementById('cardTbody').innerHTML = cards?.map(c => `<tr><td class="fw-bold"><span class="badge bg-light text-dark border px-3 py-2 fs-6">${c.card_number}</span></td><td class="text-end"><button onclick="delMaster('card', '${c.id}', '${c.card_number}')" class="btn btn-sm btn-light border text-danger rounded-circle"><i class="bi bi-trash3"></i></button></td></tr>`).join('') || '';
-    document.getElementById('personTbody').innerHTML = persons?.map(p => `<tr><td class="fw-bold text-muted">${p.fullname}</td><td class="text-end"><button onclick="delMaster('person', '${p.id}', '${p.fullname}')" class="btn btn-sm btn-light border text-danger rounded-circle"><i class="bi bi-trash3"></i></button></td></tr>`).join('') || '';
+    const render = (id, records, type, field) => {
+        const tbody = document.getElementById(id);
+        tbody.replaceChildren();
+        for (const record of records || []) {
+            const row = tbody.insertRow();
+            row.insertCell().textContent = record[field];
+            const actions = row.insertCell();
+            actions.className = 'text-end';
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'btn btn-sm btn-light border text-danger rounded-circle';
+            button.setAttribute('aria-label', 'ลบ ' + record[field]);
+            button.innerHTML = '<i class="bi bi-trash3"></i>';
+            button.addEventListener('click', () => delMaster(type, record.id, record[field]));
+            actions.append(button);
+        }
+    };
+    render('cardTbody', cards, 'card', 'card_number');
+    render('personTbody', persons, 'person', 'fullname');
 }
 
 async function addMaster(type) {
@@ -1419,10 +1479,11 @@ async function addMaster(type) {
 
 async function delMaster(type, id, name) {
     Swal.fire({
-        title: `ยืนยันลบ ${name}?`, text: "หากลบแล้วจะไม่สามารถกู้คืนได้", icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545', confirmButtonText: 'ลบข้อมูล', cancelButtonText: 'ยกเลิก'
+        titleText: `ยืนยันลบ ${name}?`, text: "หากลบแล้วจะไม่สามารถกู้คืนได้", icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545', confirmButtonText: 'ลบข้อมูล', cancelButtonText: 'ยกเลิก'
     }).then(async (result) => {
         if (result.isConfirmed) {
-            await db.from(type === 'card' ? 'security_card_master' : 'security_personnel_master').delete().eq('id', id);
+            const { data, error } = await db.from(type === 'card' ? 'security_card_master' : 'security_personnel_master').delete().eq('id', id).select('id').maybeSingle();
+            if (error || !data) return Swal.fire('ลบไม่สำเร็จ', 'รายการอาจถูกใช้งานอยู่หรือไม่มีสิทธิ์ลบ', 'error');
             Toast.fire({ icon: 'success', title: 'ลบข้อมูลเรียบร้อย' });
             loadMasterTables(); loadFilterNames();
         }
@@ -1433,21 +1494,6 @@ async function delMaster(type, id, name) {
 let logCurrentPage = 1;
 const LOG_PAGE_SIZE = 20;
 
-async function writeLog(action, recordId, detail, beforeData = null, afterData = null) {
-    try {
-        await db.from('guardadmin_logs').insert([{
-            action,
-            table_name: 'guard_attendance',
-            record_id: String(recordId),
-            detail,
-            before_data: beforeData,
-            after_data: afterData
-        }]);
-    } catch (err) {
-        console.warn('Log write failed:', err);
-    }
-}
-
 async function loadAdminLogs() {
     const tbody = document.getElementById('logTbody');
     tbody.innerHTML = `<tr><td colspan="4" class="text-center py-4"><span class="spinner-border spinner-border-sm text-primary me-2"></span>กำลังโหลด...</td></tr>`;
@@ -1455,20 +1501,16 @@ async function loadAdminLogs() {
     const filterAction = document.getElementById('logFilterAction').value;
     const filterMonth = document.getElementById('logFilterMonth').value;
 
-    let query = db.from('guardadmin_logs').select('*', { count: 'exact' }).order('created_at', { ascending: false });
-
-    if (filterAction !== 'ALL') query = query.eq('action', filterAction);
-    if (filterMonth) {
-        const [y, m] = filterMonth.split('-');
-        const lastDay = new Date(y, m, 0).getDate();
-        query = query.gte('created_at', `${filterMonth}-01`).lte('created_at', `${filterMonth}-${lastDay}T23:59:59`);
-    }
-
     const from = (logCurrentPage - 1) * LOG_PAGE_SIZE;
-    query = query.range(from, from + LOG_PAGE_SIZE - 1);
-
-    const { data, error, count } = await query;
-    if (error) { tbody.innerHTML = `<tr><td colspan="4" class="text-center text-danger py-4">โหลดข้อมูลไม่สำเร็จ</td></tr>`; return; }
+    let result;
+    try {
+        result = await guardAdminRequest('guard-admin-logs', { month: filterMonth, filter: filterAction, offset: from });
+    } catch (error) {
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-danger py-4"></td></tr>';
+        tbody.querySelector('td').textContent = error.message;
+        return;
+    }
+    const { data, count } = result;
 
     const totalPages = Math.ceil(count / LOG_PAGE_SIZE);
     document.getElementById('logCountLabel').innerText = `รายการทั้งหมด: ${count} รายการ`;
@@ -1484,7 +1526,7 @@ async function loadAdminLogs() {
     const actionBadge = { INSERT: 'bg-success', UPDATE: 'bg-warning text-dark', DELETE: 'bg-danger' };
     const actionLabel = { INSERT: 'เพิ่ม', UPDATE: 'แก้ไข', DELETE: 'ลบ' };
 
-    tbody.innerHTML = data.map(row => {
+    tbody.innerHTML = data.map((row, index) => {
         const dt = new Date(row.created_at);
         const dateStr = dt.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
         const timeStr = dt.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -1492,16 +1534,20 @@ async function loadAdminLogs() {
         const label = actionLabel[row.action] || row.action;
         const hasBefore = row.before_data && Object.keys(row.before_data).length > 0;
         const beforeBtn = hasBefore
-            ? `<button class="btn btn-sm btn-light border rounded-pill px-2" onclick='showLogDetail(${JSON.stringify(row.before_data)}, ${JSON.stringify(row.after_data)})'><i class="bi bi-eye"></i></button>`
+            ? `<button type="button" class="btn btn-sm btn-light border rounded-pill px-2" data-log-index="${index}" aria-label="ดูรายละเอียดการเปลี่ยนแปลง"><i class="bi bi-eye"></i></button>`
             : `<span class="text-muted">-</span>`;
 
         return `<tr>
             <td><div class="fw-bold small">${dateStr}</div><div class="text-muted small">${timeStr}</div></td>
-            <td class="text-center"><span class="badge ${badge} rounded-pill px-3">${label}</span></td>
-            <td class="small">${row.detail || '-'}</td>
+            <td class="text-center"><span class="badge ${badge} rounded-pill px-3">${escapeReportText(label)}</span></td>
+            <td class="small">${escapeReportText(row.detail || '-')}<div class="text-muted">${escapeReportText(row.actor_line_user_id || 'ไม่มีบัญชี LINE ที่ยืนยันในบันทึกนี้')}</div></td>
             <td class="text-center">${beforeBtn}</td>
         </tr>`;
     }).join('');
+    tbody.querySelectorAll('[data-log-index]').forEach(button => button.addEventListener('click', () => {
+        const row = data[Number(button.dataset.logIndex)];
+        showLogDetail(row.before_data, row.after_data);
+    }));
 }
 
 function changeLogPage(dir) {
@@ -1510,7 +1556,7 @@ function changeLogPage(dir) {
 }
 
 function showLogDetail(before, after) {
-    const fmt = obj => obj ? `<pre class="text-start small mb-0" style="white-space:pre-wrap;">${JSON.stringify(obj, null, 2)}</pre>` : '<span class="text-muted">-</span>';
+    const fmt = obj => obj ? `<pre class="text-start small mb-0" style="white-space:pre-wrap;">${escapeReportText(JSON.stringify(obj, null, 2))}</pre>` : '<span class="text-muted">-</span>';
     Swal.fire({
         title: 'รายละเอียดการเปลี่ยนแปลง',
         html: `<div class="row text-start g-3">
@@ -1525,72 +1571,46 @@ function showLogDetail(before, after) {
 }
 
 // ================= 🌟 จัดการตารางสรุปการหักเงิน (Penalty) 🌟 =================
-async function initPenaltyTable() {
-    try {
-        const { data, error } = await db.from('guard_penalty').select('*').eq('id', 1).single();
-        if (data && !error) {
-            renderPenaltyTable(data);
-        }
-    } catch (err) {
-        console.warn("ยังไม่มีตาราง guard_penalty หรือข้อมูลว่างอยู่");
+function openPenaltyModal() {
+    if (!activeReport) return;
+    const modal = document.getElementById('penaltyModal');
+    document.getElementById('input_month_year').value = activeReport.month;
+    for (const [field, defaultValue] of Object.entries(penaltyDefaults)) {
+        document.getElementById('input_' + field).value = activeReport.penalty?.[field] ?? defaultValue;
     }
-}
-
-async function openPenaltyModal() {
-    try {
-        const { data, error } = await db.from('guard_penalty').select('*').eq('id', 1).single();
-        // เอาค่าจาก DB ไปใส่ในช่องกรอก (ถ้าว่างให้เป็น 0)
-        document.getElementById('input_month_year').value = data?.month_year || 'มกราคม 2569';
-        document.getElementById('input_chief_rate').value = data?.chief_rate || 786.67;
-        document.getElementById('input_chief_times').value = data?.chief_times || 0;
-        document.getElementById('input_guard_rate').value = data?.guard_rate || 739.17;
-        document.getElementById('input_guard_times').value = data?.guard_times || 0;
-        document.getElementById('input_late_rate').value = data?.late_rate || 100;
-        document.getElementById('input_late_hours').value = data?.late_hours || 0;
-
-        new bootstrap.Modal(document.getElementById('penaltyModal')).show();
-    } catch (err) {
-        console.error("Error fetching penalty data:", err);
-        // กรณี Error แต่ยังยอมให้เปิด Modal (เผื่อยังไม่ได้สร้าง row แรก)
-        new bootstrap.Modal(document.getElementById('penaltyModal')).show();
-    }
+    bootstrap.Modal.getOrCreateInstance(modal).show();
 }
 
 async function savePenaltyData() {
+    const month = document.getElementById('input_month_year').value;
+    if (!month) return;
+    const data = {};
+    for (const field of Object.keys(penaltyDefaults)) {
+        const input = document.getElementById('input_' + field);
+        const value = input.valueAsNumber;
+        if (!Number.isFinite(value) || value < 0) return Swal.fire('ตรวจสอบยอดหัก', 'กรุณากรอกตัวเลขตั้งแต่ศูนย์ขึ้นไป', 'warning');
+        data[field] = value;
+    }
     try {
-        const payload = {
-            id: 1, // บังคับ id = 1 เสมอเพื่อให้มีแค่บรรทัดเดียว
-            month_year: document.getElementById('input_month_year').value || 'ไม่ระบุ',
-            chief_rate: parseFloat(document.getElementById('input_chief_rate').value) || 0,
-            chief_times: parseFloat(document.getElementById('input_chief_times').value) || 0,
-            guard_rate: parseFloat(document.getElementById('input_guard_rate').value) || 0,
-            guard_times: parseFloat(document.getElementById('input_guard_times').value) || 0,
-            late_rate: parseFloat(document.getElementById('input_late_rate').value) || 0,
-            late_hours: parseFloat(document.getElementById('input_late_hours').value) || 0
-        };
-
-        // ใช้ upsert เพื่อให้เพิ่มอัตโนมัติถ้ายังไม่มี id = 1
-        const { error } = await db.from('guard_penalty').upsert(payload);
-        if (error) throw error;
-
-        // ปิดหน้าต่าง Popup
-        const modalEl = document.getElementById('penaltyModal');
-        const modalInstance = bootstrap.Modal.getInstance(modalEl);
-        if (modalInstance) modalInstance.hide();
-        
+        const result = await guardAdminRequest('guard-admin-penalty', { month, data });
+        bootstrap.Modal.getInstance(document.getElementById('penaltyModal'))?.hide();
+        if (activeReport?.month === month) {
+            activeReport.penalty = result.penalty;
+            renderPenaltyTable(result.penalty, month);
+        }
         Toast.fire({ icon: 'success', title: 'บันทึกข้อมูลหักเงินเรียบร้อย' });
-        renderPenaltyTable(payload);
-
-    } catch (err) {
-        console.error("Error saving penalty:", err);
-        Swal.fire('ข้อผิดพลาด', 'ไม่สามารถบันทึกข้อมูลได้ กรุณาตรวจสอบว่าสร้างตาราง guard_penalty แล้วหรือยัง', 'error');
+    } catch (error) {
+        Swal.fire('บันทึกยอดหักไม่สำเร็จ', error.message, 'error');
     }
 }
 
-function renderPenaltyTable(data) {
-    savedPenaltyMonth = data.month_year;
-    document.getElementById('print_month_year').innerText = data.month_year;
-    document.getElementById('print_total_month').innerText = data.month_year;
+function renderPenaltyTable(penalty, month) {
+    savedPenaltyMonth = penalty ? month : null;
+    const date = new Date(month + '-01T00:00:00+07:00');
+    const label = new Intl.DateTimeFormat('th-TH', { month: 'long', year: 'numeric', timeZone: 'Asia/Bangkok' }).format(date);
+    document.getElementById('print_month_year').textContent = label;
+    document.getElementById('print_total_month').textContent = label;
+    const data = Object.fromEntries(Object.keys(penaltyDefaults).map(field => [field, Number(penalty?.[field] ?? 0)]));
 
     const chiefTotal = data.chief_rate * data.chief_times;
     const guardTotal = data.guard_rate * data.guard_times;

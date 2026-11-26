@@ -1799,6 +1799,13 @@ async function initialize() {
             return;
         }
         const params = new URLSearchParams(window.location.search);
+        if (params.get('guard_admin') === '1') {
+            const token = window.liff.getAccessToken();
+            if (!token) throw new Error('LINE access token is unavailable');
+            sessionStorage.setItem('guardAdminLoginToken', token);
+            window.location.replace(new URL('guard-admin.html', window.location.href));
+            return;
+        }
         if (params.has('attachment_kind') || params.has('attachment_id')) {
             try {
                 const opener = window.LEGACY_SAFETY_ATTACHMENTS;

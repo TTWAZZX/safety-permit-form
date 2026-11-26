@@ -538,7 +538,7 @@ async function loadMasterData() {
         // เคลียร์ TomSelect เก่าออกก่อนป้องกัน Error ตอน Refresh
         if (selectCardInstance) selectCardInstance.destroy();
         selectCard.innerHTML = '<option value="">เลือกการ์ด...</option>';
-        if (cards) cards.forEach(c => selectCard.innerHTML += `<option value="${c.card_number}">${c.card_number}</option>`);
+        if (cards) cards.forEach(c => selectCard.add(new Option(c.card_number, c.card_number)));
         
         selectCardInstance = new TomSelect("#id_card", { 
             create: false, 
@@ -559,8 +559,8 @@ async function loadMasterData() {
         
         if (persons) {
             persons.forEach(p => {
-                selectPerson.innerHTML += `<option value="${p.fullname}">${p.fullname}</option>`;
-                selectSub.innerHTML += `<option value="${p.fullname}">${p.fullname}</option>`;
+                selectPerson.add(new Option(p.fullname, p.fullname));
+                selectSub.add(new Option(p.fullname, p.fullname));
             });
         }
 
@@ -685,14 +685,13 @@ async function fetchHistory() {
         if (errToday) throw errToday;
 
         // ใส่ป้ายบอกว่ากำลังดูของใครอยู่
-        let htmlToday = `<div class="badge bg-primary bg-opacity-10 text-primary mb-3 w-100 py-2 fs-6 shadow-sm border">📅 ประวัติวันนี้ของ: ${nameFilter}</div>`;
+        listToday.replaceChildren(historyText('div', 'badge bg-primary bg-opacity-10 text-primary mb-3 w-100 py-2 fs-6 shadow-sm border', 'ประวัติวันนี้ของ ' + nameFilter));
         
         if (dataToday && dataToday.length > 0) {
-            dataToday.forEach(item => { htmlToday += generateHistoryCard(item); });
+            listToday.append(...dataToday.map(generateHistoryCard));
         } else {
-            htmlToday += '<div class="text-center text-muted small py-3">ไม่มีประวัติลงเวลาของวันนี้</div>';
+            listToday.append(historyText('div', 'text-center text-muted small py-3', 'ไม่มีประวัติลงเวลาของวันนี้'));
         }
-        listToday.innerHTML = htmlToday;
 
         // 🟢 4. โหลดข้อมูล "ย้อนหลัง" พร้อมส่งวันที่ไทยเข้าไป
         await loadPastHistory(nameFilter, todayStr);
@@ -716,23 +715,14 @@ async function loadPastHistory(nameFilter, todayStr) {
 
         if (errPast) throw errPast;
 
-        let htmlPast = '';
-        // ถ้าเป็นหน้าแรก ให้แสดงป้ายชื่อด้วย
-        if (currentPastPage === 1) {
-            htmlPast = `<div class="badge bg-secondary bg-opacity-10 text-secondary mb-3 w-100 py-2 fs-6 shadow-sm border">⏳ ประวัติย้อนหลังของ: ${nameFilter}</div>`;
-        }
-
-        if (dataPast && dataPast.length > 0) {
-            dataPast.forEach(item => { htmlPast += generateHistoryCard(item); });
-        } else if (currentPastPage === 1) {
-            htmlPast += '<div class="text-center text-muted small py-3">ไม่มีประวัติย้อนหลังในระบบ</div>';
-        }
-
         const listPast = document.getElementById('listPast');
         if (currentPastPage === 1) {
-            listPast.innerHTML = htmlPast;
-        } else {
-            listPast.insertAdjacentHTML('beforeend', htmlPast); 
+            listPast.replaceChildren(historyText('div', 'badge bg-secondary bg-opacity-10 text-secondary mb-3 w-100 py-2 fs-6 shadow-sm border', 'ประวัติย้อนหลังของ ' + nameFilter));
+        }
+        if (dataPast?.length) {
+            listPast.append(...dataPast.map(generateHistoryCard));
+        } else if (currentPastPage === 1) {
+            listPast.append(historyText('div', 'text-center text-muted small py-3', 'ไม่มีประวัติย้อนหลังในระบบ'));
         }
 
         // เช็คโชว์ปุ่ม Load More
@@ -763,35 +753,38 @@ function loadMorePast() {
 }
 
 // 🎨 ฟังก์ชันแยกสำหรับสร้างการ์ด HTML (เพื่อไม่ให้โค้ดซ้ำซ้อน)
+function historyText(tag, className, value) {
+    const node = document.createElement(tag);
+    node.className = className;
+    node.textContent = value ?? '';
+    return node;
+}
+
 function generateHistoryCard(item) {
-    const shiftText = guardShifts[getGuardShift(item.shift)]?.label || (item.shift ? item.shift.split(' ')[0] : '-');
+    const shiftText = guardShifts[getGuardShift(item.shift)]?.label || item.shift || '-';
     const lateMinutes = getGuardLateness(item.shift, item.time_in, item.remark_type);
     const timeInClass = lateMinutes > 0 ? 'attendance-late' : lateMinutes === 0 ? 'text-success' : 'text-muted';
-    const timeIn = item.time_in ? `<span class="${timeInClass} fw-bold">IN: ${item.time_in}</span>` : '-';
-    const lateLabel = lateMinutes > 0 ? `<div class="attendance-late fw-bold mt-1">มาสาย ${lateMinutes} นาที</div>` : '';
-    const timeOut = item.time_out ? `<span class="text-danger fw-bold ms-2">OUT: ${item.time_out}</span>` : '';
-    
-    const actionBtns = `
-        <div class="mt-2 text-end border-top pt-2">
-            <button type="button" class="action-btn" onclick="userEdit('${item.id}', '${item.id_card}', '${item.time_in||''}', '${item.time_out||''}')"><i class="bi bi-pencil-square"></i> แก้ไข</button>
-            <button type="button" class="action-btn delete ms-2" onclick="userDelete('${item.id}', '${item.id_card}')"><i class="bi bi-trash"></i> ลบ</button>
-        </div>
-    `;
-
-    return `
-        <div class="history-item animate__animated animate__fadeIn">
-            <div class="d-flex justify-content-between align-items-center mb-1">
-                <div class="fw-bold" style="color: var(--primary-color);"><i class="bi bi-calendar-event me-1"></i>${item.work_date}</div>
-                <div class="badge bg-secondary bg-opacity-10 text-dark border">${shiftText}</div>
-            </div>
-            <div class="small text-muted mb-2"><i class="bi bi-person-vcard"></i> ${item.id_card} | ${item.remark_type} ${item.remark_detail ? `(${item.remark_detail})` : ''}</div>
-            <div class="bg-light p-2 rounded text-center border" style="font-size: 0.9rem;">
-                ${timeIn} ${timeOut}
-                ${lateLabel}
-            </div>
-            ${actionBtns}
-        </div>
-    `;
+    const card = historyText('div', 'history-item animate__animated animate__fadeIn');
+    const heading = historyText('div', 'd-flex justify-content-between align-items-center mb-1');
+    heading.append(
+        historyText('div', 'fw-bold', item.work_date),
+        historyText('div', 'badge bg-secondary bg-opacity-10 text-dark border', shiftText)
+    );
+    const detail = item.remark_detail ? ' (' + item.remark_detail + ')' : '';
+    const times = historyText('div', 'bg-light p-2 rounded text-center border small');
+    times.append(historyText('span', timeInClass + ' fw-bold', item.time_in ? 'IN: ' + item.time_in : '-'));
+    if (item.time_out) times.append(historyText('span', 'text-danger fw-bold ms-2', 'OUT: ' + item.time_out));
+    if (lateMinutes > 0) times.append(historyText('div', 'attendance-late fw-bold mt-1', `มาสาย ${lateMinutes} นาที`));
+    const actions = historyText('div', 'mt-2 text-end border-top pt-2');
+    const edit = historyText('button', 'action-btn', 'แก้ไข');
+    edit.type = 'button';
+    edit.addEventListener('click', () => userEdit(item.id, item.id_card, item.time_in, item.time_out));
+    const remove = historyText('button', 'action-btn delete ms-2', 'ลบ');
+    remove.type = 'button';
+    remove.addEventListener('click', () => userDelete(item.id, item.id_card));
+    actions.append(edit, remove);
+    card.append(heading, historyText('div', 'small text-muted mb-2', `${item.id_card ?? '-'} | ${item.remark_type ?? '-'}${detail}`), times, actions);
+    return card;
 }
 
 // ================= USER EDIT/DELETE =================
@@ -813,11 +806,15 @@ async function userEdit(id, id_card, currentIn, currentOut) {
         html: `
             <div class="text-start mt-3">
                 <label class="form-label text-success">เวลาเข้า</label>
-                <input type="text" id="swal-in" value="${currentIn}" class="form-control mb-3 text-center" inputmode="numeric" placeholder="ระบุเวลา" maxlength="5" oninput="formatTime(this)">
+                <input type="text" id="swal-in" class="form-control mb-3 text-center" inputmode="numeric" placeholder="ระบุเวลา" maxlength="5" oninput="formatTime(this)">
                 <label class="form-label text-danger">เวลาออก</label>
-                <input type="text" id="swal-out" value="${currentOut}" class="form-control text-center" inputmode="numeric" placeholder="ระบุเวลา" maxlength="5" oninput="formatTime(this)">
+                <input type="text" id="swal-out" class="form-control text-center" inputmode="numeric" placeholder="ระบุเวลา" maxlength="5" oninput="formatTime(this)">
             </div>
         `,
+        didOpen: () => {
+            document.getElementById('swal-in').value = currentIn?.slice(0, 5) || '';
+            document.getElementById('swal-out').value = currentOut?.slice(0, 5) || '';
+        },
         focusConfirm: false, showCancelButton: true, confirmButtonText: 'บันทึก',
         preConfirm: () => { 
             const tin = document.getElementById('swal-in').value;
@@ -829,12 +826,12 @@ async function userEdit(id, id_card, currentIn, currentOut) {
 
     if (formValues) {
         Swal.fire({ title: 'กำลังบันทึก...', didOpen: () => Swal.showLoading() });
-        const { error } = await db.from('guard_attendance').update({
+        const { data, error } = await db.from('guard_attendance').update({
             time_in: formValues.in || null, time_out: formValues.out || null,
             updated_at: new Date(), updated_by: 'User (รปภ.)'
-        }).eq('id', id);
+        }).eq('id', id).select('id').maybeSingle();
 
-        if (error) Swal.fire('Error', 'แก้ไขไม่ได้', 'error');
+        if (error || !data) Swal.fire('แก้ไขไม่สำเร็จ', 'ไม่พบรายการหรือไม่มีสิทธิ์แก้ไข', 'error');
         else { Swal.fire({ icon: 'success', title: 'อัปเดตเรียบร้อย', timer: 1500, showConfirmButton: false }); fetchHistory(); }
     }
 }
@@ -843,7 +840,8 @@ async function userDelete(id, id_card) {
     if(!(await verifyUser(id_card))) return Swal.fire('ผิดพลาด', 'รหัสบัตรไม่ตรงกับรายการนี้', 'error');
     const res = await Swal.fire({ title: 'ยืนยันการลบ?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545', confirmButtonText: 'ลบทิ้ง' });
     if(res.isConfirmed) {
-        await db.from('guard_attendance').delete().eq('id', id);
+        const { data, error } = await db.from('guard_attendance').delete().eq('id', id).select('id').maybeSingle();
+        if (error || !data) return Swal.fire('ลบไม่สำเร็จ', 'รายการอาจถูกลบไปแล้วหรือไม่มีสิทธิ์ลบ', 'error');
         Swal.fire({ icon: 'success', title: 'ลบสำเร็จ', timer: 1500, showConfirmButton: false }); fetchHistory();
     }
 }
