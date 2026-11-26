@@ -225,37 +225,44 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
                     <select id="fullname" required placeholder="ค้นหาชื่อ-นามสกุล..."></select>
                 </div>
 
+                <div id="activeSessionStatus" class="mb-3" role="status" aria-live="polite"></div>
+
                 <div class="row g-3 mb-3">
                     <div class="col-6">
                         <label class="form-label text-success"><i class="bi bi-box-arrow-in-right me-1"></i> เวลาเข้า</label>
                         <input type="text" id="time_in" class="form-control fw-bold text-success fs-5 text-center" placeholder="-- : --" inputmode="numeric" maxlength="5" oninput="formatTime(this); updateCheckInStatus()" aria-describedby="checkInStatus">
+                        <button type="button" class="btn btn-sm btn-outline-success w-100 mt-2" id="useCurrentIn" onclick="fillGuardTime('time_in')">ใช้เวลาตอนนี้</button>
                         <div id="checkInStatus" class="small fw-bold attendance-late mt-1" role="status"></div>
                     </div>
                     <div class="col-6">
                         <label class="form-label text-danger"><i class="bi bi-box-arrow-right me-1"></i> เวลาออก</label>
                         <input type="text" id="time_out" class="form-control fw-bold text-danger fs-5 text-center" placeholder="-- : --" inputmode="numeric" maxlength="5" oninput="formatTime(this)">
+                        <button type="button" class="btn btn-sm btn-outline-danger w-100 mt-2" id="useCurrentOut" onclick="fillGuardTime('time_out')">ใช้เวลาตอนนี้</button>
                     </div>
                 </div>
 
-                <div class="mb-3">
-                    <label class="form-label"><i class="bi bi-journal-text me-1"></i> หมายเหตุการปฏิบัติงาน</label>
-                    <select id="remark_type" class="form-select" onchange="handleRemarkChange()">
-                        <option value="ปกติ" selected>ปฏิบัติงานปกติ</option>
-                        <option value="ควงเปลี่ยนกะ 24 ชั่วโมง">ควงเปลี่ยนกะ 24 ชั่วโมง</option>
-                        <option value="แทน (หัวหน้าชุด รปภ.)">แทน (หัวหน้าชุด รปภ.)</option>
-                        <option value="แทน (รปภ.)">แทน (รปภ.)</option>
-                        <option value="อื่นๆ">อื่นๆ (ระบุด้วยตนเอง)</option>
-                    </select>
-                </div>
-                
-                <div class="mb-4 d-none" id="remark_substitute_div">
-                    <label class="form-label text-warning"><i class="bi bi-people-fill me-1"></i> ปฏิบัติงานแทนผู้ใด?</label>
-                    <select id="remark_substitute" placeholder="ค้นหาชื่อผู้ที่ถูกแทน..."></select>
-                </div>
+                <div id="workRemarks">
+                    <div class="mb-3">
+                        <label class="form-label"><i class="bi bi-journal-text me-1"></i> หมายเหตุการปฏิบัติงาน</label>
+                        <select id="remark_type" class="form-select" onchange="handleRemarkChange()">
+                            <option value="ปกติ" selected>ปฏิบัติงานปกติ</option>
+                            <option value="ควงเปลี่ยนกะ 24 ชั่วโมง">ควงเปลี่ยนกะ 24 ชั่วโมง</option>
+                            <option value="แทน (หัวหน้าชุด รปภ.)">แทน (หัวหน้าชุด รปภ.)</option>
+                            <option value="แทน (รปภ.)">แทน (รปภ.)</option>
+                            <option value="อื่นๆ">อื่นๆ (ระบุด้วยตนเอง)</option>
+                        </select>
+                    </div>
 
-                <div class="mb-4 d-none" id="remark_other_div">
-                    <label class="form-label text-warning"><i class="bi bi-pencil-square me-1"></i> ระบุรายละเอียด</label>
-                    <input type="text" id="remark_detail" class="form-control" placeholder="ระบุเหตุผลเพิ่มเติม...">
+                    <div class="mb-4 d-none" id="remark_substitute_div">
+                        <label class="form-label text-warning"><i class="bi bi-people-fill me-1"></i> ปฏิบัติงานแทนผู้ใด?</label>
+                        <select id="remark_substitute" placeholder="ค้นหาชื่อผู้ที่ถูกแทน..."></select>
+                    </div>
+
+                    <div class="mb-4 d-none" id="remark_other_div">
+                        <label class="form-label text-warning"><i class="bi bi-pencil-square me-1"></i> ระบุรายละเอียด</label>
+                        <input type="text" id="remark_detail" class="form-control" placeholder="ระบุเหตุผลเพิ่มเติม...">
+                    </div>
+
                 </div>
 
                 <button type="submit" id="btnSubmit" class="btn-submit mt-2">
@@ -305,6 +312,7 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
 </nav>
 
 <script src="guard-attendance.js"></script>
+<script src="guard-checkin-session.js"></script>
 <script>
 // ================= CONFIG =================
 const SUPABASE_URL = 'https://dqsfioiqwxuxpucwwhsv.supabase.co';
@@ -314,7 +322,11 @@ const LIFF_ID = '2007053300-gJitj7Vr';
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let selectCardInstance, selectPersonInstance, selectSubstituteInstance;
-let activeRecordId = null; 
+let activeRecord = null;
+let sessionRequest = 0;
+let sessionPending = false;
+let sessionError = false;
+let submitPending = false;
 let currentMode = 'work'; // โหมดเริ่มต้น
 
 // 🟢 ตัวแปรสำหรับระบบแบ่งหน้า (Pagination)
@@ -325,7 +337,7 @@ const ITEMS_PER_PAGE = 10;
 window.onload = async () => {
     initTheme();
     startLiveClock();
-    document.getElementById('work_date').valueAsDate = new Date();
+    document.getElementById('work_date').value = guardBangkokClock().date;
 
     try {
         await updateLoader("กำลังอัปเดตข้อมูลผู้ใช้...", 300);
@@ -366,6 +378,7 @@ function switchPage(page) {
     if(page === 'form') {
         document.getElementById('formPage').classList.add('active');
         document.getElementById('nav-form').classList.add('active');
+        checkActiveSession();
     } else {
         document.getElementById('historyPage').classList.add('active');
         document.getElementById('nav-history').classList.add('active');
@@ -374,7 +387,12 @@ function switchPage(page) {
 }
 
 // ================= CLOCK & THEME =================
-function startLiveClock() { setInterval(() => { document.getElementById('liveClock').innerText = new Date().toLocaleTimeString('th-TH', { hour12: false }); }, 1000); }
+function startLiveClock() {
+    const clock = document.getElementById('liveClock');
+    const update = () => { clock.textContent = guardBangkokClock().time; };
+    update();
+    setInterval(update, 1000);
+}
 function initTheme() {
     const savedTheme = localStorage.getItem('sec_theme') || 'light';
     document.documentElement.setAttribute('data-theme', savedTheme);
@@ -401,7 +419,7 @@ async function refreshData() {
 
     try {
         await Promise.all([ loadMasterData(), fetchHistory() ]);
-        if (typeof checkActiveSession === "function") await checkActiveSession();
+        if (sessionError) throw new Error('ตรวจสอบเวรที่เปิดอยู่ไม่สำเร็จ');
 
         Swal.fire({ icon: 'success', title: 'อัปเดตข้อมูลเรียบร้อย', timer: 1000, showConfirmButton: false });
     } catch (error) {
@@ -411,52 +429,109 @@ async function refreshData() {
     }
 }
 
-// ================= 🟢 SMART CHECK-IN/OUT =================
+// ================= SMART CHECK-IN/OUT =================
 async function checkActiveSession() {
-    const id_card = document.getElementById('id_card').value;
-    const fullname = document.getElementById('fullname').value;
-    const todayStr = document.getElementById('work_date').value;
-
-    const timeInInput = document.getElementById('time_in');
-    const btnSubmit = document.getElementById('btnSubmit');
-    
-    // รีเซ็ต UI
-    activeRecordId = null;
-    timeInInput.disabled = false;
-    timeInInput.value = '';
-    updateCheckInStatus();
-    timeInInput.parentElement.style.opacity = "1";
-    btnSubmit.innerHTML = '<i class="bi bi-cloud-arrow-up-fill me-2"></i> บันทึกเวลาเข้าสู่ระบบ';
-
-    if (!id_card || !fullname) return;
+    const request = ++sessionRequest;
+    const card = document.getElementById('id_card').value;
+    const name = document.getElementById('fullname').value;
+    const date = document.getElementById('work_date').value;
+    const shiftInput = document.getElementById('shift');
+    const clock = guardBangkokClock();
+    const dates = guardSessionDates(date, shiftInput.value, clock);
+    if (!card || !name || !date) {
+        sessionPending = sessionError = false;
+        setActiveRecord(null);
+        return true;
+    }
+    sessionPending = true;
+    sessionError = false;
+    renderSessionState();
 
     try {
         const { data, error } = await db.from('guard_attendance')
-            .select('*')
-            .eq('id_card', id_card)
-            .eq('fullname', fullname)
-            .eq('work_date', todayStr)
-            .is('time_out', null) // หาช่องเวลาออกที่ยังว่าง
-            .not('time_in', 'is', null) // แต่ช่องเวลาเข้าต้องไม่ว่าง
+            .select('id,work_date,shift,time_in,remark_type')
+            .eq('id_card', card)
+            .eq('fullname', name)
+            .in('work_date', dates)
+            .is('time_out', null)
+            .not('time_in', 'is', null)
             .order('created_at', { ascending: false })
-            .limit(1);
+            .order('id', { ascending: false });
+        if (request !== sessionRequest) return false;
+        if (error) throw error;
 
-        if (data && data.length > 0) {
-            // เจอว่ากำลังเข้าเวรอยู่ (ล็อกเวลาเข้า)
-            activeRecordId = data[0].id;
-            timeInInput.value = data[0].time_in;
-            timeInInput.disabled = true;
-            timeInInput.parentElement.style.opacity = "0.5";
-            btnSubmit.innerHTML = '<i class="bi bi-box-arrow-right me-2"></i> บันทึกเวลาออกงาน';
-        }
-    } catch (err) {
-        console.error("Check Session Error:", err);
+        const record = chooseGuardSession(data, dates, shiftInput.value);
+        if (record && !shiftInput.value) selectGuardShift(record.shift);
+        sessionPending = false;
+        setActiveRecord(record);
+        return true;
+    } catch (error) {
+        if (request !== sessionRequest) return false;
+        sessionPending = false;
+        sessionError = true;
+        setActiveRecord(null);
+        console.error('ตรวจสอบเวรไม่สำเร็จ', error);
+        return false;
     }
+}
+
+function selectGuardShift(value) {
+    const input = document.getElementById('shift');
+    const key = getGuardShift(value);
+    const option = [...input.options].find(option => key && getGuardShift(option.value) === key);
+    if (option) input.value = option.value;
+}
+
+function setActiveRecord(record) {
+    if (activeRecord?.id !== record?.id && (activeRecord || record)) {
+        document.getElementById('time_in').value = record?.time_in || '';
+        if (activeRecord) document.getElementById('time_out').value = '';
+    }
+    activeRecord = record;
+    renderSessionState();
+}
+
+function renderSessionState() {
+    const status = document.getElementById('activeSessionStatus');
+    const timeIn = document.getElementById('time_in');
+    const button = document.getElementById('btnSubmit');
+    const isLeave = currentMode === 'leave';
+    timeIn.disabled = Boolean(activeRecord);
+    document.getElementById('useCurrentIn').disabled = Boolean(activeRecord) || sessionPending || sessionError;
+    document.getElementById('useCurrentOut').disabled = sessionPending || sessionError;
+    document.getElementById('workRemarks').classList.toggle('d-none', Boolean(activeRecord));
+    button.disabled = sessionPending || sessionError || submitPending || Boolean(isLeave && activeRecord);
+    button.textContent = submitPending ? 'กำลังบันทึก…' : isLeave ? 'บันทึกลางาน' : activeRecord ? 'ลงเวลาออก' : 'ตรวจสอบและบันทึกเวลา';
+    status.className = 'rounded-3 mb-3';
+    if (sessionPending) {
+        status.textContent = 'กำลังตรวจสอบเวรที่เปิดอยู่…';
+    } else if (sessionError) {
+        status.classList.add('alert', 'alert-danger');
+        status.textContent = 'ตรวจสอบเวรที่เปิดอยู่ไม่สำเร็จ กรุณากดรีเฟรชก่อนบันทึก';
+    } else if (activeRecord) {
+        status.classList.add('alert', 'alert-info');
+        status.textContent = 'เวรที่เปิดอยู่ · ' + guardDutyLabel(activeRecord.work_date, activeRecord.shift) +
+            ' · เข้า ' + activeRecord.time_in + ' น.' + (isLeave ? ' กรุณาลงเวลาออกก่อนลางาน' : '');
+    } else {
+        status.textContent = '';
+    }
+    status.classList.toggle('d-none', !status.textContent);
+    updateCheckInStatus();
+}
+
+function fillGuardTime(field) {
+    const input = document.getElementById(field);
+    if (input.disabled || currentMode !== 'work' || sessionPending || sessionError) return;
+    input.value = guardBangkokClock().time.slice(0, 5);
+    updateCheckInStatus();
 }
 
 // ================= LOAD DATA & MEMORY =================
 async function loadMasterData() {
     try {
+        const currentCard = document.getElementById('id_card').value;
+        const currentName = document.getElementById('fullname').value;
+        const currentShift = document.getElementById('shift').value;
         const { data: cards } = await db.from('security_card_master').select('card_number').order('card_number');
         const selectCard = document.getElementById('id_card');
         
@@ -505,11 +580,11 @@ async function loadMasterData() {
         });
 
         // Memory (จดจำค่าล่าสุด)
-        if(localStorage.getItem('sec_last_card')) selectCardInstance.setValue(localStorage.getItem('sec_last_card'));
-        if(localStorage.getItem('sec_last_name')) selectPersonInstance.setValue(localStorage.getItem('sec_last_name'));
-        if(localStorage.getItem('sec_last_shift')) document.getElementById('shift').value = localStorage.getItem('sec_last_shift');
-        
-        checkActiveSession(); 
+        selectCardInstance.setValue(currentCard || localStorage.getItem('sec_last_card') || '', true);
+        selectPersonInstance.setValue(currentName || localStorage.getItem('sec_last_name') || '', true);
+        selectGuardShift(currentShift || localStorage.getItem('sec_last_shift'));
+
+        await checkActiveSession();
     } catch (err) { console.error("Load Master Error:", err); }
 }
 // ================= ⏰ CUSTOM TIME FORMATTER (Numpad) =================
@@ -521,11 +596,7 @@ function formatTime(input) {
     input.value = val;
 }
 function validateTimeStr(timeStr) {
-    if (!timeStr) return true;
-    if (timeStr.length !== 5) return false;
-    const [h, m] = timeStr.split(':');
-    if (parseInt(h) > 23 || parseInt(m) > 59) return false;
-    return true;
+    return !timeStr || /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(timeStr);
 }
 
 function updateCheckInStatus() {
@@ -540,7 +611,8 @@ function updateCheckInStatus() {
     input.classList.toggle('text-success', !isLate);
 }
 
-document.getElementById('shift').addEventListener('change', updateCheckInStatus);
+document.getElementById('shift').addEventListener('change', checkActiveSession);
+document.getElementById('work_date').addEventListener('change', checkActiveSession);
 
 // ================= 📝 REMARK LOGIC =================
 function handleRemarkChange() {
@@ -551,7 +623,7 @@ function handleRemarkChange() {
     subDiv.classList.add('d-none');
     otherDiv.classList.add('d-none');
     document.getElementById('remark_detail').value = '';
-    selectSubstituteInstance.clear();
+    selectSubstituteInstance?.clear();
 
     if (val.includes('แทน')) {
         subDiv.classList.remove('d-none'); 
@@ -564,30 +636,16 @@ function handleRemarkChange() {
 // ================= 🏖️ MODE SWITCH (WORK / LEAVE) =================
 function setMode(mode) {
     currentMode = mode;
-
-    const leaveDiv = document.getElementById('leaveTypeDiv');
-    const timeRow = document.getElementById('time_in').closest('.row');
-    const btn = document.getElementById('btnSubmit');
-
-    document.getElementById('modeWork').classList.remove('active');
-    document.getElementById('modeLeave').classList.remove('active');
-
-    if (mode === 'leave') {
-        leaveDiv.classList.remove('d-none');
-        timeRow.classList.add('d-none');
-        btn.innerHTML = '<i class="bi bi-calendar-x me-2"></i> บันทึกลางาน';
-        document.getElementById('modeLeave').classList.add('active');
-
-        // เคลียร์เวลาออก/เข้า
+    const isLeave = mode === 'leave';
+    document.getElementById('leaveTypeDiv').classList.toggle('d-none', !isLeave);
+    document.getElementById('time_in').closest('.row').classList.toggle('d-none', isLeave);
+    document.getElementById('modeWork').classList.toggle('active', !isLeave);
+    document.getElementById('modeLeave').classList.toggle('active', isLeave);
+    if (isLeave && !activeRecord) {
         document.getElementById('time_in').value = '';
         document.getElementById('time_out').value = '';
-    } else {
-        leaveDiv.classList.add('d-none');
-        timeRow.classList.remove('d-none');
-        btn.innerHTML = '<i class="bi bi-cloud-arrow-up-fill me-2"></i> บันทึกเวลาเข้าสู่ระบบ';
-        document.getElementById('modeWork').classList.add('active');
     }
-    updateCheckInStatus();
+    renderSessionState();
 }
 
 // ================= HISTORY (ระบบใหม่ เฉพาะบุคคล + วันที่ไทยเป๊ะๆ) =================
@@ -615,12 +673,8 @@ async function fetchHistory() {
 
     try {
         // 🟢 2. บังคับใช้วันที่เวลาประเทศไทย (ป้องกันบั๊ก UTC ข้ามวัน)
-        const todayLocal = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Bangkok"}));
-        const yyyy = todayLocal.getFullYear();
-        const mm = String(todayLocal.getMonth() + 1).padStart(2, '0');
-        const dd = String(todayLocal.getDate()).padStart(2, '0');
-        const todayStr = `${yyyy}-${mm}-${dd}`;
-        
+        const todayStr = guardBangkokClock().date;
+
         // 🟢 3. ดึงข้อมูล "วันนี้"
         const { data: dataToday, error: errToday } = await db.from('guard_attendance')
             .select('*')
@@ -700,8 +754,7 @@ function loadMorePast() {
     currentPastPage++; 
     
     let nameFilter = document.getElementById('fullname').value || localStorage.getItem('sec_last_name');
-    const todayLocal = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Bangkok"}));
-    const todayStr = `${todayLocal.getFullYear()}-${String(todayLocal.getMonth() + 1).padStart(2, '0')}-${String(todayLocal.getDate()).padStart(2, '0')}`;
+    const todayStr = guardBangkokClock().date;
 
     loadPastHistory(nameFilter, todayStr).then(() => {
         btn.innerHTML = 'ดูประวัติเก่ากว่านี้ <i class="bi bi-chevron-down"></i>';
@@ -795,104 +848,72 @@ async function userDelete(id, id_card) {
     }
 }
 
-// ================= SUBMIT FORM (🟢 อัปเดตเงื่อนไข Insert/Update) =================
-document.getElementById('attendanceForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    const time_in = document.getElementById('time_in').value || null;
-    const time_out = document.getElementById('time_out').value || null;
+// ================= SUBMIT FORM =================
+document.getElementById('attendanceForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    if (sessionPending || sessionError || submitPending) return;
 
-    // ================= VALIDATE TIME (เฉพาะโหมดทำงาน) =================
-    if (currentMode === 'work') {
-        if(!time_in && !time_out) {
-            return Swal.fire({
-                icon: 'warning',
-                title: 'ข้อมูลไม่ครบ',
-                text: 'กรุณาระบุเวลาอย่างน้อย 1 ช่อง'
-            });
-        }
-
-        if((time_in && !validateTimeStr(time_in)) || (time_out && !validateTimeStr(time_out))) {
-            return Swal.fire({
-                icon: 'error',
-                title: 'เวลาผิดพลาด',
-                text: 'กรุณากรอกเวลาให้ถูกต้อง (00:00 - 23:59)'
-            });
+    const value = id => document.getElementById(id).value;
+    const record = activeRecord;
+    const isLeave = currentMode === 'leave';
+    if (isLeave && record) return;
+    const timeIn = record?.time_in || value('time_in') || null;
+    const timeOut = value('time_out') || null;
+    if (!isLeave) {
+        if (record && !timeOut) return Swal.fire('ระบุเวลาออก', 'กรุณาระบุเวลาออกจากเวรที่เปิดอยู่', 'warning');
+        if (!timeIn && !timeOut) return Swal.fire('ข้อมูลไม่ครบ', 'กรุณาระบุเวลาอย่างน้อย 1 ช่อง', 'warning');
+        if ((!record && !validateTimeStr(timeIn)) || !validateTimeStr(timeOut)) {
+            return Swal.fire('เวลาผิดพลาด', 'กรุณากรอกเวลาให้ถูกต้อง (00:00 - 23:59)', 'error');
         }
     }
 
-    const remark_type = document.getElementById('remark_type').value;
-    let final_remark_detail = null;
-
-    if (remark_type.includes('แทน')) {
-        final_remark_detail = document.getElementById('remark_substitute').value;
-        if(!final_remark_detail) return Swal.fire({ icon: 'warning', title: 'ข้อมูลไม่ครบ', text: 'กรุณาเลือกชื่อผู้ที่ปฏิบัติงานแทน' });
-    } else if (remark_type === 'อื่นๆ') {
-        final_remark_detail = document.getElementById('remark_detail').value;
+    const remark = isLeave ? value('leave_type') : value('remark_type');
+    let detail = null;
+    if (isLeave && !remark) return Swal.fire('ข้อมูลไม่ครบ', 'กรุณาเลือกประเภทการลา', 'warning');
+    if (!record && !isLeave && remark.includes('แทน')) {
+        detail = value('remark_substitute');
+        if (!detail) return Swal.fire('ข้อมูลไม่ครบ', 'กรุณาเลือกชื่อผู้ที่ปฏิบัติงานแทน', 'warning');
+    } else if (!record && !isLeave && remark === 'อื่นๆ') {
+        detail = value('remark_detail');
     }
-
-    const btn = document.getElementById('btnSubmit');
-    const originalText = btn.innerHTML; btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" style="width:1.2rem;height:1.2rem;color:white;"></span> กำลังบันทึก...';
 
     const payload = {
-        work_date: document.getElementById('work_date').value,
-        shift: document.getElementById('shift').value,
-        id_card: document.getElementById('id_card').value,
-        fullname: document.getElementById('fullname').value,
-        time_in: time_in,
-        time_out: time_out,
-        remark_type: remark_type,
-        remark_detail: final_remark_detail,
-        profile_pic: document.getElementById('picUrl').value || null,
-        status: 'Active' // ตรงกับ DB schema
+        work_date: record?.work_date || value('work_date'),
+        shift: record?.shift || value('shift'),
+        id_card: value('id_card'),
+        fullname: value('fullname'),
+        time_in: isLeave ? null : timeIn,
+        time_out: isLeave ? null : timeOut,
+        remark_type: remark,
+        remark_detail: detail || null,
+        profile_pic: value('picUrl') || null,
+        status: 'Active'
     };
 
-    // ================= 🏖️ HANDLE LEAVE MODE =================
-    if (currentMode === 'leave') {
-        const leaveType = document.getElementById('leave_type').value;
-
-        if (!leaveType) {
-            btn.disabled = false;
-            btn.innerHTML = originalText;
-            return Swal.fire({
-                icon: 'warning',
-                title: 'กรุณาเลือกประเภทการลา'
+    submitPending = true;
+    renderSessionState();
+    try {
+        if (!isLeave) {
+            const result = await Swal.fire({
+                title: record ? 'ยืนยันลงเวลาออก' : 'ตรวจสอบก่อนบันทึก',
+                text: `${payload.fullname} · ${guardDutyLabel(payload.work_date, payload.shift)} · เข้า ${timeIn || '–'} · ออก ${timeOut || '–'}`,
+                showCancelButton: true,
+                confirmButtonText: record ? 'ลงเวลาออก' : 'บันทึก',
+                cancelButtonText: 'กลับไปแก้ไข'
             });
+            if (!result.isConfirmed) return;
         }
 
-        payload.time_in = null;
-        payload.time_out = null;
-        payload.remark_type = leaveType;
-        payload.remark_detail = null;
-    }
-
-    // ================= 🚫 PREVENT LEAVE IF SESSION ACTIVE =================
-    if (currentMode === 'leave' && activeRecordId) {
-        btn.disabled = false;
-        btn.innerHTML = originalText;
-
-        return Swal.fire({
-            icon: 'warning',
-            title: 'ไม่สามารถลางานได้',
-            text: 'คุณยังไม่ได้ลงเวลาออกงาน กรุณาลงเวลาออกก่อน'
-        });
-    }
-
-    try {
-        if (activeRecordId) {
-            // 🎯 กรณีที่ 1: กำลังออกงาน (อัปเดตแถวเดิมที่มีเวลาเข้าอยู่แล้ว)
-            if (!time_out) {
-                btn.disabled = false; btn.innerHTML = originalText;
-                return Swal.fire({ icon: 'warning', title: 'ระบุเวลาออก', text: 'คุณลงเวลาเข้างานไปแล้ว กรุณาระบุเวลาออกงานด้วยครับ' });
-            }
-            const { error } = await db.from('guard_attendance').update({
-                time_out: payload.time_out,
-                remark_type: payload.remark_type,
-                remark_detail: payload.remark_detail,
-                profile_pic: payload.profile_pic
-            }).eq('id', activeRecordId);
+        Swal.fire({ title: 'กำลังบันทึก…', allowOutsideClick: false, allowEscapeKey: false, didOpen: () => Swal.showLoading() });
+        if (record) {
+            const { data, error } = await db.from('guard_attendance')
+                .update({ time_out: timeOut }).eq('id', record.id).is('time_out', null).select('id').maybeSingle();
             if (error) throw error;
+            if (!data) {
+                await checkActiveSession();
+                return Swal.fire('เวรนี้มีการเปลี่ยนแปลง', 'ตรวจสอบรายการล่าสุดก่อนลงเวลาอีกครั้ง', 'info');
+            }
         } else {
-            // 🎯 กรณีที่ 2: กำลังเข้างานใหม่ (หรือกรอกทีเดียว 2 ช่อง) (สร้างแถวใหม่)
             const { error } = await db.from('guard_attendance').insert([payload]);
             if (error) throw error;
         }
@@ -902,16 +923,26 @@ document.getElementById('attendanceForm').addEventListener('submit', async funct
         localStorage.setItem('sec_last_shift', payload.shift);
         if (navigator.vibrate) navigator.vibrate(50);
 
+        document.getElementById('time_in').value = '';
+        document.getElementById('time_out').value = '';
+        document.getElementById('remark_type').value = 'ปกติ';
+        handleRemarkChange();
+        setActiveRecord(null);
+        await checkActiveSession();
+        setMode('work');
         await Swal.fire({ icon: 'success', title: 'บันทึกสำเร็จ', timer: 1500, showConfirmButton: false });
-        
-        document.getElementById('time_in').value = ''; document.getElementById('time_out').value = '';
-        document.getElementById('remark_type').value = 'ปกติ'; handleRemarkChange();
-        
-        checkActiveSession(); // 🟢 รีเซ็ตหน้าจอใหม่
+        if (record && payload.work_date < guardBangkokClock().date) {
+            bootstrap.Tab.getOrCreateInstance(document.getElementById('tab-past-btn')).show();
+        } else {
+            bootstrap.Tab.getOrCreateInstance(document.getElementById('tab-today-btn')).show();
+        }
         switchPage('history');
-
-    } catch (err) { Swal.fire('เกิดข้อผิดพลาด', err.message, 'error'); } 
-    finally { btn.disabled = false; btn.innerHTML = '<i class="bi bi-cloud-arrow-up-fill me-2"></i> บันทึกเวลาเข้าสู่ระบบ'; }
+    } catch (error) {
+        Swal.fire('เกิดข้อผิดพลาด', error.message, 'error');
+    } finally {
+        submitPending = false;
+        renderSessionState();
+    }
 });
 </script>
 </body>

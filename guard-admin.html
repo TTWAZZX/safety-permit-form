@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Enterprise Admin - ลงเวลา รปภ.</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="portal-module-favicon.css">
@@ -17,7 +17,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 
     <style>
@@ -113,7 +112,7 @@
             border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15); 
         }
         
-        .btn { font-weight: 600; border-radius: 8px; padding: 10px 20px; transition: all 0.2s; }
+        .btn { font-weight: 600; border-radius: 8px; padding: 10px 20px; transition: background-color .18s, color .18s, border-color .18s; }
         .btn-gradient { background: linear-gradient(135deg, var(--primary-color) 0%, #0369a1 100%); color: white; border: none; }
         .btn-gradient:hover { box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3); transform: translateY(-1px); color: white; }
 
@@ -161,13 +160,9 @@
         [data-theme="dark"] .attendance-late { color: #fca5a5 !important; }
 
         .sortable-ghost { background-color: var(--table-hover-bg) !important; opacity: 0.8; border: 2px dashed var(--primary-color); }
-        #attendanceTbody tr:not(.group-header) { cursor: grab; }
-        #attendanceTbody tr:not(.group-header):active { cursor: grabbing; }
+        #attendanceTbody[data-reorderable] .data-row:not(.no-sort) { cursor: grab; }
+        #attendanceTbody[data-reorderable] .data-row:not(.no-sort):active { cursor: grabbing; }
         .col-hidden { display: none !important; }
-
-        /* 🟢 สไตล์ซ่อน/แสดง ตัวเลขลำดับ */
-        .web-no { display: inline; }
-        .print-no { display: none; }
 
         /* ================= LOADER ================= */
         #loadingScreen {
@@ -180,6 +175,7 @@
 
         /* ================= 🖨️ PRINT TEMPLATE (STRICTLY FORMAL - PROFESSIONAL LAYOUT UPGRADE) ================= */
         .print-only { display: none; }
+        .report-mobile-time-label { display: none; }
 
         @media print {
             @page { size: A4 portrait; margin: 15mm 10mm; }
@@ -192,11 +188,6 @@
 
             .print-only { display: block !important; }
             [data-theme] #attendanceTable .attendance-late { color: #000 !important; }
-            .hide-in-print { display: none !important; } /* ซ่อนคนลา/ขาดใน PDF */
-
-            /* สลับการแสดงผลเลขลำดับ */
-            .web-no { display: none !important; }
-            .print-no { display: inline !important; }
 
             /* รีเซ็ตพื้นฐาน */
             body, * {
@@ -276,7 +267,7 @@
             /* 🟢 หมายเหตุ (ให้กินพื้นที่หน้ากระดาษที่เหลือทั้งหมด และบังคับห้ามตัดลงบรรทัดใหม่) */
             th[data-col="remark"], td[data-col="remark"] { 
                 width: auto !important; 
-                white-space: nowrap !important; 
+                white-space: normal !important;
                 font-size: 8pt !important; 
             }
 
@@ -290,6 +281,7 @@
             .col-hidden { display: none !important; }
 
             /* ================= PENALTY SUMMARY TABLE (PRINT STYLES) ================= */
+            .hide-penalty-in-print #penalty-summary-section { display: none !important; }
             #penalty-summary-section {
                 margin-top: 20px !important;
                 margin-bottom: 20px !important;
@@ -329,6 +321,7 @@
             .sign-line { border-bottom: 1px solid #000 !important; margin: 40px auto 10px; width: 80%; }
         }
     </style>
+    <link rel="stylesheet" href="guard-admin-layout.css" media="screen">
 </head>
 <body>
 
@@ -353,117 +346,149 @@
 </div>
 
 <div id="mainApp" style="display: none;">
-    <div class="top-navbar no-print">
-        <div class="container-xl d-flex justify-content-between align-items-center">
-            <div class="d-flex align-items-center gap-3">
-                <div class="bg-primary bg-opacity-10 text-primary rounded-3 d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;" data-portal-module-logo>
-                    <i class="bi bi-shield-check fs-4"></i>
-                </div>
-                <div>
-                    <h5 class="mb-0 fw-bold">SafetyPass Admin</h5>
-                    <small class="text-muted">Enterprise Dashboard</small>
-                </div>
+    <header class="top-navbar no-print">
+        <div class="report-shell report-top">
+            <div class="report-brand">
+                <div class="report-brand-logo" data-portal-module-logo><i class="bi bi-shield-check" aria-hidden="true"></i></div>
+                <span>SafetyPass <strong>Admin</strong></span>
             </div>
-            <div class="d-flex gap-3 align-items-center">
-                <button class="theme-toggle" onclick="toggleTheme()" title="สลับโหมดมืด/สว่าง"><i class="bi bi-moon" id="themeIcon"></i></button>
-                <button class="btn btn-light border text-danger px-4" onclick="logout()"><i class="bi bi-power me-1"></i> ออกระบบ</button>
+            <nav class="report-nav" aria-label="เมนูแอดมิน">
+                <div class="nav nav-pills" id="pills-tab" role="tablist">
+                    <button class="nav-link active" id="attendance-tab" type="button" data-bs-toggle="pill" data-bs-target="#tab-attendance" role="tab" aria-controls="tab-attendance" aria-selected="true"><i class="bi bi-grid" aria-hidden="true"></i> ลงเวลา</button>
+                    <button class="nav-link" id="master-tab" type="button" data-bs-toggle="pill" data-bs-target="#tab-master" role="tab" aria-controls="tab-master" aria-selected="false"><i class="bi bi-people" aria-hidden="true"></i> พนักงาน</button>
+                    <button class="nav-link" id="logs-tab" type="button" data-bs-toggle="pill" data-bs-target="#tab-logs" role="tab" aria-controls="tab-logs" aria-selected="false" onclick="loadAdminLogs()"><i class="bi bi-journal-text" aria-hidden="true"></i> ประวัติแก้ไข</button>
+                </div>
+            </nav>
+            <div class="report-top-actions">
+                <a class="report-icon-button report-portal-link" data-admin-portal-shortcut href="admin-portal.html" aria-label="กลับหน้า Admin Portal" title="กลับหน้า Admin Portal"><i class="bi bi-house" aria-hidden="true"></i><span>Admin Portal</span></a>
+                <button type="button" class="theme-toggle report-icon-button" onclick="toggleTheme()" aria-label="สลับโหมดมืดหรือสว่าง" title="สลับโหมดมืดหรือสว่าง"><i class="bi bi-moon" id="themeIcon" aria-hidden="true"></i></button>
+                <button type="button" class="report-icon-button report-logout" onclick="logout()" aria-label="ออกจากระบบ" title="ออกจากระบบ"><i class="bi bi-box-arrow-right" aria-hidden="true"></i><span>ออกจากระบบ</span></button>
             </div>
         </div>
-    </div>
+    </header>
 
-    <div class="container-xl">
-        <div class="d-flex justify-content-center mb-4 no-print">
-            <ul class="nav nav-pills" id="pills-tab" role="tablist">
-                <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-attendance"><i class="bi bi-grid me-2"></i> แดชบอร์ด & ลงเวลา</button></li>
-                <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-master"><i class="bi bi-people me-2"></i> จัดการพนักงาน</button></li>
-                <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-logs" onclick="loadAdminLogs()"><i class="bi bi-journal-text me-2"></i> Admin Log</button></li>
-            </ul>
-        </div>
-
+    <main class="report-shell report-main">
         <div class="tab-content">
-            <div class="tab-pane fade show active" id="tab-attendance">
-                
-                <div class="row g-3 mb-4 no-print animate__animated animate__fadeInDown">
-                    <div class="col-md-8">
-                        <div class="row g-3">
-                            <div class="col-sm-6">
-                                <div class="kpi-card" style="border-left-color: #0284c7;">
-                                    <div><small class="text-muted fw-bold"><i class="bi bi-file-earmark-text me-1"></i> รายการทั้งหมด</small><h2 class="mb-0 fw-bold text-primary mt-1" id="kpi-total">0</h2></div>
-                                    <div class="kpi-icon bg-primary bg-opacity-10 text-primary"><i class="bi bi-list-ul"></i></div>
-                                </div>
-                            </div>
-                            <div class="col-sm-6">
-                                <div class="kpi-card" style="border-left-color: #f59e0b;">
-                                    <div><small class="text-muted fw-bold"><i class="bi bi-sun me-1"></i> กะเช้า (Day Shift)</small><h2 class="mb-0 fw-bold text-warning mt-1" id="kpi-morning">0</h2><small class="attendance-late fw-bold" id="kpi-morning-late">มาสาย 0 รายการ</small></div>
-                                    <div class="kpi-icon bg-warning bg-opacity-10 text-warning"><i class="bi bi-brightness-high"></i></div>
-                                </div>
-                            </div>
-                            <div class="col-sm-6">
-                                <div class="kpi-card" style="border-left-color: #334155;">
-                                    <div><small class="text-muted fw-bold"><i class="bi bi-moon-stars me-1"></i> กะดึก (Night Shift)</small><h2 class="mb-0 fw-bold mt-1" style="color: #334155;" id="kpi-night">0</h2><small class="attendance-late fw-bold" id="kpi-night-late">มาสาย 0 รายการ</small></div>
-                                    <div class="kpi-icon bg-secondary bg-opacity-10 text-secondary"><i class="bi bi-moon"></i></div>
-                                </div>
-                            </div>
-                            <div class="col-sm-6">
-                                <div class="kpi-card" style="border-left-color: #ef4444;">
-                                    <div><small class="text-muted fw-bold"><i class="bi bi-clock-history me-1"></i> ไม่มีบันทึกเวลา (No Record)</small><h2 class="mb-0 fw-bold text-danger mt-1" id="kpi-issue">0</h2></div>
-                                    <div class="kpi-icon bg-danger bg-opacity-10 text-danger"><i class="bi bi-clipboard-x"></i></div>
-                                </div>
-                            </div>
-                        </div>
+            <div class="tab-pane fade show active" id="tab-attendance" role="tabpanel" aria-labelledby="attendance-tab">
+                <div class="report-heading no-print">
+                    <div>
+                        <h1>รายงานลงเวลา รปภ.</h1>
+                        <div class="report-period-line"><p id="reportPeriod">รายงานประจำเดือน</p><button type="button" class="report-jump" onclick="focusAttendanceTable()">ดูรายการ <i class="bi bi-arrow-down" aria-hidden="true"></i></button></div>
                     </div>
-                    <div class="col-md-4">
-                        <div class="admin-card h-100 d-flex flex-column justify-content-center">
-                            <h6 class="fw-bold text-center mb-3 text-muted">สัดส่วนกะการทำงาน</h6>
-                            <div class="chart-container"><canvas id="shiftChart"></canvas></div>
-                        </div>
-                    </div>
+                    <button type="button" class="btn report-primary" onclick="openRecordModal()"><i class="bi bi-plus-lg" aria-hidden="true"></i> เพิ่มรายการ</button>
                 </div>
 
-                <div class="admin-card mb-4 no-print animate__animated animate__fadeInUp" style="position: relative; z-index: 10;">
-                    <div class="row align-items-end g-3">
-                        <div class="col-lg-2 col-md-3">
-                            <label class="form-label fw-bold small text-muted">เดือน</label>
-                            <input type="month" id="filterMonth" class="form-control">
+                <section class="report-overview no-print" aria-label="ภาพรวมการลงเวลา">
+                    <div class="report-stat report-stat-total">
+                        <div class="report-stat-label">รายการทั้งหมด<i class="bi bi-list-check" aria-hidden="true"></i></div>
+                        <strong id="kpi-total">0</strong>
+                    </div>
+                    <div class="report-stat report-stat-day">
+                        <div class="report-stat-label">กะเช้า<i class="bi bi-sun" aria-hidden="true"></i></div>
+                        <strong id="kpi-morning">0</strong>
+                        <button type="button" class="report-late-link" id="kpi-morning-late" onclick="showLateShift('เช้า')">มาสาย 0 รายการ</button>
+                    </div>
+                    <div class="report-stat report-stat-night">
+                        <div class="report-stat-label">กะดึก<i class="bi bi-moon-stars" aria-hidden="true"></i></div>
+                        <strong id="kpi-night">0</strong>
+                        <button type="button" class="report-late-link" id="kpi-night-late" onclick="showLateShift('ดึก')">มาสาย 0 รายการ</button>
+                    </div>
+                    <div class="report-stat report-stat-issue">
+                        <div class="report-stat-label">รายการที่ต้องตรวจ<i class="bi bi-clock-history" aria-hidden="true"></i></div>
+                        <strong id="kpi-issue">0</strong>
+                    </div>
+                    <div class="report-stat report-shift-mix">
+                        <div class="report-stat-label">สัดส่วนกะการทำงาน<i class="bi bi-bar-chart" aria-hidden="true"></i></div>
+                        <div class="report-shift-track" aria-hidden="true">
+                            <span id="mixMorning" class="mix-morning"></span><span id="mixNight" class="mix-night"></span><span id="mixOther" class="mix-other"></span>
                         </div>
-                        <div class="col-lg-2 col-md-3">
-                            <label class="form-label fw-bold small text-muted">รายบุคคล</label>
-                            <select id="filterName" class="form-select"><option value="ALL">ทุกคน</option></select>
+                        <p id="mixLegend" class="report-shift-legend"></p>
+                    </div>
+                </section>
+
+                <section class="report-panel report-filters no-print" aria-labelledby="filterHeading">
+                    <div class="report-filter-title">
+                        <h2 id="filterHeading"><i class="bi bi-funnel" aria-hidden="true"></i> ตัวกรองรายงาน</h2>
+                        <button type="button" class="btn report-secondary report-reset" onclick="resetReportFilters()">ล้างตัวกรอง</button>
+                    </div>
+                    <div class="report-filter-grid">
+                        <div>
+                            <label for="filterMonth">เดือน</label>
+                            <input type="month" id="filterMonth" class="form-control" onchange="loadAttendance()">
                         </div>
-                        <div class="col-lg-2 col-md-3">
-                            <label class="form-label fw-bold small text-muted">กะการทำงาน</label>
-                            <select id="filterShift" class="form-select">
-                                <option value="ALL">ทั้งหมด</option>
+                        <div>
+                            <label for="filterName">พนักงาน</label>
+                            <select id="filterName" class="form-select" onchange="renderAttendanceReport()"><option value="ALL">ทุกคน</option></select>
+                        </div>
+                        <div>
+                            <label for="filterShift">กะการทำงาน</label>
+                            <select id="filterShift" class="form-select" onchange="renderAttendanceReport()">
+                                <option value="ALL">ทุกกะ</option>
                                 <option value="เช้า">กะเช้า</option>
                                 <option value="ดึก">กะดึก</option>
                             </select>
                         </div>
-                        <div class="col-lg-2 col-md-3 d-flex gap-2">
-                            <button onclick="loadAttendance()" class="btn btn-primary fw-bold w-100"><i class="bi bi-search me-1"></i> ค้นหา</button>
-                            <button onclick="refreshAdminData()" class="btn btn-light border text-muted" title="รีเฟรชข้อมูล"><i class="bi bi-arrow-clockwise"></i></button>
-                        </div>
-                        
-                        <div class="col-lg-4 col-md-12 text-lg-end mt-3 mt-lg-0 d-flex justify-content-lg-end gap-2 flex-wrap">
-                            <div class="dropdown d-inline-block">
-                                <button class="btn btn-light border fw-bold dropdown-toggle text-muted" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside">
-                                    <i class="bi bi-layout-three-columns me-1"></i> คอลัมน์
-                                </button>
-                                <ul class="dropdown-menu shadow-lg p-3 border-0" id="columnSelector" style="width: 220px; z-index: 1050;"></ul>
-                            </div>
-                            
-                            <button id="btnSaveOrder" onclick="saveRowOrder()" class="btn btn-warning fw-bold d-none animate__animated animate__pulse"><i class="bi bi-save2 me-1"></i> ล็อกลำดับ</button>
-                            
-                            <button onclick="openPenaltyModal()" class="btn btn-warning fw-bold text-dark"><i class="bi bi-cash-coin me-1"></i> หักเงิน</button>
-                            
-                            <button onclick="openRecordModal()" class="btn btn-primary fw-bold"><i class="bi bi-plus-circle me-1"></i> เพิ่มรายการ</button>
-                            <button onclick="exportExcel()" class="btn btn-success fw-bold"><i class="bi bi-file-earmark-excel me-1"></i> Excel</button>
-                            <button onclick="exportPDF()" class="btn btn-danger fw-bold"><i class="bi bi-file-earmark-pdf me-1"></i> PDF</button>
+                        <div>
+                            <label for="filterStatus">สถานะเวลา</label>
+                            <select id="filterStatus" class="form-select" onchange="renderAttendanceReport()">
+                                <option value="ALL">ทุกสถานะ</option>
+                                <option value="late">เฉพาะมาสาย</option>
+                                <option value="missingOut">ยังไม่ลงเวลาออก</option>
+                                <option value="noRecord">ไม่มีบันทึกเวลา</option>
+                                <option value="absent">ขาดงาน</option>
+                            </select>
                         </div>
                     </div>
+                </section>
+
+                <div class="report-detail-grid no-print">
+                    <details class="report-panel report-details" id="guardLateSummary">
+                        <summary><i class="bi bi-person-lines-fill" aria-hidden="true"></i> สรุปมาสายรายบุคคล</summary>
+                        <div class="table-responsive report-summary-table">
+                            <table class="table">
+                                <thead><tr><th scope="col">พนักงาน</th><th scope="col">ครั้ง</th><th scope="col">นาทีรวม</th><th scope="col">รายการ</th></tr></thead>
+                                <tbody id="guardLateSummaryRows"></tbody>
+                            </table>
+                        </div>
+                    </details>
+                    <details class="report-panel report-details">
+                        <summary><i class="bi bi-calendar3" aria-hidden="true"></i> ตารางเวรและสรุปหักเงิน</summary>
+                        <div class="report-detail-controls">
+                            <p id="rosterStatus" role="status"></p>
+                            <div class="report-detail-actions">
+                                <button type="button" onclick="document.getElementById('rosterFile').click()" class="btn report-secondary">นำเข้าตารางเวร</button>
+                                <button type="button" onclick="downloadRosterTemplate()" class="btn report-secondary">ไฟล์ตัวอย่าง</button>
+                                <button type="button" id="clearRosterButton" onclick="clearRoster()" class="btn report-secondary report-logout d-none">ล้างตารางเวร</button>
+                                <button type="button" onclick="openPenaltyModal()" class="btn report-secondary">แก้ไขยอดหักเงิน</button>
+                                <input type="file" id="rosterFile" accept=".xlsx,.csv" hidden onchange="importRoster(this)">
+                            </div>
+                        </div>
+                    </details>
                 </div>
 
-                <div class="admin-card animate__animated animate__fadeInUp p-0 border-0" id="attendanceTableContainer">
-                    
+                <section class="report-panel" id="attendanceTableContainer" tabindex="-1" aria-labelledby="attendanceHeading">
+                    <div class="report-table-toolbar no-print">
+                        <div>
+                            <h2 id="attendanceHeading">รายการลงเวลา</h2>
+                            <p id="reportResults" role="status" aria-atomic="true"></p>
+                        </div>
+                        <div class="report-table-actions">
+                            <button type="button" id="btnSaveOrder" onclick="saveRowOrder()" class="btn report-secondary d-none"><i class="bi bi-check2" aria-hidden="true"></i> ล็อกลำดับ</button>
+                            <div class="dropdown report-columns">
+                                <button type="button" class="btn report-secondary dropdown-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside"><i class="bi bi-layout-three-columns" aria-hidden="true"></i> คอลัมน์</button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow-sm" id="columnSelector"></ul>
+                            </div>
+                            <button type="button" onclick="refreshAdminData()" class="btn report-secondary report-refresh" title="รีเฟรชข้อมูล" aria-label="รีเฟรชข้อมูล"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i></button>
+                            <div class="dropdown">
+                                <button type="button" class="btn report-secondary dropdown-toggle" data-bs-toggle="dropdown"><i class="bi bi-download" aria-hidden="true"></i> ส่งออก</button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                    <li><button type="button" class="dropdown-item" onclick="exportExcel()"><i class="bi bi-file-earmark-excel" aria-hidden="true"></i> Excel</button></li>
+                                    <li><button type="button" class="dropdown-item" onclick="exportPDF()"><i class="bi bi-file-earmark-pdf" aria-hidden="true"></i> PDF / พิมพ์</button></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="print-only print-header">
                         <h4>รายงานบันทึกเวลาปฏิบัติงานเจ้าหน้าที่รักษาความปลอดภัย</h4>
                         <p class="fw-bold">บริษัท ไทยซัมมิท ฮาร์เนส จำกัด (มหาชน)</p>
@@ -471,30 +496,31 @@
                         <p style="text-align: right; font-size: 10pt; margin-top: 8px;">วันที่พิมพ์: <span id="reportPrintDate"></span></p>
                     </div>
 
-                    <div class="table-responsive border-0 shadow-sm" style="overflow: visible;"> 
-                        <table id="attendanceTable" class="table align-middle mb-0">
-                            <thead id="mainTableHeader">
-                                <tr>
-                                    <th data-col="no" class="text-center" style="width: 60px;">ลำดับ</th> 
-                                    <th data-col="date" class="text-center">วันที่</th>
-                                    <th data-col="shift">กะทำงาน</th>
-                                    <th data-col="id_card">รหัสบัตร</th>
-                                    <th data-col="name">ชื่อพนักงาน</th> 
-                                    <th data-col="time_in" class="text-center">เข้า (IN)</th>
-                                    <th data-col="time_out" class="text-center">ออก (OUT)</th>
-                                    <th data-col="remark">หมายเหตุ</th>
-                                    <th data-col="action" class="text-center no-print">จัดการ</th>
+                    <div class="table-responsive report-table-wrap">
+                        <table id="attendanceTable" class="table align-middle mb-0" role="table" aria-labelledby="attendanceHeading">
+                            <thead id="mainTableHeader" role="rowgroup">
+                                <tr role="row">
+                                    <th scope="col" role="columnheader" data-col="no" class="text-center" style="width: 60px;">ลำดับ</th>
+                                    <th scope="col" role="columnheader" data-col="date" class="text-center">วันที่</th>
+                                    <th scope="col" role="columnheader" data-col="shift">กะทำงาน</th>
+                                    <th scope="col" role="columnheader" data-col="id_card">รหัสบัตร</th>
+                                    <th scope="col" role="columnheader" data-col="name">ชื่อพนักงาน</th>
+                                    <th scope="col" role="columnheader" data-col="time_in" class="text-center">เข้า (IN)</th>
+                                    <th scope="col" role="columnheader" data-col="time_out" class="text-center">ออก (OUT)</th>
+                                    <th scope="col" role="columnheader" data-col="remark">หมายเหตุ / สถานะ</th>
+                                    <th scope="col" role="columnheader" data-col="action" class="text-center no-print">จัดการ</th>
                                 </tr>
                             </thead>
                             
-                            <tbody id="attendanceTbody"></tbody>
+                            <tbody id="attendanceTbody" role="rowgroup" onclick="editAttendanceRow(event)"></tbody>
                         </table>
                     </div>
                     
-                    <div id="penalty-summary-section" class="mt-4 mb-3 p-3 border shadow-sm rounded-3" style="background-color: var(--card-bg); page-break-inside: avoid;">
+                    <div id="penalty-summary-section" class="report-penalty" style="background-color: var(--card-bg); page-break-inside: avoid;">
                         <h5 class="text-start fw-bold mb-3" style="color: var(--text-main);">
                             สรุปการปรับหักค่าบริการ รปภ. ประจำเดือน <span id="print_month_year">มกราคม 2569</span>
                         </h5>
+                        <div class="table-responsive report-penalty-table">
                         <table class="table text-center align-middle m-0" style="border: 1px solid var(--border-color); border-collapse: collapse !important;">
                             <thead style="background-color: var(--table-header-bg); color: var(--text-muted); font-size: 0.9rem;">
                                 <tr>
@@ -529,6 +555,7 @@
                                 </tr>
                             </tbody>
                         </table>
+                        </div>
                     </div>
                     <div class="print-only print-footer-content">
                         <div class="sign-box-container">
@@ -541,10 +568,10 @@
                             </div>
                         </div>
                     </div>
-                </div>
+                </section>
             </div>
 
-            <div class="tab-pane fade" id="tab-master">
+            <div class="tab-pane fade" id="tab-master" role="tabpanel" aria-labelledby="master-tab">
                 <div class="row g-4"> 
                     <div class="col-md-6">
                         <div class="admin-card h-100 border-top border-4 border-primary">
@@ -599,7 +626,7 @@
                 </div>
             </div>
 
-            <div class="tab-pane fade" id="tab-logs">
+            <div class="tab-pane fade" id="tab-logs" role="tabpanel" aria-labelledby="logs-tab">
                 <div class="admin-card">
                     <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom flex-wrap gap-2">
                         <div class="d-flex align-items-center gap-3">
@@ -650,7 +677,7 @@
             </div>
 
         </div>
-    </div>
+    </main>
 </div>
 
 <div class="modal fade" id="penaltyModal" tabindex="-1">
@@ -711,6 +738,7 @@
 </div>
 
 <script src="guard-attendance.js"></script>
+<script src="guard-admin-report.js"></script>
 <script>
 // ================= CONFIG =================
 const SUPABASE_URL = 'https://dqsfioiqwxuxpucwwhsv.supabase.co';
@@ -719,8 +747,9 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const ADMIN_PIN = "safety1234"; 
 
-let shiftChartInstance = null;
-let sortableInstance = null; 
+let sortableInstance = null;
+let activeReport = null;
+let reportRequest = 0;
 
 // ================= ⏰ CUSTOM TIME FORMATTER =================
 function formatTime(input) {
@@ -772,8 +801,7 @@ async function unlockDashboard() {
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('loadingScreen').style.display = 'flex';
     
-    const today = new Date();
-    const currentMonthVal = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+    const currentMonthVal = guardReportToday().slice(0, 7);
     document.getElementById('filterMonth').value = currentMonthVal;
     document.getElementById('logFilterMonth').value = currentMonthVal;
     
@@ -802,7 +830,6 @@ function toggleTheme() {
     document.documentElement.setAttribute('data-theme', next);
     localStorage.setItem('theme', next);
     document.getElementById('themeIcon').className = next === 'dark' ? 'bi bi-sun text-warning' : 'bi bi-moon text-muted';
-    if(shiftChartInstance) loadAttendance(); 
 }
 
 // ================= เลือกคอลัมน์ =================
@@ -833,7 +860,7 @@ function toggleColumn(colIndex, isVisible) {
     const th = table.querySelectorAll(`#mainTableHeader th`)[colIndex];
     if (th) isVisible ? th.classList.remove('col-hidden') : th.classList.add('col-hidden');
     
-    const rows = table.querySelectorAll('#attendanceTbody tr');
+    const rows = table.querySelectorAll('#attendanceTbody .data-row');
     rows.forEach(row => {
         const td = row.querySelectorAll('td')[colIndex];
         if (td) isVisible ? td.classList.remove('col-hidden') : td.classList.add('col-hidden');
@@ -858,235 +885,300 @@ async function loadFilterNames() {
 
 async function refreshAdminData() {
     // 1. เรียกฟังก์ชันดึงข้อมูล (ซึ่งมันจะเด้งหน้าต่างโหลดหมุนๆ อันใหญ่ให้เอง)
-    await loadAttendance();
+    if (!(await loadAttendance())) return;
     
     // 2. พอโหลดเสร็จ และหน้าต่างหมุนๆ ปิดลง ค่อยเด้ง Toast สีเขียวมุมขวาบนบอกว่าเสร็จแล้ว
     Toast.fire({ icon: 'success', title: 'อัปเดตเรียบร้อย' });
 }
 
+function guardReportToday() {
+    return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Bangkok' }).format(new Date());
+}
+
+function guardNameLabel(name) {
+    return name === 'ALL' ? 'ทุกคน' : name;
+}
+
+function guardShiftLabel(shift) {
+    return guardShifts[getGuardShift(shift)]?.label ?? 'ทุกกะ';
+}
+
+function reportOrderKey({ month, name, shift }) {
+    return `table_order_${month}_${name}_${shift}`;
+}
+
 async function loadAttendance() {
-    const filterMonth = document.getElementById('filterMonth').value; 
-    const filterName = document.getElementById('filterName').value;
-    const filterShift = document.getElementById('filterShift').value; 
+    const month = document.getElementById('filterMonth').value;
+    if (!month) return Swal.fire('แจ้งเตือน', 'กรุณาเลือกเดือน', 'warning');
+    const request = ++reportRequest;
+    Swal.fire({ title: 'กำลังดึงข้อมูลตาราง...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-    if (!filterMonth) return Swal.fire('แจ้งเตือน', 'กรุณาเลือกเดือน', 'warning');
+    const [year, monthNumber] = month.split('-').map(Number);
+    const days = new Date(Date.UTC(year, monthNumber, 0)).getUTCDate();
+    const first = month + '-01';
+    const last = month + '-' + String(days).padStart(2, '0');
+    const records = [];
+    const pageSize = 500;
+    try {
+        for (let firstRow = 0; ; firstRow += pageSize) {
+            const { data, error } = await db.from('guard_attendance').select('*')
+                .gte('work_date', first).lte('work_date', last).order('id').range(firstRow, firstRow + pageSize - 1);
+            if (request !== reportRequest) return;
+            if (error) throw error;
+            records.push(...data);
+            if (data.length < pageSize) break;
+        }
+        activeReport = { month, days, records };
+        renderAttendanceReport();
+        Swal.close();
+        return true;
+    } catch (error) {
+        if (request === reportRequest) Swal.fire('โหลดรายงานไม่สำเร็จ', error.message, 'error');
+    }
+}
 
-    // 🟢 โชว์หน้าต่างโหลดตอนเริ่มค้นหา (ล็อคหน้าจอ)
-    Swal.fire({ 
-        title: 'กำลังดึงข้อมูลตาราง...', 
-        text: 'กรุณารอสักครู่ครับ',
-        allowOutsideClick: false, 
-        didOpen: () => { Swal.showLoading(); } 
-    });
-
-    let query = db.from('guard_attendance').select('*');
-    
-    const startDate = `${filterMonth}-01`;
-    const lastDayInMonth = new Date(filterMonth.split('-')[0], filterMonth.split('-')[1], 0).getDate();
-    const endDate = `${filterMonth}-${String(lastDayInMonth).padStart(2, '0')}`;
-
-    query = query.gte('work_date', startDate).lte('work_date', endDate);
-    if (filterName !== 'ALL') query = query.eq('fullname', filterName);
-    if (filterShift !== 'ALL') query = query.ilike('shift', `%${filterShift}%`);
-
-    const { data: attendanceData, error } = await query;
-    if (error) return Swal.fire('Error', error.message, 'error');
-
-    let finalRows = [];
-    const attendanceMap = new Set(attendanceData.map(item => `${item.work_date}_${item.fullname}`));
-    
-    attendanceData.forEach(row => finalRows.push(row));
-
-    if (filterName !== 'ALL' && filterShift === 'ALL') {
-        const daysInMonth = new Date(filterMonth.split('-')[0], filterMonth.split('-')[1], 0).getDate();
-        for (let d = 1; d <= daysInMonth; d++) {
-            const dateStr = `${filterMonth}-${String(d).padStart(2, '0')}`;
-            if (!attendanceMap.has(`${dateStr}_${filterName}`)) {
-                const absentRow = {
-                    id: 'absent_' + dateStr, 
-                    work_date: dateStr, shift: '-', id_card: '-', fullname: filterName,
-                    time_in: null, time_out: null, 
-                    remark_type: '<span class="badge bg-light text-secondary border px-2 py-1">ไม่มีบันทึกเวลา</span>', 
-                    remark_detail: '-'
-                };
-                finalRows.push(absentRow);
-            }
+function renderAttendanceReport() {
+    if (!activeReport) return;
+    const { month, days, records } = activeReport;
+    const name = document.getElementById('filterName').value;
+    const shift = document.getElementById('filterShift').value;
+    const status = document.getElementById('filterStatus').value;
+    const roster = readGuardRoster(month);
+    const reportRows = buildGuardReport(records, roster, Date.now());
+    const personRows = reportRows.filter(row => name === 'ALL' || row.fullname === name);
+    if (!roster.length && name !== 'ALL' && shift === 'ALL') {
+        const today = guardReportToday();
+        const coveredDates = new Set(personRows.map(row => row.work_date));
+        for (let day = 1; day <= days; day++) {
+            const date = month + '-' + String(day).padStart(2, '0');
+            if (date >= today || coveredDates.has(date)) continue;
+            personRows.push({
+                id: 'absent_' + date, work_date: date, fullname: name, flags: { noRecord: true },
+                labels: [guardReportStatuses.noRecord]
+            });
         }
     }
 
-    // 🟢 เรียงลำดับข้อมูล: วันที่ -> กะ (เช้ามาก่อนดึก) -> ชื่อพนักงาน
-    const storageKey = `table_order_${filterMonth}_${filterName}_${filterShift}`;
-    const savedOrderStr = localStorage.getItem(storageKey);
-    const savedOrder = savedOrderStr ? JSON.parse(savedOrderStr) : [];
-    
-    finalRows.sort((a, b) => {
-        // 🔥 [ทางแยกใหม่]: ถ้าดู "รายบุคคล" บังคับเรียงวันที่เป๊ะๆ ป้องกันวันที่กระโดด
-        if (filterName !== 'ALL') {
-            if (a.work_date < b.work_date) return -1;
-            if (a.work_date > b.work_date) return 1;
-            const shiftA = (a.shift && a.shift.includes('เช้า')) ? 1 : 2;
-            const shiftB = (b.shift && b.shift.includes('เช้า')) ? 1 : 2;
-            return shiftA - shiftB;
-        }
+    const shiftRows = personRows.filter(row => shift === 'ALL' || row.shiftKey === getGuardShift(shift));
+    const rows = shiftRows.filter(row => status === 'ALL' || row.flags[status]);
+    activeReport.filters = { month, name, shift, status };
+    activeReport.visibleRows = rows;
+    window.currentAttendanceData = rows;
 
-        // 👇👇👇 โค้ดเดิมสำหรับ "ทุกคน" (ไม่ถูกแก้ไข ทำงานเหมือนเดิม 100%) 👇👇👇
-        const indexA = savedOrder.indexOf(String(a.id));
-        const indexB = savedOrder.indexOf(String(b.id));
+    const storageKey = reportOrderKey(activeReport.filters);
+    let savedOrder = [];
+    try { savedOrder = JSON.parse(localStorage.getItem(storageKey)) || []; } catch { /* Use default ordering. */ }
+    const order = new Map((Array.isArray(savedOrder) ? savedOrder : []).map((id, index) => [id, index]));
+    const shiftRank = { morning: 0, night: 1 };
+    rows.sort((a, b) => a.work_date.localeCompare(b.work_date) ||
+        (shiftRank[a.shiftKey] ?? 2) - (shiftRank[b.shiftKey] ?? 2) ||
+        (order.get(String(a.id)) ?? Infinity) - (order.get(String(b.id)) ?? Infinity) ||
+        a.fullname.localeCompare(b.fullname, 'th'));
 
-        // ถ้าทั้ง 2 แถวเคยถูกจัดลำดับไว้แล้ว ให้เรียงตามที่เคยลากเซฟไว้
-        if (indexA !== -1 && indexB !== -1) return indexA - indexB;
-
-        // 🔥 อัปเกรดลอจิก: ถ้ามีอันไหนเป็น "ข้อมูลใหม่" ให้บังคับแทรกเข้าตาม "วันที่และกะ" เสมอ 
-        // (แก้ปัญหาข้อมูลใหม่เด้งไปอยู่ท้ายตารางจนทำให้ Header สร้างซ้ำซ้อน)
-        if (a.work_date < b.work_date) return -1;
-        if (a.work_date > b.work_date) return 1;
-
-        const shiftA = (a.shift && a.shift.includes('เช้า')) ? 1 : 2;
-        const shiftB = (b.shift && b.shift.includes('เช้า')) ? 1 : 2;
-        if (shiftA !== shiftB) return shiftA - shiftB;
-
-        if (a.fullname < b.fullname) return -1;
-        if (a.fullname > b.fullname) return 1;
-
-        return 0;
-    });
-
-    window.currentAttendanceData = finalRows; // ให้ระบบจำข้อมูลไว้ส่งให้ฟอร์มแก้ไข
     const tbody = document.getElementById('attendanceTbody');
-    tbody.innerHTML = '';
-    
-    // 🟢 ระบบคำนวณตัวเลข (ปรับใหม่: รายบุคคลรันเลขยาว / ทุกคนรีเซ็ตเลขตามกลุ่ม)
-    let currentDate = null;
-    let currentShiftGroup = null;
-    let webCounter = 1;   
-    let printCounter = 1; 
-
-    finalRows.forEach(row => {
-        const shiftGroup = getGuardShift(row.shift);
-
-        // เช็คว่าขึ้นกลุ่มใหม่หรือไม่
-        if (row.work_date !== currentDate || shiftGroup !== currentShiftGroup) {
-            currentDate = row.work_date;
-            currentShiftGroup = shiftGroup;
-            
-            // 🔥 ลอจิกใหม่: ถ้าเลือก "ทุกคน" ให้รีเซ็ตตัวเลขเป็น 1 เสมอเมื่อเปลี่ยนกลุ่ม
-            // แต่ถ้าเลือก "รายบุคคล" ไม่ต้องรีเซ็ต ให้มันบวกเลขต่อไปเรื่อยๆ
-            if (filterName === 'ALL') {
-                webCounter = 1; 
-                printCounter = 1; 
-            }
-            
-            const shift = guardShifts[shiftGroup];
-            const shiftClass = shiftGroup === 'morning' ? 'header-day' : shiftGroup === 'night' ? 'header-night' : '';
-            const shiftIcon = shiftGroup === 'morning' ? '<i class="bi bi-sun-fill me-1"></i>' : shiftGroup === 'night' ? '<i class="bi bi-moon-stars-fill me-1"></i>' : '📅';
-            const shiftLabel = shift ? `${shift.label} (${shift.startsAt} - ${shift.endsAt})` : 'ไม่ระบุกะ';
-            
-            tbody.innerHTML += `
-                <tr class="group-header no-sort ${shiftClass}">
-                    <td colspan="9" class="text-start fs-6 border-0">
-                        ${shiftIcon} <span>วันที่: ${formatDateThai(row.work_date)} | ${shiftLabel}</span>
-                    </td>
-                </tr>
-            `;
+    const parts = [];
+    let group = '';
+    let number = 0;
+    rows.forEach(row => {
+        const nextGroup = row.work_date + '/' + (row.shiftKey || '');
+        if (group !== nextGroup) {
+            group = nextGroup;
+            if (name === 'ALL') number = 0;
+            const duty = guardShifts[row.shiftKey];
+            const shiftClass = row.shiftKey === 'morning' ? 'header-day' : row.shiftKey === 'night' ? 'header-night' : '';
+            const shiftIcon = row.shiftKey === 'morning' ? 'bi-sun-fill' : 'bi-moon-stars-fill';
+            const label = duty ? `<i class="bi ${shiftIcon} me-1"></i> ${duty.label} (${duty.startsAt} - ${duty.endsAt})` : 'ไม่ระบุกะ';
+            parts.push(`<tr class="group-header no-sort ${shiftClass}"><td colspan="9" class="text-start fs-6">
+                วันที่ ${formatDateThai(row.work_date)} | ${label}</td></tr>`);
         }
-
-        const isAbsentDummy = String(row.id).startsWith('absent');
-        const isLeave = row.remark_type && row.remark_type.includes('ลา');
-        
-        let hideInPrint = false;
-        if (filterName === 'ALL') {
-            hideInPrint = isAbsentDummy || isLeave; 
-        }
-
-        // โยนค่า counter ลงไปประมวลผล
-        renderRow(row, tbody, isAbsentDummy, hideInPrint, webCounter, hideInPrint ? '-' : printCounter);
-
-        webCounter++; // บวกลำดับหน้าเว็บ
-        if (!hideInPrint) {
-            printCounter++; // บวกลำดับ PDF เฉพาะคนที่ไม่ถูกซ่อน
-        }
+        parts.push(renderRow(row, ++number));
     });
+    tbody.toggleAttribute('data-reorderable', status === 'ALL');
+    tbody.innerHTML = parts.join('') || '<tr class="report-empty no-sort"><td colspan="9">ไม่มีรายการตามตัวกรอง</td></tr>';
+    document.querySelectorAll('[id^="colSwitch_"]').forEach(input => toggleColumn(Number(input.id.split('_')[1]), input.checked));
+    updateKPIs(personRows);
+    renderLateSummary(summarizeGuardLateness(shiftRows));
+    updateRosterStatus(month, roster.length);
+    const printLabel = `ประจำเดือน ${month} | พนักงาน ${guardNameLabel(name)} | กะ ${guardShiftLabel(shift)} | ${guardReportStatuses[status]}`;
+    document.getElementById('printInfoLabel').textContent = printLabel;
+    const monthDate = new Date(month + '-01T00:00:00+07:00');
+    document.getElementById('reportPeriod').textContent = new Intl.DateTimeFormat('th-TH', {
+        timeZone: 'Asia/Bangkok', month: 'long', year: 'numeric'
+    }).format(monthDate);
+    document.getElementById('attendanceTableContainer').toggleAttribute('data-filtered', name !== 'ALL' || shift !== 'ALL' || status !== 'ALL');
+    document.getElementById('reportResults').textContent = [
+        `${rows.length.toLocaleString('th-TH')} รายการ`, guardNameLabel(name),
+        guardShiftLabel(shift), guardReportStatuses[status]
+    ].join(' · ');
 
-    const switches = document.querySelectorAll('[id^="colSwitch_"]');
-    switches.forEach((sw, idx) => toggleColumn(idx, sw.checked));
-
-    updateKPIs(attendanceData);
-
+    document.getElementById('btnSaveOrder').classList.add('d-none');
     if (sortableInstance) sortableInstance.destroy();
     sortableInstance = new Sortable(tbody, {
-        animation: 150,
-        ghostClass: 'sortable-ghost',
-        filter: '.group-header', 
-        preventOnFilter: false,
-        onEnd: function () {
-            document.getElementById('btnSaveOrder').classList.remove('d-none');
-        }
+        animation: 150, ghostClass: 'sortable-ghost', filter: '.no-sort, button', preventOnFilter: false, delay: 180, delayOnTouchOnly: true, touchStartThreshold: 5,
+        disabled: status !== 'ALL',
+        onEnd: () => document.getElementById('btnSaveOrder').classList.remove('d-none')
     });
-
-    // 🟢 สั่งปิดหน้าต่างโหลดเมื่อข้อมูลตารางแสดงผลเสร็จสมบูรณ์
-    Swal.close(); 
 }
 
-// 🟢 อัปเดตฟังก์ชัน renderRow
-function renderRow(row, tbody, isAbsentDummy, hideInPrint, webCounter, printCounterVal) {
-    const profileImg = row.profile_pic ? `<img src="${row.profile_pic}" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover;" class="me-2 no-print border shadow-sm">` : '';
-    
-    let detailText = '';
-    if (row.remark_detail && String(row.remark_detail).toLowerCase() !== 'null' && row.remark_detail !== '-') {
-        detailText = row.remark_detail;
+function resetReportFilters() {
+    for (const id of ['filterName', 'filterShift', 'filterStatus']) document.getElementById(id).value = 'ALL';
+    renderAttendanceReport();
+}
+
+function showLateShift(shift) {
+    document.getElementById('filterShift').value = shift;
+    document.getElementById('filterStatus').value = 'late';
+    renderAttendanceReport();
+    focusAttendanceTable();
+}
+
+function focusAttendanceTable() {
+    const table = document.getElementById('attendanceTableContainer');
+    table.focus({ preventScroll: true });
+    table.scrollIntoView({ block: 'start', behavior: 'instant' });
+}
+
+function renderLateSummary(summary) {
+    const body = document.getElementById('guardLateSummaryRows');
+    body.replaceChildren();
+    if (!summary.length) {
+        body.innerHTML = '<tr><td colspan="4" class="text-muted text-center">ไม่มีรายการมาสายในเดือนและกะที่เลือก</td></tr>';
+        return;
     }
-    
-    // 🔥 ปรับให้ชื่อคนแทนต่อท้าย และย่อขนาดตัวอักษรให้เล็กลงอีก 2 ระดับ
-    const remarkDetailHtml = detailText ? ` <span class="text-muted ms-1" style="font-weight: normal; font-size: 0.8em;">${detailText}</span>` : '';
-
-    const lateMinutes = getGuardLateness(row.shift, row.time_in, row.remark_type);
-    const timeInClass = lateMinutes > 0 ? 'attendance-late' : lateMinutes === 0 ? 'text-success' : 'text-muted';
-    const lateLabel = lateMinutes > 0 ? ` <span class="attendance-late fw-bold">มาสาย ${lateMinutes} นาที</span>` : '';
-    const remarkType = lateLabel && row.remark_type === 'ปกติ' ? '' : (row.remark_type || '');
-
-    const rowClasses = ['data-row'];
-    if (isAbsentDummy) rowClasses.push('bg-light', 'opacity-75');
-    if (hideInPrint) rowClasses.push('hide-in-print');
-
-    tbody.innerHTML += `
-        <tr class="${rowClasses.join(' ')}" data-id="${row.id}" title="จับลากเพื่อสลับแถวได้">
-            <td data-col="no" class="text-center fw-bold text-muted">
-                <span class="web-no">${webCounter}</span> 
-                <span class="print-no">${printCounterVal}</span> 
-            </td>
-            <td data-col="date" class="text-center fw-bold text-muted">${row.work_date}</td>
-            <td data-col="shift">${row.shift}</td>
-            <td data-col="id_card"><span class="badge bg-light text-dark border">${row.id_card}</span></td>
-            <td data-col="name" class="fw-bold">${profileImg}${row.fullname}</td>
-            <td data-col="time_in" class="text-center fw-bold ${timeInClass}">${row.time_in || '-'}</td>
-            <td data-col="time_out" class="text-center fw-bold text-danger">${row.time_out || '-'}</td>
-            <td data-col="remark">${remarkType}${remarkDetailHtml}${lateLabel}</td>
-            <td data-col="action" class="text-center no-print">
-                <button onclick="openRecordModal('${row.id}')" class="btn btn-sm btn-light border text-primary px-3 rounded-pill"><i class="bi bi-pencil-square"></i></button>
-            </td>
-        </tr>`;
+    for (const { name, count, minutes } of summary) {
+        const row = body.insertRow();
+        for (const value of [name, count, minutes]) row.insertCell().textContent = value;
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'btn btn-link p-0';
+        button.textContent = 'ดูวันที่';
+        button.setAttribute('aria-label', 'ดูวันที่มาสายของ ' + name);
+        button.addEventListener('click', () => {
+            const filter = document.getElementById('filterName');
+            if (![...filter.options].some(option => option.value === name)) filter.add(new Option(name, name));
+            filter.value = name;
+            document.getElementById('filterStatus').value = 'late';
+            renderAttendanceReport();
+            focusAttendanceTable();
+        });
+        row.insertCell().append(button);
+    }
 }
 
-// ================= ระบบบันทึกลำดับ =================
-function saveRowOrder() {
-    Toast.fire({ icon: 'info', title: 'กำลังบันทึกลำดับ...' });
-    
-    setTimeout(() => {
-        const rows = document.querySelectorAll('#attendanceTbody tr:not(.group-header)');
-        const orderIds = Array.from(rows).map(tr => tr.getAttribute('data-id'));
-        
-        const filterMonth = document.getElementById('filterMonth').value || 'ALL';
-        const filterName = document.getElementById('filterName').value || 'ALL';
-        const filterShift = document.getElementById('filterShift').value || 'ALL';
-        const storageKey = `table_order_${filterMonth}_${filterName}_${filterShift}`;
-        
-        localStorage.setItem(storageKey, JSON.stringify(orderIds));
+function readGuardRoster(month) {
+    try {
+        const roster = JSON.parse(localStorage.getItem('guard_roster_' + month));
+        return Array.isArray(roster) ? roster : [];
+    } catch {
+        return [];
+    }
+}
 
-        document.getElementById('btnSaveOrder').classList.add('d-none');
-        Toast.fire({ icon: 'success', title: 'ล็อกลำดับตารางเรียบร้อย' });
-        
-        loadAttendance();
-    }, 500);
+function updateRosterStatus(month, count) {
+    document.getElementById('rosterStatus').textContent = count
+        ? `ตารางเวรเดือน ${month}: ${count} เวร · เก็บในเบราว์เซอร์นี้`
+        : `เดือน ${month} ยังไม่มีตารางเวรในเบราว์เซอร์นี้ · นำเข้า Excel หรือ CSV เพื่อเทียบเวรที่ขาดงาน`;
+    document.getElementById('clearRosterButton').classList.toggle('d-none', !count);
+}
+
+async function importRoster(input) {
+    const file = input.files[0];
+    input.value = '';
+    if (!file) return;
+    const month = document.getElementById('filterMonth').value;
+    if (!month) return Swal.fire('กรุณาเลือกเดือน', '', 'warning');
+    try {
+        const csv = /\.csv$/i.test(file.name);
+        const workbook = XLSX.read(csv ? await file.text() : await file.arrayBuffer(),
+            { type: csv ? 'string' : 'array', raw: true, cellDates: true });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const cells = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true, blankrows: false });
+        const rows = cells.map(([date, ...fields]) => [
+            date instanceof Date ? new Intl.DateTimeFormat('sv-SE').format(date) : date, ...fields
+        ]);
+        const names = [...document.getElementById('filterName').options].filter(option => option.value !== 'ALL').map(option => option.value);
+        const roster = parseGuardRoster(rows, month, names);
+        if (readGuardRoster(month).length) {
+            const result = await Swal.fire({ title: 'แทนที่ตารางเวรเดือน ' + month + '?',
+                icon: 'question', showCancelButton: true, confirmButtonText: 'แทนที่', cancelButtonText: 'ยกเลิก' });
+            if (!result.isConfirmed) return;
+        }
+        localStorage.setItem('guard_roster_' + month, JSON.stringify(roster));
+        if (activeReport?.month === month) renderAttendanceReport();
+        else if (document.getElementById('filterMonth').value === month) await loadAttendance();
+    } catch (error) {
+        Swal.fire('นำเข้าตารางเวรไม่สำเร็จ', error.message, 'error');
+    }
+}
+
+async function clearRoster() {
+    const month = activeReport?.month;
+    if (!month) return;
+    const { isConfirmed } = await Swal.fire({ title: 'ล้างตารางเวรเดือน ' + month + '?', icon: 'question',
+        showCancelButton: true, confirmButtonText: 'ล้างตารางเวร', cancelButtonText: 'ยกเลิก' });
+    if (!isConfirmed) return;
+    try {
+        localStorage.removeItem('guard_roster_' + month);
+        renderAttendanceReport();
+    } catch (error) {
+        Swal.fire('ล้างตารางเวรไม่สำเร็จ', error.message, 'error');
+    }
+}
+
+function downloadRosterTemplate() {
+    const month = document.getElementById('filterMonth').value || guardReportToday().slice(0, 7);
+    const sheet = XLSX.utils.aoa_to_sheet([['วันที่', 'กะ', 'ชื่อ-นามสกุล'], [month + '-01', 'กะเช้า', 'กรอกชื่อจากรายชื่อพนักงาน']]);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, sheet, 'ตารางเวร');
+    XLSX.writeFile(workbook, 'Guard_Roster_' + month + '.xlsx');
+}
+
+function escapeReportText(value) {
+    return String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+}
+
+function reportRemark(row) {
+    const type = row.remark_type?.trim();
+    const detail = row.remark_detail?.trim();
+    const displayType = (row.flags.late || row.labels.length) && (type === 'ปกติ' || type === 'ขาดงาน') ? '' : type;
+    return [displayType, detail && !['-', 'null'].includes(detail.toLowerCase()) ? detail : ''].filter(Boolean).join(' ');
+}
+
+function renderRow(row, number) {
+    const text = escapeReportText;
+    const synthetic = String(row.id).startsWith('absent_');
+    const profileImg = row.profile_pic ? `<img src="${text(row.profile_pic)}" alt="" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover;" class="me-2 no-print border shadow-sm">` : '';
+    const timeInClass = row.flags.late ? 'attendance-late' : row.lateMinutes === 0 ? 'report-on-time text-success' : 'text-muted';
+    const labels = row.labels.map(label => `<span class="badge report-status-badge">${text(label)}</span>`).join('');
+    const lateLabel = row.flags.late ? ` <span class="attendance-late report-late-badge fw-bold">มาสาย ${row.lateMinutes} นาที</span>` : '';
+    const actionLabel = synthetic ? 'เพิ่มบันทึก' : 'แก้ไขรายการ';
+    const actionIcon = synthetic ? 'bi-plus-lg' : 'bi-pencil-square';
+    const action = `<button type="button" data-record-id="${text(row.id)}" class="btn report-edit" aria-label="${actionLabel}" title="${actionLabel}"><i class="bi ${actionIcon}" aria-hidden="true"></i></button>`;
+
+    return `<tr class="data-row${synthetic ? ' no-sort' : ''}${row.flags.late ? ' report-late-row' : ''}" role="row" data-id="${text(row.id)}">
+        <td role="cell" data-col="no" class="text-center fw-bold text-muted">${number}</td>
+        <td role="cell" data-col="date" class="text-center fw-bold text-muted">${text(row.work_date)}</td>
+        <td role="cell" data-col="shift">${text(row.shift || '-')}</td>
+        <td role="cell" data-col="id_card"><span class="badge bg-light text-dark border">${text(row.id_card || '-')}</span></td>
+        <td role="cell" data-col="name" class="fw-bold">${profileImg}${text(row.fullname)}</td>
+        <td role="cell" data-col="time_in" class="text-center fw-bold ${timeInClass}"><span class="report-mobile-time-label">เวลาเข้า</span><span>${text(row.time_in || '–')}</span></td>
+        <td role="cell" data-col="time_out" class="text-center fw-bold"><span class="report-mobile-time-label">เวลาออก</span><span>${text(row.time_out || '–')}</span></td>
+        <td role="cell" data-col="remark"><span class="report-remark-text">${text(reportRemark(row))}</span>${labels}${lateLabel}</td>
+        <td role="cell" data-col="action" class="text-center no-print">${action}</td>
+    </tr>`;
+}
+
+function editAttendanceRow(event) {
+    const button = event.target.closest('[data-record-id]');
+    if (button) openRecordModal(button.dataset.recordId);
+}
+
+function saveRowOrder() {
+    if (!activeReport || activeReport.filters.status !== 'ALL') return;
+    const rows = document.querySelectorAll('#attendanceTbody .data-row:not(.no-sort)');
+    localStorage.setItem(reportOrderKey(activeReport.filters), JSON.stringify([...rows].map(row => row.dataset.id)));
+    renderAttendanceReport();
+    Toast.fire({ icon: 'success', title: 'ล็อกลำดับตารางเรียบร้อย' });
 }
 
 function updateKPIs(rows) {
@@ -1095,8 +1187,8 @@ function updateKPIs(rows) {
     const nightRows = rows.filter(row => getGuardShift(row.shift) === 'night');
     const morning = morningRows.length;
     const night = nightRows.length;
-    const issue = rows.filter(row => row.remark_type !== 'ปกติ').length;
-    const isLate = row => getGuardLateness(row.shift, row.time_in, row.remark_type) > 0;
+    const issue = rows.filter(row => row.flags.missingOut || row.flags.noRecord || row.flags.absent).length;
+    const isLate = row => row.flags.late;
     document.getElementById('kpi-morning-late').innerText = `มาสาย ${morningRows.filter(isLate).length} รายการ`;
     document.getElementById('kpi-night-late').innerText = `มาสาย ${nightRows.filter(isLate).length} รายการ`;
     document.getElementById('kpi-total').innerText = total;
@@ -1104,18 +1196,13 @@ function updateKPIs(rows) {
     document.getElementById('kpi-night').innerText = night;
     document.getElementById('kpi-issue').innerText = issue;
 
-    const ctx = document.getElementById('shiftChart').getContext('2d');
-    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    if(shiftChartInstance) shiftChartInstance.destroy();
-    
-    const chartData = (total === 0) ? [1] : [morning, night, issue];
-    const chartBg = (total === 0) ? ['#e2e8f0'] : ['#f59e0b', '#334155', '#ef4444'];
-
-    shiftChartInstance = new Chart(ctx, {
-        type: 'doughnut',
-        data: { labels: ['กะเช้า', 'กะดึก', 'หมายเหตุ'], datasets: [{ data: chartData, backgroundColor: chartBg, borderWidth: 0 }] },
-        options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'bottom', labels: { color: isDark ? '#f8fafc' : '#1e293b', font: { family: 'Sarabun' } }, display: total > 0 } } }
+    const counts = [morning, night, total - morning - night];
+    ['mixMorning', 'mixNight', 'mixOther'].forEach((id, index) => {
+        document.getElementById(id).style.flexGrow = counts[index];
     });
+    document.getElementById('mixLegend').textContent = total
+        ? [`กะเช้า ${morning}`, `กะดึก ${night}`, counts[2] ? `ไม่ระบุกะ ${counts[2]}` : ''].filter(Boolean).join(' · ')
+        : 'ไม่มีข้อมูลในช่วงที่เลือก';
 }
 
 // ================= จัดการข้อมูล (เพิ่ม/แก้ไข/ลบ) แบบ Full Control =================
@@ -1293,20 +1380,37 @@ async function openRecordModal(rowId = null) {
 
 // ================= EXPORT =================
 function exportPDF() {
-    const monthText = document.getElementById('filterMonth').value || 'ทั้งหมด';
-    const nameText = document.getElementById('filterName').options[document.getElementById('filterName').selectedIndex].text;
-    const shiftText = document.getElementById('filterShift').options[document.getElementById('filterShift').selectedIndex].text;
-    
-    document.getElementById('printInfoLabel').innerText = `ประจำเดือน: ${monthText} | พนักงาน: ${nameText} | กะ: ${shiftText}`;
-    document.getElementById('reportPrintDate').innerText = new Date().toLocaleDateString('th-TH');
-    
-    setTimeout(() => { window.print(); }, 500);
+    if (!activeReport) return;
+    const { month, name, shift, status } = activeReport.filters;
+    const monthDate = new Date(month + '-01T00:00:00+07:00');
+    const thaiMonth = new Intl.DateTimeFormat('th-TH', { timeZone: 'Asia/Bangkok', month: 'long', year: 'numeric' }).format(monthDate);
+    const penaltyMonth = document.getElementById('print_month_year').textContent?.trim();
+    const showPenalty = name === 'ALL' && shift === 'ALL' && status === 'ALL' && [month, thaiMonth].includes(penaltyMonth);
+    document.getElementById('attendanceTableContainer').classList.toggle('hide-penalty-in-print', !showPenalty);
+    document.getElementById('reportPrintDate').textContent = new Date().toLocaleDateString('th-TH', { timeZone: 'Asia/Bangkok' });
+    window.print();
 }
 
 function exportExcel() {
-    let table = document.getElementById("attendanceTable");
-    let wb = XLSX.utils.table_to_book(table, { sheet: "Attendance" });
-    XLSX.writeFile(wb, `Report_Attendance.xlsx`);
+    if (!activeReport) return;
+    const { month, visibleRows, filters } = activeReport;
+    const orderedRows = new Map(visibleRows.map(row => [String(row.id), row]));
+    const rows = [...document.querySelectorAll('#attendanceTbody .data-row')].map(tr => orderedRows.get(tr.dataset.id));
+    const entries = rows.map(row => [
+        row.work_date, row.shift || '', row.id_card || '', row.fullname, row.time_in || '', row.time_out || '',
+        row.lateMinutes ?? null, row.labels.join(' / '), reportRemark(row)
+    ]);
+    const summary = summarizeGuardLateness(rows).map(row => [row.name, row.count, row.minutes]);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet([
+        ['วันที่', 'กะ', 'รหัสบัตร', 'ชื่อพนักงาน', 'เวลาเข้า', 'เวลาออก', 'นาทีที่สาย', 'สถานะ', 'หมายเหตุ'], ...entries
+    ]), 'ลงเวลา');
+    XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet([
+        ['เดือน', month], ['พนักงาน', guardNameLabel(filters.name)], ['กะ', guardShiftLabel(filters.shift)],
+        ['สถานะ', guardReportStatuses[filters.status]], [],
+        ['พนักงาน', 'มาสาย (ครั้ง)', 'สายรวม (นาที)'], ...summary
+    ]), 'สรุปมาสาย');
+    XLSX.writeFile(workbook, `Report_Attendance_${month}.xlsx`);
 }
 
 // ================= จัดการ MASTER DATA =================

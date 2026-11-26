@@ -1,0 +1,261 @@
+/* Report layout uses the same attendance rows for screen and print. */
+:root {
+    --report-header-size: 66px;
+    --report-gutter: clamp(20px, 2.5vw, 48px);
+    --report-surface: #fff;
+    --report-line: #dce5e5;
+    --report-ink: #172c2f;
+    --report-muted: #52696d;
+    --report-soft: #f3f7f7;
+    --report-accent: #006b61;
+    --report-accent-soft: #e6f3ee;
+    --report-day: #9a4a14;
+    --report-day-soft: #fff3e4;
+    --report-night: #4b55a3;
+    --report-night-soft: #edf0ff;
+    --report-danger: #ad2a40;
+    --report-danger-soft: #fff0f2;
+}
+
+[data-theme="dark"] {
+    color-scheme: dark;
+    --report-surface: #18282d;
+    --report-line: #354b50;
+    --report-ink: #edf6f4;
+    --report-muted: #adc2c3;
+    --report-soft: #122025;
+    --report-accent: #80ddc3;
+    --report-accent-soft: #183f38;
+    --report-day: #ffcc93;
+    --report-day-soft: #3e2f24;
+    --report-night: #c2c9ff;
+    --report-night-soft: #2b3453;
+    --report-danger: #ffabb6;
+    --report-danger-soft: #432b36;
+}
+
+body { background: var(--report-soft); color: var(--report-ink); }
+.report-shell {
+    max-width: 1920px;
+    margin-inline: auto;
+    padding-left: max(var(--report-gutter), env(safe-area-inset-left));
+    padding-right: max(var(--report-gutter), env(safe-area-inset-right));
+}
+.report-main { padding-top: 24px; padding-bottom: max(28px, env(safe-area-inset-bottom)); }
+.report-main, .report-main > .tab-content, #tab-attendance { min-width: 0; }
+.top-navbar {
+    margin: 0;
+    padding: env(safe-area-inset-top) 0 0;
+    background: var(--report-surface);
+    border-color: var(--report-line);
+    box-shadow: 0 1px 3px #1226280a;
+}
+.report-top {
+    min-height: var(--report-header-size);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    gap: 16px;
+}
+.report-brand, .report-top-actions { display: flex; align-items: center; gap: 9px; white-space: nowrap; }
+.report-brand { min-width: 0; font-size: 1rem; font-weight: 700; }
+.report-brand strong { color: var(--report-accent); }
+.report-brand-logo {
+    width: 36px; height: 36px; flex: 0 0 36px;
+    border-radius: 9px; display: grid; place-items: center;
+    overflow: hidden; background: var(--report-accent-soft); color: var(--report-accent); font-size: 1.2rem;
+}
+.report-top-actions { justify-self: end; }
+.report-icon-button {
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    min-height: 42px; min-width: 42px; width: auto; padding: 0 10px;
+    border: 1px solid var(--report-line); border-radius: 9px;
+    background: var(--report-surface); color: var(--report-ink);
+    font: inherit; font-size: .84rem; font-weight: 700; text-decoration: none;
+}
+.report-icon-button:hover, .report-secondary:hover { background: var(--report-accent-soft); color: var(--report-accent); border-color: var(--report-line); }
+.report-logout { color: var(--report-danger) !important; }
+.report-nav .nav { display: flex; flex-wrap: nowrap; gap: 4px; padding: 4px; border: none; background: var(--report-soft); }
+.report-nav .nav-link { padding: 9px 15px; white-space: nowrap; color: var(--report-muted); font-size: .9rem; }
+.report-nav .nav-link i { margin-inline-end: 5px; }
+.report-nav .nav-link.active { color: var(--report-accent); background: var(--report-accent-soft); }
+.report-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+.report-jump { display: none; }
+.report-heading h1 { font-size: clamp(1.55rem, 2.1vw, 2.25rem); letter-spacing: -.025em; margin: 0; font-weight: 800; }
+.report-heading p, .report-table-toolbar p { margin: 5px 0 0; color: var(--report-muted); font-size: .9rem; }
+.report-primary, .report-secondary { min-height: 42px; padding: 8px 13px; display: inline-flex; gap: 7px; align-items: center; justify-content: center; white-space: nowrap; }
+.report-primary { background: #006b61; color: #fff; border: 1px solid #006b61; }
+.report-primary:hover, .report-primary:active { background: #005348; color: #fff; border-color: #005348; }
+.report-secondary { border: 1px solid var(--report-line); color: var(--report-ink); background: var(--report-surface); font-size: .88rem; }
+.report-overview { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(200px, 1.34fr); gap: 12px; margin-bottom: 16px; }
+.report-stat, .report-panel { border: 1px solid var(--report-line); background: var(--report-surface); border-radius: 13px; min-width: 0; }
+.report-stat { min-height: 114px; padding: 12px 16px; --stat-ink: var(--report-accent); --stat-soft: var(--report-accent-soft); }
+.report-stat-day { --stat-ink: var(--report-day); --stat-soft: var(--report-day-soft); }
+.report-stat-night { --stat-ink: var(--report-night); --stat-soft: var(--report-night-soft); }
+.report-stat-issue { --stat-ink: var(--report-danger); --stat-soft: var(--report-danger-soft); }
+.report-stat-label { display: flex; align-items: center; justify-content: space-between; gap: 5px; font-weight: 700; color: var(--report-muted); font-size: .9rem; line-height: 1.25; }
+.report-stat-label i { flex: 0 0 29px; height: 29px; display: grid; place-items: center; border-radius: 8px; color: var(--stat-ink); background: var(--stat-soft); }
+.report-stat strong { display: block; font-size: clamp(1.55rem, 2.5vw, 2rem); font-variant-numeric: tabular-nums; color: var(--stat-ink); line-height: 1.15; }
+.report-late-link { display: inline-block; border: 0; background: transparent; color: var(--report-danger); padding: 4px 0; text-decoration: underline; text-underline-offset: 3px; font-size: .8rem; font-weight: 700; text-align: start; }
+.report-shift-track { display: flex; height: 9px; overflow: hidden; border-radius: 9px; background: var(--report-line); margin: 12px 0 7px; }
+.report-shift-track span { flex-basis: 0; }
+.mix-morning { background: #e7a454; }
+.mix-night { background: #6677d2; }
+.mix-other { background: #859a9e; }
+.report-shift-legend { color: var(--report-muted); font-size: .8rem; margin: 0; }
+.report-filters { padding: 14px 16px 16px; margin-bottom: 12px; }
+.report-filter-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.report-filter-title h2, .report-table-toolbar h2 { margin: 0; font-size: 1.12rem; font-weight: 800; }
+.report-filter-title i, .report-details summary i { color: var(--report-accent); margin-right: 5px; }
+.report-reset { padding-block: 5px; min-height: 34px; }
+.report-filter-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.report-filter-grid > div { min-width: 0; }
+.report-filter-grid label { display: block; margin-bottom: 5px; color: var(--report-muted); font-size: .85rem; font-weight: 700; }
+.report-filter-grid .form-control, .report-filter-grid .form-select { width: 100%; min-width: 0; min-height: 44px; color: var(--report-ink); border-color: var(--report-line); background-color: var(--report-soft); box-shadow: none; }
+[data-theme="dark"] .report-filter-grid .form-select { --bs-form-select-bg-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23adc2c3' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3E%3C/svg%3E"); }
+.report-detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 12px; margin-bottom: 16px; }
+.report-details summary { padding: 10px 15px; min-height: 44px; cursor: pointer; font-weight: 700; }
+.report-details[open] summary { border-bottom: 1px solid var(--report-line); }
+.report-summary-table { border: 0; border-radius: 0; }
+.report-summary-table th, .report-summary-table td { padding: 7px 10px; }
+.report-summary-table button { min-height: 38px; }
+.report-detail-controls { padding: 12px 15px; }
+.report-detail-controls p { color: var(--report-muted); font-size: .88rem; margin: 0 0 8px; }
+.report-detail-actions, .report-table-actions { display: flex; flex-wrap: wrap; gap: 7px; }
+#attendanceTableContainer { scroll-margin-top: calc(var(--report-header-size) + env(safe-area-inset-top) + 10px); }
+.report-table-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 16px; }
+.report-table-toolbar p { font-size: .81rem; overflow-wrap: anywhere; }
+.report-table-actions { justify-content: flex-end; align-items: center; }
+.report-refresh { width: 42px; padding-inline: 0; }
+.report-table-actions .dropdown-menu { background: var(--report-surface); color: var(--report-ink); border-color: var(--report-line); min-width: 140px; }
+.report-table-actions .dropdown-item { color: var(--report-ink); min-height: 42px; padding-block: 10px; }
+.report-table-actions .dropdown-item:hover { background: var(--report-accent-soft); }
+#columnSelector { padding: 8px; min-width: 180px; }
+.report-table-wrap { border: 0; border-radius: 0; overflow: visible; }
+#attendanceTable { --bs-table-bg: var(--report-surface); --bs-table-color: var(--report-ink); }
+#attendanceTable th, #attendanceTable td { border: 0 !important; border-bottom: 1px solid var(--report-line) !important; }
+#attendanceTable th { top: calc(var(--report-header-size) + env(safe-area-inset-top)); z-index: 2; font-size: .82rem; text-transform: none; letter-spacing: 0; white-space: nowrap; background: var(--report-soft); color: var(--report-muted); }
+#attendanceTable td { padding: 9px 14px; }
+#attendanceTable .group-header td { padding: 9px 15px !important; font-size: .86rem !important; font-weight: 700; background: var(--report-soft); color: var(--report-muted); }
+#attendanceTable .header-day td { background: var(--report-day-soft); color: var(--report-day); }
+#attendanceTable .header-night td { background: var(--report-night-soft); color: var(--report-night); }
+#attendanceTable .data-row:hover td { background-color: var(--report-soft); }
+#attendanceTable [data-col="name"] { min-width: 160px; }
+#attendanceTable [data-col="date"], #attendanceTable [data-col="time_in"], #attendanceTable [data-col="time_out"] { white-space: nowrap; font-variant-numeric: tabular-nums; }
+#attendanceTable [data-col="name"] img { vertical-align: middle; }
+#attendanceTable [data-col="remark"] { overflow-wrap: anywhere; }
+#attendanceTable .report-on-time { color: var(--report-accent) !important; }
+#attendanceTable .attendance-late { color: var(--report-danger) !important; }
+.report-status-badge, .report-late-badge { display: inline-block; border-radius: 6px; padding: 4px 8px; margin: 2px 4px 2px 0; font-size: .78rem; line-height: 1.35; white-space: normal; }
+.report-status-badge { color: var(--report-night); background: var(--report-night-soft); }
+.report-late-badge { background: var(--report-danger-soft); }
+.report-remark-text:not(:empty) { margin-right: 5px; }
+.report-edit { width: 42px; height: 40px; padding: 0; border: 1px solid var(--report-line); background: var(--report-accent-soft); color: var(--report-accent); }
+.report-edit:hover { color: var(--report-accent); background: var(--report-surface); border-color: var(--report-accent); }
+.report-empty td { text-align: center; color: var(--report-muted); padding: 28px 10px !important; }
+.report-penalty { margin: 14px; padding: 14px; border: 1px solid var(--report-line); border-radius: 10px; }
+#attendanceTableContainer[data-filtered] .report-penalty { display: none; }
+.report-penalty-table { border: 0; }
+.report-penalty-table .table { --bs-table-bg: var(--report-surface); --bs-table-color: var(--report-ink); }
+#mainApp :is(button,a,summary,input,select):focus-visible { outline: 2px solid var(--report-accent); outline-offset: 2px; }
+#attendanceTableContainer:focus-visible { outline: 2px solid var(--report-accent); outline-offset: 3px; }
+
+@media (max-width: 1080px) {
+    .report-top-actions span { display: none; }
+    .report-overview { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .report-shift-mix { grid-column: 1 / -1; min-height: auto; display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; }
+    .report-shift-mix i { display: none; }
+    .report-shift-track { margin: 0; }
+    #attendanceTable td { padding-inline: 9px; }
+}
+
+@media (min-width: 768px) and (max-width: 960px) {
+    .report-table-wrap { overflow-x: auto; }
+    #attendanceTable { min-width: 730px; }
+}
+
+@media (max-width: 767px) {
+    :root { --report-header-size: 100px; --report-gutter: 12px; }
+    .top-navbar { position: relative; }
+    .report-top { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "brand actions" "nav nav"; gap: 5px 8px; padding-top: 7px; padding-bottom: 7px; }
+    .report-brand { grid-area: brand; }
+    .report-top-actions { grid-area: actions; gap: 4px; }
+    .report-top-actions .report-icon-button { min-width: 40px; min-height: 40px; padding: 0; }
+    .report-nav { grid-area: nav; }
+    .report-nav .nav { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .report-nav .nav-link { min-height: 40px; padding: 6px 2px; font-size: .82rem; }
+    .report-nav .nav-link i { margin-inline-end: 3px; }
+    .report-main { padding-top: 16px; }
+    .report-heading { margin-bottom: 12px; }
+    .report-heading h1 { font-size: clamp(1.2rem, 5.6vw, 1.55rem); }
+    .report-period-line { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 9px; margin-top: 3px; }
+    .report-heading p { margin: 0; font-size: .84rem; }
+    .report-jump { display: inline-flex; align-items: center; gap: 3px; padding: 5px 0; border: 0; background: transparent; color: var(--report-accent); font-weight: 700; font-size: .79rem; }
+    .report-stat-label i { flex-basis: 23px; height: 23px; }
+    .report-primary { padding-inline: 9px; font-size: .83rem; min-height: 44px; }
+    .report-overview { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
+    .report-stat { padding: 9px 10px; min-height: 92px; }
+    .report-stat-label { font-size: .84rem; }
+    .report-stat strong { font-size: 1.65rem; }
+    .report-late-link { min-height: 28px; padding: 3px 0; }
+    .report-shift-mix { display: grid; grid-template-columns: minmax(0, 1fr) auto; min-height: auto; gap: 6px; }
+    .report-shift-track { grid-row: 2; grid-column: 1/-1; }
+    .report-shift-legend { text-align: end; font-size: .73rem; }
+    .report-filters { padding: 10px; margin-bottom: 8px; }
+    .report-filter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .report-filter-grid .form-control, .report-filter-grid .form-select { font-size: 16px; padding: 7px 10px; }
+    .report-filter-grid .form-select { padding-right: 27px; background-position: right 8px center; }
+    .report-filter-title h2, .report-table-toolbar h2 { font-size: 1rem; }
+    .report-reset { min-height: 42px; }
+    .report-detail-grid { grid-template-columns: minmax(0, 1fr); gap: 6px; margin-bottom: 12px; }
+    .report-summary-table th, .report-summary-table td { padding: 6px; }
+    .report-summary-table th { font-size: .73rem; position: static; }
+    #attendanceTableContainer { scroll-margin-top: 8px; }
+    .report-table-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) auto; padding: 10px 9px; gap: 4px 6px; }
+    .report-table-toolbar > div:first-child { display: contents; }
+    .report-table-toolbar h2 { grid-area: 1 / 1; }
+    .report-table-toolbar p { grid-area: 2 / 1 / 3 / -1; margin: 0; font-size: .76rem; }
+    .report-table-actions { grid-area: 1 / 2; gap: 5px; }
+    .report-table-actions .btn { padding-inline: 8px; min-height: 44px; }
+    .report-refresh { width: 38px; }
+    .report-columns { display: none; }
+    .report-table-toolbar:has(#btnSaveOrder:not(.d-none)) .report-table-actions { grid-area: 3 / 1 / 4 / -1; justify-content: flex-start; }
+    .report-table-wrap { padding: 0 8px 8px; }
+    #attendanceTable, #attendanceTbody { display: block; width: 100%; }
+    #mainTableHeader { position: absolute; width: 1px; height: 1px; clip-path: inset(50%); overflow: hidden; }
+    #attendanceTable .group-header, #attendanceTable .report-empty { display: block; margin: 0 0 6px; }
+    #attendanceTable .group-header:not(:first-child) { margin-top: 13px; }
+    #attendanceTable .group-header td, #attendanceTable .report-empty td { display: block; border: 0 !important; border-radius: 8px; }
+    #attendanceTable .group-header td { padding: 8px 9px !important; font-size: .8rem !important; }
+    #attendanceTable .data-row {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-areas: "name name" "in out" "remark remark";
+        align-items: center; gap: 7px; padding: 8px;
+        margin-bottom: 6px; border: 1px solid var(--report-line); border-radius: 9px;
+        background: var(--report-surface);
+    }
+    #attendanceTable .report-late-row { border-inline-start: 3px solid var(--report-danger); }
+    #attendanceTable .data-row td { padding: 0; display: block; border: 0 !important; min-width: 0; background: transparent; }
+    #attendanceTable .data-row :is([data-col="no"], [data-col="date"], [data-col="shift"], [data-col="id_card"]) { display: none; }
+    #attendanceTable .data-row [data-col="name"] { grid-area: name; display: flex; align-items: center; padding-inline-end: 52px; overflow-wrap: anywhere; }
+    #attendanceTable .data-row [data-col="name"] img { flex-shrink: 0; }
+    #attendanceTable .data-row [data-col="time_in"] { grid-area: in; }
+    #attendanceTable .data-row [data-col="time_out"] { grid-area: out; }
+    #attendanceTable .data-row :is([data-col="time_in"], [data-col="time_out"]) {
+        display: flex; justify-content: space-between; align-items: center; gap: 4px;
+        background: var(--report-soft); border-radius: 6px; padding: 6px 8px;
+    }
+    .report-mobile-time-label { display: inline; font-size: .73rem; font-weight: 500; color: var(--report-muted); }
+    #attendanceTable .data-row [data-col="remark"] { grid-area: remark; font-size: .82rem; }
+    #attendanceTable .data-row [data-col="remark"]:has(.report-remark-text:empty):not(:has(.badge, .report-late-badge)) { display: none; }
+    #attendanceTable .data-row [data-col="action"] { grid-area: 1 / 2; justify-self: end; }
+    .report-edit { width: 44px; height: 44px; }
+    .report-penalty { margin: 8px; padding: 8px; }
+    .report-penalty h5 { font-size: .92rem; }
+    .report-penalty-table th, .report-penalty-table td { padding: 6px 4px; font-size: .72rem; }
+    #tab-master .admin-card, #tab-logs .admin-card { padding: 12px; }
+    #tab-master .input-group .btn { padding-inline: 10px !important; }
+    #tab-logs .table th, #tab-logs .table td { padding: 8px; }
+    #loginScreen { padding: 12px; }
+}
