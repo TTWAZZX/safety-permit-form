@@ -71,7 +71,7 @@
     border-radius: 8px;
 }
 .admin-workspace .login-box input:not([type="checkbox"]) { border: 1px solid var(--workspace-line); }
-.admin-workspace #loginScreen button[onclick="checkLogin()"],
+.admin-workspace #loginScreen .workspace-login-submit,
 .admin-workspace .admin-tab.active,
 .admin-workspace .nav-pills-custom .nav-link.active {
     background: var(--workspace-accent);

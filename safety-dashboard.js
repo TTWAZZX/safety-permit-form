@@ -1799,6 +1799,18 @@ async function initialize() {
             return;
         }
         const params = new URLSearchParams(window.location.search);
+        const legacyAdminPage = params.get('legacy_admin');
+        const legacyAdminRoutes = new Map([
+            ['violation', 'admin_guard_violation.html'],
+            ['slipper', 'admin_slipper_permit.html']
+        ]);
+        if (legacyAdminRoutes.has(legacyAdminPage)) {
+            const token = window.liff.getAccessToken();
+            if (!token) throw new Error('LINE access token is unavailable');
+            sessionStorage.setItem('legacyAdminLoginToken:' + legacyAdminPage, token);
+            window.location.replace(new URL(legacyAdminRoutes.get(legacyAdminPage), window.location.href));
+            return;
+        }
         if (params.get('guard_admin') === '1') {
             const token = window.liff.getAccessToken();
             if (!token) throw new Error('LINE access token is unavailable');

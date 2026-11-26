@@ -272,6 +272,7 @@
     <script src="safety-dashboard-config.js"></script>
     <script src="legacy-safety-attachments.js"></script>
     <link rel="stylesheet" href="admin-workspace.css" media="screen">
+    <script src="legacy-admin-login.js"></script>
 </head>
 <body class="admin-workspace slipper-admin">
 
@@ -282,10 +283,15 @@
             </div>
             <h3 class="fw-bold mb-1">Admin Slipper Permit</h3>
             <p class="small text-muted mb-4">จัดการใบอนุญาตยืมรองเท้า</p>
-            <input type="password" id="adminPassword" class="form-control form-control-lg text-center mb-4 rounded-pill" placeholder="รหัสผ่านผู้ดูแลระบบ" onkeypress="if(event.key === 'Enter') checkLogin()">
-            <button class="btn btn-light w-100 rounded-pill fw-bold py-3 text-primary shadow" onclick="checkLogin()">
-                เข้าสู่ระบบ <i class="bi bi-arrow-right-circle-fill ms-2"></i>
-            </button>
+            <p id="legacyAdminLoginStatus" class="small text-muted" role="status"></p>
+            <form id="legacyAdminLoginForm" autocomplete="off">
+                <div id="legacyAdminPinField" hidden>
+                    <label for="legacyAdminPin" class="form-label small fw-bold">PIN กลาง / Shared PIN</label>
+                    <input type="password" id="legacyAdminPin" class="form-control text-center mb-3"
+                        inputmode="numeric" autocomplete="new-password" maxlength="32" aria-describedby="legacyAdminLoginStatus" disabled>
+                </div>
+                <button id="legacyAdminLoginButton" class="btn workspace-login-submit w-100 fw-bold py-3" type="submit">เข้าสู่ระบบด้วย LINE</button>
+            </form>
         <a class="workspace-login-return d-block text-center small mt-3" href="admin-portal.html">กลับ Admin Portal</a>
         </div>
     </div>
@@ -311,6 +317,7 @@
                 <button class="btn btn-danger btn-sm fw-bold rounded-pill px-3 shadow-sm" onclick="viewBlacklist()">
                     <i class="bi bi-person-fill-slash"></i> Blacklist
                 </button>
+                <button type="button" class="btn btn-outline-secondary" onclick="location.reload()" aria-label="ออกจากหน้าแอดมิน / Sign out"><i class="bi bi-box-arrow-right" aria-hidden="true"></i></button>
                 <button class="btn btn-dark btn-sm fw-bold rounded-pill px-3 shadow-sm" onclick="forceRefresh()">
                     <i class="bi bi-arrow-clockwise"></i> รีเฟรช
                 </button>
@@ -486,18 +493,6 @@
 
 <script>
     // ================= 1. SECURITY =================
-    const ADMIN_PASSWORD = "safety1234"; 
-
-    function checkLogin() {
-        const pass = document.getElementById('adminPassword').value;
-        if (pass === ADMIN_PASSWORD) {
-            sessionStorage.setItem('isAdminLoggedIn', 'true'); // S-03: persist session
-            unlockDashboard();
-        } else {
-            Swal.fire({ icon: 'error', title: 'รหัสผ่านผิด', confirmButtonColor: '#0f172a', customClass: { popup: 'rounded-4' } });
-            document.getElementById('adminPassword').value = '';
-        }
-    }
 
     function unlockDashboard() {
         document.getElementById('loginScreen').style.display = 'none';
@@ -509,13 +504,6 @@
         if (autoRefreshInterval) clearInterval(autoRefreshInterval);
         autoRefreshInterval = setInterval(fetchLiveDashboard, 10000);
     }
-
-    // S-03: ตรวจสอบ session เมื่อโหลดหน้าใหม่ (ป้องกัน logout เมื่อ refresh)
-    window.onload = function() {
-        if (sessionStorage.getItem('isAdminLoggedIn') === 'true') {
-            unlockDashboard();
-        }
-    };
 
     function switchTab(tabId) {
         document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
@@ -1250,6 +1238,7 @@
         const key = String(raw).trim().toLowerCase();
         return _STATUS_CANONICAL[key] || String(raw).trim();
     }
+    window.LEGACY_ADMIN_LOGIN.mount({ page: 'slipper', apiUrl: SUPABASE_URL, openDashboard: unlockDashboard });
 </script>
 </body>
 </html>
