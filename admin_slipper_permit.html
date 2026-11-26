@@ -317,6 +317,7 @@
                 <button class="btn btn-danger btn-sm fw-bold rounded-pill px-3 shadow-sm" onclick="viewBlacklist()">
                     <i class="bi bi-person-fill-slash"></i> Blacklist
                 </button>
+                <button type="button" class="btn btn-outline-secondary" onclick="adminAccess.showAudit()">ประวัติแก้ไข</button>
                 <button type="button" class="btn btn-outline-secondary" onclick="location.reload()" aria-label="ออกจากหน้าแอดมิน / Sign out"><i class="bi bi-box-arrow-right" aria-hidden="true"></i></button>
                 <button class="btn btn-dark btn-sm fw-bold rounded-pill px-3 shadow-sm" onclick="forceRefresh()">
                     <i class="bi bi-arrow-clockwise"></i> รีเฟรช
@@ -805,7 +806,8 @@
                         // ✅ เพิ่มตรงนี้
                         expected_return_date: null
                     };
-                    await db.from('slipper_requests').insert([dummyReq]);
+                    const { error } = await adminAccess.mutate('slipper_requests', 'insert', [dummyReq]);
+                    if (error) throw error;
                     Swal.fire({ icon: 'success', title: 'ระงับการใช้งานสำเร็จ', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
                     forceRefresh();
                 } catch (err) { Swal.fire('Error', err.message, 'error'); }
@@ -982,7 +984,7 @@
         }).then(async (result) => {
             if (result.isConfirmed) {
                 try {
-                    const { error } = await db.from('slipper_blacklist').insert([{ emp_id: emp_id, fullname: fullname, reason: result.value || '-' }]);
+                    const { error } = await adminAccess.mutate('slipper_blacklist', 'insert', [{ emp_id, fullname, reason: result.value || '-' }]);
                     if (error) throw error;
                     Swal.fire('สำเร็จ', 'เพิ่มเข้า Blacklist แล้ว (ไม่สามารถยืมบัตรได้อีก)', 'success');
                 } catch (e) { Swal.fire('Error', 'กรุณาสร้างตาราง slipper_blacklist ใน Supabase ก่อน', 'error'); }
@@ -1003,7 +1005,8 @@
     }
 
     async function removeFromBlacklist(emp_id) {
-        await db.from('slipper_blacklist').delete().eq('emp_id', emp_id);
+        const { error } = await adminAccess.mutate('slipper_blacklist', 'delete', null, emp_id);
+        if (error) return Swal.fire('ปลดแบนไม่สำเร็จ', error.message, 'error');
         Swal.close(); Swal.fire({ icon: 'success', title: 'ปลดแบนสำเร็จ', toast: true, position: 'top-end', timer: 1500 });
     }
 
@@ -1014,7 +1017,7 @@
             if (newStatus === 'Approved' || newStatus === 'Rejected') { updateData.approved_by = 'SuperAdmin'; updateData.approved_at = new Date(); }
             else if (newStatus === 'Returning') { updateData.returned_at = new Date(); updateData.received_by = 'SuperAdmin'; }
             else if (newStatus === 'Completed') { updateData.received_at = new Date(); updateData.received_by = 'SuperAdmin'; }
-            const { error } = await db.from('slipper_requests').update(updateData).eq('id', id);
+            const { error } = await adminAccess.mutate('slipper_requests', 'update', [updateData], id);
             if (error) throw error;
             Swal.fire({ icon: 'success', title: 'ดำเนินการสำเร็จ', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
             forceRefresh(); 
@@ -1238,7 +1241,7 @@
         const key = String(raw).trim().toLowerCase();
         return _STATUS_CANONICAL[key] || String(raw).trim();
     }
-    window.LEGACY_ADMIN_LOGIN.mount({ page: 'slipper', apiUrl: SUPABASE_URL, openDashboard: unlockDashboard });
+    const adminAccess = window.LEGACY_ADMIN_LOGIN.mount({ page: 'slipper', apiUrl: SUPABASE_URL, openDashboard: unlockDashboard });
 </script>
 </body>
 </html>

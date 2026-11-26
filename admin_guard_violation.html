@@ -273,6 +273,7 @@
                     </div>
                     <button class="btn btn-outline-secondary fw-bold" id="btnRefresh" onclick="fetchReports()"><i class="bi bi-arrow-clockwise me-1"></i><span data-i18n="refresh">Refresh</span></button>
                     <a href="admin-portal.html" class="btn workspace-portal"><i class="bi bi-house" aria-hidden="true"></i> Admin Portal</a>
+                    <button type="button" class="btn btn-outline-secondary" onclick="adminAccess.showAudit()">ประวัติแก้ไข / Activity log</button>
                     <button type="button" class="btn btn-outline-secondary" onclick="location.reload()" aria-label="ออกจากหน้าแอดมิน / Sign out"><i class="bi bi-box-arrow-right" aria-hidden="true"></i></button>
                     <button class="btn btn-success fw-bold" onclick="exportToExcel()"><i class="bi bi-file-earmark-excel-fill me-1"></i><span data-i18n="excel">Excel</span></button>
                 </div>
@@ -905,7 +906,7 @@ async function fetchCaseTimeline(report) {
 async function addCaseTimelineEvent(event) {
     if (!db || !event.case_id) return;
 
-    const { error } = await db.from('violation_case_timeline').insert([{
+    const { error } = await adminAccess.mutate('violation_case_timeline', 'insert', [{
         case_id: event.case_id,
         report_id: event.report_id || null,
         event_type: event.event_type,
@@ -924,14 +925,11 @@ async function markReportViewed(report) {
     if (!db || !report || report.admin_seen_at) return;
 
     const now = new Date().toISOString();
-    const { error } = await db
-        .from('violation_reports')
-        .update({
+    const { error } = await adminAccess.mutate('violation_reports', 'update', [{
             admin_seen_at: now,
             last_status_changed_at: report.last_status_changed_at || now,
             last_status_changed_by: report.last_status_changed_by || ADMIN_ACTOR
-        })
-        .eq('id', report.id);
+        }], report.id);
 
     if (error) {
         console.warn('Mark viewed skipped:', error.message);
@@ -1131,7 +1129,7 @@ async function openAddEmployeeModal(empId = '') {
     if (!formValues) return;
 
     try {
-        const { error } = await db.from('employees_list').upsert([formValues], { onConflict: 'emp_id' });
+        const { error } = await adminAccess.mutate('employees_list', 'upsert', [formValues]);
         if (error) throw error;
         await Swal.fire(t('successTitle'), t('employeeSaved', existing ? t('editedText') : t('addedText'), formValues.fullname), 'success');
         await fetchEmployees();
@@ -1271,9 +1269,7 @@ async function handleEmployeeExcel(event) {
         }
 
         preview.innerText = t('importing', employees.length);
-        const { error } = await db
-            .from('employees_list')
-            .upsert(employees, { onConflict: 'emp_id' });
+        const { error } = await adminAccess.mutate('employees_list', 'upsert', employees);
 
         if (error) throw error;
 
@@ -1688,9 +1684,9 @@ async function openReportModal(reportId = null) {
     try {
         let result;
         if (existing) {
-            result = await db.from('violation_reports').update(payload).eq('id', existing.id);
+            result = await adminAccess.mutate('violation_reports', 'update', [payload], existing.id);
         } else {
-            result = await db.from('violation_reports').insert([payload]);
+            result = await adminAccess.mutate('violation_reports', 'insert', [payload]);
         }
         if (result.error) throw result.error;
 
@@ -1723,7 +1719,7 @@ async function deleteReport(id) {
 
     if (!result.isConfirmed) return;
 
-    const { error } = await db.from('violation_reports').delete().eq('id', id);
+    const { error } = await adminAccess.mutate('violation_reports', 'delete', null, id);
     if (error) {
         Swal.fire(t('deleteFailedTitle'), error.message, 'error');
         return;
@@ -2017,18 +2013,7 @@ async function updateStatus(id, status) {
         synced_at: now
     };
 
-    let { error } = await db.from('violation_reports').update(updateData).eq('id', id);
-    if (error) {
-        console.warn('Enterprise status update fallback:', error.message);
-        const fallbackData = {
-            workflow_status: status,
-            review_owner: getStatusOwner(status),
-            synced_at: now
-        };
-        const fallbackResult = await db.from('violation_reports').update(fallbackData).eq('id', id);
-        error = fallbackResult.error;
-    }
-
+    const { error } = await adminAccess.mutate('violation_reports', 'update', [updateData], id);
     if (error) {
         Swal.fire(t('updateFailedTitle'), error.message, 'error');
         return;
@@ -2114,7 +2099,7 @@ async function exportToExcel() {
 }
 
 applyLanguage();
-window.LEGACY_ADMIN_LOGIN.mount({ page: 'violation', apiUrl: SUPABASE_URL, openDashboard: startAdminApp });
+const adminAccess = window.LEGACY_ADMIN_LOGIN.mount({ page: 'violation', apiUrl: SUPABASE_URL, openDashboard: startAdminApp });
 </script>
 </body>
 </html>

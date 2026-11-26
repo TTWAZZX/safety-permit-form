@@ -1505,12 +1505,17 @@ async function addMaster(type) {
     const val = document.getElementById(inputId).value.trim();
     if(!val) return;
 
-    const { error } = await db.from(isCard ? 'security_card_master' : 'security_personnel_master').insert([ isCard ? { card_number: val } : { fullname: val } ]);
-    if(!error) {
+    try {
+        await guardAdminRequest('legacy-admin-mutate', {
+            table: isCard ? 'security_card_master' : 'security_personnel_master',
+            operation: 'insert', id: null, rows: [isCard ? { card_number: val } : { fullname: val }]
+        });
         document.getElementById(inputId).value = '';
         Toast.fire({ icon: 'success', title: 'เพิ่มข้อมูลเรียบร้อย' });
         loadMasterTables(); loadFilterNames(); 
-    } else { Swal.fire('Error', 'เกิดข้อผิดพลาด อาจมีข้อมูลซ้ำ', 'error'); }
+    } catch (error) {
+        Swal.fire('เพิ่มไม่สำเร็จ', error.message, 'error');
+    }
 }
 
 async function delMaster(type, id, name) {
@@ -1518,8 +1523,14 @@ async function delMaster(type, id, name) {
         titleText: `ยืนยันลบ ${name}?`, text: "หากลบแล้วจะไม่สามารถกู้คืนได้", icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545', confirmButtonText: 'ลบข้อมูล', cancelButtonText: 'ยกเลิก'
     }).then(async (result) => {
         if (result.isConfirmed) {
-            const { data, error } = await db.from(type === 'card' ? 'security_card_master' : 'security_personnel_master').delete().eq('id', id).select('id').maybeSingle();
-            if (error || !data) return Swal.fire('ลบไม่สำเร็จ', 'รายการอาจถูกใช้งานอยู่หรือไม่มีสิทธิ์ลบ', 'error');
+            try {
+                await guardAdminRequest('legacy-admin-mutate', {
+                    table: type === 'card' ? 'security_card_master' : 'security_personnel_master',
+                    operation: 'delete', id: String(id)
+                });
+            } catch (error) {
+                return Swal.fire('ลบไม่สำเร็จ', error.message, 'error');
+            }
             Toast.fire({ icon: 'success', title: 'ลบข้อมูลเรียบร้อย' });
             loadMasterTables(); loadFilterNames();
         }
@@ -1576,7 +1587,7 @@ async function loadAdminLogs() {
         return `<tr>
             <td><div class="fw-bold small">${dateStr}</div><div class="text-muted small">${timeStr}</div></td>
             <td class="text-center"><span class="badge ${badge} rounded-pill px-3">${escapeReportText(label)}</span></td>
-            <td class="small">${escapeReportText(row.detail || '-')}<div class="text-muted">${escapeReportText(row.actor_line_user_id || 'ไม่มีบัญชี LINE ที่ยืนยันในบันทึกนี้')}</div></td>
+            <td class="small">${escapeReportText(row.detail || '-')}<div class="text-muted">${escapeReportText(row.actor_line_display_name || row.actor_line_user_id || 'ไม่มีบัญชี LINE ที่ยืนยันในบันทึกนี้')}</div></td>
             <td class="text-center">${beforeBtn}</td>
         </tr>`;
     }).join('');
