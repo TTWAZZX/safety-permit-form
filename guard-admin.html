@@ -176,7 +176,7 @@
         .print-only, .report-mobile-time-label { display: none; }
     </style>
     <link rel="stylesheet" href="guard-admin-layout.css" media="screen">
-    <link rel="stylesheet" href="guard-admin-print.css" media="print">
+    <link rel="stylesheet" href="guard-admin-print.css">
 </head>
 <body>
 
@@ -344,7 +344,7 @@
                         </div>
                     </div>
 
-                    <div class="print-only print-header">
+                    <div id="attendancePrintHeaderSource" class="print-only print-header print-source">
                         <h4>รายงานบันทึกเวลาปฏิบัติงานเจ้าหน้าที่รักษาความปลอดภัย</h4>
                         <p class="fw-bold">บริษัท ไทยซัมมิท ฮาร์เนส จำกัด (มหาชน)</p>
                         <p id="printInfoLabel"></p>
@@ -373,11 +373,11 @@
                         </table>
                     </div>
                     
-                    <div id="penalty-summary-section" class="report-penalty" style="background-color: var(--card-bg); page-break-inside: avoid;">
+                    <div id="penalty-summary-section" class="report-penalty print-source" style="background-color: var(--card-bg); page-break-inside: avoid;">
                         <h5 class="text-start fw-bold mb-3" style="color: var(--text-main);">
                             สรุปการปรับหักค่าบริการ รปภ. ประจำเดือน <span id="print_month_year">มกราคม 2569</span>
                         </h5>
-                        <p id="printPenaltyEmpty" class="print-only"></p>
+                        <p id="printPenaltyEmpty" class="print-only print-penalty-empty"></p>
                         <div class="table-responsive report-penalty-table">
                         <table class="table text-center align-middle m-0" style="border: 1px solid var(--border-color); border-collapse: collapse !important;">
                             <thead style="background-color: var(--table-header-bg); color: var(--text-muted); font-size: 0.9rem;">
@@ -409,13 +409,13 @@
                                 </tr>
                                 <tr>
                                     <td colspan="3" class="text-end fw-bold" style="color: var(--text-main);">รวมหักในเดือน <span id="print_total_month">มกราคม 2569</span> ทั้งหมด</td>
-                                    <td id="print_grand_total" class="fw-bold fs-5" style="color: #dc2626;">0.00</td>
+                                    <td id="print_grand_total" data-print-grand-total class="fw-bold fs-5" style="color: #dc2626;">0.00</td>
                                 </tr>
                             </tbody>
                         </table>
                         </div>
                     </div>
-                    <div class="print-only print-footer-content">
+                    <div id="attendancePrintSignatureSource" class="print-only print-footer-content print-source">
                         <div class="sign-box-container">
                             <div class="sign-box">
                                 <div class="sign-line"></div>
@@ -1238,14 +1238,15 @@ async function openRecordModal(rowId = null) {
 }
 
 // ================= EXPORT =================
-function exportPDF() {
-    if (activeReport) window.print();
+async function exportPDF() {
+    if (!activeReport) return;
+    await document.fonts.ready;
+    window.print();
 }
 
 window.addEventListener('beforeprint', prepareAttendancePrint);
 
 function prepareAttendancePrint() {
-    const container = document.getElementById('attendanceTableContainer');
     const grid = document.getElementById('attendancePrintGrid');
     if (!activeReport) return;
     const { month, name, shift, status } = activeReport.filters;
@@ -1256,46 +1257,119 @@ function prepareAttendancePrint() {
     const normalize = text => text?.trim().replace(/\s+/g, ' ');
     const fullMonth = name === 'ALL' && shift === 'ALL' && status === 'ALL';
     const hasPenalty = [month, monthFormat('buddhist'), monthFormat('gregory')].includes(normalize(savedPenaltyMonth));
-    container.classList.toggle('hide-penalty-in-print', !fullMonth);
-    container.classList.toggle('empty-penalty-in-print', !hasPenalty);
     document.getElementById('printPenaltyEmpty').textContent = 'ยังไม่มีข้อมูลสรุปการปรับหักค่าบริการสำหรับเดือน ' + monthFormat('buddhist');
     document.getElementById('reportPrintDate').textContent = new Date().toLocaleDateString('th-TH', { timeZone: 'Asia/Bangkok' });
 
-    const printTable = document.createElement('table');
-    printTable.id = 'attendancePrintTable';
+    const clonePrintSection = id => {
+        const copy = document.getElementById(id).cloneNode(true);
+        copy.removeAttribute('id');
+        copy.classList.remove('print-only', 'print-source');
+        copy.querySelectorAll('[id]').forEach(element => element.removeAttribute('id'));
+        return copy;
+    };
+    const footer = document.createElement('div');
+    footer.className = 'print-report-end';
+    if (fullMonth) {
+        const penalty = clonePrintSection('penalty-summary-section');
+        penalty.classList.toggle('print-penalty-unavailable', !hasPenalty);
+        footer.append(penalty);
+    }
+    footer.append(clonePrintSection('attendancePrintSignatureSource'));
+
     const columns = ['no', 'name', 'time_in', 'time_out', 'remark'];
+    const copyCells = (source, target) => {
+        for (const column of columns) {
+            const cell = source.querySelector(`[data-col="${column}"]`).cloneNode(true);
+            cell.classList.remove('col-hidden');
+            cell.querySelectorAll('.no-print, .report-mobile-time-label').forEach(item => item.remove());
+            target.append(cell);
+        }
+    };
+    const tableTemplate = document.createElement('table');
+    tableTemplate.className = 'attendance-print-table';
     const colgroup = document.createElement('colgroup');
     for (const name of columns) {
         const col = document.createElement('col');
         col.dataset.col = name;
         colgroup.append(col);
     }
-    printTable.append(colgroup);
+    tableTemplate.append(colgroup);
+    copyCells(document.getElementById('mainTableHeader').rows[0], tableTemplate.createTHead().insertRow());
 
-    const copyCells = (source, target) => {
-        for (const name of columns) {
-            const cell = source.querySelector(`[data-col="${name}"]`).cloneNode(true);
-            cell.classList.remove('col-hidden');
-            cell.querySelectorAll('.no-print, .report-mobile-time-label').forEach(item => item.remove());
-            target.append(cell);
-        }
-    };
-    copyCells(document.getElementById('mainTableHeader').rows[0], printTable.createTHead().insertRow());
-    let section;
+    const rows = [];
+    let group = null;
     for (const source of document.getElementById('attendanceTbody').rows) {
-        if (!section || source.classList.contains('group-header')) section = printTable.createTBody();
-        const row = section.insertRow();
+        const row = document.createElement('tr');
         if (source.classList.contains('data-row')) {
             copyCells(source, row);
         } else {
             row.className = source.className;
             const cell = source.cells[0].cloneNode(true);
             cell.colSpan = columns.length;
+            cell.classList.remove('fs-6');
             cell.querySelectorAll('i').forEach(icon => icon.remove());
             row.append(cell);
         }
+        if (source.classList.contains('group-header')) group = row;
+        else rows.push({ group, row });
     }
-    grid.replaceChildren(printTable);
+    paginateAttendancePrint(grid, tableTemplate, clonePrintSection('attendancePrintHeaderSource'), rows, footer);
+}
+
+function paginateAttendancePrint(grid, tableTemplate, heading, rows, footer) {
+    grid.classList.add('print-measure');
+    grid.replaceChildren();
+    const heightGuide = document.createElement('div');
+    heightGuide.className = 'print-height-guide';
+    grid.append(heightGuide);
+    const maxHeight = heightGuide.getBoundingClientRect().height;
+    heightGuide.remove();
+
+    function newPage() {
+        const page = document.createElement('section');
+        page.className = 'attendance-print-page';
+        const table = tableTemplate.cloneNode(true);
+        page.append(heading.cloneNode(true), table);
+        grid.append(page);
+        return { page, body: table.createTBody(), group: null, count: 0 };
+    }
+
+    function appendRow(sheet, entry, continued) {
+        const newGroup = entry.group && sheet.group !== entry.group;
+        const groupRow = newGroup ? entry.group.cloneNode(true) : null;
+        if (groupRow) {
+            if (continued) groupRow.cells[0].append(' (ต่อ)');
+            sheet.body.append(groupRow);
+        }
+        sheet.body.append(entry.row);
+        return groupRow;
+    }
+
+    try {
+        let sheet = newPage();
+        rows.forEach((entry, index) => {
+            const firstOnPage = sheet.count === 0;
+            const previousGroup = rows[index - 1]?.group;
+            const last = index === rows.length - 1;
+            const groupRow = appendRow(sheet, entry, firstOnPage && entry.group === previousGroup);
+            if (last) sheet.page.append(footer);
+
+            // Keep the heading with its first row, and keep the signature with the last record.
+            if (!firstOnPage && sheet.page.getBoundingClientRect().height > maxHeight) {
+                entry.row.remove();
+                groupRow?.remove();
+                if (last) footer.remove();
+                sheet = newPage();
+                appendRow(sheet, entry, entry.group === previousGroup);
+                if (last) sheet.page.append(footer);
+            }
+            sheet.group = entry.group;
+            sheet.count++;
+        });
+        if (!rows.length) sheet.page.append(footer);
+    } finally {
+        grid.classList.remove('print-measure');
+    }
 }
 
 function exportExcel() {

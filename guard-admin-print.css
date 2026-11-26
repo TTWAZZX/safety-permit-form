@@ -1,42 +1,67 @@
-@page {
-    size: A4 portrait;
-    margin: 15mm 10mm;
+@media print {
+    @page {
+        size: A4 portrait;
+        margin: 15mm 10mm;
+    }
+
+    html, body {
+        margin: 0 !important;
+        padding: 0 !important;
+        min-height: 0 !important;
+        color: #000 !important;
+        background: #fff !important;
+        font: 9.6pt/1.4 "Sarabun", sans-serif !important;
+    }
+
+    .no-print,
+    #loginScreen,
+    #loadingScreen,
+    #tab-master,
+    #tab-logs,
+    .modal,
+    .modal-backdrop,
+    .swal2-container {
+        display: none !important;
+    }
+
+    .print-only { display: block !important; }
+
+    .report-shell,
+    #attendanceTableContainer,
+    .report-penalty-table {
+        display: block;
+        max-width: none;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        overflow: visible !important;
+    }
+
+    .print-source { display: none !important; }
+    .attendance-print-page + .attendance-print-page { break-before: page; }
 }
 
-html, body {
-    margin: 0 !important;
-    padding: 0 !important;
-    min-height: 0 !important;
-    color: #000 !important;
-    background: #fff !important;
-    font: 9.6pt/1.4 "Sarabun", sans-serif !important;
+/* The same dimensions apply when measuring rows and when Chromium prints them. */
+#attendancePrintGrid.print-measure {
+    display: block !important;
+    position: absolute !important;
+    visibility: hidden;
+    left: 0;
+    top: 0;
+    pointer-events: none;
 }
 
-.no-print,
-#loginScreen,
-#loadingScreen,
-#tab-master,
-#tab-logs,
-.modal,
-.modal-backdrop,
-.swal2-container {
-    display: none !important;
+.attendance-print-page {
+    display: flow-root;
+    width: 190mm;
+    color: #000;
+    background: #fff;
+    font: 9.6pt/1.4 "Sarabun", sans-serif;
 }
 
-.print-only { display: block !important; }
+.print-height-guide { height: 266mm; }
 
-.report-shell,
-#attendanceTableContainer,
-.report-penalty-table {
-    display: block;
-    max-width: none;
-    margin: 0;
-    padding: 0;
-    border: 0;
-    overflow: visible !important;
-}
-
-.print-header {
+.attendance-print-page .print-header {
     text-align: center;
     margin-bottom: 5mm;
     padding-bottom: 2.5mm;
@@ -45,25 +70,25 @@ html, body {
     break-after: avoid;
 }
 
-.print-header h4 {
+.attendance-print-page .print-header h4 {
     margin: 0 0 1mm;
     font-size: 16pt;
     font-weight: 700;
 }
 
-.print-header p {
+.attendance-print-page .print-header p {
     margin: .5mm 0;
     font-size: 11pt;
 }
 
 /* Keep the painted outer borders a safe distance inside the page clip. */
-#attendancePrintGrid,
-#penalty-summary-section {
-    margin-inline: 1.5mm;
+.attendance-print-table,
+.attendance-print-page .report-penalty {
+    margin-inline: auto;
 }
 
-#attendancePrintTable,
-#penalty-summary-section table {
+.attendance-print-table,
+.attendance-print-page .report-penalty table {
     width: 100%;
     table-layout: fixed;
     border-collapse: collapse;
@@ -72,20 +97,20 @@ html, body {
     background: #fff;
 }
 
-#attendancePrintTable thead,
-#penalty-summary-section thead { display: table-header-group; }
+.attendance-print-table thead,
+.attendance-print-page .report-penalty thead { display: table-header-group; }
 
-#attendancePrintTable tbody,
-#penalty-summary-section,
-.print-footer-content { break-inside: avoid; }
+.print-report-end,
+.attendance-print-page .report-penalty,
+.attendance-print-page .print-footer-content { break-inside: avoid; }
 
-#attendancePrintTable tr,
-#penalty-summary-section tr { break-inside: avoid; }
+.attendance-print-table tr,
+.attendance-print-page .report-penalty tr { break-inside: avoid; }
 
-#attendancePrintTable th,
-#attendancePrintTable td,
-#penalty-summary-section th,
-#penalty-summary-section td {
+.attendance-print-table th,
+.attendance-print-table td,
+.attendance-print-page .report-penalty th,
+.attendance-print-page .report-penalty td {
     border: .75pt solid #000 !important;
     padding: 1.55mm 2mm;
     color: #000 !important;
@@ -94,8 +119,8 @@ html, body {
     overflow-wrap: anywhere;
 }
 
-#attendancePrintTable thead th,
-#penalty-summary-section thead th {
+.attendance-print-table thead th,
+.attendance-print-page .report-penalty thead th {
     color: #000;
     background: #f2f2f2;
     text-align: center;
@@ -107,23 +132,23 @@ html, body {
     print-color-adjust: exact;
 }
 
-#attendancePrintTable col[data-col="no"] { width: 7%; }
-#attendancePrintTable col[data-col="name"] { width: 35%; }
-#attendancePrintTable col[data-col="time_in"],
-#attendancePrintTable col[data-col="time_out"] { width: 13%; }
-#attendancePrintTable col[data-col="remark"] { width: 32%; }
+.attendance-print-table col[data-col="no"] { width: 7%; }
+.attendance-print-table col[data-col="name"] { width: 35%; }
+.attendance-print-table col[data-col="time_in"],
+.attendance-print-table col[data-col="time_out"] { width: 13%; }
+.attendance-print-table col[data-col="remark"] { width: 32%; }
 
-#attendancePrintTable td[data-col="no"],
-#attendancePrintTable td[data-col="time_in"],
-#attendancePrintTable td[data-col="time_out"] {
+.attendance-print-table td[data-col="no"],
+.attendance-print-table td[data-col="time_in"],
+.attendance-print-table td[data-col="time_out"] {
     text-align: center;
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
 }
 
-#attendancePrintTable .group-header { break-after: avoid; }
+.attendance-print-table .group-header { break-after: avoid; }
 
-#attendancePrintTable .group-header td {
+.attendance-print-table .group-header td {
     background: #f2f2f2;
     font-weight: 700;
     padding: 1.6mm 2mm !important;
@@ -131,16 +156,21 @@ html, body {
     print-color-adjust: exact;
 }
 
-#attendancePrintTable .header-day td { background: #fef3c7; }
+.attendance-print-table .header-day td { background: #fef3c7; }
 
-#attendancePrintTable .header-night td {
+.attendance-print-table .header-night td {
     background: #334155;
     color: #fff !important;
 }
 
-#attendancePrintTable .report-empty td { text-align: center; }
+.attendance-print-table .report-empty td { text-align: center; }
 
-#attendancePrintTable .badge {
+.attendance-print-table .report-remark-text { margin: 0; }
+
+.attendance-print-table .badge,
+.attendance-print-table .report-late-badge {
+    display: inline;
+    margin: 0;
     padding: 0;
     color: inherit;
     background: transparent;
@@ -150,34 +180,37 @@ html, body {
     white-space: normal;
 }
 
-#attendancePrintTable .report-remark-text:not(:empty) + .badge,
-#attendancePrintTable .badge + .badge { margin-inline-start: .35em; }
+.attendance-print-table .report-remark-text:not(:empty) + .badge,
+.attendance-print-table .badge + .badge { margin-inline-start: .35em; }
 
-#penalty-summary-section {
+.attendance-print-page .report-penalty {
+    width: calc(100% - 3mm);
     margin-block: 5mm;
     padding: 0;
+    border: 0;
+    border-radius: 0;
     background: #fff !important;
 }
 
-#penalty-summary-section h5 {
+.attendance-print-page .report-penalty h5 {
     margin-bottom: 3mm;
     font-size: 11pt;
     font-weight: 700;
 }
 
-#penalty-summary-section th,
-#penalty-summary-section td { padding: 1.6mm; }
+.attendance-print-page .report-penalty th,
+.attendance-print-page .report-penalty td { padding: 1.6mm; }
 
-#penalty-summary-section #print_grand_total { font-size: 11pt !important; }
+.attendance-print-page .report-penalty [data-print-grand-total] { font-size: 11pt !important; }
 
-.hide-penalty-in-print #penalty-summary-section,
-#attendanceTableContainer:not(.empty-penalty-in-print) #printPenaltyEmpty,
-.empty-penalty-in-print #penalty-summary-section > h5,
-.empty-penalty-in-print .report-penalty-table {
+.attendance-print-page .print-penalty-empty,
+.attendance-print-page .print-penalty-unavailable > h5,
+.attendance-print-page .print-penalty-unavailable .report-penalty-table {
     display: none !important;
 }
 
-#printPenaltyEmpty {
+.attendance-print-page .print-penalty-unavailable .print-penalty-empty {
+    display: block !important;
     margin: 0;
     padding: 2.5mm;
     border: .75pt solid #000;
@@ -185,13 +218,14 @@ html, body {
 
 .print-footer-content {
     text-align: center;
-    margin: 7mm auto 0;
+    margin: 0 auto;
+    padding-top: 7mm;
 }
 
-.sign-box {
+.attendance-print-page .sign-box {
     width: 90mm;
     margin: 0 auto;
     font-size: 11pt;
 }
 
-.sign-line { border-bottom: 1pt solid #000; margin: 10mm auto 2.5mm; width: 80%; }
+.attendance-print-page .sign-line { border-bottom: 1pt solid #000; margin: 10mm auto 2.5mm; width: 80%; }
