@@ -1798,6 +1798,39 @@ async function initialize() {
             window.liff.login({ redirectUri: window.location.href });
             return;
         }
+        const params = new URLSearchParams(window.location.search);
+        if (params.has('attachment_kind') || params.has('attachment_id')) {
+            try {
+                const opener = window.LEGACY_SAFETY_ATTACHMENTS;
+                const attachment = opener.fromLocation(window.location.search);
+                const token = window.liff.getAccessToken();
+                if (!token) throw new Error('กรุณาเข้าสู่ระบบ LINE ใหม่');
+                showGateError('เปิดเอกสารแนบ', 'ยืนยัน LINE แล้ว กรุณากรอก PIN สำหรับเอกสารแนบ', false);
+                const form = element('attachmentPinForm');
+                const input = element('attachmentPin');
+                const button = form.querySelector('button');
+                form.hidden = false;
+                input.focus();
+                form.addEventListener('submit', async event => {
+                    event.preventDefault();
+                    if (button.disabled) return;
+                    button.disabled = true;
+                    const pin = input.value;
+                    input.value = '';
+                    try {
+                        const url = await opener.getSignedUrl(config.apiUrl, token, attachment, pin);
+                        window.location.replace(url);
+                    } catch (error) {
+                        element('gateErrorMessage').textContent = error.message;
+                        button.disabled = false;
+                        input.focus();
+                    }
+                });
+            } catch (attachmentError) {
+                showGateError('เปิดเอกสารแนบไม่สำเร็จ', attachmentError.message);
+            }
+            return;
+        }
         if (shouldOpenJohnnyControlCenter()) {
             openJohnnyControlCenter();
             return;

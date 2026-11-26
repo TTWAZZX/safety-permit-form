@@ -1636,9 +1636,8 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
             const filePath = `${caseId}/${Date.now()}-${safeFileName}`;
             await uploadStorageWithRetry(filePath, uploadFile);
 
-            const { data } = db.storage.from(EVIDENCE_BUCKET).getPublicUrl(filePath);
             return {
-                evidence_url: data?.publicUrl || filePath,
+                evidence_url: filePath,
                 evidence_file_name: uploadFile.name,
                 evidence_file_size: uploadFile.size,
                 evidence_file_type: uploadFile.type

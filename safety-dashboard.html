@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="portal-content-manager.css">
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js" defer></script>
     <script src="safety-dashboard-config.js" defer></script>
+    <script src="legacy-safety-attachments.js" defer></script>
     <script src="safety-dashboard.js" defer></script>
     <script src="portal-content-manager.js" defer></script>
     <script src="portal-module-favicon.js" defer></script>
@@ -34,7 +35,12 @@
             <div class="gate-icon" aria-hidden="true">!</div>
             <p class="eyebrow">SAFETY DASHBOARD</p>
             <h1 id="gateErrorTitle">ไม่สามารถเปิด Dashboard ได้</h1>
-            <p id="gateErrorMessage">กรุณาลองใหม่อีกครั้ง</p>
+            <p id="gateErrorMessage" aria-live="polite">กรุณาลองใหม่อีกครั้ง</p>
+            <form id="attachmentPinForm" hidden>
+                <label for="attachmentPin">PIN สำหรับเอกสารแนบ</label>
+                <input id="attachmentPin" type="password" inputmode="numeric" autocomplete="off" pattern="[0-9]{10,32}" maxlength="32" required>
+                <button class="button button-primary" type="submit">เปิดเอกสาร</button>
+            </form>
             <div class="gate-actions">
                 <button id="retryLoginButton" class="button button-primary" type="button">ลองอีกครั้ง</button>
                 <a class="button button-ghost" href="admin-portal.html">กลับ Admin Portal</a>

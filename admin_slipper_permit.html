@@ -269,6 +269,8 @@
             @page { size: A4 landscape; margin: 10mm; }
         }
     </style>
+    <script src="safety-dashboard-config.js"></script>
+    <script src="legacy-safety-attachments.js"></script>
 </head>
 <body>
 
@@ -911,7 +913,8 @@
         // ปุ่ม Blacklist
         const blacklistBtn = `<button class="btn btn-outline-danger w-100 fw-bold rounded-4 py-2 mt-2" onclick="addToBlacklist('${req.emp_id}', '${req.fullname}')"><i class="bi bi-person-fill-slash me-2"></i>ขึ้นบัญชีดำ (Blacklist)</button>`;
         
-        const certHtml = req.medical_cert_url ? `<a href="${req.medical_cert_url}" target="_blank" class="btn btn-outline-primary btn-sm w-100 mt-3 rounded-pill fw-bold"><i class="bi bi-file-earmark-medical-fill me-1"></i> ดูใบรับรองแพทย์</a>` : '';
+        const attachment = req.medical_cert_url && window.LEGACY_SAFETY_ATTACHMENTS.buildLink('medical-certificate', req.id);
+        const certHtml = attachment ? `<a href="${attachment}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm w-100 mt-3 rounded-pill fw-bold"><i class="bi bi-file-earmark-medical-fill me-1"></i> ดูใบรับรองแพทย์</a>` : '';
         
         Swal.fire({ 
         html: `

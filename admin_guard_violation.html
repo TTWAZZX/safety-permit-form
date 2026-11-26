@@ -225,6 +225,8 @@
             .detail-grid { grid-template-columns: 1fr; }
         }
     </style>
+    <script src="safety-dashboard-config.js"></script>
+    <script src="legacy-safety-attachments.js"></script>
 </head>
 <body>
     <div id="loginScreen">
@@ -1504,7 +1506,8 @@ function renderTable() {
         const rowClass = [repeatReport ? 'repeat-row' : '', urgentReport ? 'urgent-row' : ''].filter(Boolean).join(' ');
         const repeatBadge = repeatReport ? `<span class="badge bg-danger ms-1">${t('repeatOffender')}</span>` : '';
         const newBadge = !report.admin_seen_at ? `<span class="badge bg-primary ms-1">${t('newBadge')}</span>` : '';
-        const evidence = report.evidence_url ? `<a href="${escapeHtml(report.evidence_url)}" target="_blank"><img src="${escapeHtml(report.evidence_url)}" class="evidence-thumb" alt="Evidence"></a>` : '<span class="text-muted">-</span>';
+        const attachment = report.evidence_url && window.LEGACY_SAFETY_ATTACHMENTS.buildLink('violation-evidence', report.id);
+        const evidence = attachment ? `<a href="${attachment}" target="_blank" rel="noopener noreferrer">${t('openEvidence')}</a>` : '<span class="text-muted">-</span>';
         const severityClass = report.severity_level === 'Critical' ? 'danger' : (report.severity_level === 'High' ? 'warning' : (report.severity_level === 'Low' ? 'secondary' : 'info'));
         const status = report.workflow_status || WORKFLOW_PENDING;
         const statusClass = getStatusBadgeClass(status);
@@ -1925,10 +1928,12 @@ async function printCasePdf(id) {
     addPdfRow(table, t('adminRemark'), report.admin_remark || '-');
     addPdfRow(table, t('closeReason'), report.closed_reason || '-');
     addPdfRow(table, t('gps'), gpsText);
-    if (report.evidence_url) {
+    const attachment = report.evidence_url && window.LEGACY_SAFETY_ATTACHMENTS.buildLink('violation-evidence', report.id);
+    if (attachment) {
         const link = doc.createElement('a');
-        link.href = report.evidence_url;
-        link.textContent = report.evidence_url;
+        link.href = attachment;
+        link.rel = 'noreferrer';
+        link.textContent = t('openEvidence');
         addPdfRow(table, t('evidence'), '', link);
     } else {
         addPdfRow(table, t('evidence'), '-');
@@ -1967,8 +1972,9 @@ async function viewReport(id) {
     const gpsLink = report.gps_latitude && report.gps_longitude
         ? `<a href="https://www.google.com/maps?q=${report.gps_latitude},${report.gps_longitude}" target="_blank">${t('openGoogleMaps')}</a>`
         : '-';
-    const evidenceLink = report.evidence_url
-        ? `<a href="${escapeHtml(report.evidence_url)}" target="_blank">${t('openEvidence')}</a>`
+    const attachment = report.evidence_url && window.LEGACY_SAFETY_ATTACHMENTS.buildLink('violation-evidence', report.id);
+    const evidenceLink = attachment
+        ? `<a href="${attachment}" target="_blank" rel="noopener noreferrer">${t('openEvidence')}</a>`
         : '-';
 
     const panel = document.getElementById('caseDetailPanel');
@@ -2147,7 +2153,7 @@ async function exportToExcel() {
         LastStatusChangedBy: report.last_status_changed_by || '',
         RepeatOffender: isRepeatReport(report) ? 'Yes' : 'No',
         CumulativeRepeatCount: getRepeatCount(report) || 1,
-        Evidence: report.evidence_url || '',
+        Evidence: report.evidence_url ? window.LEGACY_SAFETY_ATTACHMENTS.buildLink('violation-evidence', report.id) : '',
         GPS: report.gps_latitude && report.gps_longitude ? `${report.gps_latitude},${report.gps_longitude}` : '',
         DeviceID: report.device_id || '',
         DeviceLabel: report.device_label || '',
