@@ -173,155 +173,10 @@
         .line-spinner { border: 4px solid var(--border-color); border-top: 4px solid var(--primary-color); border-radius: 50%; width: 45px; height: 45px; animation: spin 1s linear infinite; margin-bottom: 20px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* ================= 🖨️ PRINT TEMPLATE (STRICTLY FORMAL - PROFESSIONAL LAYOUT UPGRADE) ================= */
-        .print-only { display: none; }
-        .report-mobile-time-label { display: none; }
-
-        @media print {
-            @page { size: A4 portrait; margin: 15mm 10mm; }
-
-            /* ซ่อนส่วนที่ไม่เกี่ยวข้อง */
-            .no-print, .btn, .theme-toggle, .top-navbar, .kpi-card, #pills-tab, .dropdown,
-            .admin-card:not(#attendanceTableContainer) {
-                display: none !important;
-            }
-
-            .print-only { display: block !important; }
-            [data-theme] #attendanceTable .attendance-late { color: #000 !important; }
-
-            /* รีเซ็ตพื้นฐาน */
-            body, * {
-                background: white !important;
-                color: black !important;
-                font-family: 'Sarabun', sans-serif !important;
-            }
-
-            .admin-card { border: none !important; box-shadow: none !important; padding: 0 !important; border-radius: 0 !important; }
-            .table-responsive { border: none !important; overflow: visible !important; }
-            .badge { border: none !important; background: transparent !important; color: black !important; padding: 0 !important; font-size: 9.5pt !important; font-weight: normal !important; }
-            i { display: none !important; }
-
-            /* ================= HEADER ================= */
-            .print-header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; }
-            .print-header h4 { font-size: 16pt; font-weight: bold; margin-bottom: 5px; }
-            .print-header p { font-size: 11pt; margin: 2px 0; }
-
-            /* ================= TABLE CORE ================= */
-            table#attendanceTable { width: 100% !important; border-collapse: collapse !important; border-spacing: 0 !important; table-layout: auto !important; border: 1px solid #000 !important; margin-top: 0; }
-            table#attendanceTable thead th { position: static !important; top: auto !important; z-index: auto !important; }
-            table#attendanceTable th, table#attendanceTable td { border: 1px solid #000 !important; padding: 6px 8px !important; font-size: 9.6pt !important; vertical-align: middle !important; }
-            #mainTableHeader th { background-color: #f2f2f2 !important; font-weight: bold !important; text-align: center !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            table#attendanceTable thead { display: table-header-group !important; }
-            tr { page-break-inside: avoid !important; break-inside: avoid !important; }
-
-            /* 🟢 ปรับแต่ง Group Header ใน PDF + แก้ไฮไลท์ขาว + แยกสีกะ */
-            .group-header td {
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-                font-weight: bold !important;
-                text-align: left !important;
-                padding: 8px 15px !important;
-                font-size: 10pt !important;
-            }
-            
-            /* ล้างพื้นหลังสีขาวที่แอบติดมากับตัวหนังสือ */
-            .group-header td * {
-                background-color: transparent !important; 
-            }
-
-            /* สีแถบกะเช้า (พื้นส้มอ่อน ตัวหนังสือดำ) */
-            .header-day td {
-                background-color: #fef3c7 !important;
-                color: #000000 !important;
-                border-top: 1px solid #000 !important;
-                border-bottom: 1px solid #000 !important;
-            }
-
-            /* สีแถบกะดึก (พื้นเทาเข้ม/กรมท่า) */
-            tr.header-night td {
-                background-color: #334155 !important;
-                border-top: 1px solid #000 !important;
-                border-bottom: 1px solid #000 !important;
-            }
-            /* 🔴 บังคับตัวหนังสือสีขาวขั้นสุด (แก้ปัญหาปริ้นขาวดำแล้วตัวหนังสือดำ) */
-            tr.header-night td, 
-            tr.header-night td span, 
-            tr.header-night td i, 
-            tr.header-night td strong {
-                color: #ffffff !important;
-                -webkit-text-fill-color: #ffffff !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-            }
-
-            /* ================= COLUMN WIDTH CONTROL ================= */
-            /* ลำดับ (คงเดิม) */
-            th[data-col="no"], td[data-col="no"] { width: 50px !important; text-align: center !important; font-weight: bold !important; }
-            
-            /* 🟢 ชื่อพนักงาน (ลดเหลือ 200px ตามที่คุณพี่ต้องการครับ กว้างพอดีสำหรับชื่อ-สกุล) */
-            th[data-col="name"], td[data-col="name"] { width: 260px !important; font-weight: 600 !important; white-space: nowrap !important; }
-            
-            /* เข้า / ออก (คงเดิม) */
-            td[data-col="time_in"], td[data-col="time_out"] { width: 100px !important; text-align: center !important; font-weight: bold !important; white-space: nowrap !important; }
-            
-            /* 🟢 หมายเหตุ (ให้กินพื้นที่หน้ากระดาษที่เหลือทั้งหมด และบังคับห้ามตัดลงบรรทัดใหม่) */
-            th[data-col="remark"], td[data-col="remark"] { 
-                width: auto !important; 
-                white-space: normal !important;
-                font-size: 8pt !important; 
-            }
-
-            /* ================= ซ่อนคอลัมน์ที่ไม่ต้องการใน PDF ================= */
-            th[data-col="date"], td[data-col="date"],
-            th[data-col="shift"], td[data-col="shift"],
-            th[data-col="id_card"], td[data-col="id_card"],
-            th[data-col="action"], td[data-col="action"] {
-                display: none !important;
-            }
-            .col-hidden { display: none !important; }
-
-            /* ================= PENALTY SUMMARY TABLE (PRINT STYLES) ================= */
-            .hide-penalty-in-print #penalty-summary-section { display: none !important; }
-            #penalty-summary-section {
-                margin-top: 20px !important;
-                margin-bottom: 20px !important;
-                border: none !important;
-                padding: 0 !important;
-            }
-            #penalty-summary-section h5 {
-                font-size: 11pt !important;
-                font-weight: bold !important;
-                text-align: left !important;
-                border-bottom: 1px solid #000;
-                padding-bottom: 5px;
-                margin-bottom: 10px;
-                color: #000 !important;
-            }
-            #penalty-summary-section table {
-                border-collapse: collapse !important;
-                width: 100% !important;
-                border: 1px solid #000 !important;
-            }
-            #penalty-summary-section th, #penalty-summary-section td {
-                border: 1px solid #000 !important;
-                padding: 6px !important;
-                font-size: 9.5pt !important;
-                color: #000 !important;
-            }
-            #penalty-summary-section thead th, #penalty-summary-section tr.table-active td {
-                background-color: #f2f2f2 !important;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
-
-            /* ================= FOOTER ================= */
-            .print-footer-content { display: block !important; margin-top: 30px; page-break-inside: avoid; }
-            .sign-box-container { display: flex; justify-content: center; width: 100%; }
-            .sign-box { width: 350px; text-align: center; font-size: 11pt; }
-            .sign-line { border-bottom: 1px solid #000 !important; margin: 40px auto 10px; width: 80%; }
-        }
+        .print-only, .report-mobile-time-label { display: none; }
     </style>
     <link rel="stylesheet" href="guard-admin-layout.css" media="screen">
+    <link rel="stylesheet" href="guard-admin-print.css" media="print">
 </head>
 <body>
 
@@ -496,7 +351,9 @@
                         <p style="text-align: right; font-size: 10pt; margin-top: 8px;">วันที่พิมพ์: <span id="reportPrintDate"></span></p>
                     </div>
 
-                    <div class="table-responsive report-table-wrap">
+                    <div id="attendancePrintGrid" class="print-only"></div>
+
+                    <div class="table-responsive report-table-wrap no-print">
                         <table id="attendanceTable" class="table align-middle mb-0" role="table" aria-labelledby="attendanceHeading">
                             <thead id="mainTableHeader" role="rowgroup">
                                 <tr role="row">
@@ -520,38 +377,39 @@
                         <h5 class="text-start fw-bold mb-3" style="color: var(--text-main);">
                             สรุปการปรับหักค่าบริการ รปภ. ประจำเดือน <span id="print_month_year">มกราคม 2569</span>
                         </h5>
+                        <p id="printPenaltyEmpty" class="print-only"></p>
                         <div class="table-responsive report-penalty-table">
                         <table class="table text-center align-middle m-0" style="border: 1px solid var(--border-color); border-collapse: collapse !important;">
                             <thead style="background-color: var(--table-header-bg); color: var(--text-muted); font-size: 0.9rem;">
                                 <tr>
-                                    <th style="width: 40%; border: 1px solid var(--border-color) !important;" class="text-start">รายการ</th>
-                                    <th style="width: 20%; border: 1px solid var(--border-color) !important;">อัตราหัก (บาท/ครั้ง)</th>
-                                    <th style="width: 20%; border: 1px solid var(--border-color) !important;">จำนวน (ครั้ง/ชั่วโมง)</th>
-                                    <th style="width: 20%; border: 1px solid var(--border-color) !important;">รวมเป็นเงิน (บาท)</th>
+                                    <th style="width: 40%; " class="text-start">รายการ</th>
+                                    <th style="width: 20%; ">อัตราหัก (บาท/ครั้ง)</th>
+                                    <th style="width: 20%; ">จำนวน (ครั้ง/ชั่วโมง)</th>
+                                    <th style="width: 20%; ">รวมเป็นเงิน (บาท)</th>
                                 </tr>
                             </thead>
                             <tbody style="color: var(--text-main);">
                                 <tr>
-                                    <td class="text-start" style="border: 1px solid var(--border-color) !important;"><strong>ขาดจุด/ทิ้งจุด (หัวหน้าชุด รปภ.)</strong></td>
-                                    <td id="print_chief_rate" style="border: 1px solid var(--border-color) !important;">0.00</td>
-                                    <td id="print_chief_times" style="border: 1px solid var(--border-color) !important;">0</td>
-                                    <td id="print_chief_total" style="border: 1px solid var(--border-color) !important;">0.00</td>
+                                    <td class="text-start"><strong>ขาดจุด/ทิ้งจุด (หัวหน้าชุด รปภ.)</strong></td>
+                                    <td id="print_chief_rate">0.00</td>
+                                    <td id="print_chief_times">0</td>
+                                    <td id="print_chief_total">0.00</td>
                                 </tr>
                                 <tr>
-                                    <td class="text-start" style="border: 1px solid var(--border-color) !important;"><strong>ขาดจุด/ทิ้งจุด (พนักงาน รปภ.)</strong></td>
-                                    <td id="print_guard_rate" style="border: 1px solid var(--border-color) !important;">0.00</td>
-                                    <td id="print_guard_times" style="border: 1px solid var(--border-color) !important;">0</td>
-                                    <td id="print_guard_total" style="border: 1px solid var(--border-color) !important;">0.00</td>
+                                    <td class="text-start"><strong>ขาดจุด/ทิ้งจุด (พนักงาน รปภ.)</strong></td>
+                                    <td id="print_guard_rate">0.00</td>
+                                    <td id="print_guard_times">0</td>
+                                    <td id="print_guard_total">0.00</td>
                                 </tr>
                                 <tr>
-                                    <td class="text-start" style="border: 1px solid var(--border-color) !important;"><strong>หักสาย (ชั่วโมง)</strong></td>
-                                    <td id="print_late_rate" style="border: 1px solid var(--border-color) !important;">0.00</td>
-                                    <td id="print_late_hours" style="border: 1px solid var(--border-color) !important;">0</td>
-                                    <td id="print_late_total" style="border: 1px solid var(--border-color) !important;">0.00</td>
+                                    <td class="text-start"><strong>หักสาย (ชั่วโมง)</strong></td>
+                                    <td id="print_late_rate">0.00</td>
+                                    <td id="print_late_hours">0</td>
+                                    <td id="print_late_total">0.00</td>
                                 </tr>
                                 <tr>
-                                    <td colspan="3" class="text-end fw-bold" style="border: 1px solid var(--border-color) !important; color: var(--text-main);">รวมหักในเดือน <span id="print_total_month">มกราคม 2569</span> ทั้งหมด</td>
-                                    <td id="print_grand_total" class="fw-bold fs-5" style="border: 1px solid var(--border-color) !important; color: #dc2626;">0.00</td>
+                                    <td colspan="3" class="text-end fw-bold" style="color: var(--text-main);">รวมหักในเดือน <span id="print_total_month">มกราคม 2569</span> ทั้งหมด</td>
+                                    <td id="print_grand_total" class="fw-bold fs-5" style="color: #dc2626;">0.00</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -749,6 +607,7 @@ const ADMIN_PIN = "safety1234";
 
 let sortableInstance = null;
 let activeReport = null;
+let savedPenaltyMonth = null;
 let reportRequest = 0;
 
 // ================= ⏰ CUSTOM TIME FORMATTER =================
@@ -1380,15 +1239,63 @@ async function openRecordModal(rowId = null) {
 
 // ================= EXPORT =================
 function exportPDF() {
+    if (activeReport) window.print();
+}
+
+window.addEventListener('beforeprint', prepareAttendancePrint);
+
+function prepareAttendancePrint() {
+    const container = document.getElementById('attendanceTableContainer');
+    const grid = document.getElementById('attendancePrintGrid');
     if (!activeReport) return;
     const { month, name, shift, status } = activeReport.filters;
     const monthDate = new Date(month + '-01T00:00:00+07:00');
-    const thaiMonth = new Intl.DateTimeFormat('th-TH', { timeZone: 'Asia/Bangkok', month: 'long', year: 'numeric' }).format(monthDate);
-    const penaltyMonth = document.getElementById('print_month_year').textContent?.trim();
-    const showPenalty = name === 'ALL' && shift === 'ALL' && status === 'ALL' && [month, thaiMonth].includes(penaltyMonth);
-    document.getElementById('attendanceTableContainer').classList.toggle('hide-penalty-in-print', !showPenalty);
+    const monthFormat = calendar => new Intl.DateTimeFormat('th-TH', {
+        timeZone: 'Asia/Bangkok', month: 'long', year: 'numeric', calendar
+    }).format(monthDate);
+    const normalize = text => text?.trim().replace(/\s+/g, ' ');
+    const fullMonth = name === 'ALL' && shift === 'ALL' && status === 'ALL';
+    const hasPenalty = [month, monthFormat('buddhist'), monthFormat('gregory')].includes(normalize(savedPenaltyMonth));
+    container.classList.toggle('hide-penalty-in-print', !fullMonth);
+    container.classList.toggle('empty-penalty-in-print', !hasPenalty);
+    document.getElementById('printPenaltyEmpty').textContent = 'ยังไม่มีข้อมูลสรุปการปรับหักค่าบริการสำหรับเดือน ' + monthFormat('buddhist');
     document.getElementById('reportPrintDate').textContent = new Date().toLocaleDateString('th-TH', { timeZone: 'Asia/Bangkok' });
-    window.print();
+
+    const printTable = document.createElement('table');
+    printTable.id = 'attendancePrintTable';
+    const columns = ['no', 'name', 'time_in', 'time_out', 'remark'];
+    const colgroup = document.createElement('colgroup');
+    for (const name of columns) {
+        const col = document.createElement('col');
+        col.dataset.col = name;
+        colgroup.append(col);
+    }
+    printTable.append(colgroup);
+
+    const copyCells = (source, target) => {
+        for (const name of columns) {
+            const cell = source.querySelector(`[data-col="${name}"]`).cloneNode(true);
+            cell.classList.remove('col-hidden');
+            cell.querySelectorAll('.no-print, .report-mobile-time-label').forEach(item => item.remove());
+            target.append(cell);
+        }
+    };
+    copyCells(document.getElementById('mainTableHeader').rows[0], printTable.createTHead().insertRow());
+    let section;
+    for (const source of document.getElementById('attendanceTbody').rows) {
+        if (!section || source.classList.contains('group-header')) section = printTable.createTBody();
+        const row = section.insertRow();
+        if (source.classList.contains('data-row')) {
+            copyCells(source, row);
+        } else {
+            row.className = source.className;
+            const cell = source.cells[0].cloneNode(true);
+            cell.colSpan = columns.length;
+            cell.querySelectorAll('i').forEach(icon => icon.remove());
+            row.append(cell);
+        }
+    }
+    grid.replaceChildren(printTable);
 }
 
 function exportExcel() {
@@ -1607,6 +1514,7 @@ async function savePenaltyData() {
 }
 
 function renderPenaltyTable(data) {
+    savedPenaltyMonth = data.month_year;
     document.getElementById('print_month_year').innerText = data.month_year;
     document.getElementById('print_total_month').innerText = data.month_year;
 

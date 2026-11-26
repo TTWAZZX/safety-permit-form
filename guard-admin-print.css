@@ -1,0 +1,197 @@
+@page {
+    size: A4 portrait;
+    margin: 15mm 10mm;
+}
+
+html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    min-height: 0 !important;
+    color: #000 !important;
+    background: #fff !important;
+    font: 9.6pt/1.4 "Sarabun", sans-serif !important;
+}
+
+.no-print,
+#loginScreen,
+#loadingScreen,
+#tab-master,
+#tab-logs,
+.modal,
+.modal-backdrop,
+.swal2-container {
+    display: none !important;
+}
+
+.print-only { display: block !important; }
+
+.report-shell,
+#attendanceTableContainer,
+.report-penalty-table {
+    display: block;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    overflow: visible !important;
+}
+
+.print-header {
+    text-align: center;
+    margin-bottom: 5mm;
+    padding-bottom: 2.5mm;
+    border-bottom: 1.5pt solid #000;
+    break-inside: avoid;
+    break-after: avoid;
+}
+
+.print-header h4 {
+    margin: 0 0 1mm;
+    font-size: 16pt;
+    font-weight: 700;
+}
+
+.print-header p {
+    margin: .5mm 0;
+    font-size: 11pt;
+}
+
+/* Keep the painted outer borders a safe distance inside the page clip. */
+#attendancePrintGrid,
+#penalty-summary-section {
+    margin-inline: 1.5mm;
+}
+
+#attendancePrintTable,
+#penalty-summary-section table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+    border: 1pt solid #000;
+    color: #000;
+    background: #fff;
+}
+
+#attendancePrintTable thead,
+#penalty-summary-section thead { display: table-header-group; }
+
+#attendancePrintTable tbody,
+#penalty-summary-section,
+.print-footer-content { break-inside: avoid; }
+
+#attendancePrintTable tr,
+#penalty-summary-section tr { break-inside: avoid; }
+
+#attendancePrintTable th,
+#attendancePrintTable td,
+#penalty-summary-section th,
+#penalty-summary-section td {
+    border: .75pt solid #000 !important;
+    padding: 1.55mm 2mm;
+    color: #000 !important;
+    font-size: 9.6pt;
+    vertical-align: middle;
+    overflow-wrap: anywhere;
+}
+
+#attendancePrintTable thead th,
+#penalty-summary-section thead th {
+    color: #000;
+    background: #f2f2f2;
+    text-align: center;
+    text-transform: none;
+    letter-spacing: normal;
+    font-weight: 700;
+    position: static;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+#attendancePrintTable col[data-col="no"] { width: 7%; }
+#attendancePrintTable col[data-col="name"] { width: 35%; }
+#attendancePrintTable col[data-col="time_in"],
+#attendancePrintTable col[data-col="time_out"] { width: 13%; }
+#attendancePrintTable col[data-col="remark"] { width: 32%; }
+
+#attendancePrintTable td[data-col="no"],
+#attendancePrintTable td[data-col="time_in"],
+#attendancePrintTable td[data-col="time_out"] {
+    text-align: center;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+#attendancePrintTable .group-header { break-after: avoid; }
+
+#attendancePrintTable .group-header td {
+    background: #f2f2f2;
+    font-weight: 700;
+    padding: 1.6mm 2mm !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+#attendancePrintTable .header-day td { background: #fef3c7; }
+
+#attendancePrintTable .header-night td {
+    background: #334155;
+    color: #fff !important;
+}
+
+#attendancePrintTable .report-empty td { text-align: center; }
+
+#attendancePrintTable .badge {
+    padding: 0;
+    color: inherit;
+    background: transparent;
+    font-size: inherit;
+    font-weight: inherit;
+    line-height: inherit;
+    white-space: normal;
+}
+
+#attendancePrintTable .report-remark-text:not(:empty) + .badge,
+#attendancePrintTable .badge + .badge { margin-inline-start: .35em; }
+
+#penalty-summary-section {
+    margin-block: 5mm;
+    padding: 0;
+    background: #fff !important;
+}
+
+#penalty-summary-section h5 {
+    margin-bottom: 3mm;
+    font-size: 11pt;
+    font-weight: 700;
+}
+
+#penalty-summary-section th,
+#penalty-summary-section td { padding: 1.6mm; }
+
+#penalty-summary-section #print_grand_total { font-size: 11pt !important; }
+
+.hide-penalty-in-print #penalty-summary-section,
+#attendanceTableContainer:not(.empty-penalty-in-print) #printPenaltyEmpty,
+.empty-penalty-in-print #penalty-summary-section > h5,
+.empty-penalty-in-print .report-penalty-table {
+    display: none !important;
+}
+
+#printPenaltyEmpty {
+    margin: 0;
+    padding: 2.5mm;
+    border: .75pt solid #000;
+}
+
+.print-footer-content {
+    text-align: center;
+    margin: 7mm auto 0;
+}
+
+.sign-box {
+    width: 90mm;
+    margin: 0 auto;
+    font-size: 11pt;
+}
+
+.sign-line { border-bottom: 1pt solid #000; margin: 10mm auto 2.5mm; width: 80%; }
