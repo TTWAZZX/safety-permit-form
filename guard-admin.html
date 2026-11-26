@@ -299,6 +299,10 @@
                             </select>
                         </div>
                     </div>
+                    <div class="form-check mt-3">
+                        <input type="checkbox" id="filterUnderstaffed" class="form-check-input" onchange="renderAttendanceReport()">
+                        <label for="filterUnderstaffed" class="form-check-label fw-semibold">เฉพาะกะที่คนไม่ครบ</label>
+                    </div>
                 </section>
 
                 <div class="report-detail-grid no-print">
@@ -380,9 +384,14 @@
                     </div>
                     
                     <div id="penalty-summary-section" class="report-penalty print-source" style="background-color: var(--card-bg); page-break-inside: avoid;">
-                        <h5 class="text-start fw-bold mb-3" style="color: var(--text-main);">
-                            สรุปการปรับหักค่าบริการ รปภ. ประจำเดือน <span id="print_month_year">มกราคม 2569</span>
-                        </h5>
+                        <div class="d-flex flex-wrap align-items-baseline justify-content-between gap-2 mb-3">
+                            <h5 class="text-start fw-bold mb-0" style="color: var(--text-main);">
+                                สรุปการปรับหักค่าบริการ รปภ. ประจำเดือน <span id="print_month_year">มกราคม 2569</span>
+                            </h5>
+                            <button type="button" onclick="openPenaltyModal()" class="btn report-secondary no-print">
+                                <i class="bi bi-pencil-square" aria-hidden="true"></i> แก้ไขยอดหักเงิน
+                            </button>
+                        </div>
                         <p id="printPenaltyEmpty" class="print-only print-penalty-empty"></p>
                         <div class="table-responsive report-penalty-table">
                         <table class="table text-center align-middle m-0" style="border: 1px solid var(--border-color); border-collapse: collapse !important;">
@@ -553,7 +562,7 @@
             </div>
             <div class="modal-body">
                 <div class="mb-3">
-                    <label class="form-label fw-bold text-dark">ระบุชื่อเดือนที่ต้องการพิมพ์</label>
+                    <label class="form-label fw-bold text-dark" for="input_month_year">เดือนที่กำลังแก้ไข</label>
                     <input type="month" id="input_month_year" class="form-control" readonly>
                 </div>
                 
@@ -876,8 +885,11 @@ function renderAttendanceReport() {
     const name = document.getElementById('filterName').value;
     const shift = document.getElementById('filterShift').value;
     const status = document.getElementById('filterStatus').value;
+    const understaffedOnly = document.getElementById('filterUnderstaffed').checked;
     const roster = activeReport.roster;
-    const reportRows = buildGuardReport(records, roster, Date.now());
+    const now = Date.now();
+    const reportRows = buildGuardReport(records, roster, now);
+    const staffingByShift = buildGuardShiftStaffing(reportRows, month, days, now);
     const personRows = reportRows.filter(row => name === 'ALL' || row.fullname === name);
     if (!roster.length && name !== 'ALL' && shift === 'ALL') {
         const today = guardReportToday();
@@ -893,8 +905,9 @@ function renderAttendanceReport() {
     }
 
     const shiftRows = personRows.filter(row => shift === 'ALL' || row.shiftKey === getGuardShift(shift));
-    const rows = shiftRows.filter(row => status === 'ALL' || row.flags[status]);
-    activeReport.filters = { month, name, shift, status };
+    const rows = shiftRows.filter(row => (status === 'ALL' || row.flags[status]) &&
+        (!understaffedOnly || staffingByShift.get(guardReportGroupKey(row))?.missing > 0));
+    activeReport.filters = { month, name, shift, status, understaffedOnly };
     activeReport.visibleRows = rows;
     window.currentAttendanceData = rows;
 
@@ -903,46 +916,72 @@ function renderAttendanceReport() {
     try { savedOrder = JSON.parse(localStorage.getItem(storageKey)) || []; } catch { /* Use default ordering. */ }
     const order = new Map((Array.isArray(savedOrder) ? savedOrder : []).map((id, index) => [id, index]));
     const shiftRank = { morning: 0, night: 1 };
-    rows.sort((a, b) => a.work_date.localeCompare(b.work_date) ||
-        (shiftRank[a.shiftKey] ?? 2) - (shiftRank[b.shiftKey] ?? 2) ||
+    const compareShifts = (a, b) => a.work_date.localeCompare(b.work_date) ||
+        (shiftRank[a.shiftKey] ?? 2) - (shiftRank[b.shiftKey] ?? 2);
+    rows.sort((a, b) => compareShifts(a, b) ||
         (order.get(String(a.id)) ?? Infinity) - (order.get(String(b.id)) ?? Infinity) ||
         a.fullname.localeCompare(b.fullname, 'th'));
 
     const tbody = document.getElementById('attendanceTbody');
     const parts = [];
-    let group = '';
-    let number = 0;
-    rows.forEach(row => {
-        const nextGroup = row.work_date + '/' + (row.shiftKey || '');
-        if (group !== nextGroup) {
-            group = nextGroup;
-            if (name === 'ALL') number = 0;
-            const duty = guardShifts[row.shiftKey];
-            const shiftClass = row.shiftKey === 'morning' ? 'header-day' : row.shiftKey === 'night' ? 'header-night' : '';
-            const shiftIcon = row.shiftKey === 'morning' ? 'bi-sun-fill' : 'bi-moon-stars-fill';
-            const label = duty ? `<i class="bi ${shiftIcon} me-1"></i> ${duty.label} (${duty.startsAt} - ${duty.endsAt})` : 'ไม่ระบุกะ';
-            parts.push(`<tr class="group-header no-sort ${shiftClass}"><td colspan="9" class="text-start fs-6">
-                วันที่ ${formatDateThai(row.work_date)} | ${label}</td></tr>`);
+    const groups = new Map();
+    for (const row of rows) {
+        const key = guardReportGroupKey(row);
+        if (!groups.has(key)) groups.set(key, { work_date: row.work_date, shiftKey: row.shiftKey, rows: [] });
+        groups.get(key).rows.push(row);
+    }
+    // A started shift may have no attendance rows at all.
+    if (name === 'ALL' && status === 'ALL') {
+        for (const [key, staffing] of staffingByShift) {
+            if (staffing.missing > 0 && !groups.has(key) && (shift === 'ALL' || staffing.shiftKey === getGuardShift(shift))) {
+                groups.set(key, { ...staffing, rows: [] });
+            }
         }
-        parts.push(renderRow(row, ++number));
-    });
-    tbody.toggleAttribute('data-reorderable', status === 'ALL');
+    }
+
+    let number = 0;
+    for (const group of [...groups.values()].sort(compareShifts)) {
+        const { work_date, shiftKey } = group;
+        if (name === 'ALL') number = 0;
+        const duty = guardShifts[shiftKey];
+        const shiftClass = shiftKey === 'morning' ? 'header-day' : shiftKey === 'night' ? 'header-night' : '';
+        const shiftIcon = shiftKey === 'morning' ? 'bi-sun-fill' : 'bi-moon-stars-fill';
+        const label = duty ? `<i class="bi ${shiftIcon} me-1"></i> ${duty.label} (${duty.startsAt} - ${duty.endsAt})` : 'ไม่ระบุกะ';
+        const staffing = staffingByShift.get(guardReportGroupKey(group));
+        let badge = '';
+        if (staffing) {
+            const { count, target, missing, started } = staffing;
+            const state = missing ? 'short' : started ? 'full' : 'pending';
+            const detail = missing ? `ขาด ${missing} คน` : started ? 'ครบ' : 'รอเริ่มกะ';
+            badge = `<span class="report-shift-staffing report-shift-staffing-${state}">มา ${count}/${target} คน · ${detail}</span>`;
+        }
+        parts.push(`<tr class="group-header no-sort ${shiftClass}${staffing?.missing ? ' report-shift-short' : ''}"><td colspan="9" class="text-start fs-6">
+            วันที่ ${formatDateThai(work_date)} | ${label} ${badge}</td></tr>`);
+        if (!group.rows.length) {
+            parts.push('<tr class="report-empty no-sort"><td colspan="9">ไม่มีรายการลงเวลาของกะนี้</td></tr>');
+        }
+        for (const row of group.rows) parts.push(renderRow(row, ++number));
+    }
+    const reorderable = status === 'ALL' && !understaffedOnly;
+    tbody.toggleAttribute('data-reorderable', reorderable);
     tbody.innerHTML = parts.join('') || '<tr class="report-empty no-sort"><td colspan="9">ไม่มีรายการตามตัวกรอง</td></tr>';
     document.querySelectorAll('[id^="colSwitch_"]').forEach(input => toggleColumn(Number(input.id.split('_')[1]), input.checked));
     updateKPIs(personRows);
     renderLateSummary(summarizeGuardLateness(shiftRows));
     updateRosterStatus(month, roster.length);
-    const printLabel = `ประจำเดือน ${month} | พนักงาน ${guardNameLabel(name)} | กะ ${guardShiftLabel(shift)} | ${guardReportStatuses[status]}`;
+    const staffingFilterLabel = understaffedOnly ? 'เฉพาะกะที่คนไม่ครบ' : '';
+    const printLabel = [`ประจำเดือน ${month}`, `พนักงาน ${guardNameLabel(name)}`, `กะ ${guardShiftLabel(shift)}`,
+        guardReportStatuses[status], staffingFilterLabel].filter(Boolean).join(' | ');
     document.getElementById('printInfoLabel').textContent = printLabel;
     const monthDate = new Date(month + '-01T00:00:00+07:00');
     document.getElementById('reportPeriod').textContent = new Intl.DateTimeFormat('th-TH', {
         timeZone: 'Asia/Bangkok', month: 'long', year: 'numeric'
     }).format(monthDate);
-    document.getElementById('attendanceTableContainer').toggleAttribute('data-filtered', name !== 'ALL' || shift !== 'ALL' || status !== 'ALL');
+    document.getElementById('attendanceTableContainer').toggleAttribute('data-filtered', name !== 'ALL' || shift !== 'ALL' || status !== 'ALL' || understaffedOnly);
     document.getElementById('reportResults').textContent = [
         `${rows.length.toLocaleString('th-TH')} รายการ`, guardNameLabel(name),
-        guardShiftLabel(shift), guardReportStatuses[status]
-    ].join(' · ');
+        guardShiftLabel(shift), guardReportStatuses[status], staffingFilterLabel
+    ].filter(Boolean).join(' · ');
 
     document.getElementById('btnSaveOrder').classList.add('d-none');
     sortableInstance?.destroy();
@@ -950,13 +989,14 @@ function renderAttendanceReport() {
     if (typeof Sortable !== "function") return;
     sortableInstance = new Sortable(tbody, {
         animation: 150, ghostClass: 'sortable-ghost', filter: '.no-sort, button', preventOnFilter: false, delay: 180, delayOnTouchOnly: true, touchStartThreshold: 5,
-        disabled: status !== 'ALL',
+        disabled: !reorderable,
         onEnd: () => document.getElementById('btnSaveOrder').classList.remove('d-none')
     });
 }
 
 function resetReportFilters() {
     for (const id of ['filterName', 'filterShift', 'filterStatus']) document.getElementById(id).value = 'ALL';
+    document.getElementById('filterUnderstaffed').checked = false;
     renderAttendanceReport();
 }
 
@@ -1329,12 +1369,12 @@ window.addEventListener('beforeprint', prepareAttendancePrint);
 function prepareAttendancePrint() {
     const grid = document.getElementById('attendancePrintGrid');
     if (!activeReport) return;
-    const { month, name, shift, status } = activeReport.filters;
+    const { month, name, shift, status, understaffedOnly } = activeReport.filters;
     const monthDate = new Date(month + '-01T00:00:00+07:00');
     const monthFormat = calendar => new Intl.DateTimeFormat('th-TH', {
         timeZone: 'Asia/Bangkok', month: 'long', year: 'numeric', calendar
     }).format(monthDate);
-    const fullMonth = name === 'ALL' && shift === 'ALL' && status === 'ALL';
+    const fullMonth = name === 'ALL' && shift === 'ALL' && status === 'ALL' && !understaffedOnly;
     const hasPenalty = savedPenaltyMonth === month;
     document.getElementById('printPenaltyEmpty').textContent = 'ยังไม่มีข้อมูลสรุปการปรับหักค่าบริการสำหรับเดือน ' + monthFormat('buddhist');
     document.getElementById('reportPrintDate').textContent = new Date().toLocaleDateString('th-TH', { timeZone: 'Asia/Bangkok' });
@@ -1350,6 +1390,9 @@ function prepareAttendancePrint() {
     footer.className = 'print-report-end';
     if (fullMonth) {
         const penalty = clonePrintSection('penalty-summary-section');
+        const heading = penalty.querySelector('h5');
+        heading.classList.replace('mb-0', 'mb-3');
+        heading.parentElement.replaceWith(heading);
         penalty.classList.toggle('print-penalty-unavailable', !hasPenalty);
         footer.append(penalty);
     }

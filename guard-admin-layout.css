@@ -139,6 +139,11 @@ body { background: var(--report-soft); color: var(--report-ink); }
 #attendanceTable .group-header td { padding: 9px 15px !important; font-size: .86rem !important; font-weight: 700; background: var(--report-soft); color: var(--report-muted); }
 #attendanceTable .header-day td { background: var(--report-day-soft); color: var(--report-day); }
 #attendanceTable .header-night td { background: var(--report-night-soft); color: var(--report-night); }
+#attendanceTable .report-shift-short td { background: var(--report-danger-soft); color: var(--report-danger); }
+.report-shift-staffing { display: inline-block; margin-inline-start: 5px; padding: 2px 7px; border: 1px solid currentColor; border-radius: 6px; font-size: .8rem; line-height: 1.4; }
+.report-shift-staffing-full { color: var(--report-accent); background: var(--report-accent-soft); }
+.report-shift-staffing-short { color: var(--report-danger); background: var(--report-surface); }
+.report-shift-staffing-pending { color: var(--report-muted); background: var(--report-surface); }
 #attendanceTable .data-row:hover td { background-color: var(--report-soft); }
 #attendanceTable [data-col="name"] { min-width: 160px; }
 #attendanceTable [data-col="date"], #attendanceTable [data-col="time_in"], #attendanceTable [data-col="time_out"] { white-space: nowrap; font-variant-numeric: tabular-nums; }

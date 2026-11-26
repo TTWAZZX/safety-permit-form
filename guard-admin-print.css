@@ -163,6 +163,8 @@
     color: #fff !important;
 }
 
+.attendance-print-table .report-shift-short td { background: #fff0f2; color: #7f1d1d !important; }
+.attendance-print-table .report-shift-staffing { margin-inline-start: 2mm; white-space: nowrap; }
 .attendance-print-table .report-empty td { text-align: center; }
 
 .attendance-print-table .report-remark-text { margin: 0; }

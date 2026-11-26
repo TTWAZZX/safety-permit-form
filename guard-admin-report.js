@@ -106,6 +106,39 @@ function buildGuardReport(records, roster, now) {
     return rows;
 }
 
+const guardShiftTargets = { morning: 6, night: 5 };
+
+function guardReportGroupKey(row) {
+    return row.work_date + '/' + (row.shiftKey || '');
+}
+
+function buildGuardShiftStaffing(rows, month, days, now) {
+    const namesByShift = new Map();
+    for (const row of rows) {
+        if (!row.shiftKey) continue;
+        const key = guardReportGroupKey(row);
+        if (!namesByShift.has(key)) namesByShift.set(key, new Set());
+        const name = row.fullname?.trim().replace(/\s+/g, ' ').normalize('NFC');
+        if (name && !row.flags.absent && !row.remark_type?.trim().startsWith('ลา') && guardReportTimeRecorded(row.time_in)) {
+            namesByShift.get(key).add(name);
+        }
+    }
+
+    const staffing = new Map();
+    for (let day = 1; day <= days; day++) {
+        const work_date = month + '-' + String(day).padStart(2, '0');
+        for (const [shiftKey, target] of Object.entries(guardShiftTargets)) {
+            const key = guardReportGroupKey({ work_date, shiftKey });
+            const started = now >= Date.parse(`${work_date}T${guardShifts[shiftKey].startsAt}:00+07:00`);
+            if (!started && !namesByShift.has(key)) continue;
+            const count = namesByShift.get(key)?.size ?? 0;
+            const missing = started ? Math.max(0, target - count) : 0;
+            staffing.set(key, { work_date, shiftKey, count, target, started, missing });
+        }
+    }
+    return staffing;
+}
+
 function summarizeGuardLateness(rows) {
     const names = new Map();
     for (const row of rows) {
