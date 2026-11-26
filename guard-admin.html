@@ -613,6 +613,7 @@ let guardAdminToken = '';
 let guardAdminPin = '';
 const penaltyDefaults = { chief_rate: 786.67, chief_times: 0, guard_rate: 739.17, guard_times: 0, late_rate: 100, late_hours: 0 };
 let activeReport = null;
+let sortableInstance = null;
 let savedPenaltyMonth = null;
 let reportRequest = 0;
 
@@ -729,24 +730,23 @@ function logout() {
 
 async function unlockDashboard() {
     document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('loadingScreen').style.display = 'flex';
-    
-    const currentMonthVal = guardReportToday().slice(0, 7);
-    document.getElementById('filterMonth').value = currentMonthVal;
-    document.getElementById('logFilterMonth').value = currentMonthVal;
-    
+    document.getElementById('mainApp').style.display = 'block';
+    const currentMonth = guardReportToday().slice(0, 7);
+    document.getElementById('filterMonth').value = currentMonth;
+    document.getElementById('logFilterMonth').value = currentMonth;
     try {
-        await loadFilterNames(); 
-        if (!(await loadAttendance())) throw new Error('โหลดรายงานไม่สำเร็จ');
+        await loadFilterNames();
+        await loadAttendance();
         await loadMasterTables();
-        
-        document.getElementById('loadingScreen').style.display = 'none';
-        document.getElementById('mainApp').style.display = 'block';
-    } catch (err) {
-        document.getElementById('loadingScreen').style.display = 'none';
-        document.getElementById('loginScreen').style.display = 'flex';
-        throw err;
+    } catch (error) {
+        showGuardReportError(error);
     }
+}
+
+function showGuardReportError(error) {
+    const message = String(error?.message || 'กรุณารีเฟรชข้อมูลแล้วลองอีกครั้ง');
+    document.getElementById('reportResults').textContent = 'โหลดรายงานไม่สำเร็จ · ' + message;
+    Swal.fire({ title: 'โหลดรายงานไม่สำเร็จ', text: message, icon: 'error' });
 }
 
 // ================= THEME =================
@@ -866,7 +866,7 @@ async function loadAttendance() {
         Swal.close();
         return true;
     } catch (error) {
-        if (request === reportRequest) Swal.fire('โหลดรายงานไม่สำเร็จ', error.message, 'error');
+        if (request === reportRequest) showGuardReportError(error);
     }
 }
 
@@ -945,7 +945,9 @@ function renderAttendanceReport() {
     ].join(' · ');
 
     document.getElementById('btnSaveOrder').classList.add('d-none');
-    if (sortableInstance) sortableInstance.destroy();
+    sortableInstance?.destroy();
+    sortableInstance = null;
+    if (typeof Sortable !== "function") return;
     sortableInstance = new Sortable(tbody, {
         animation: 150, ghostClass: 'sortable-ghost', filter: '.no-sort, button', preventOnFilter: false, delay: 180, delayOnTouchOnly: true, touchStartThreshold: 5,
         disabled: status !== 'ALL',
