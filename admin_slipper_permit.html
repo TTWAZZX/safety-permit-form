@@ -13,7 +13,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/locale/th.min.js"></script>
@@ -516,9 +515,7 @@
 
     // ================= 2. CONFIG & DB =================
     const SUPABASE_URL = 'https://dqsfioiqwxuxpucwwhsv.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxc2Zpb2lxd3h1eHB1Y3d3aHN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1OTk1NjUsImV4cCI6MjA4NDE3NTU2NX0.L_u0Ff3uHofxiimEs6ySFB4TPNtOWiKeSu3KFoVcA1U';
     
-    const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     moment.locale('th'); 
     
     let dashboardData = []; 
@@ -545,15 +542,8 @@
                 { data: activeData, error: activeError },
                 { data: analyticsData, error: analyticsError }
             ] = await Promise.all([
-                db.from('slipper_requests')
-                    .select('*')
-                    .in('status', ['Pending', 'Approved', 'Returning'])
-                    .order('created_at', { ascending: false }),
-                db.from('slipper_requests')
-                    .select('*')
-                    .gte('request_date', startOfYear)
-                    .lte('request_date', endOfYear)
-                    .order('created_at', { ascending: false })
+                adminAccess.read('active'),
+                adminAccess.read('range', { from: startOfYear, to: endOfYear })
             ]);
 
             if (activeError) throw activeError;
@@ -578,7 +568,7 @@
         const end = moment(monthVal, 'YYYY-MM').endOf('month').format('YYYY-MM-DD');
         Swal.fire({ title: 'กำลังโหลดข้อมูล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
         try {
-            const { data, error } = await db.from('slipper_requests').select('*').gte('request_date', start).lte('request_date', end).order('request_date', { ascending: false });
+            const { data, error } = await adminAccess.read('range', { from: start, to: end, order: 'request_date' });
             if (error) throw error;
             historyDataList = data;
             currentFilteredData = data;
@@ -994,7 +984,7 @@
 
     async function viewBlacklist() {
         try {
-            const { data, error } = await db.from('slipper_blacklist').select('*').order('created_at', { ascending: false });
+            const { data, error } = await adminAccess.read('blacklist');
             if (error) throw error;
             let listHtml = data.length === 0 ? '<p class="text-muted">ไม่มีพนักงานในแบล็กลิสต์</p>' : '';
             data.forEach(b => {
@@ -1027,7 +1017,7 @@
     async function showUserFullHistory(empId) {
         Swal.fire({ title: 'กำลังดึงประวัติ...', didOpen: () => Swal.showLoading() });
         try {
-            const { data, error } = await db.from('slipper_requests').select('*').eq('emp_id', empId).order('request_date', { ascending: false });
+            const { data, error } = await adminAccess.read('employee', { empId });
             if (error) throw error;
             const user = data[0]; const totalBorrows = data.filter(r => r.status === 'Completed' || r.status === 'Approved' || r.status === 'Returning').length;
             let historyListHtml = '';

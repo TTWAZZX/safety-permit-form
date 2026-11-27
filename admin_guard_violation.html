@@ -12,7 +12,6 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
@@ -442,8 +441,6 @@
 
 <script>
 const SUPABASE_URL = 'https://dqsfioiqwxuxpucwwhsv.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxc2Zpb2lxd3h1eHB1Y3d3aHN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1OTk1NjUsImV4cCI6MjA4NDE3NTU2NX0.L_u0Ff3uHofxiimEs6ySFB4TPNtOWiKeSu3KFoVcA1U';
-const db = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 const WORKFLOW_PENDING = 'Pending Safety Review';
 const WORKFLOW_REPEAT = 'Repeat Offender Review';
 const WORKFLOW_UNDER_REVIEW = 'Under Review';
@@ -463,7 +460,8 @@ let filteredReports = [];
 let allEmployees = [];
 let repeatCounts = {};
 let reportAutoRefreshTimer = null;
-let reportRealtimeChannel = null;
+let reportRefreshTimer = null;
+let refreshingReports = false;
 let currentLang = localStorage.getItem('guardViolationAdminLang') || 'th';
 let activeReportId = null;
 let activeRepeatFilterKey = '';
@@ -887,13 +885,9 @@ function renderTimeline(events) {
 }
 
 async function fetchCaseTimeline(report) {
-    if (!db || !report?.case_id) return [];
+    if (!adminAccess || !report?.case_id) return [];
 
-    const { data, error } = await db
-        .from('violation_case_timeline')
-        .select('*')
-        .eq('case_id', report.case_id)
-        .order('created_at', { ascending: true });
+    const { data, error } = await adminAccess.read('timeline', { caseId: report.case_id });
 
     if (error) {
         console.warn('Timeline load skipped:', error.message);
@@ -904,7 +898,7 @@ async function fetchCaseTimeline(report) {
 }
 
 async function addCaseTimelineEvent(event) {
-    if (!db || !event.case_id) return;
+    if (!adminAccess || !event.case_id) return;
 
     const { error } = await adminAccess.mutate('violation_case_timeline', 'insert', [{
         case_id: event.case_id,
@@ -922,7 +916,7 @@ async function addCaseTimelineEvent(event) {
 }
 
 async function markReportViewed(report) {
-    if (!db || !report || report.admin_seen_at) return;
+    if (!adminAccess || !report || report.admin_seen_at) return;
 
     const now = new Date().toISOString();
     const { error } = await adminAccess.mutate('violation_reports', 'update', [{
@@ -990,12 +984,7 @@ async function fetchAllEmployeeRows() {
     let from = 0;
 
     while (true) {
-        const to = from + EMPLOYEE_PAGE_SIZE - 1;
-        const { data, error } = await db
-            .from('employees_list')
-            .select('emp_id, fullname, section, updated_at, created_at')
-            .order('emp_id', { ascending: true })
-            .range(from, to);
+        const { data, error } = await adminAccess.read('employees', { offset: from });
 
         if (error) throw error;
 
@@ -1013,7 +1002,7 @@ async function fetchAllEmployeeRows() {
 }
 
 async function fetchEmployees() {
-    if (!db) {
+    if (!adminAccess) {
         Swal.fire(t('connectionFailed'), t('supabaseLoadFailed'), 'error');
         return;
     }
@@ -1031,23 +1020,18 @@ async function fetchEmployees() {
     }
 }
 
-async function fetchAllReportRows() {
+async function fetchAllReportRows(quiet = false) {
     const rows = [];
     let from = 0;
 
     while (true) {
-        const to = from + REPORT_PAGE_SIZE - 1;
-        const { data, error } = await db
-            .from('violation_reports')
-            .select('*')
-            .order('created_at', { ascending: false })
-            .range(from, to);
+        const { data, error } = await adminAccess.read('reports', { offset: from });
 
         if (error) throw error;
 
         const pageRows = data || [];
         rows.push(...pageRows);
-        document.getElementById('lastUpdated').innerText = t('loadingDataWithCount', rows.length);
+        if (!quiet) document.getElementById('lastUpdated').innerText = t('loadingDataWithCount', rows.length);
 
         if (pageRows.length < REPORT_PAGE_SIZE) break;
         from += REPORT_PAGE_SIZE;
@@ -1215,7 +1199,7 @@ async function handleEmployeeExcel(event) {
     const preview = document.getElementById('employeeImportPreview');
     if (!file) return;
 
-    if (!db) {
+    if (!adminAccess) {
         Swal.fire(t('connectionFailed'), t('supabaseLoadFailed'), 'error');
         input.value = '';
         return;
@@ -1286,48 +1270,30 @@ async function handleEmployeeExcel(event) {
 }
 
 function setupRealtimeReports() {
-    if (!db || reportRealtimeChannel) return;
-
-    try {
-        reportRealtimeChannel = db
-            .channel('guard-violation-admin-realtime')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'violation_reports' }, (payload) => {
-                const eventType = payload.eventType || 'change';
-                if (payload.new && ['INSERT', 'UPDATE'].includes(eventType)) {
-                    Swal.fire({
-                        toast: true,
-                        position: 'top-end',
-                        icon: eventType === 'INSERT' ? 'info' : 'success',
-                        title: eventType === 'INSERT' ? t('newCaseToast') : t('updatedCaseToast'),
-                        timer: 1800,
-                        showConfirmButton: false
-                    });
-                }
-                fetchReports();
-            })
-            .subscribe((status) => {
-                if (status === 'SUBSCRIBED') {
-                    document.getElementById('lastUpdated').innerText = t('realtimeReady');
-                }
-            });
-    } catch (err) {
-        console.warn('Realtime setup skipped:', err.message);
-    }
+    if (!adminAccess || reportRefreshTimer) return;
+    reportRefreshTimer = setInterval(() => {
+        if (document.visibilityState === 'visible') fetchReports(true);
+    }, 30000);
 }
 
-async function fetchReports() {
-    if (!db) {
+async function fetchReports(quiet = false) {
+    if (!adminAccess) {
         Swal.fire(t('connectionFailed'), t('supabaseLoadFailed'), 'error');
         return;
     }
 
-    document.getElementById('lastUpdated').innerText = t('loadingData');
-
+    if (quiet && refreshingReports) return;
+    refreshingReports = true;
+    if (!quiet) document.getElementById('lastUpdated').innerText = t('loadingData');
     try {
-        allReports = await fetchAllReportRows();
+        const reports = await fetchAllReportRows(quiet);
+        if (quiet && JSON.stringify(reports) === JSON.stringify(allReports)) return;
+        allReports = reports;
     } catch (error) {
-        Swal.fire(t('loadDataFailedTitle'), error.message, 'error');
+        if (!quiet) Swal.fire(t('loadDataFailedTitle'), error.message, 'error');
         return;
+    } finally {
+        refreshingReports = false;
     }
 
     computeRepeatCounts();
@@ -1557,7 +1523,7 @@ function makeAdminCaseId() {
 }
 
 async function openReportModal(reportId = null) {
-    if (!db) {
+    if (!adminAccess) {
         Swal.fire(t('connectionFailed'), t('supabaseLoadFailed'), 'error');
         return;
     }
@@ -1699,7 +1665,7 @@ async function openReportModal(reportId = null) {
 }
 
 async function deleteReport(id) {
-    if (!db) {
+    if (!adminAccess) {
         Swal.fire(t('connectionFailed'), t('supabaseLoadFailed'), 'error');
         return;
     }
@@ -2038,16 +2004,16 @@ async function updateStatus(id, status) {
 
 async function fetchTimelineSummaryMap(reports) {
     const caseIds = reports.map(report => report.case_id).filter(Boolean);
-    if (!db || caseIds.length === 0) return {};
+    if (!adminAccess || caseIds.length === 0) return {};
 
-    const { data, error } = await db
-        .from('violation_case_timeline')
-        .select('case_id, created_at, event_type, from_status, to_status, actor_name, note')
-        .in('case_id', caseIds);
-
-    if (error) {
-        console.warn('Timeline export skipped:', error.message);
-        return {};
+    const data = [];
+    for (let from = 0; from < caseIds.length; from += 100) {
+        const { data: rows, error } = await adminAccess.read('timeline-export', { caseIds: caseIds.slice(from, from + 100) });
+        if (error) {
+            console.warn('Timeline export skipped:', error.message);
+            return {};
+        }
+        data.push(...(rows || []));
     }
 
     return (data || []).reduce((map, event) => {

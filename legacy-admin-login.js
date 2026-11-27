@@ -76,6 +76,14 @@
         }
 
         return {
+            async read(view, filters = {}) {
+                try {
+                    const { rows } = await request(page + '-admin-read', { ...filters, view });
+                    return { data: rows, error: null };
+                } catch (error) {
+                    return { data: null, error };
+                }
+            },
             async mutate(table, operation, rows = null, id = null) {
                 try {
                     const result = await request('legacy-admin-mutate', { table, operation, rows, id: id === null ? null : String(id) });

@@ -463,22 +463,25 @@ const LIFF_ID = '2007053300-s20OjYXq';
 
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let sectionSelect; 
-let authReady = false;
-
-// ================= AUTH =================
-async function ensureAuth() {
-    const { data } = await db.auth.getSession();
-    if (!data.session) {
-        const res = await db.auth.signInAnonymously();
-        if (res.error) {
-            Swal.fire('Auth error', res.error.message, 'error');
-            return false;
-        }
-    }
-    authReady = true;
-    return true;
+async function slipperRequest(operation, values = {}) {
+    const token = liff.getAccessToken();
+    if (!token) throw new Error('กรุณาเข้าสู่ระบบ LINE ใหม่');
+    const response = await fetch(SUPABASE_URL + '/functions/v1/legacy-safety-access', {
+        method: 'POST', cache: 'no-store', credentials: 'omit', redirect: 'error',
+        headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...values, action: 'slipper-request', operation }),
+        signal: AbortSignal.timeout(20000)
+    });
+    const result = await response.json().catch(() => null);
+    const errors = {
+        SLIPPER_BLOCKED: 'สิทธิ์การยืมถูกระงับชั่วคราว กรุณาติดต่อ จป.',
+        SLIPPER_ACTIVE_REQUEST: 'คุณมีคำขอที่กำลังดำเนินการอยู่ กรุณาคืนบัตรเดิมหรือยกเลิกคำขอก่อน',
+        SLIPPER_CARD_IN_USE: 'บัตรนี้ถูกยืมแล้ว กรุณาเลือกบัตรใบอื่น',
+    };
+    if (response.status === 401) throw new Error('กรุณาเข้าสู่ระบบ LINE ใหม่');
+    if (!response.ok || !result) throw new Error(errors[result?.error] || 'ไม่สามารถดำเนินการคำขอนี้ได้');
+    return result;
 }
-ensureAuth();
 
 // ================= UI HELPERS =================
 function toggleInput(selectId, areaId) {
@@ -526,11 +529,7 @@ function switchTab(tab) {
 async function lockBusyCards() {
     try {
         // เพิ่มการ select 'emp_id' มาด้วย เพื่อแยกว่าเป็นการแจ้งซ่อมหรือไม่
-        const { data, error } = await db.from('slipper_requests')
-            .select('card_no, emp_id')
-            .in('status', ['Pending', 'Approved', 'Returning']);
-        
-        if (error) throw error;
+        const { rows: data } = await slipperRequest('cards');
 
         // สร้างที่เก็บแยกกันระหว่าง บัตรที่คนยืมปกติ กับ บัตรที่แจ้งซ่อม
         const borrowedCards = [];
@@ -588,10 +587,8 @@ async function autoFillLastRequest() {
     btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
     
     try {
-        const { data, error } = await db.from('slipper_requests')
-            .select('*').eq('line_user_id', userId).order('created_at', { ascending: false }).limit(1).single();
-
-        if (error || !data) throw new Error('ไม่พบประวัติเดิม');
+        const { rows: [data] } = await slipperRequest('history');
+        if (!data) throw new Error('ไม่พบประวัติเดิม');
 
         document.getElementById('empId').value = data.emp_id;
         
@@ -655,10 +652,7 @@ async function loadHistory() {
     loadingDiv.style.display = 'block';
 
     try {
-        const { data, error } = await db.from('slipper_requests')
-            .select('*').eq('line_user_id', userId).order('created_at', { ascending: false }).limit(20);
-
-        if (error) throw error;
+        const { rows: data } = await slipperRequest('history');
         loadingDiv.style.display = 'none';
 
         if (!data || data.length === 0) {
@@ -748,8 +742,7 @@ async function cancelRequest(recordId) {
     if (confirm.isConfirmed) {
         Swal.fire({ title: 'กำลังยกเลิก...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
         try {
-            const { error } = await db.from('slipper_requests').update({ status: 'Cancelled' }).eq('id', recordId);
-            if (error) throw error;
+            await slipperRequest('cancel', { id: String(recordId) });
             
             Swal.fire({ icon: 'success', title: 'ยกเลิกสำเร็จ!', text: 'คำขอของคุณถูกยกเลิกแล้ว', timer: 1500, showConfirmButton: false });
             
@@ -780,12 +773,7 @@ async function returnRequest(recordId) {
     if (confirm.isConfirmed) {
         Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
         try {
-            const { error } = await db.from('slipper_requests').update({ 
-                status: 'Returning',
-                returned_at: new Date()
-            }).eq('id', recordId);
-            
-            if (error) throw error;
+            await slipperRequest('return', { id: String(recordId) });
             
             Swal.fire({ icon: 'success', title: 'แจ้งคืนสำเร็จ!', text: 'กรุณานำของไปส่งให้ รปภ. ที่ป้อมนะครับ', timer: 2000, showConfirmButton: false });
             
@@ -961,57 +949,11 @@ window.onload = async () => {
 document.getElementById('slipperForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     if (navigator.vibrate) navigator.vibrate(50);
-    if (!authReady) {
-        const ok = await ensureAuth();
-        if (!ok) return;
-    }
 
     const btn = document.getElementById('btnSubmit');
     const originalText = btn.innerHTML;
     btn.disabled = true; 
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> กำลังตรวจสอบสิทธิ์...';
-
-    try {
-        const userId = document.getElementById('userId').value;
-
-        // 👇👇👇 เริ่มแทรกโค้ด Blacklist ตรงนี้ 👇👇👇
-        const currentEmpId = document.getElementById('empId').value;
-        // F-05: ใช้ ilike เพื่อ case-insensitive match (ป้องกัน bypass ด้วยตัวพิมพ์เล็ก/ใหญ่)
-        const { data: blacklisted } = await db.from('slipper_blacklist').select('*').ilike('emp_id', currentEmpId);
-        
-        if (blacklisted && blacklisted.length > 0) {
-            Swal.fire({
-                icon: 'error',
-                title: 'ถูกระงับสิทธิ์ 🚫',
-                text: `คุณถูกระงับสิทธิ์การยืมชั่วคราว (สาเหตุ: ${blacklisted[0].reason}) กรุณาติดต่อ จป.`,
-                confirmButtonColor: '#ef4444'
-            });
-            btn.disabled = false;
-            btn.innerHTML = originalText;
-            return; // หยุดทำงาน ไม่บันทึกข้อมูล
-        }
-        const { data: activeRequests, error: checkError } = await db
-            .from('slipper_requests')
-            .select('id, status')
-            .eq('line_user_id', userId)
-            .in('status', ['Pending', 'Approved', 'Returning']);
-
-        if (checkError) throw checkError;
-
-        if (activeRequests && activeRequests.length > 0) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'ไม่สามารถทำรายการได้',
-                text: 'คุณมีคำขอที่กำลังดำเนินการอยู่ (รออนุมัติ หรือ บัตรยังไม่ได้คืน) กรุณาคืนบัตรเดิม หรือยกเลิกคำขอก่อนครับ',
-                confirmButtonColor: '#ef4444'
-            });
-            btn.disabled = false;
-            btn.innerHTML = originalText;
-            return; 
-        }
-    } catch (err) {
-        console.error('Check duplicate error:', err);
-    }
 
     let section = document.getElementById('section').value;
     if (section === 'OTHER') section = document.getElementById('otherSection').value;
@@ -1075,27 +1017,24 @@ document.getElementById('slipperForm').addEventListener('submit', async (e) => {
             if (file.type.startsWith('image/')) {
                  try { file = await compressImage(file); } catch (compErr) { console.warn('Compression failed', compErr); }
             }
-            const fileExt = file.name.split('.').pop() || 'jpg';
-            const fileName = `${document.getElementById('empId').value}_${Date.now()}.${fileExt}`;
-            const { data: uploadData, error: uploadError } = await db.storage.from('medical_certs').upload(fileName, file); 
-            if (uploadError) throw new Error('Upload Failed: ' + uploadError.message);
-
-            certUrl = uploadData.path;
+            const extension = (file.name.split('.').pop() || 'jpg').toLowerCase();
+            const { path, token } = await slipperRequest('create-certificate-upload', { extension });
+            const { error: uploadError } = await db.storage.from('medical_certs').uploadToSignedUrl(path, token, file);
+            if (uploadError) throw new Error('อัปโหลดใบรับรองไม่สำเร็จ');
+            certUrl = path;
         }
 
         const formData = {
-            line_user_id: document.getElementById('userId').value,
             fullname: document.getElementById('fullname').value, 
             emp_id: document.getElementById('empId').value,
             section, card_no: document.getElementById('cardNo').value,
-            reason, access_type: document.querySelector('input[name="accessType"]:checked').value,
+            reason,
             request_date: document.getElementById('requestDate').value,
-            end_date: endDateVal, medical_cert_url: certUrl, status: 'Pending',
+            end_date: endDateVal, medical_cert_url: certUrl,
             user_picture_url: document.getElementById('userPictureUrl').value || null 
         };
 
-        const { error } = await db.from('slipper_requests').insert([formData])
-        if (error) throw error
+        await slipperRequest('submit', { values: formData });
 
         localStorage.setItem('saved_empId', formData.emp_id);
         localStorage.setItem('saved_section', formData.section);
