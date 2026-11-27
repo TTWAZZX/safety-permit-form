@@ -19,6 +19,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="./guard-navigation.js"></script>
+    <script src="./guard-report-queue.js"></script>
 
     <style>
         /* ════════════════════════════════
@@ -474,6 +475,13 @@
             width: fit-content;
             transition: opacity 0.3s;
         }
+        .guard-queue-link {
+            position: relative; overflow: hidden; margin-top: 8px; display: block;
+            padding: 12px 14px; border: 1px solid var(--orange-border);
+            border-radius: 12px; background: var(--orange-bg); color: var(--ink);
+            font-size: 0.85rem; font-weight: 700; text-decoration: none;
+        }
+        .guard-queue-link[hidden] { display: none; }
         .violation-badge.hidden { display: none; }
         .violation-badge.ok { background: var(--green-pale); border-color: var(--green-border); color: var(--green-mid); }
 
@@ -735,6 +743,12 @@
             </a>
         </div>
 
+
+        <a href="./guard_violation.html#reportQueue" id="guardQueueLink" class="guard-queue-link" onclick="tapTile(event)" hidden>
+            <i class="bi bi-cloud-arrow-up me-1" aria-hidden="true"></i>
+            <span id="guardQueueText" role="status"></span>
+            <i class="bi bi-chevron-right" aria-hidden="true"></i>
+        </a>
 
         <!-- กระดานข่าว SHE -->
         <div class="sec-label fade-up d6">
@@ -1193,6 +1207,20 @@
     }
 
 
+    async function updateGuardQueueLink() {
+        const { entries, unavailable } = await guardReportQueue.list();
+        const link = document.getElementById('guardQueueLink');
+        const text = document.getElementById('guardQueueText');
+        const count = entries.length;
+        text.textContent = count ? 'รายงานรอส่ง ' + count + ' เคส · ดูคิว' : 'ตรวจคิวรายงานบนเครื่องไม่ได้';
+        link.hidden = count === 0 && !unavailable;
+    }
+
+    guardReportQueue.watch(updateGuardQueueLink);
+    window.addEventListener('pageshow', updateGuardQueueLink);
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) updateGuardQueueLink();
+    });
     initGuardProfile();
     requestAnimationFrame(() => {
         const target = restoreGuardHomePosition();

@@ -186,6 +186,9 @@
             font-weight: 700;
         }
         .status-strip.show { display: block; }
+        #reportQueueList { margin: 8px 0; padding-inline-start: 24px; }
+        #reportQueueList li + li { margin-top: 5px; }
+        #reportQueue { scroll-margin-top: 16px; }
 
         .evidence-preview { display: none; width: 100%; max-height: 220px; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); margin-top: 10px; }
         .step-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
@@ -407,6 +410,7 @@
 </head>
 <body>
 <script src="./guard-navigation.js"></script>
+<script src="./guard-report-queue.js"></script>
 
     <main class="app-shell">
         <header class="topbar">
@@ -446,9 +450,14 @@
             </button>
         </nav>
 
+        <section id="reportQueue" class="status-strip" aria-label="คิวรายงานบนเครื่อง" tabindex="-1">
+            <div id="queueStatus" role="status"></div>
+            <ul id="reportQueueList"></ul>
+            <button type="button" id="btnSyncQueue" class="btn btn-sm btn-outline-dark" onclick="syncOfflineQueue(true)" hidden>ส่งคิวตอนนี้</button>
+        </section>
+
         <div class="app-grid app-view active" id="reportView">
             <section class="workspace">
-                <div id="queueStatus" class="status-strip"></div>
 
                 <form id="violationForm">
                     <section class="form-section active-step" data-step="1">
@@ -695,18 +704,20 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxc2Zpb2lxd3h1eHB1Y3d3aHN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1OTk1NjUsImV4cCI6MjA4NDE3NTU2NX0.L_u0Ff3uHofxiimEs6ySFB4TPNtOWiKeSu3KFoVcA1U';
         const db = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
         const guardLineSessionKey = 'guard-violation-line-session';
+        const queueReturnKey = 'guard-violation-return-to-queue';
         function openGuardLineLogin() {
+            if (location.hash === "#reportQueue") sessionStorage.setItem(queueReturnKey, "1");
             sessionStorage.removeItem(guardLineSessionKey);
             const login = new URL('guard-checkin.html', location.href);
             login.searchParams.set('continue', 'guard-violation');
             location.replace(login);
         }
 
-        async function guardViolationRequest(operation, values) {
+        async function guardViolationRequest(operation, values, redirectOnAuthError = true) {
             const token = sessionStorage.getItem(guardLineSessionKey);
             if (!token) {
-                openGuardLineLogin();
-                throw new Error('กรุณาเข้าสู่ระบบ LINE');
+                if (redirectOnAuthError) openGuardLineLogin();
+                throw Object.assign(new Error('กรุณาเข้าสู่ระบบ LINE'), { status: 401 });
             }
             const response = await fetch(new URL('/functions/v1/legacy-safety-access', SUPABASE_URL), {
                 method: 'POST', cache: 'no-store', credentials: 'omit', redirect: 'error',
@@ -715,12 +726,13 @@
                 signal: AbortSignal.timeout(20000)
             });
             const result = await response.json().catch(() => null);
-            if (response.status === 401) openGuardLineLogin();
-            if (!response.ok || !result) throw new Error(result?.error || 'เชื่อมต่อระบบรายงานไม่สำเร็จ');
+            if (response.status === 401 && redirectOnAuthError) openGuardLineLogin();
+            if (!response.ok || !result) {
+                throw Object.assign(new Error(result?.error || 'เชื่อมต่อระบบรายงานไม่สำเร็จ'), { status: response.status });
+            }
             return result;
         }
 
-        const OFFLINE_QUEUE_KEY = 'tsh_violation_report_queue_v1';
         const SYNC_HISTORY_KEY = 'tsh_violation_sync_history_v1';
         const DEVICE_ID_KEY = 'tsh_violation_device_id_v1';
         const EVIDENCE_BUCKET = 'violation-evidence';
@@ -739,6 +751,8 @@
         let currentMobileStep = 1;
         let gpsRequest = 0;
         let syncingOfflineQueue = false;
+        let queueNeedsLogin = false;
+        let queueStatusRevision = 0;
         let guardHistoryLoaded = false;
         let employeeRiskTimer = null;
         let latestEmployeeRiskKey = '';
@@ -1359,7 +1373,7 @@
         }
 
         async function insertViolationReport(report) {
-            return await guardViolationRequest('submit', { report });
+            return await guardViolationRequest('submit', { report }, false);
         }
 
         async function checkDuplicateReport(empId, violation, locationRef) {
@@ -1367,7 +1381,7 @@
             try {
                 const { count } = await guardViolationRequest('duplicate', {
                     employeeCode: empId, violationType: violation, locationRef
-                });
+                }, false);
                 return count > 0;
             } catch (error) {
                 console.warn('Duplicate check skipped:', error.message);
@@ -1375,13 +1389,13 @@
             }
         }
 
-        async function getCumulativeViolationCount(empId, fullname = '') {
+        async function getCumulativeViolationCount(empId, fullname = '', redirectOnAuthError = true) {
             if (!db || !navigator.onLine) return 0;
             const identity = getRepeatIdentityKeyFromValues(empId, fullname);
             if (!identity) return 0;
             try {
                 const { count } = await guardViolationRequest('count',
-                    identity.type === 'emp_id' ? { employeeCode: identity.value } : { fullname: identity.value });
+                    identity.type === 'emp_id' ? { employeeCode: identity.value } : { fullname: identity.value }, redirectOnAuthError);
                 return count;
             } catch (error) {
                 console.warn('Repeat offender check error:', error.message);
@@ -1389,14 +1403,7 @@
             }
         }
 
-        function getOfflineQueue() {
-            try {
-                return JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]');
-            } catch (err) {
-                console.error('Queue parse error:', err);
-                return [];
-            }
-        }
+
 
         function getSyncHistory() {
             try {
@@ -1443,133 +1450,124 @@
             `).join('');
         }
 
-        function saveOfflineQueue(queue) {
-            localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue));
-            updateQueueStatus();
-        }
-
-        function enqueueOfflineReport(payload) {
-            const queue = getOfflineQueue();
-            if (queue.some(item => item.id === payload.case_id)) return;
-            queue.push({
+        async function enqueueOfflineReport(payload, attachment) {
+            await guardReportQueue.add({
                 id: payload.case_id,
-                payload: {
-                    ...payload,
-                    evidence_file_name: null,
-                    evidence_file_size: null,
-                    evidence_file_type: null,
-                    evidence_url: null,
-                    sync_status: 'Queued'
-                },
+                payload: { ...payload, sync_status: "Queued" },
+                attachment,
                 queued_at: new Date().toISOString()
             });
-            saveOfflineQueue(queue);
             addSyncHistory({
                 case_id: payload.case_id,
                 fullname: payload.fullname,
                 emp_id: payload.emp_id,
-                status: 'warning',
-                message: 'Queued: รอ Sync เมื่อออนไลน์'
+                status: "warning",
+                message: attachment ? "เก็บรายงานและรูปไว้ในเครื่อง" : "เก็บรายงานไว้ในเครื่อง รอส่ง"
             });
         }
 
-        function updateQueueStatus() {
-            const queueStatus = document.getElementById('queueStatus');
-            const queueCount = getOfflineQueue().length;
-            if (!queueStatus) return;
-
-            if (queueCount === 0) {
-                queueStatus.classList.remove('show');
-                queueStatus.innerHTML = '';
-                return;
-            }
-
-            queueStatus.classList.add('show');
-            queueStatus.innerHTML = `<i class="bi bi-cloud-arrow-up-fill me-1"></i> บันทึกไว้ในเครื่อง รอส่งเข้า Admin ${queueCount} รายการ <button type="button" class="btn btn-sm btn-outline-dark ms-2 py-0" onclick="syncOfflineQueue()">Sync ตอนนี้</button>`;
+        async function updateQueueStatus() {
+            const revision = ++queueStatusRevision;
+            const { entries, unavailable } = await guardReportQueue.list();
+            if (revision !== queueStatusRevision) return;
+            const count = entries.length;
+            const requested = location.hash === "#reportQueue";
+            const panel = document.getElementById("reportQueue");
+            const status = document.getElementById("queueStatus");
+            const list = document.getElementById("reportQueueList");
+            const button = document.getElementById("btnSyncQueue");
+            panel.classList.toggle("show", count > 0 || unavailable || requested);
+            const countText = count ? "รายงานรอส่ง " + count + " เคส" : "ไม่มีรายงานรอส่งในเครื่องนี้";
+            status.textContent = unavailable ? (count ? countText + " · ตรวจคิวได้บางส่วน" : "ตรวจคิวรายงานบนเครื่องไม่ได้") : countText;
+            list.replaceChildren(...entries.map(entry => {
+                const item = document.createElement("li");
+                const evidence = entry.attachment || entry.payload.evidence_url ? " · มีรูปหลักฐาน" : "";
+                item.textContent = entry.id + " · " + formatThaiDate(entry.queued_at) + evidence;
+                return item;
+            }));
+            button.hidden = count === 0;
+            button.disabled = syncingOfflineQueue || !navigator.onLine;
+            button.textContent = syncingOfflineQueue ? "กำลังส่ง…" : queueNeedsLogin ? "เข้าสู่ระบบ LINE เพื่อส่งคิว" : "ส่งคิวตอนนี้";
         }
 
-        async function syncOfflineQueue() {
-            if (syncingOfflineQueue || !navigator.onLine) return;
-            const queue = getOfflineQueue();
-            if (!db || queue.length === 0) {
-                updateQueueStatus();
+        async function syncOfflineQueue(manual = false) {
+            if (syncingOfflineQueue || !navigator.onLine || !db) return;
+            if (queueNeedsLogin || !sessionStorage.getItem(guardLineSessionKey)) {
+                queueNeedsLogin = true;
+                if (manual) openGuardLineLogin();
+                else updateQueueStatus();
                 return;
             }
 
             syncingOfflineQueue = true;
+            updateQueueStatus();
             try {
-                await syncQueuedReports(queue);
+                if (navigator.locks) {
+                    await navigator.locks.request("tsh-guard-queue-sync", { ifAvailable: true }, lock => lock && syncQueuedReports());
+                } else {
+                    await syncQueuedReports();
+                }
+            } catch (err) {
+                console.error("Queue sync error:", err);
             } finally {
                 syncingOfflineQueue = false;
+                updateQueueStatus();
             }
         }
 
-        async function syncQueuedReports(queue) {
-            const syncedIds = new Set();
-
-            for (const item of queue) {
+        async function syncQueuedReports() {
+            const { entries } = await guardReportQueue.list();
+            let sent = 0;
+            let failed = 0;
+            for (const entry of entries) {
+                if (!navigator.onLine) break;
                 try {
-                    const syncedPayload = {
-                        ...item.payload,
-                        sync_status: 'Synced',
-                        synced_at: new Date().toISOString()
-                    };
-                    await insertViolationReport(syncedPayload);
+                    const evidence = entry.payload.evidence_url ? {} : await uploadEvidenceFile(entry.attachment);
+                    await insertViolationReport({ ...entry.payload, ...evidence, sync_status: "Synced" });
+                    await guardReportQueue.remove(entry);
                     addSyncHistory({
-                        case_id: syncedPayload.case_id,
-                        fullname: syncedPayload.fullname,
-                        emp_id: syncedPayload.emp_id,
-                        status: 'success',
-                        message: 'Synced: ส่งเข้า Admin แล้ว'
+                        case_id: entry.id, fullname: entry.payload.fullname, emp_id: entry.payload.emp_id,
+                        status: "success", message: "ส่งเข้า Admin แล้ว"
                     });
-                    syncedIds.add(item.id);
+                    sent++;
                 } catch (err) {
-                    console.error('Queue sync error:', err);
+                    failed++;
                     addSyncHistory({
-                        case_id: item.payload?.case_id,
-                        fullname: item.payload?.fullname,
-                        emp_id: item.payload?.emp_id,
-                        status: 'danger',
-                        message: `Failed: ${err.message}`
+                        case_id: entry.id, fullname: entry.payload.fullname, emp_id: entry.payload.emp_id,
+                        status: "danger", message: "ยังส่งไม่สำเร็จ รายงานยังอยู่ในคิว"
                     });
+                    if (err.status === 401) { queueNeedsLogin = true; break; }
                 }
             }
-
-            const remaining = getOfflineQueue().filter(item => !syncedIds.has(item.id));
-            saveOfflineQueue(remaining);
-
-            if (syncedIds.size > 0) {
+            if (sent > 0) {
                 guardHistoryLoaded = false;
-                if (document.body.classList.contains('history-mode')) loadGuardHistory();
-                if (Swal.isVisible()) return;
+                if (document.body.classList.contains("history-mode")) loadGuardHistory();
+            }
+            if ((sent || failed) && !Swal.isVisible()) {
                 Swal.fire({
-                    toast: true,
-                    position: 'top',
-                    icon: remaining.length === 0 ? 'success' : 'warning',
-                    title: remaining.length === 0 ? 'Sync สำเร็จ' : 'Sync ได้บางส่วน',
-                    text: `ส่งรายงานค้างระบบแล้ว ${syncedIds.size} รายการ${remaining.length ? `, เหลือ ${remaining.length} รายการ` : ''}`,
-                    timer: 2200,
-                    showConfirmButton: false
+                    toast: true, position: "top", icon: failed ? "warning" : "success",
+                    title: sent ? "ส่งรายงานแล้ว " + sent + " เคส" : "ยังส่งรายงานไม่สำเร็จ",
+                    text: failed ? "รายการที่ส่งไม่สำเร็จยังอยู่ในคิว" : undefined,
+                    timer: 2200, showConfirmButton: false
                 });
             }
         }
 
-        async function uploadEvidenceFile(caseId) {
-            const evidenceInput = document.getElementById('evidencePhoto');
-            const file = evidenceInput?.files?.[0];
-            if (!file) return { evidence_url: null, evidence_file_name: null, evidence_file_size: null, evidence_file_type: null };
-            if (!db) throw new Error('ไม่สามารถอัปโหลดรูปหลักฐานได้ เพราะยังไม่เชื่อมต่อฐานข้อมูล');
+        async function prepareEvidenceFile(payload, original) {
+            if (!original) return null;
+            const file = await compressImageFile(original);
+            const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-200) || "evidence";
+            const path = payload.case_id + "/" + Date.parse(payload.client_reported_at) + "-" + safeName;
+            return { file, path };
+        }
 
-            const uploadFile = await compressImageFile(file);
-            const safeFileName = uploadFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-            const filePath = `${caseId}/${Date.now()}-${safeFileName}`;
-            await uploadStorageWithRetry(filePath, uploadFile);
-
+        async function uploadEvidenceFile(attachment) {
+            if (!attachment) return {};
+            const { path, file } = attachment;
+            await uploadStorageWithRetry(path, file);
             return {
-                evidence_url: filePath,
-                evidence_file_name: uploadFile.name,
-                evidence_file_size: uploadFile.size,
-                evidence_file_type: uploadFile.type
+                evidence_url: path, evidence_file_name: file.name,
+                evidence_file_size: file.size, evidence_file_type: file.type
             };
         }
 
@@ -1592,7 +1590,13 @@
                     canvas.width = Math.round(image.width * scale);
                     canvas.height = Math.round(image.height * scale);
                     const ctx = canvas.getContext('2d');
-                    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+                    if (!ctx) { resolve(file); return; }
+                    try {
+                        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+                    } catch {
+                        resolve(file);
+                        return;
+                    }
 
                     canvas.toBlob((blob) => {
                         if (!blob) {
@@ -1618,6 +1622,11 @@
             for (let attempt = 1; attempt <= maxAttempts; attempt++) {
                 const { error } = await db.storage.from(EVIDENCE_BUCKET).upload(filePath, file, { upsert: false });
                 if (!error) return;
+                // Each case uses one stable object path, including after a lost upload response.
+                const status = Number(error.statusCode ?? error.status);
+                const duplicate = /already exists|duplicate/i.test(error.message) ||
+                    /^(Duplicate|ResourceAlreadyExists|KeyAlreadyExists)$/.test(error.error ?? error.code);
+                if ((status === 400 || status === 409) && duplicate) return;
                 lastError = error;
                 await new Promise(resolve => setTimeout(resolve, attempt * 600));
             }
@@ -1715,8 +1724,7 @@
             let options = fallbackEmployeeOptions;
 
             try {
-                if (!db) throw new Error('Supabase client is not available');
-                options = await fetchEmployeeOptions('');
+                if (db && navigator.onLine) options = await fetchEmployeeOptions('');
             } catch (err) {
                 console.error("Load EMP error:", err);
             }
@@ -1760,7 +1768,10 @@
             }
         }
 
-        window.onload = () => {
+        window.onload = async () => {
+            const queueRequested = location.hash === "#reportQueue" || sessionStorage.getItem(queueReturnKey) === "1";
+            sessionStorage.removeItem(queueReturnKey);
+            if (queueRequested && location.hash !== "#reportQueue") history.replaceState(history.state, "", "#reportQueue");
             if (!sessionStorage.getItem(guardLineSessionKey) && navigator.onLine) {
                 openGuardLineLogin();
                 return;
@@ -1768,7 +1779,9 @@
             updateConnectionStatus();
             updateMobileStepper();
             initEvidencePreview();
-            updateQueueStatus();
+            guardReportQueue.watch(updateQueueStatus);
+            await updateQueueStatus();
+            if (queueRequested) document.getElementById("reportQueue").focus();
             renderSyncHistory();
             updateLiveSummary();
             loadEmployees();
@@ -1785,8 +1798,18 @@
             updateConnectionStatus();
             syncOfflineQueue();
         });
-        window.addEventListener('offline', updateConnectionStatus);
+        window.addEventListener('offline', () => {
+            updateConnectionStatus();
+            updateQueueStatus();
+        });
+        window.addEventListener('pageshow', event => {
+            if (event.persisted) {
+                updateQueueStatus();
+                syncOfflineQueue();
+            }
+        });
         window.addEventListener('resize', updateMobileStepper);
+        if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
 
         // ─── LINE Notification (fire-and-forget) ───────────────
         async function sendLineViolationNotify(payload, report) {
@@ -1859,6 +1882,7 @@
             e.preventDefault();
 
             const form = e.currentTarget;
+            const evidencePhoto = document.getElementById('evidencePhoto').files?.[0];
             const btn = document.getElementById('btnSubmit');
             if (btn.disabled) return;
             const originalText = btn.innerHTML;
@@ -1909,7 +1933,7 @@
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> กำลังตรวจสอบรายงาน...';
             try {
-                const cumulativeViolationCount = await getCumulativeViolationCount(emp_id, fullname);
+                const cumulativeViolationCount = await getCumulativeViolationCount(emp_id, fullname, false);
                 const projectedViolationCount = cumulativeViolationCount + 1;
                 const isRepeatOffender = projectedViolationCount >= 2;
                 const finalSeverityLevel = isRepeatOffender && severityLevel === 'Medium' ? 'High' : severityLevel;
@@ -1992,18 +2016,15 @@
 
                 let storedReport;
                 let sendError;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> กำลังเตรียมหลักฐาน…';
+                const attachment = await prepareEvidenceFile(payload, evidencePhoto);
                 if (db && navigator.onLine) {
-                    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> กำลังอัปโหลดหลักฐาน...';
                     try {
-                        Object.assign(payload, await uploadEvidenceFile(caseId));
-                    } catch (err) {
-                        console.warn('Evidence upload error:', err);
-                        payload.evidence_upload_error = err.message;
-                        payload.evidence_url = null;
-                    }
-
-                    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> กำลังบันทึก...';
-                    try {
+                        if (attachment) {
+                            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> กำลังอัปโหลดหลักฐาน…';
+                            Object.assign(payload, await uploadEvidenceFile(attachment));
+                        }
+                        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> กำลังบันทึก…';
                         storedReport = await insertViolationReport(payload);
                     } catch (err) {
                         sendError = err;
@@ -2027,15 +2048,25 @@
                         showConfirmButton: false
                     });
                 } else {
-                    enqueueOfflineReport(payload);
-                    const hadPhoto = Boolean(document.getElementById('evidencePhoto').files?.[0]);
+                    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> กำลังเก็บรายงานไว้ในเครื่อง…';
+                    try {
+                        await enqueueOfflineReport(payload, attachment);
+                    } catch {
+                        throw new Error("เก็บรายงานไว้ในเครื่องไม่สำเร็จ ข้อมูลและรูปยังอยู่ในฟอร์ม กรุณาลองส่งใหม่เมื่อออนไลน์");
+                    }
+                    if (sendError?.status === 401) {
+                        queueNeedsLogin = true;
+                        updateQueueStatus();
+                    }
                     await Swal.fire({
-                        icon: sendError || hadPhoto ? 'warning' : 'info',
-                        title: sendError ? 'ส่งไม่สำเร็จ แต่เก็บไว้รอ Sync แล้ว' : 'บันทึกไว้รอ Sync',
-                        text: hadPhoto ? 'ระบบจะส่งข้อมูลรายงานเมื่อออนไลน์ รูปหลักฐานไม่ได้เก็บในคิวออฟไลน์' : 'เมื่อออนไลน์ ระบบจะส่งรายงานจากเครื่องเข้าฐานข้อมูล',
-                        timer: sendError || hadPhoto ? undefined : 2500,
-                        showConfirmButton: Boolean(sendError || hadPhoto)
+                        icon: sendError ? "warning" : "info",
+                        title: "บันทึกไว้รอส่งแล้ว",
+                        text: (attachment ? "เก็บรายงานและรูปหลักฐานไว้ในเครื่องแล้ว" : "เก็บรายงานไว้ในเครื่องแล้ว") +
+                            (queueNeedsLogin ? " · เข้าสู่ระบบ LINE อีกครั้งเพื่อส่งคิว" : " · เปิดหน้านี้เมื่อออนไลน์เพื่อส่งคิว"),
+                        timer: sendError ? undefined : 2500,
+                        showConfirmButton: Boolean(sendError)
                     });
+
                 }
                 resetSavedReport(form);
             } catch (err) {
