@@ -18,6 +18,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="./guard-navigation.js"></script>
 
     <style>
         /* ════════════════════════════════
@@ -66,57 +67,6 @@
             -webkit-tap-highlight-color: transparent;
             overscroll-behavior: none;
         }
-
-        /* ════════════════════════════════
-           LOADING
-        ════════════════════════════════ */
-        #loadingScreen {
-            position: fixed; inset: 0;
-            background: linear-gradient(155deg, #166534 0%, #14532d 100%);
-            display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            gap: 18px; z-index: 9999;
-            transition: opacity 0.4s ease;
-        }
-        #loadingScreen.fade-out { opacity: 0; pointer-events: none; }
-
-        .load-logo {
-            width: 84px; height: 84px;
-            border-radius: 22px;
-            background: #fff;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-            overflow: hidden;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .load-logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
-
-        .load-company {
-            font-size: 1rem; font-weight: 800;
-            color: #fff; text-align: center; line-height: 1.35;
-            text-shadow: 0 1px 4px rgba(0,0,0,0.15);
-        }
-        .load-dept {
-            font-size: 0.78rem; color: rgba(255,255,255,0.7);
-            text-align: center; margin-top: -10px;
-        }
-
-        .load-dots { display: flex; gap: 7px; }
-        .load-dots span {
-            width: 8px; height: 8px; border-radius: 50%;
-            background: rgba(255,255,255,0.6);
-            animation: dot-pulse 1.2s ease-in-out infinite;
-        }
-        .load-dots span:nth-child(2) { animation-delay: 0.2s; }
-        .load-dots span:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes dot-pulse {
-            0%, 80%, 100% { transform: scale(0.75); opacity: 0.4; }
-            40%            { transform: scale(1.1);  opacity: 1; }
-        }
-
-        /* ════════════════════════════════
-           SHELL
-        ════════════════════════════════ */
-        #appContent { display: none; }
 
         .shell {
             max-width: 440px;
@@ -222,6 +172,11 @@
             font-size: 1rem; font-weight: 800;
             color: #fff; line-height: 1.2;
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+
+        .profile-login {
+            margin-top: 4px; padding: 5px 9px; border: 1px solid #fff8; border-radius: 8px;
+            color: #fff; background: #fff2; font: inherit; cursor: pointer;
         }
 
         .btn-refresh {
@@ -522,23 +477,6 @@
         .violation-badge.hidden { display: none; }
         .violation-badge.ok { background: var(--green-pale); border-color: var(--green-border); color: var(--green-mid); }
 
-        /* ── Step 3: Pull-to-refresh ── */
-        #pullIndicator {
-            position: fixed; top: 0; left: 0; right: 0;
-            display: flex; align-items: center; justify-content: center; gap: 8px;
-            padding: 12px;
-            background: var(--green-mid);
-            color: #fff; font-size: 0.8rem; font-weight: 700;
-            transform: translateY(-100%);
-            transition: transform 0.2s ease, opacity 0.2s ease;
-            z-index: 8888; opacity: 0;
-        }
-        #pullIndicator.pulling  { opacity: 1; }
-        #pullIndicator.ready    { background: var(--green); }
-        #pullIndicator.loading  { transform: translateY(0); opacity: 1; }
-        #pullIndicator i { font-size: 1rem; }
-        #pullIndicator.loading i { animation: spin 0.8s linear infinite; }
-
         .fade-up {
             opacity: 0; transform: translateY(14px);
             animation: fadeUp 0.35s ease forwards;
@@ -624,27 +562,6 @@
 </head>
 <body>
 
-<!-- ══════════════════════════════════
-     LOADING
-══════════════════════════════════ -->
-<div id="loadingScreen">
-    <div class="load-logo">
-        <img src="https://lh3.googleusercontent.com/d/1YzWJFya1Oj7n_sTKZs_g97-sNez8Nxbn" alt="Thai Summit">
-    </div>
-    <div class="load-company">บริษัท ไทยซัมมิท จำกัด (มหาชน)</div>
-    <div class="load-dept">ส่วนความปลอดภัย อาชีวอนามัย และสิ่งแวดล้อม (SHE)</div>
-    <div class="load-dots"><span></span><span></span><span></span></div>
-</div>
-
-<!-- ══════════════════════════════════
-     MAIN APP
-══════════════════════════════════ -->
-<!-- Step 3: Pull indicator -->
-<div id="pullIndicator">
-    <i class="bi bi-arrow-clockwise"></i>
-    <span id="pullLabel">ดึงลงเพื่อรีเฟรช</span>
-</div>
-
 <div id="appContent">
 <div class="shell">
 
@@ -678,12 +595,13 @@
             <div class="profile-info">
                 <div class="profile-greeting" id="profileGreeting">ยินดีต้อนรับ</div>
                 <div class="profile-name"     id="profileName">Guard Patrol</div>
+                <button type="button" class="profile-login" id="profileLogin" onclick="signInToGuardHome()" hidden>เข้าสู่ระบบ LINE</button>
             </div>
             <div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0;">
                 <button class="btn-refresh" id="btnRefresh" onclick="refreshProfile()" title="รีเฟรชข้อมูล">
                     <i class="bi bi-arrow-clockwise"></i>
                 </button>
-                <div class="sync-label" id="syncLabel">—</div>
+                <div class="sync-label" id="syncLabel" role="status">—</div>
             </div>
         </div>
 
@@ -753,7 +671,7 @@
         <div class="tile-grid">
 
             <a class="tile tile-green fade-up d2"
-               href="https://liff.line.me/2007053300-gJitj7Vr"
+               href="./guard-checkin.html" data-line-liff="2007053300-gJitj7Vr"
                onclick="tapTile(event)">
                 <div class="tile-icon">
                     <i class="bi bi-person-badge-fill"></i>
@@ -775,7 +693,7 @@
             </a>
 
             <a class="tile tile-teal fade-up d3"
-               href="https://liff.line.me/2007053300-w9vHc99G"
+               href="./water.html" data-line-liff="2007053300-w9vHc99G"
                onclick="tapTile(event)">
                 <div class="tile-icon">
                     <i class="bi bi-speedometer2"></i>
@@ -799,7 +717,7 @@
 
         <div class="tile-grid full">
             <a class="tile wide tile-orange fade-up d5"
-               href="https://ttwazzx.github.io/safety-permit-form/guard_violation.html"
+               href="./guard_violation.html"
                onclick="tapTile(event)">
                 <div class="tile-icon">
                     <i class="bi bi-exclamation-octagon-fill"></i>
@@ -808,9 +726,9 @@
                     <div class="tile-eyebrow">Safety Report</div>
                     <div class="tile-name">รายงานความผิด</div>
                     <div class="tile-desc">บันทึก Violation Report พร้อมรูปหลักฐานและพิกัด GPS</div>
-                    <div id="violationBadge" class="violation-badge ok">
-                        <i class="bi bi-check-circle-fill" id="violationIcon"></i>
-                        <span id="violationCount">ปกติ</span>
+                    <div id="violationBadge" class="violation-badge">
+                        <i class="bi bi-shield" id="violationIcon"></i>
+                        <span id="violationCount">—</span>
                     </div>
                 </div>
                 <i class="bi bi-chevron-right tile-chevron"></i>
@@ -876,12 +794,15 @@
     const db = window.supabase?.createClient(SUPABASE_URL, SUPABASE_KEY) ?? null;
 
     // ── Step 1: Last sync timestamp ─────────────────────────
-    let lastSyncTime    = null;
-    let lineDisplayName = null; // Step 5: set after LIFF getProfile
+    let lastSyncTime = null;
+    let syncState = null;
+    let refreshInProgress = null;
+    let liffReady = false;
 
     function updateSyncLabel() {
         const el = document.getElementById('syncLabel');
         if (!el) return;
+        if (syncState) { el.textContent = syncState; return; }
         if (!lastSyncTime) { el.textContent = '—'; return; }
 
         const diffSec = Math.floor((Date.now() - lastSyncTime) / 1000);
@@ -952,80 +873,9 @@
     renderCountdown();
     setInterval(renderCountdown, 60000); // อัปเดตทุก 1 นาที
 
-    // ── Step 3: Pull-to-refresh ─────────────────────────────
-    const PULL_THRESHOLD = 72; // px ที่ต้องดึงเพื่อ trigger
-    let pullStartY   = 0;
-    let pullCurrent  = 0;
-    let isPulling    = false;
-    let pullTriggered = false;
-
-    const pullEl    = document.getElementById('pullIndicator');
-    const pullLabel = document.getElementById('pullLabel');
-
-    document.addEventListener('touchstart', (e) => {
-        if (window.scrollY === 0) {
-            pullStartY  = e.touches[0].clientY;
-            isPulling   = true;
-            pullTriggered = false;
-        }
-    }, { passive: true });
-
-    document.addEventListener('touchmove', (e) => {
-        if (!isPulling) return;
-        pullCurrent = e.touches[0].clientY - pullStartY;
-        if (pullCurrent <= 0) return;
-
-        const ratio = Math.min(pullCurrent / PULL_THRESHOLD, 1);
-        pullEl.style.transform = `translateY(${Math.min(pullCurrent * 0.4, 36)}px)`;
-        pullEl.style.opacity   = ratio;
-        pullEl.classList.add('pulling');
-        pullEl.classList.toggle('ready', pullCurrent >= PULL_THRESHOLD);
-        pullLabel.textContent  = pullCurrent >= PULL_THRESHOLD ? 'ปล่อยเพื่อรีเฟรช' : 'ดึงลงเพื่อรีเฟรช';
-    }, { passive: true });
-
-    document.addEventListener('touchend', async () => {
-        if (!isPulling) return;
-        isPulling = false;
-
-        if (pullCurrent >= PULL_THRESHOLD && !pullTriggered) {
-            pullTriggered = true;
-            pullEl.style.transform = 'translateY(0)';
-            pullEl.style.opacity   = '1';
-            pullEl.classList.add('loading');
-            pullEl.classList.remove('pulling', 'ready');
-            pullLabel.textContent  = 'กำลังอัปเดต...';
-            if (navigator.vibrate) navigator.vibrate(30);
-
-            await refreshProfile();
-
-            pullLabel.textContent = 'อัปเดตแล้ว';
-            setTimeout(() => {
-                pullEl.style.transform = '';
-                pullEl.style.opacity   = '';
-                pullEl.classList.remove('loading', 'pulling', 'ready');
-                pullLabel.textContent  = 'ดึงลงเพื่อรีเฟรช';
-            }, 800);
-        } else {
-            pullEl.style.transform = '';
-            pullEl.style.opacity   = '';
-            pullEl.classList.remove('pulling', 'ready');
-        }
-        pullCurrent = 0;
-    }, { passive: true });
-
-    // ── Step 4: Violation count ─────────────────────────────
-    function getTodayDateBkk() {
-        const bkk = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
-        const y = bkk.getFullYear();
-        const m = String(bkk.getMonth() + 1).padStart(2, '0');
-        const d = String(bkk.getDate()).padStart(2, '0');
-        return `${y}-${m}-${d}`;
-    }
-
-    async function fetchGuardTotals() {
-        if (!db) return;
+    async function fetchGuardTotals(signal) {
         try {
-            const { data, error } = await db.rpc('legacy_guard_home_totals').single();
+            const { data, error } = await db.rpc('legacy_guard_home_totals').abortSignal(signal).single();
             if (error) throw error;
             const count = data.violations;
             const badge = document.getElementById('violationBadge');
@@ -1040,26 +890,14 @@
             if (nEl) nEl.textContent = data.night + '/5 คน';
         } catch (err) {
             console.warn('fetchGuardTotals error:', err);
+            throw err;
         }
     }
 
-    // ── Step 5: Attendance status ───────────────────────────
-    function fmtTime(t) {
-        if (!t) return '';
-        return t.includes('T') ? t.slice(11, 16) : t.slice(0, 5);
-    }
-
-
-    async function fetchWaterStatus() {
+    async function fetchWaterStatus(signal) {
         const el     = document.getElementById('waterStatus');
         const textEl = document.getElementById('waterStatusText');
         if (!el || !textEl) return;
-
-        if (!db) {
-            el.className = 'attend-status loading';
-            textEl.textContent = '—';
-            return;
-        }
 
         try {
             const { data, error } = await db
@@ -1067,7 +905,8 @@
                 .select('meter_reading, record_date')
                 .order('record_date', { ascending: false })
                 .order('record_time', { ascending: false })
-                .limit(1);
+                .limit(1)
+                .abortSignal(signal);
 
             if (error) throw error;
 
@@ -1081,8 +920,8 @@
             }
         } catch (err) {
             console.warn('fetchWaterStatus error:', err);
-            el.className = 'attend-status loading';
-            textEl.textContent = '—';
+            if (textEl.textContent === 'กำลังโหลด...') textEl.textContent = '—';
+            throw err;
         }
     }
 
@@ -1099,9 +938,9 @@
         'ทั่วไป':       { color: '#475569', pale: '#f1f5f9' },
     };
 
-    async function fetchAnnouncements() {
+    async function fetchAnnouncements(signal) {
         const listEl = document.getElementById('announcementList');
-        if (!db || !listEl) return;
+        if (!listEl) return;
 
         try {
             const { data, error } = await db
@@ -1109,7 +948,8 @@
                 .select('id, title, body, category, created_at')
                 .eq('is_active', true)
                 .order('created_at', { ascending: false })
-                .limit(5);
+                .limit(5)
+                .abortSignal(signal);
 
             if (error) throw error;
 
@@ -1152,7 +992,10 @@
             }).join('');
         } catch (err) {
             console.warn('fetchAnnouncements error:', err);
-            listEl.innerHTML = '<div class="announce-empty"><i class="bi bi-wifi-off"></i>ไม่สามารถโหลดข้อมูลได้</div>';
+            if (!listEl.querySelector('.announce-card')) {
+                listEl.innerHTML = '<div class="announce-empty"><i class="bi bi-wifi-off"></i>ไม่สามารถโหลดข้อมูลได้</div>';
+            }
+            throw err;
         }
     }
 
@@ -1208,7 +1051,7 @@
         label.textContent = navigator.onLine ? 'ออนไลน์' : 'ออฟไลน์';
     }
     updateNet();
-    window.addEventListener('online',  updateNet);
+    window.addEventListener('online', refreshProfile);
     window.addEventListener('offline', updateNet);
 
     // ══════════════════════════════════
@@ -1216,6 +1059,13 @@
     // ══════════════════════════════════
     function tapTile(e) {
         const tile = e.currentTarget;
+        if (!e.defaultPrevented && e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey) {
+            rememberGuardHomePosition();
+            if (tile.dataset.lineLiff && window.liff?.isInClient()) {
+                e.preventDefault();
+                location.assign('https://liff.line.me/' + tile.dataset.lineLiff);
+            }
+        }
         const r    = tile.getBoundingClientRect();
         const size = Math.max(r.width, r.height);
         const el   = document.createElement('span');
@@ -1230,7 +1080,6 @@
     // LIFF — PROFILE
     // ══════════════════════════════════
     function applyProfile(profile) {
-        lineDisplayName = profile.displayName; // Step 5
         document.getElementById('profileGreeting').textContent = getGreeting();
         document.getElementById('profileName').textContent     = profile.displayName;
 
@@ -1243,64 +1092,73 @@
         }
     }
 
-    async function refreshProfile() {
+    function refreshProfile() {
+        if (refreshInProgress) return refreshInProgress;
         const btn = document.getElementById('btnRefresh');
-        btn.classList.add('spinning');
-        try {
-            if (liff.isLoggedIn()) {
-                const profile = await liff.getProfile();
-                applyProfile(profile);
-            }
-        } catch (err) {
-            console.warn('LIFF refresh error:', err);
-        } finally {
-            setTimeout(() => btn.classList.remove('spinning'), 600);
-        }
-        // ดึงข้อมูล Supabase เสมอ แม้ LIFF จะ throw
         updateNet();
         renderShift();
-        fetchGuardTotals();
-        fetchWaterStatus();
-        fetchAnnouncements();
-        stampSync();
+        renderCountdown();
+        if (!navigator.onLine || !db) {
+            syncState = navigator.onLine ? 'อัปเดตไม่สำเร็จ' : 'ออฟไลน์';
+            updateSyncLabel();
+            return Promise.resolve();
+        }
+
+        syncState = 'กำลังอัปเดต…';
+        updateSyncLabel();
+        btn.disabled = true;
+        btn.classList.add('spinning');
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 12000);
+        const { signal } = controller;
+        refreshInProgress = Promise.allSettled([
+            fetchGuardTotals(signal), fetchWaterStatus(signal), fetchAnnouncements(signal)
+        ]).then(results => {
+            const failures = results.filter(result => result.status === 'rejected').length;
+            if (failures === 0) {
+                syncState = null;
+                stampSync();
+            } else {
+                syncState = failures === results.length ? 'อัปเดตไม่สำเร็จ' : 'อัปเดตได้บางส่วน';
+                updateSyncLabel();
+            }
+        }).finally(() => {
+            clearTimeout(timeout);
+            btn.disabled = false;
+            btn.classList.remove('spinning');
+            refreshInProgress = null;
+        });
+        return refreshInProgress;
     }
 
     // ══════════════════════════════════
     // BOOT
     // ══════════════════════════════════
-    async function initApp() {
+    function signInToGuardHome() {
+        if (liffReady && !liff.isInClient() && !liff.isLoggedIn()) liff.login();
+    }
+
+    async function initGuardProfile() {
+        document.getElementById('profileGreeting').textContent = getGreeting();
         try {
             await liff.init({ liffId: LIFF_ID });
-
-            if (!liff.isLoggedIn()) {
-                liff.login();
-                return;
+            liffReady = true;
+            if (liff.isLoggedIn()) {
+                applyProfile(await liff.getProfile());
+            } else if (!liff.isInClient()) {
+                document.getElementById('profileLogin').hidden = false;
             }
-
-            const profile = await liff.getProfile();
-            applyProfile(profile);
-
         } catch (err) {
-            // เปิดนอก LINE — ใช้งานได้ปกติ ไม่มี profile
-            console.warn('LIFF init skipped (non-LINE browser):', err);
-            document.getElementById('profileGreeting').textContent = getGreeting();
+            console.warn('Unable to load LINE profile:', err);
         }
-
-        fetchGuardTotals();
-        fetchWaterStatus();
-        fetchAnnouncements();
-        stampSync();
-        showApp();
     }
 
-    function showApp() {
-        const screen = document.getElementById('loadingScreen');
-        screen.classList.add('fade-out');
-        setTimeout(() => {
-            screen.style.display = 'none';
-            document.getElementById('appContent').style.display = 'block';
-        }, 420);
-    }
+    window.addEventListener('pageshow', (event) => {
+        if (event.persisted) {
+            try { sessionStorage.removeItem(guardHomeScrollKey); } catch { /* Storage blocked. */ }
+            refreshProfile();
+        }
+    });
 
     // ══════════════════════════════════
     // PWA INSTALL PROMPT
@@ -1335,7 +1193,16 @@
     }
 
 
-    window.addEventListener('load', initApp);
+    initGuardProfile();
+    requestAnimationFrame(() => {
+        const target = restoreGuardHomePosition();
+        const restoredTop = window.scrollY;
+        refreshProfile().then(() => {
+            if (target !== null && target > restoredTop && window.scrollY === restoredTop) {
+                window.scrollTo(0, target);
+            }
+        });
+    });
 </script>
 </body>
 </html>

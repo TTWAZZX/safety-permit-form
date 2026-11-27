@@ -406,9 +406,7 @@
     </style>
 </head>
 <body>
-<script>
-function tshGoHome() { window.location.href = './guard-home.html'; }
-</script>
+<script src="./guard-navigation.js"></script>
 
     <main class="app-shell">
         <header class="topbar">
@@ -739,6 +737,8 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
 
         let tomSelectInstance;
         let currentMobileStep = 1;
+        let gpsRequest = 0;
+        let syncingOfflineQueue = false;
         let guardHistoryLoaded = false;
         let employeeRiskTimer = null;
         let latestEmployeeRiskKey = '';
@@ -1363,7 +1363,7 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
         }
 
         async function checkDuplicateReport(empId, violation, locationRef) {
-            if (!db || !empId || !violation || !locationRef) return false;
+            if (!db || !navigator.onLine || !empId || !violation || !locationRef) return false;
             try {
                 const { count } = await guardViolationRequest('duplicate', {
                     employeeCode: empId, violationType: violation, locationRef
@@ -1376,7 +1376,7 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
         }
 
         async function getCumulativeViolationCount(empId, fullname = '') {
-            if (!db) return 0;
+            if (!db || !navigator.onLine) return 0;
             const identity = getRepeatIdentityKeyFromValues(empId, fullname);
             if (!identity) return 0;
             try {
@@ -1417,8 +1417,12 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
                 message: entry.message || '',
                 at: new Date().toISOString()
             });
-            localStorage.setItem(SYNC_HISTORY_KEY, JSON.stringify(history.slice(0, SYNC_HISTORY_LIMIT)));
-            renderSyncHistory();
+            try {
+                localStorage.setItem(SYNC_HISTORY_KEY, JSON.stringify(history.slice(0, SYNC_HISTORY_LIMIT)));
+                renderSyncHistory();
+            } catch (err) {
+                console.warn('Could not update sync history:', err);
+            }
         }
 
         function renderSyncHistory() {
@@ -1446,6 +1450,7 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
 
         function enqueueOfflineReport(payload) {
             const queue = getOfflineQueue();
+            if (queue.some(item => item.id === payload.case_id)) return;
             queue.push({
                 id: payload.case_id,
                 payload: {
@@ -1484,14 +1489,23 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
         }
 
         async function syncOfflineQueue() {
+            if (syncingOfflineQueue || !navigator.onLine) return;
             const queue = getOfflineQueue();
             if (!db || queue.length === 0) {
                 updateQueueStatus();
                 return;
             }
 
-            const remaining = [];
-            let syncedCount = 0;
+            syncingOfflineQueue = true;
+            try {
+                await syncQueuedReports(queue);
+            } finally {
+                syncingOfflineQueue = false;
+            }
+        }
+
+        async function syncQueuedReports(queue) {
+            const syncedIds = new Set();
 
             for (const item of queue) {
                 try {
@@ -1508,7 +1522,7 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
                         status: 'success',
                         message: 'Synced: ส่งเข้า Admin แล้ว'
                     });
-                    syncedCount++;
+                    syncedIds.add(item.id);
                 } catch (err) {
                     console.error('Queue sync error:', err);
                     addSyncHistory({
@@ -1518,17 +1532,22 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
                         status: 'danger',
                         message: `Failed: ${err.message}`
                     });
-                    remaining.push(item);
                 }
             }
 
+            const remaining = getOfflineQueue().filter(item => !syncedIds.has(item.id));
             saveOfflineQueue(remaining);
 
-            if (syncedCount > 0) {
+            if (syncedIds.size > 0) {
+                guardHistoryLoaded = false;
+                if (document.body.classList.contains('history-mode')) loadGuardHistory();
+                if (Swal.isVisible()) return;
                 Swal.fire({
+                    toast: true,
+                    position: 'top',
                     icon: remaining.length === 0 ? 'success' : 'warning',
                     title: remaining.length === 0 ? 'Sync สำเร็จ' : 'Sync ได้บางส่วน',
-                    text: `ส่งรายงานค้างระบบแล้ว ${syncedCount} รายการ${remaining.length ? `, เหลือ ${remaining.length} รายการ` : ''}`,
+                    text: `ส่งรายงานค้างระบบแล้ว ${syncedIds.size} รายการ${remaining.length ? `, เหลือ ${remaining.length} รายการ` : ''}`,
                     timer: 2200,
                     showConfirmButton: false
                 });
@@ -1618,7 +1637,9 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> กำลังอ่านพิกัด...';
             status.innerText = 'กำลังขอพิกัดจากอุปกรณ์';
 
+            const request = ++gpsRequest;
             navigator.geolocation.getCurrentPosition((position) => {
+                if (request !== gpsRequest) return;
                 const { latitude, longitude, accuracy } = position.coords;
                 document.getElementById('gpsLatitude').value = latitude.toFixed(7);
                 document.getElementById('gpsLongitude').value = longitude.toFixed(7);
@@ -1630,6 +1651,7 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
                 btn.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> อัปเดตพิกัด GPS';
                 updateLiveSummary();
             }, (err) => {
+                if (request !== gpsRequest) return;
                 status.classList.remove('success');
                 status.classList.add('warning');
                 status.innerText = `อ่านพิกัดไม่สำเร็จ: ${err.message}`;
@@ -1651,6 +1673,7 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
             input.addEventListener('change', () => {
                 const file = input.files?.[0];
                 const status = document.getElementById('evidenceStatus');
+                if (preview.hasAttribute('src')) URL.revokeObjectURL(preview.src);
                 if (!file) {
                     preview.style.display = 'none';
                     preview.removeAttribute('src');
@@ -1795,11 +1818,49 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
             }
         }
 
+        function resetSavedReport(form) {
+            form.reset();
+            if (tomSelectInstance) {
+                tomSelectInstance.clear(true);
+                tomSelectInstance.setTextboxValue('');
+                tomSelectInstance.close();
+            }
+            toggleOther(false);
+            gpsRequest++;
+            for (const id of ['gpsLatitude', 'gpsLongitude', 'gpsAccuracy']) {
+                document.getElementById(id).value = '';
+            }
+            const gpsStatus = document.getElementById('gpsStatus');
+            gpsStatus.classList.remove('success', 'warning');
+            gpsStatus.innerText = 'ยังไม่ได้บันทึกพิกัด';
+            const gpsButton = document.getElementById('btnLocation');
+            gpsButton.disabled = false;
+            gpsButton.innerHTML = '<i class="bi bi-crosshair me-1"></i> บันทึกพิกัด GPS';
+            document.getElementById('evidencePhoto').dispatchEvent(new Event('change'));
+            clearTimeout(employeeRiskTimer);
+            latestEmployeeRiskKey = '';
+            latestRepeatSummary = { checked: false, projectedCount: null, isRepeat: false };
+            setEmployeeRiskAlert('', '');
+            const insight = document.getElementById('insightPanel');
+            insight.className = 'insight-card warning mt-3';
+            insight.textContent = 'ระบบจะตรวจผู้กระทำซ้ำจากประวัติสะสมทั้งหมดตอนกดส่งรายงาน';
+            updateLiveSummary();
+            guardHistoryLoaded = false;
+            if (document.body.classList.contains('history-mode')) {
+                currentMobileStep = 1;
+                loadGuardHistory();
+            } else {
+                goToMobileStep(1);
+            }
+        }
+
         // จัดการตอนกดปุ่ม Submit
         document.getElementById('violationForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
+            const form = e.currentTarget;
             const btn = document.getElementById('btnSubmit');
+            if (btn.disabled) return;
             const originalText = btn.innerHTML;
 
             const rawEmpData = safeText(document.getElementById('empSearch').value, '');
@@ -1845,153 +1906,145 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
             const gpsLongitude = safeText(document.getElementById('gpsLongitude').value, '');
             const gpsAccuracy = safeText(document.getElementById('gpsAccuracy').value, '');
             const caseId = buildCaseId();
-            const cumulativeViolationCount = await getCumulativeViolationCount(emp_id, fullname);
-            const projectedViolationCount = cumulativeViolationCount + 1;
-            const isRepeatOffender = projectedViolationCount >= 2;
-            const finalSeverityLevel = isRepeatOffender && severityLevel === 'Medium' ? 'High' : severityLevel;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> กำลังตรวจสอบรายงาน...';
+            try {
+                const cumulativeViolationCount = await getCumulativeViolationCount(emp_id, fullname);
+                const projectedViolationCount = cumulativeViolationCount + 1;
+                const isRepeatOffender = projectedViolationCount >= 2;
+                const finalSeverityLevel = isRepeatOffender && severityLevel === 'Medium' ? 'High' : severityLevel;
 
-            if (isRepeatOffender && severityLevel === 'Medium') {
-                document.getElementById('severityLevel').value = 'High';
-                updateLiveSummary();
-            }
+                if (isRepeatOffender && severityLevel === 'Medium') {
+                    document.getElementById('severityLevel').value = 'High';
+                    updateLiveSummary();
+                }
 
-            const insightPanel = document.getElementById('insightPanel');
-            if (insightPanel && isRepeatOffender) {
-                insightPanel.className = 'insight-card danger mt-3';
-                insightPanel.innerHTML = `<b>ผู้กระทำซ้ำ</b><br>${escapeHtml(fullname)} มีประวัติสะสมรวม ${projectedViolationCount} ครั้ง`;
-            }
+                const insightPanel = document.getElementById('insightPanel');
+                if (insightPanel && isRepeatOffender) {
+                    insightPanel.className = 'insight-card danger mt-3';
+                    insightPanel.innerHTML = `<b>ผู้กระทำซ้ำ</b><br>${escapeHtml(fullname)} มีประวัติสะสมรวม ${projectedViolationCount} ครั้ง`;
+                }
 
-            const isDuplicate = await checkDuplicateReport(emp_id, violation, locationCctv);
-            if (isDuplicate) {
-                const duplicateDecision = await Swal.fire({
+                const isDuplicate = await checkDuplicateReport(emp_id, violation, locationCctv);
+                if (isDuplicate) {
+                    const duplicateDecision = await Swal.fire({
+                        icon: 'warning',
+                        title: 'อาจเป็นรายการซ้ำ',
+                        text: 'พบคนเดิม + ข้อหาเดิม + จุดเกิดเหตุเดิม ภายใน 5 นาที ต้องการบันทึกต่อหรือไม่?',
+                        showCancelButton: true,
+                        confirmButtonText: 'บันทึกต่อ',
+                        cancelButtonText: 'กลับไปตรวจสอบ',
+                        confirmButtonColor: '#dc2626'
+                    });
+                    if (!duplicateDecision.isConfirmed) return;
+                }
+
+                // เด้ง Popup ยืนยันข้อมูลก่อนส่ง
+                const result = await Swal.fire({
+                    title: 'ยืนยันการบันทึก?',
+                    html: `<div class="text-start p-3 bg-dark bg-opacity-10 rounded border border-secondary mt-2" style="color: #334155;">
+                        <div class="mb-1"><b>Case:</b> ${escapeHtml(caseId)}</div>
+                        <div class="mb-1"><b>ชื่อ:</b> ${escapeHtml(fullname)} (${escapeHtml(emp_id)})</div>
+                        <div class="mb-1"><b>ข้อหา:</b> <span class="text-danger fw-bold">${escapeHtml(violation)}</span></div>
+                        <div class="mb-1"><b>หลักฐาน:</b> ${escapeHtml(locationCctv)}</div>
+                        <div class="mb-0"><b>การดำเนินการ:</b> ${escapeHtml(actionTaken)}</div>
+                        <div class="mb-0"><b>ความเร่งด่วน:</b> ${escapeHtml(finalSeverityLevel)}</div>
+                        <div class="mb-0"><b>ประวัติสะสม:</b> ${isRepeatOffender ? `<span class="text-danger fw-bold">ผู้กระทำซ้ำ (${projectedViolationCount} ครั้ง)</span>` : `${projectedViolationCount} ครั้ง`}</div>
+                        <div class="mb-0"><b>พิกัด:</b> ${gpsLatitude && gpsLongitude ? `${escapeHtml(gpsLatitude)}, ${escapeHtml(gpsLongitude)}` : 'ยังไม่ได้บันทึก'}</div>
+                    </div>`,
                     icon: 'warning',
-                    title: 'อาจเป็นรายการซ้ำ',
-                    text: 'พบคนเดิม + ข้อหาเดิม + จุดเกิดเหตุเดิม ภายใน 5 นาที ต้องการบันทึกต่อหรือไม่?',
                     showCancelButton: true,
-                    confirmButtonText: 'บันทึกต่อ',
-                    cancelButtonText: 'กลับไปตรวจสอบ',
-                    confirmButtonColor: '#dc2626'
+                    confirmButtonColor: '#ef4444',
+                    cancelButtonColor: '#64748b',
+                    confirmButtonText: 'ใช่, บันทึกเลย',
+                    cancelButtonText: 'แก้ไข',
+                    reverseButtons: true
                 });
-                if (!duplicateDecision.isConfirmed) return;
-            }
+                if (!result.isConfirmed) return;
 
-            // เด้ง Popup ยืนยันข้อมูลก่อนส่ง
-            Swal.fire({
-                title: 'ยืนยันการบันทึก?',
-                html: `<div class="text-start p-3 bg-dark bg-opacity-10 rounded border border-secondary mt-2" style="color: #334155;">
-                    <div class="mb-1"><b>Case:</b> ${escapeHtml(caseId)}</div>
-                    <div class="mb-1"><b>ชื่อ:</b> ${escapeHtml(fullname)} (${escapeHtml(emp_id)})</div>
-                    <div class="mb-1"><b>ข้อหา:</b> <span class="text-danger fw-bold">${escapeHtml(violation)}</span></div>
-                    <div class="mb-1"><b>หลักฐาน:</b> ${escapeHtml(locationCctv)}</div>
-                    <div class="mb-0"><b>การดำเนินการ:</b> ${escapeHtml(actionTaken)}</div>
-                    <div class="mb-0"><b>ความเร่งด่วน:</b> ${escapeHtml(finalSeverityLevel)}</div>
-                    <div class="mb-0"><b>ประวัติสะสม:</b> ${isRepeatOffender ? `<span class="text-danger fw-bold">ผู้กระทำซ้ำ (${projectedViolationCount} ครั้ง)</span>` : `${projectedViolationCount} ครั้ง`}</div>
-                    <div class="mb-0"><b>พิกัด:</b> ${gpsLatitude && gpsLongitude ? `${escapeHtml(gpsLatitude)}, ${escapeHtml(gpsLongitude)}` : 'ยังไม่ได้บันทึก'}</div>
-                </div>`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#ef4444',
-                cancelButtonColor: '#64748b',
-                confirmButtonText: 'ใช่, บันทึกเลย',
-                cancelButtonText: 'แก้ไข',
-                reverseButtons: true
-            }).then(async (result) => {
-                if (result.isConfirmed) {
-                    btn.disabled = true;
-                    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> กำลังเตรียมรายงาน...';
+                const payload = {
+                    case_id: caseId,
+                    emp_id: emp_id,
+                    fullname: fullname,
+                    section: section,
+                    violation_type: violation,
+                    location_ref: locationCctv,
+                    action_taken: actionTaken,
+                    reported_by: reportedBy,
+                    guard_shift: guardShift,
+                    severity_level: finalSeverityLevel,
+                    workflow_status: isRepeatOffender ? WORKFLOW_REPEAT : WORKFLOW_PENDING,
+                    review_owner: isRepeatOffender ? REVIEW_SAFETY_MANAGER : REVIEW_SAFETY_OFFICER,
+                    repeat_offender: isRepeatOffender,
+                    recent_violation_count_30d: projectedViolationCount,
+                    repeat_window_days: null,
+                    client_reported_at: new Date().toISOString(),
+                    source_page: 'guard_violation.html',
+                    device_user_agent: navigator.userAgent,
+                    device_id: getDeviceId(),
+                    device_label: safeText(localStorage.getItem('tsh_guard_device_label'), 'Guard Mobile'),
+                    gps_latitude: gpsLatitude || null,
+                    gps_longitude: gpsLongitude || null,
+                    gps_accuracy_meter: gpsAccuracy || null,
+                    sync_status: 'Online',
+                    offline_created: !navigator.onLine
+                };
 
-                    // 🛑 ข้อมูลสำหรับส่งขึ้น Supabase (ตาราง violation_reports)
-                    const payload = {
-                        case_id: caseId,
-                        emp_id: emp_id,
-                        fullname: fullname,
-                        section: section,
-                        violation_type: violation,
-                        location_ref: locationCctv,
-                        action_taken: actionTaken,
-                        reported_by: reportedBy,
-                        guard_shift: guardShift,
-                        severity_level: finalSeverityLevel,
-                        workflow_status: isRepeatOffender ? WORKFLOW_REPEAT : WORKFLOW_PENDING,
-                        review_owner: isRepeatOffender ? REVIEW_SAFETY_MANAGER : REVIEW_SAFETY_OFFICER,
-                        repeat_offender: isRepeatOffender,
-                        recent_violation_count_30d: projectedViolationCount,
-                        repeat_window_days: null,
-                        client_reported_at: new Date().toISOString(),
-                        source_page: 'guard_violation.html',
-                        device_user_agent: navigator.userAgent,
-                        device_id: getDeviceId(),
-                        device_label: safeText(localStorage.getItem('tsh_guard_device_label'), 'Guard Mobile'),
-                        gps_latitude: gpsLatitude || null,
-                        gps_longitude: gpsLongitude || null,
-                        gps_accuracy_meter: gpsAccuracy || null,
-                        sync_status: 'Online',
-                        offline_created: !navigator.onLine
-                    };
-
+                let storedReport;
+                let sendError;
+                if (db && navigator.onLine) {
+                    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> กำลังอัปโหลดหลักฐาน...';
                     try {
-                        if (!db || !navigator.onLine) {
-                            enqueueOfflineReport(payload);
-                            Swal.fire({
-                                icon: 'info',
-                                title: 'บันทึกไว้รอ Sync',
-                                text: 'ระบบเก็บรายงานไว้ในเครื่องแล้ว เมื่อออนไลน์จะส่งเข้าฐานข้อมูลให้อัตโนมัติ',
-                                timer: 2500,
-                                showConfirmButton: false
-                            }).then(() => {
-                                window.location.reload();
-                            });
-                            return;
-                        }
-
-                        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> กำลังอัปโหลดหลักฐาน...';
-                        try {
-                            Object.assign(payload, await uploadEvidenceFile(caseId));
-                        } catch (uploadErr) {
-                            console.warn('Evidence upload error:', uploadErr);
-                            payload.evidence_upload_error = uploadErr.message;
-                            payload.evidence_url = null;
-                        }
-
-                        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> กำลังบันทึก...';
-                        const { report } = await insertViolationReport(payload);
-
-                        // ส่ง LINE แจ้งกลุ่ม (fire-and-forget ไม่ block UI)
-                        sendLineViolationNotify(payload, report);
-
-                        addSyncHistory({
-                            case_id: payload.case_id,
-                            fullname: payload.fullname,
-                            emp_id: payload.emp_id,
-                            status: 'success',
-                            message: 'Online: ส่งเข้า Admin แล้ว'
-                        });
-
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'ส่งเข้า Admin แล้ว',
-                            text: `Case ${caseId} พร้อมให้แอดมินตรวจสอบใน Dashboard`,
-                            timer: 2600,
-                            showConfirmButton: false
-                        }).then(() => {
-                            window.location.reload(); // รีเฟรชหน้าเตรียมรับเคสต่อไป
-                        });
-
+                        Object.assign(payload, await uploadEvidenceFile(caseId));
                     } catch (err) {
-                        console.error('Submit error:', err);
-                        enqueueOfflineReport(payload);
-                        Swal.fire({
-                            icon: 'warning',
-                            title: 'ส่งไม่สำเร็จ แต่เก็บไว้รอ Sync แล้ว',
-                            text: `ระบบจะลองส่งใหม่เมื่อออนไลน์: ${err.message}`,
-                            confirmButtonText: 'รับทราบ'
-                        }).then(() => {
-                            btn.disabled = false;
-                            btn.innerHTML = originalText;
-                        });
+                        console.warn('Evidence upload error:', err);
+                        payload.evidence_upload_error = err.message;
+                        payload.evidence_url = null;
+                    }
+
+                    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> กำลังบันทึก...';
+                    try {
+                        storedReport = await insertViolationReport(payload);
+                    } catch (err) {
+                        sendError = err;
                     }
                 }
-            });
+
+                if (storedReport) {
+                    sendLineViolationNotify(payload, storedReport.report);
+                    addSyncHistory({
+                        case_id: payload.case_id,
+                        fullname: payload.fullname,
+                        emp_id: payload.emp_id,
+                        status: 'success',
+                        message: 'Online: ส่งเข้า Admin แล้ว'
+                    });
+                    await Swal.fire({
+                        icon: 'success',
+                        title: 'ส่งเข้า Admin แล้ว',
+                        text: 'Case ' + caseId + ' พร้อมให้แอดมินตรวจสอบใน Dashboard',
+                        timer: 2600,
+                        showConfirmButton: false
+                    });
+                } else {
+                    enqueueOfflineReport(payload);
+                    const hadPhoto = Boolean(document.getElementById('evidencePhoto').files?.[0]);
+                    await Swal.fire({
+                        icon: sendError || hadPhoto ? 'warning' : 'info',
+                        title: sendError ? 'ส่งไม่สำเร็จ แต่เก็บไว้รอ Sync แล้ว' : 'บันทึกไว้รอ Sync',
+                        text: hadPhoto ? 'ระบบจะส่งข้อมูลรายงานเมื่อออนไลน์ รูปหลักฐานไม่ได้เก็บในคิวออฟไลน์' : 'เมื่อออนไลน์ ระบบจะส่งรายงานจากเครื่องเข้าฐานข้อมูล',
+                        timer: sendError || hadPhoto ? undefined : 2500,
+                        showConfirmButton: Boolean(sendError || hadPhoto)
+                    });
+                }
+                resetSavedReport(form);
+            } catch (err) {
+                console.error('Submit error:', err);
+                await Swal.fire('ดำเนินการไม่สำเร็จ', err.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
         });
     </script>
 </body>
