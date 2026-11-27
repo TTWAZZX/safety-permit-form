@@ -1,4 +1,17 @@
 (() => {
+    function renderPinButton(button, label, busy = false) {
+        button.disabled = busy;
+        button.setAttribute('aria-busy', String(busy));
+        if (!busy) {
+            button.textContent = label;
+            return;
+        }
+        const spinner = document.createElement('span');
+        spinner.className = 'spinner-border spinner-border-sm me-2';
+        spinner.setAttribute('aria-hidden', 'true');
+        button.replaceChildren(spinner, document.createTextNode(label));
+    }
+
     function mount({ page, apiUrl, openDashboard }) {
         const form = document.getElementById('legacyAdminLoginForm');
         const button = document.getElementById('legacyAdminLoginButton');
@@ -11,10 +24,11 @@
         input.value = '';
         let adminPin = '';
 
-        function render(message = '', error = false) {
+        function render(message = '', error = false, busy = false) {
             field.hidden = !token;
-            input.disabled = !token;
-            button.textContent = token ? 'ยืนยัน PIN / Verify PIN' : 'เข้าสู่ระบบด้วย LINE / Sign in with LINE';
+            input.disabled = busy || !token;
+            renderPinButton(button, busy ? 'กำลังเข้าสู่ระบบ…' : token
+                ? 'ยืนยัน PIN / Verify PIN' : 'เข้าสู่ระบบด้วย LINE / Sign in with LINE', busy);
             status.classList.toggle('text-danger', error);
             status.textContent = message || (token
                 ? 'ยืนยัน LINE แล้ว กรุณากรอก PIN กลาง / Enter the shared PIN'
@@ -39,18 +53,19 @@
                 return;
             }
 
-            button.disabled = true;
-            render('กำลังตรวจสอบ PIN…');
+            render('กำลังตรวจสอบ PIN…', false, true);
+            let failure = '';
             try {
                 const result = await request('guard-admin-login', {}, pin);
                 if (result?.ok !== true) throw new Error('ตรวจสอบสิทธิ์ไม่สำเร็จ / Sign-in failed');
                 adminPin = pin;
-                openDashboard();
+                await openDashboard();
             } catch (error) {
-                render(error.message, true);
-                if (token) input.focus();
+                adminPin = '';
+                failure = error.message || 'เข้าสู่ระบบไม่สำเร็จ';
             } finally {
-                button.disabled = false;
+                render(failure, Boolean(failure));
+                if (failure && token) input.focus();
             }
         });
         render();
@@ -171,5 +186,5 @@
         Swal.fire({ title: 'ประวัติแก้ไข', html: panel, width: 850, confirmButtonText: 'ปิด', didOpen: render });
     }
 
-    window.LEGACY_ADMIN_LOGIN = Object.freeze({ mount });
+    window.LEGACY_ADMIN_LOGIN = Object.freeze({ mount, renderPinButton });
 })();

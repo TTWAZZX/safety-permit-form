@@ -15,6 +15,7 @@
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="legacy-admin-login.js?v=pin-loading-1"></script>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 
@@ -658,14 +659,18 @@ window.onload = () => {
     renderGuardAdminLogin();
 };
 
-function renderGuardAdminLogin(message = '', error = false) {
+function renderGuardAdminLogin(message = '', error = false, busy = false) {
     const verified = Boolean(guardAdminToken);
     const input = document.getElementById('guardAdminAccessCode');
     const status = document.getElementById('guardAdminLoginStatus');
-    input.disabled = !verified;
+    input.disabled = busy || !verified;
     document.getElementById('guardAdminPinLabel').classList.toggle('d-none', !verified);
     document.getElementById('guardAdminPinField').classList.toggle('d-none', !verified);
-    document.getElementById('guardAdminLoginButton').textContent = verified ? 'ยืนยัน PIN' : 'เข้าสู่ระบบด้วย LINE';
+    window.LEGACY_ADMIN_LOGIN.renderPinButton(
+        document.getElementById('guardAdminLoginButton'),
+        busy ? 'กำลังเข้าสู่ระบบ…' : verified ? 'ยืนยัน PIN' : 'เข้าสู่ระบบด้วย LINE',
+        busy
+    );
     status.classList.toggle('text-danger', error);
     status.classList.toggle('text-muted', !error);
     status.textContent = message || (verified
@@ -715,18 +720,18 @@ async function checkLogin() {
     }
     guardAdminPin = pin;
     input.value = '';
-    renderGuardAdminLogin('กำลังตรวจสอบ PIN…');
-    button.disabled = true;
+    renderGuardAdminLogin('กำลังตรวจสอบ PIN…', false, true);
+    let failure = '';
     try {
         await guardAdminRequest('guard-admin-login');
         await unlockDashboard();
     } catch (error) {
         guardAdminPin = '';
         input.value = '';
-        renderGuardAdminLogin(error.message, true);
-        if (guardAdminToken) input.focus();
+        failure = error.message || 'เข้าสู่ระบบไม่สำเร็จ';
     } finally {
-        button.disabled = false;
+        renderGuardAdminLogin(failure, Boolean(failure));
+        if (failure && guardAdminToken) input.focus();
     }
 }
 
