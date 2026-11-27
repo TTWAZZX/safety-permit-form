@@ -343,7 +343,19 @@ window.onload = async () => {
         await updateLoader("กำลังอัปเดตข้อมูลผู้ใช้...", 300);
         await liff.init({ liffId: LIFF_ID });
         
+        const violationLoginKey = 'guard-violation-login-pending';
+        if (new URLSearchParams(location.search).get('continue') === 'guard-violation') {
+            sessionStorage.setItem(violationLoginKey, '1');
+        }
         if (!liff.isLoggedIn()) { liff.login(); return; }
+        if (sessionStorage.getItem(violationLoginKey) === '1') {
+            sessionStorage.removeItem(violationLoginKey);
+            const token = liff.getAccessToken();
+            if (!token) throw new Error('LINE access token unavailable');
+            sessionStorage.setItem('guard-violation-line-session', token);
+            location.replace(new URL('guard_violation.html', location.href));
+            return;
+        }
 
         const profile = await liff.getProfile();
         document.getElementById('displayName').innerText = profile.displayName;

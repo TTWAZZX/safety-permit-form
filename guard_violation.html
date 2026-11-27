@@ -696,6 +696,32 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
         const SUPABASE_URL = 'https://dqsfioiqwxuxpucwwhsv.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxc2Zpb2lxd3h1eHB1Y3d3aHN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1OTk1NjUsImV4cCI6MjA4NDE3NTU2NX0.L_u0Ff3uHofxiimEs6ySFB4TPNtOWiKeSu3KFoVcA1U';
         const db = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+        const guardLineSessionKey = 'guard-violation-line-session';
+        function openGuardLineLogin() {
+            sessionStorage.removeItem(guardLineSessionKey);
+            const login = new URL('guard-checkin.html', location.href);
+            login.searchParams.set('continue', 'guard-violation');
+            location.replace(login);
+        }
+
+        async function guardViolationRequest(operation, values) {
+            const token = sessionStorage.getItem(guardLineSessionKey);
+            if (!token) {
+                openGuardLineLogin();
+                throw new Error('กรุณาเข้าสู่ระบบ LINE');
+            }
+            const response = await fetch(new URL('/functions/v1/legacy-safety-access', SUPABASE_URL), {
+                method: 'POST', cache: 'no-store', credentials: 'omit', redirect: 'error',
+                headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...values, action: 'guard-violation-' + operation }),
+                signal: AbortSignal.timeout(20000)
+            });
+            const result = await response.json().catch(() => null);
+            if (response.status === 401) openGuardLineLogin();
+            if (!response.ok || !result) throw new Error(result?.error || 'เชื่อมต่อระบบรายงานไม่สำเร็จ');
+            return result;
+        }
+
         const OFFLINE_QUEUE_KEY = 'tsh_violation_report_queue_v1';
         const SYNC_HISTORY_KEY = 'tsh_violation_sync_history_v1';
         const DEVICE_ID_KEY = 'tsh_violation_device_id_v1';
@@ -705,8 +731,6 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
         const REVIEW_SAFETY_OFFICER = 'Safety Officer';
         const REVIEW_SAFETY_MANAGER = 'Safety Manager';
         const EMPLOYEE_SEARCH_LIMIT = 50;
-        const EVENT_CREATED = 'case_created';
-        const ACTOR_GUARD = 'Guard';
         const HISTORY_LIMIT = 50;
         const SYNC_HISTORY_LIMIT = 12;
         const IMAGE_MAX_WIDTH = 1600;
@@ -778,21 +802,8 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
             const cacheKey = term.toLowerCase();
             if (employeeSearchCache.has(cacheKey)) return employeeSearchCache.get(cacheKey);
 
-            let query = db
-                .from('employees_list')
-                .select('emp_id, fullname, section')
-                .order('emp_id', { ascending: true })
-                .limit(EMPLOYEE_SEARCH_LIMIT);
-
-            if (term) {
-                const pattern = `%${term}%`;
-                query = query.or(`emp_id.ilike.${pattern},fullname.ilike.${pattern},section.ilike.${pattern}`);
-            }
-
-            const { data, error } = await query;
-            if (error) throw error;
-
-            const options = buildEmployeeOptions(data, term ? [] : fallbackEmployeeOptions);
+            const { rows } = await guardViolationRequest('employees', { search: term });
+            const options = buildEmployeeOptions(rows, term ? [] : fallbackEmployeeOptions);
             employeeSearchCache.set(cacheKey, options);
             return options;
         }
@@ -952,18 +963,13 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
         async function countEmployeeViolations(empId) {
             if (!db || !empId) return { total: '-', projected: '-' };
 
-            const totalResult = await db
-                .from('violation_reports')
-                .select('id', { count: 'exact', head: true })
-                .eq('emp_id', empId);
-
-            if (totalResult.error) {
-                console.warn('History count skipped:', totalResult.error);
+            try {
+                const { count } = await guardViolationRequest('count', { employeeCode: empId });
+                return { total: count, projected: count + 1 };
+            } catch (error) {
+                console.warn('History count skipped:', error.message);
                 return { total: '-', projected: '-' };
             }
-
-            const total = totalResult.count || 0;
-            return { total, projected: total + 1 };
         }
 
         function encodeHistoryEmployee(report) {
@@ -1153,23 +1159,7 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
             try {
                 list.innerHTML = '<div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div>';
 
-                let query = db
-                    .from('violation_reports')
-                    .select('id, case_id, created_at, client_reported_at, emp_id, fullname, section, violation_type, location_ref, workflow_status, severity_level, repeat_offender, recent_violation_count_30d')
-                    .order('created_at', { ascending: false })
-                    .limit(HISTORY_LIMIT);
-
-                if (employeeCode) {
-                    query = query.eq('emp_id', employeeCode);
-                } else if (search.length >= 2) {
-                    const pattern = `%${search}%`;
-                    query = query.or(`emp_id.ilike.${pattern},fullname.ilike.${pattern},section.ilike.${pattern},violation_type.ilike.${pattern}`);
-                }
-
-                const { data, error } = await query;
-                if (error) throw error;
-
-                const reports = data || [];
+                const { rows: reports } = await guardViolationRequest('history', { search, employeeCode });
                 guardHistoryLoaded = true;
                 shownCount.innerText = String(reports.length);
 
@@ -1368,112 +1358,35 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
             return `VR-${stamp}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
         }
 
-        function getBasePayload(payload) {
-            return {
-                emp_id: payload.emp_id,
-                fullname: payload.fullname,
-                section: payload.section,
-                violation_type: payload.violation_type,
-                location_ref: payload.location_ref,
-                action_taken: payload.action_taken,
-                reported_by: payload.reported_by
-            };
-        }
-
-        async function insertViolationReport(payload) {
-            if (!db) throw new Error('ไม่สามารถเชื่อมต่อฐานข้อมูลได้');
-
-            const { data, error } = await db.from('violation_reports').insert([payload]).select('id, case_id').single();
-            if (!error) return { usedFallback: false, report: data };
-
-            const { data: fallbackData, error: fallbackError } = await db.from('violation_reports').insert([getBasePayload(payload)]).select('id, case_id').single();
-            if (fallbackError) throw error;
-            return { usedFallback: true, originalError: error, report: fallbackData };
-        }
-
-        async function addCaseTimelineEvent(event) {
-            if (!db || !event.case_id) return;
-
-            const { error } = await db.from('violation_case_timeline').insert([{
-                case_id: event.case_id,
-                report_id: event.report_id || null,
-                event_type: event.event_type,
-                from_status: event.from_status || null,
-                to_status: event.to_status || null,
-                actor_role: event.actor_role || ACTOR_GUARD,
-                actor_name: event.actor_name || 'Guard Patrol',
-                note: event.note || null,
-                event_payload: event.event_payload || {}
-            }]);
-
-            if (error) console.warn('Timeline event skipped:', error.message);
-        }
-
-        async function recordCaseCreatedTimeline(payload, report) {
-            await addCaseTimelineEvent({
-                case_id: payload.case_id,
-                report_id: report?.id || null,
-                event_type: EVENT_CREATED,
-                to_status: payload.workflow_status,
-                actor_role: ACTOR_GUARD,
-                actor_name: payload.reported_by,
-                note: payload.repeat_offender
-                    ? `ผู้กระทำซ้ำ ${payload.recent_violation_count_30d} ครั้งสะสม`
-                    : 'สร้างรายงานจาก Guard SuperApp',
-                event_payload: {
-                    emp_id: payload.emp_id,
-                    fullname: payload.fullname,
-                    violation_type: payload.violation_type,
-                    severity_level: payload.severity_level,
-                    sync_status: payload.sync_status
-                }
-            });
+        async function insertViolationReport(report) {
+            return await guardViolationRequest('submit', { report });
         }
 
         async function checkDuplicateReport(empId, violation, locationRef) {
             if (!db || !empId || !violation || !locationRef) return false;
-
-            const sinceDate = new Date(Date.now() - (5 * 60 * 1000)).toISOString();
-            const { count, error } = await db
-                .from('violation_reports')
-                .select('id', { count: 'exact', head: true })
-                .eq('emp_id', empId)
-                .eq('violation_type', violation)
-                .eq('location_ref', locationRef)
-                .gte('created_at', sinceDate);
-
-            if (error) {
+            try {
+                const { count } = await guardViolationRequest('duplicate', {
+                    employeeCode: empId, violationType: violation, locationRef
+                });
+                return count > 0;
+            } catch (error) {
                 console.warn('Duplicate check skipped:', error.message);
                 return false;
             }
-
-            return (count || 0) > 0;
         }
 
         async function getCumulativeViolationCount(empId, fullname = '') {
             if (!db) return 0;
-
             const identity = getRepeatIdentityKeyFromValues(empId, fullname);
             if (!identity) return 0;
-
-            let query = db
-                .from('violation_reports')
-                .select('id', { count: 'exact', head: true });
-
-            if (identity.type === 'emp_id') {
-                query = query.eq('emp_id', identity.value);
-            } else {
-                query = query.ilike('fullname', identity.value);
-            }
-
-            const { count, error } = await query;
-
-            if (error) {
-                console.warn('Repeat offender check error:', error);
+            try {
+                const { count } = await guardViolationRequest('count',
+                    identity.type === 'emp_id' ? { employeeCode: identity.value } : { fullname: identity.value });
+                return count;
+            } catch (error) {
+                console.warn('Repeat offender check error:', error.message);
                 return 0;
             }
-
-            return count || 0;
         }
 
         function getOfflineQueue() {
@@ -1587,10 +1500,7 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
                         sync_status: 'Synced',
                         synced_at: new Date().toISOString()
                     };
-                    const insertResult = await insertViolationReport(syncedPayload);
-                    if (!insertResult.usedFallback) {
-                        await recordCaseCreatedTimeline(syncedPayload, insertResult.report);
-                    }
+                    await insertViolationReport(syncedPayload);
                     addSyncHistory({
                         case_id: syncedPayload.case_id,
                         fullname: syncedPayload.fullname,
@@ -1828,6 +1738,10 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
         }
 
         window.onload = () => {
+            if (!sessionStorage.getItem(guardLineSessionKey) && navigator.onLine) {
+                openGuardLineLogin();
+                return;
+            }
             updateConnectionStatus();
             updateMobileStepper();
             initEvidencePreview();
@@ -2040,13 +1954,10 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
                         }
 
                         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> กำลังบันทึก...';
-                        const insertResult = await insertViolationReport(payload);
-                        if (!insertResult.usedFallback) {
-                            await recordCaseCreatedTimeline(payload, insertResult.report);
-                        }
+                        const { report } = await insertViolationReport(payload);
 
                         // ส่ง LINE แจ้งกลุ่ม (fire-and-forget ไม่ block UI)
-                        sendLineViolationNotify(payload, insertResult.report);
+                        sendLineViolationNotify(payload, report);
 
                         addSyncHistory({
                             case_id: payload.case_id,
@@ -2057,9 +1968,9 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
                         });
 
                         Swal.fire({
-                            icon: insertResult.usedFallback ? 'warning' : 'success',
-                            title: insertResult.usedFallback ? 'บันทึกสำเร็จด้วยโหมดพื้นฐาน' : 'ส่งเข้า Admin แล้ว',
-                            text: insertResult.usedFallback ? 'ข้อมูลหลักถูกบันทึกแล้ว แต่ฐานข้อมูลยังไม่รองรับคอลัมน์ Enterprise ทั้งหมด' : `Case ${caseId} พร้อมให้แอดมินตรวจสอบใน Dashboard`,
+                            icon: 'success',
+                            title: 'ส่งเข้า Admin แล้ว',
+                            text: `Case ${caseId} พร้อมให้แอดมินตรวจสอบใน Dashboard`,
                             timer: 2600,
                             showConfirmButton: false
                         }).then(() => {
