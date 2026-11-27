@@ -10,7 +10,6 @@
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
         :root {
@@ -376,6 +375,12 @@
         /* Fade in */
         .fade-in { animation: fadeIn 0.3s ease forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+        #pinDots[hidden], #pinPad[hidden], #sheLineLogin[hidden] { display: none; }
+        .pin-line-login {
+            border: 1px solid #ffffff66; border-radius: 12px; padding: 12px 16px;
+            background: #fff; color: #14532d; font-weight: 800; min-height: 44px;
+        }
+        #pinPad button:disabled { opacity: .55; }
     </style>
 </head>
 <body>
@@ -392,7 +397,11 @@
         <div class="pin-sub">ส่วนความปลอดภัย อาชีวอนามัย และสิ่งแวดล้อม</div>
     </div>
 
-    <div class="pin-dots" id="pinDots">
+    <button type="button" class="pin-line-login" id="sheLineLogin" onclick="signInWithLine()">
+        <i class="bi bi-line" aria-hidden="true"></i> เข้าสู่ระบบด้วย LINE
+    </button>
+
+    <div class="pin-dots" id="pinDots" hidden>
         <div class="pin-dot" id="d0"></div>
         <div class="pin-dot" id="d1"></div>
         <div class="pin-dot" id="d2"></div>
@@ -401,9 +410,9 @@
         <div class="pin-dot" id="d5"></div>
     </div>
 
-    <div class="pin-error" id="pinError"></div>
+    <div class="pin-error" id="pinError" role="status"></div>
 
-    <div class="pin-pad">
+    <div class="pin-pad" id="pinPad" hidden>
         <button class="pin-key" onclick="tapKey('1')">1</button>
         <button class="pin-key" onclick="tapKey('2')">2</button>
         <button class="pin-key" onclick="tapKey('3')">3</button>
@@ -518,50 +527,89 @@
     // CONFIG
     // ══════════════════════════════
     const SUPABASE_URL = 'https://dqsfioiqwxuxpucwwhsv.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxc2Zpb2lxd3h1eHB1Y3d3aHN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1OTk1NjUsImV4cCI6MjA4NDE3NTU2NX0.L_u0Ff3uHofxiimEs6ySFB4TPNtOWiKeSu3KFoVcA1U';
-    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-    const PIN_HASH = btoa('012609'); // base64 — not plaintext comparison
-
-    // ══════════════════════════════
-    // PIN GATE
-    // ══════════════════════════════
+    const sheLoginKey = 'legacyAdminLoginToken:she-announcements';
+    let lineToken = sessionStorage.getItem(sheLoginKey) || '';
+    sessionStorage.removeItem(sheLoginKey);
+    sessionStorage.removeItem('she_admin_ok');
     let pinInput = '';
+    let adminPin = '';
+    let pinBusy = false;
+    const announcementTitles = new Map();
 
-    // ตรวจสอบ session ที่ผ่าน PIN มาแล้ว
-    if (sessionStorage.getItem('she_admin_ok') === PIN_HASH) {
-        unlockAdmin();
+    function signInWithLine() {
+        const url = new URL('safety-dashboard.html', location.href);
+        url.searchParams.set('legacy_admin', 'she-announcements');
+        location.assign(url);
+    }
+
+    function renderPinGate(message = '') {
+        document.getElementById('sheLineLogin').hidden = Boolean(lineToken);
+        document.getElementById('pinDots').hidden = !lineToken;
+        document.getElementById('pinPad').hidden = !lineToken;
+        document.getElementById('pinError').textContent = message;
+        for (const key of document.querySelectorAll('#pinPad button')) key.disabled = pinBusy;
+    }
+
+    async function requestSHE(operation, values = {}, pin = adminPin) {
+        const endpoint = new URL('/functions/v1/legacy-safety-access', SUPABASE_URL);
+        const response = await fetch(endpoint, {
+            method: 'POST', cache: 'no-store', credentials: 'omit', redirect: 'error',
+            headers: { Authorization: 'Bearer ' + lineToken, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...values, action: 'she-announcements-admin', operation, pin }),
+            signal: AbortSignal.timeout(20000),
+        });
+        const result = await response.json().catch(() => null);
+        if (response.status === 401) {
+            lineToken = '';
+            lockAdmin('กรุณาเข้าสู่ระบบ LINE อีกครั้ง');
+            throw new Error('กรุณาเข้าสู่ระบบ LINE อีกครั้ง');
+        }
+        if (response.status === 403 && result?.error === 'Invalid SHE PIN') {
+            if (operation !== 'login') lockAdmin('กรุณายืนยัน PIN อีกครั้ง');
+            throw new Error('PIN ไม่ถูกต้อง');
+        }
+        if (response.status === 403) throw new Error('บัญชี LINE นี้ไม่มีสิทธิ์จัดการกระดานข่าว SHE');
+        if (response.status === 429) throw new Error('ลองหลายครั้งเกินไป กรุณารอสักครู่');
+        if (!response.ok || !result) throw new Error('ดำเนินการไม่สำเร็จ กรุณาลองใหม่');
+        return result;
     }
 
     function tapKey(d) {
-        if (pinInput.length >= 6) return;
+        if (pinBusy || !lineToken || pinInput.length >= 6) return;
         pinInput += d;
         updateDots();
-        if (pinInput.length === 6) setTimeout(tapConfirm, 120);
+        if (pinInput.length === 6) tapConfirm();
     }
 
     function tapDel() {
+        if (pinBusy) return;
         pinInput = pinInput.slice(0, -1);
         updateDots();
-        document.getElementById('pinError').textContent = '';
+        renderPinGate();
     }
 
-    function tapConfirm() {
-        if (pinInput.length < 6) return;
-        if (btoa(pinInput) === PIN_HASH) {
-            sessionStorage.setItem('she_admin_ok', PIN_HASH);
+    async function tapConfirm() {
+        if (pinBusy || !lineToken || pinInput.length !== 6) return;
+        const pin = pinInput;
+        pinBusy = true;
+        renderPinGate('กำลังตรวจสอบ PIN…');
+        let message = '';
+        try {
+            const result = await requestSHE('login', {}, pin);
+            if (result.ok !== true) throw new Error('ตรวจสอบสิทธิ์ไม่สำเร็จ');
+            adminPin = pin;
             unlockAdmin();
-        } else {
-            const errEl = document.getElementById('pinError');
-            errEl.textContent = 'PIN ไม่ถูกต้อง';
-            // re-trigger shake animation
-            errEl.style.animation = 'none';
-            errEl.offsetHeight;
-            errEl.style.animation = '';
+        } catch (error) {
+            message = error.message;
+        } finally {
+            pinBusy = false;
             pinInput = '';
             updateDots();
+            renderPinGate(message);
         }
     }
+
+    renderPinGate();
 
     function updateDots() {
         for (let i = 0; i < 6; i++) {
@@ -576,13 +624,15 @@
         loadAnnouncements();
     }
 
-    function lockAdmin() {
-        sessionStorage.removeItem('she_admin_ok');
+    function lockAdmin(message = '') {
+        adminPin = '';
         pinInput = '';
+        announcementTitles.clear();
+        document.getElementById('adminList').replaceChildren();
         updateDots();
-        document.getElementById('pinError').textContent = '';
         document.getElementById('adminDashboard').style.display = 'none';
         document.getElementById('pinGate').style.display = 'flex';
+        renderPinGate(message);
     }
 
     // ══════════════════════════════
@@ -604,13 +654,10 @@
     async function loadAnnouncements() {
         const listEl = document.getElementById('adminList');
         try {
-            const { data, error } = await db
-                .from('she_announcements')
-                .select('id, title, body, category, is_active, created_at')
-                .order('created_at', { ascending: false });
-
-            if (error) throw error;
-
+            const { rows: data } = await requestSHE('list');
+            if (!adminPin) return;
+            announcementTitles.clear();
+            for (const item of data) announcementTitles.set(item.id, item.title);
             document.getElementById('listCount').textContent =
                 data.length > 0 ? `${data.length} รายการ` : '';
 
@@ -649,7 +696,7 @@
                                 <i class="bi bi-${item.is_active ? 'eye-fill' : 'eye-slash-fill'}"></i>
                             </button>
                             <button class="btn-icon btn-del"
-                                    onclick="deleteAnnouncement(${item.id}, '${escHtml(item.title).replace(/'/g, "\\'")}')"
+                                    onclick="deleteAnnouncement(${item.id})"
                                     title="ลบประกาศ">
                                 <i class="bi bi-trash3-fill"></i>
                             </button>
@@ -684,15 +731,7 @@
         btn.innerHTML = '<i class="bi bi-hourglass-split"></i> กำลังบันทึก...';
 
         try {
-            const { error } = await db.from('she_announcements').insert({
-                title,
-                body:      body || null,
-                category:  selectedCat,
-                is_active: true,
-            });
-
-            if (error) throw error;
-
+            await requestSHE('create', { title, message: body, category: selectedCat });
             document.getElementById('fTitle').value = '';
             document.getElementById('fBody').value  = '';
             selectCat('ทั่วไป');
@@ -712,13 +751,7 @@
     // ══════════════════════════════
     async function toggleActive(id, current) {
         try {
-            const { error } = await db
-                .from('she_announcements')
-                .update({ is_active: !current })
-                .eq('id', id);
-
-            if (error) throw error;
-
+            await requestSHE('set-active', { id, isActive: !current });
             showToast(current ? 'ปิดประกาศแล้ว' : 'เปิดประกาศแล้ว', 'success');
             await loadAnnouncements();
         } catch (err) {
@@ -730,16 +763,12 @@
     // ══════════════════════════════
     // DELETE
     // ══════════════════════════════
-    async function deleteAnnouncement(id, title) {
+    async function deleteAnnouncement(id) {
+        const title = announcementTitles.get(id);
+        if (title === undefined) return;
         if (!confirm(`ลบประกาศ "${title}" ?\n\nการลบไม่สามารถย้อนกลับได้`)) return;
         try {
-            const { error } = await db
-                .from('she_announcements')
-                .delete()
-                .eq('id', id);
-
-            if (error) throw error;
-
+            await requestSHE('delete', { id });
             showToast('ลบประกาศแล้ว', 'success');
             await loadAnnouncements();
         } catch (err) {

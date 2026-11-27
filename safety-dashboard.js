@@ -1802,7 +1802,8 @@ async function initialize() {
         const legacyAdminPage = params.get('legacy_admin');
         const legacyAdminRoutes = new Map([
             ['violation', 'admin_guard_violation.html'],
-            ['slipper', 'admin_slipper_permit.html']
+            ['slipper', 'admin_slipper_permit.html'],
+            ['she-announcements', 'she-announcements.html']
         ]);
         if (legacyAdminRoutes.has(legacyAdminPage)) {
             const token = window.liff.getAccessToken();
