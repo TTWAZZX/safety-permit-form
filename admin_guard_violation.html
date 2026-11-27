@@ -458,6 +458,7 @@ const EVENT_STATUS_CHANGED = 'status_changed';
 let allReports = [];
 let filteredReports = [];
 let allEmployees = [];
+let employeeLoad = null;
 let repeatCounts = {};
 let reportAutoRefreshTimer = null;
 let reportRefreshTimer = null;
@@ -1005,7 +1006,15 @@ async function fetchAllEmployeeRows() {
     return rows;
 }
 
-async function fetchEmployees() {
+function fetchEmployees() {
+    const request = loadEmployees().finally(() => {
+        if (employeeLoad === request) employeeLoad = null;
+    });
+    employeeLoad = request;
+    return request;
+}
+
+async function loadEmployees() {
     if (!adminAccess) {
         Swal.fire(t('connectionFailed'), t('supabaseLoadFailed'), 'error');
         return;
@@ -1554,6 +1563,48 @@ function makeAdminCaseId() {
     return `VR-${stamp}-ADM`;
 }
 
+function setupReportEmployeeLookup(popup) {
+    const idInput = popup.querySelector('#reportEmpId');
+    const nameInput = popup.querySelector('#reportFullname');
+    const sectionInput = popup.querySelector('#reportSection');
+    const options = popup.querySelector('#reportEmployeeOptions');
+    let selectedEmployee = null;
+
+    function syncEmployee() {
+        const id = idInput.value.trim().toUpperCase();
+        if (selectedEmployee && id === selectedEmployee.emp_id.toUpperCase()) return;
+
+        if (selectedEmployee) {
+            if (nameInput.value === (selectedEmployee.fullname || '')) nameInput.value = '';
+            if (sectionInput.value === (selectedEmployee.section || '')) sectionInput.value = '';
+        }
+
+        selectedEmployee = allEmployees.find(employee => employee.emp_id.toUpperCase() === id);
+        if (selectedEmployee) {
+            idInput.value = selectedEmployee.emp_id;
+            nameInput.value = selectedEmployee.fullname || '';
+            sectionInput.value = selectedEmployee.section || '';
+        }
+    }
+
+    function showEmployees() {
+        if (!popup.isConnected) return;
+        const fragment = document.createDocumentFragment();
+        for (const employee of allEmployees) {
+            const option = document.createElement('option');
+            option.value = employee.emp_id;
+            option.label = [employee.fullname, employee.section].filter(Boolean).join(' · ');
+            fragment.append(option);
+        }
+        options.replaceChildren(fragment);
+        if (idInput.value.trim()) syncEmployee();
+    }
+
+    idInput.addEventListener('input', syncEmployee);
+    showEmployees();
+    employeeLoad?.then(showEmployees);
+}
+
 async function openReportModal(reportId = null) {
     if (!adminAccess) {
         Swal.fire(t('connectionFailed'), t('supabaseLoadFailed'), 'error');
@@ -1569,8 +1620,9 @@ async function openReportModal(reportId = null) {
         html: `<div class="text-start">
             <div class="row g-2">
                 <div class="col-md-4">
-                    <label class="form-label fw-bold small">${t('employeeIdLabel')} *</label>
-                    <input id="reportEmpId" class="form-control" value="${escapeHtml(existing?.emp_id || '')}" placeholder="000000 / AP0000 / SP0000">
+                    <label for="reportEmpId" class="form-label fw-bold small">${t('employeeIdLabel')} *</label>
+                    <input id="reportEmpId" class="form-control" value="${escapeHtml(existing?.emp_id || '')}" placeholder="000000 / AP0000 / SP0000" ${existing ? '' : 'list="reportEmployeeOptions" autocomplete="off"'}>
+                    ${existing ? '' : '<datalist id="reportEmployeeOptions"></datalist>'}
                 </div>
                 <div class="col-md-8">
                     <label class="form-label fw-bold small">${t('employeeNameLabel')}</label>
@@ -1618,7 +1670,8 @@ async function openReportModal(reportId = null) {
         confirmButtonText: t('saveCase'),
         cancelButtonText: t('cancel'),
         confirmButtonColor: '#0f172a',
-        didOpen: () => {
+        didOpen: (popup) => {
+            if (!existing) setupReportEmployeeLookup(popup);
             document.getElementById('reportStatus').addEventListener('change', (event) => {
                 document.getElementById('reportOwner').value = getStatusOwner(event.target.value);
             });
