@@ -555,7 +555,9 @@ const I18N = {
         name: 'ชื่อ',
         importNow: 'นำเข้าเลย',
         importCancelled: 'ยกเลิกการนำเข้า',
-        importing: (count) => `กำลังนำเข้า ${count} รายการ...`,
+        importingProgress: (saved, total) => 'กำลังนำเข้า ' + saved + '/' + total + ' รายการ…',
+        importPartial: (saved, message) => 'บันทึกแล้ว ' + saved + ' รายการก่อนหยุด ' + message,
+        importRowTooLarge: 'ข้อมูลพนักงานบางแถวมีขนาดใหญ่เกินไป',
         latestImport: (count, date) => `นำเข้าล่าสุด: ${count} รายการ (${date})`,
         importSuccessTitle: 'นำเข้าสำเร็จ',
         importSuccessText: (count) => `เพิ่ม/อัปเดตรายชื่อพนักงาน ${count} รายการแล้ว`,
@@ -714,7 +716,9 @@ const I18N = {
         name: 'Name',
         importNow: 'Import Now',
         importCancelled: 'Import cancelled',
-        importing: (count) => `Importing ${count} records...`,
+        importingProgress: (saved, total) => 'Importing ' + saved + '/' + total + ' records…',
+        importPartial: (saved, message) => saved + ' records saved before import stopped. ' + message,
+        importRowTooLarge: 'An employee row exceeds the supported size',
         latestImport: (count, date) => `Latest import: ${count} records (${date})`,
         importSuccessTitle: 'Import complete',
         importSuccessText: (count) => `Added/updated ${count} employee records`,
@@ -1106,7 +1110,7 @@ async function openAddEmployeeModal(empId = '') {
                 return false;
             }
 
-            return { emp_id: employeeId, fullname, section, updated_at: new Date().toISOString() };
+            return { emp_id: employeeId, fullname, section };
         }
     });
 
@@ -1156,8 +1160,7 @@ function parseEmployeeRows(rows) {
         employees.push({
             emp_id: empId,
             fullname: fullname,
-            section: section || t('unspecified'),
-            updated_at: new Date().toISOString()
+            section: section || t('unspecified')
         });
     });
 
@@ -1193,11 +1196,33 @@ function startAdminApp() {
     }
 }
 
+function employeeImportBatches(employees) {
+    const maxRows = 500;
+    const maxBytes = 384 * 1024;
+    const encoder = new TextEncoder();
+    const batches = [];
+    let batch = [];
+    let bytes = 0;
+    for (const employee of employees) {
+        const rowBytes = encoder.encode(JSON.stringify(employee)).length + 1;
+        if (rowBytes > maxBytes) throw new Error(t('importRowTooLarge'));
+        if (batch.length >= maxRows || bytes + rowBytes > maxBytes) {
+            batches.push(batch);
+            batch = [];
+            bytes = 0;
+        }
+        batch.push(employee);
+        bytes += rowBytes;
+    }
+    if (batch.length) batches.push(batch);
+    return batches;
+}
+
 async function handleEmployeeExcel(event) {
     const input = event.target;
     const file = input.files?.[0];
     const preview = document.getElementById('employeeImportPreview');
-    if (!file) return;
+    if (!file || input.disabled) return;
 
     if (!adminAccess) {
         Swal.fire(t('connectionFailed'), t('supabaseLoadFailed'), 'error');
@@ -1205,6 +1230,8 @@ async function handleEmployeeExcel(event) {
         return;
     }
 
+    let imported = 0;
+    input.disabled = true;
     try {
         preview.innerText = t('readingFile', file.name);
         const buffer = await file.arrayBuffer();
@@ -1252,20 +1279,25 @@ async function handleEmployeeExcel(event) {
             return;
         }
 
-        preview.innerText = t('importing', employees.length);
-        const { error } = await adminAccess.mutate('employees_list', 'upsert', employees);
-
-        if (error) throw error;
+        for (const batch of employeeImportBatches(employees)) {
+            preview.innerText = t('importingProgress', imported, employees.length);
+            const { data, error } = await adminAccess.mutate('employees_list', 'upsert', batch);
+            if (error) throw error;
+            imported += data.count;
+        }
 
         preview.innerText = t('latestImport', employees.length, new Date().toLocaleString(formatLocale()));
         await fetchEmployees();
         Swal.fire(t('importSuccessTitle'), t('importSuccessText', employees.length), 'success');
     } catch (err) {
         console.error('Employee import error:', err);
-        preview.innerText = t('importFailedTitle');
-        Swal.fire(t('importFailedTitle'), err.message, 'error');
+        const message = imported ? t('importPartial', imported, err.message) : err.message;
+        preview.innerText = imported ? t('importPartial', imported, '') : t('importFailedTitle');
+        Swal.fire(t('importFailedTitle'), message, 'error');
+        if (imported) await fetchEmployees();
     } finally {
         input.value = '';
+        input.disabled = false;
     }
 }
 
