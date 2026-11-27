@@ -695,6 +695,7 @@ async function guardAdminRequest(action, data = {}) {
         throw new Error('เซิร์ฟเวอร์ไม่อนุญาตคำขอจากหน้านี้');
     }
     if (response.status === 503) throw new Error('ระบบยังตั้งค่า LINE หรือ PIN บนเซิร์ฟเวอร์ไม่ครบ');
+    if (response.status === 422) throw new Error('กรุณาตรวจสอบเวลาเข้าและเวลาออกเวร');
     if (response.status === 409) throw new Error('ข้อมูลถูกเปลี่ยนแล้ว กรุณารีเฟรชรายงานแล้วลองอีกครั้ง');
     if (response.status === 429) throw new Error('ส่งคำขอหลายครั้ง กรุณารอสักครู่');
     if (!response.ok) throw new Error('เซิร์ฟเวอร์บันทึกหรือโหลดข้อมูลไม่สำเร็จ');

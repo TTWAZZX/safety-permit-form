@@ -843,7 +843,8 @@ async function userEdit(id, id_card, currentIn, currentOut) {
             updated_at: new Date(), updated_by: 'User (รปภ.)'
         }).eq('id', id).select('id').maybeSingle();
 
-        if (error || !data) Swal.fire('แก้ไขไม่สำเร็จ', 'ไม่พบรายการหรือไม่มีสิทธิ์แก้ไข', 'error');
+        if (error?.code === '23514') Swal.fire('แก้ไขไม่สำเร็จ', error.message, 'error');
+        else if (error || !data) Swal.fire('แก้ไขไม่สำเร็จ', 'ไม่พบรายการหรือไม่มีสิทธิ์แก้ไข', 'error');
         else { Swal.fire({ icon: 'success', title: 'อัปเดตเรียบร้อย', timer: 1500, showConfirmButton: false }); fetchHistory(); }
     }
 }
