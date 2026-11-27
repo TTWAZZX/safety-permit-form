@@ -14,7 +14,6 @@
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -316,10 +315,24 @@ function tshGoHome() { window.location.href = './guard-home.html'; }
 <script>
 // ================= CONFIG =================
 const SUPABASE_URL = 'https://dqsfioiqwxuxpucwwhsv.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxc2Zpb2lxd3h1eHB1Y3d3aHN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1OTk1NjUsImV4cCI6MjA4NDE3NTU2NX0.L_u0Ff3uHofxiimEs6ySFB4TPNtOWiKeSu3KFoVcA1U';
 const LIFF_ID = '2007053300-gJitj7Vr';
 
-const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+async function guardAttendanceRequest(operation, values = {}) {
+    const token = liff.getAccessToken();
+    if (!token) throw new Error('กรุณาเข้าสู่ระบบ LINE ใหม่');
+    const response = await fetch(SUPABASE_URL + '/functions/v1/legacy-safety-access', {
+        method: 'POST', cache: 'no-store', credentials: 'omit', redirect: 'error',
+        headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...values, action: 'guard-attendance', operation }),
+        signal: AbortSignal.timeout(20000)
+    });
+    const result = await response.json().catch(() => null);
+    if (response.status === 401) throw new Error('กรุณาเข้าสู่ระบบ LINE ใหม่');
+    if (response.status === 422) throw new Error('กรุณาตรวจสอบเวลาเข้าและเวลาออกเวร');
+    if (response.status === 429) throw new Error('ส่งคำขอหลายครั้ง กรุณารอสักครู่');
+    if (!response.ok || !result) throw new Error('ไม่สามารถอ่านหรือบันทึกข้อมูลลงเวลาได้');
+    return result;
+}
 
 let selectCardInstance, selectPersonInstance, selectSubstituteInstance;
 let activeRecord = null;
@@ -460,17 +473,8 @@ async function checkActiveSession() {
     renderSessionState();
 
     try {
-        const { data, error } = await db.from('guard_attendance')
-            .select('id,work_date,shift,time_in,remark_type')
-            .eq('id_card', card)
-            .eq('fullname', name)
-            .in('work_date', dates)
-            .is('time_out', null)
-            .not('time_in', 'is', null)
-            .order('created_at', { ascending: false })
-            .order('id', { ascending: false });
+        const { rows: data } = await guardAttendanceRequest('session', { card, fullname: name, dates });
         if (request !== sessionRequest) return false;
-        if (error) throw error;
 
         const record = chooseGuardSession(data, dates, shiftInput.value);
         if (record && !shiftInput.value) selectGuardShift(record.shift);
@@ -544,7 +548,7 @@ async function loadMasterData() {
         const currentCard = document.getElementById('id_card').value;
         const currentName = document.getElementById('fullname').value;
         const currentShift = document.getElementById('shift').value;
-        const { data: cards } = await db.from('security_card_master').select('card_number').order('card_number');
+        const { cards, people: persons } = await guardAttendanceRequest('masters');
         const selectCard = document.getElementById('id_card');
         
         // เคลียร์ TomSelect เก่าออกก่อนป้องกัน Error ตอน Refresh
@@ -559,7 +563,6 @@ async function loadMasterData() {
             onChange: function() { checkActiveSession(); } 
         });
 
-        const { data: persons } = await db.from('security_personnel_master').select('fullname').order('fullname');
         const selectPerson = document.getElementById('fullname');
         const selectSub = document.getElementById('remark_substitute'); 
         
@@ -688,13 +691,7 @@ async function fetchHistory() {
         const todayStr = guardBangkokClock().date;
 
         // 🟢 3. ดึงข้อมูล "วันนี้"
-        const { data: dataToday, error: errToday } = await db.from('guard_attendance')
-            .select('*')
-            .eq('work_date', todayStr)
-            .eq('fullname', nameFilter) // ล็อกชื่อ
-            .order('created_at', { ascending: false });
-
-        if (errToday) throw errToday;
+        const { rows: dataToday } = await guardAttendanceRequest('today', { fullname: nameFilter, date: todayStr });
 
         // ใส่ป้ายบอกว่ากำลังดูของใครอยู่
         listToday.replaceChildren(historyText('div', 'badge bg-primary bg-opacity-10 text-primary mb-3 w-100 py-2 fs-6 shadow-sm border', 'ประวัติวันนี้ของ ' + nameFilter));
@@ -714,18 +711,7 @@ async function fetchHistory() {
 async function loadPastHistory(nameFilter, todayStr) {
     try {
         const from = (currentPastPage - 1) * ITEMS_PER_PAGE;
-        const to = from + ITEMS_PER_PAGE - 1;
-        
-        // ดึงย้อนหลังที่ วันที่ < วันนี้
-        const { data: dataPast, error: errPast } = await db.from('guard_attendance')
-            .select('*')
-            .lt('work_date', todayStr)
-            .eq('fullname', nameFilter) // ล็อกชื่อ
-            .order('work_date', { ascending: false })
-            .order('created_at', { ascending: false })
-            .range(from, to);
-
-        if (errPast) throw errPast;
+        const { rows: dataPast } = await guardAttendanceRequest('history', { fullname: nameFilter, date: todayStr, offset: from });
 
         const listPast = document.getElementById('listPast');
         if (currentPastPage === 1) {
@@ -838,14 +824,16 @@ async function userEdit(id, id_card, currentIn, currentOut) {
 
     if (formValues) {
         Swal.fire({ title: 'กำลังบันทึก...', didOpen: () => Swal.showLoading() });
-        const { data, error } = await db.from('guard_attendance').update({
-            time_in: formValues.in || null, time_out: formValues.out || null,
-            updated_at: new Date(), updated_by: 'User (รปภ.)'
-        }).eq('id', id).select('id').maybeSingle();
-
-        if (error?.code === '23514') Swal.fire('แก้ไขไม่สำเร็จ', error.message, 'error');
-        else if (error || !data) Swal.fire('แก้ไขไม่สำเร็จ', 'ไม่พบรายการหรือไม่มีสิทธิ์แก้ไข', 'error');
-        else { Swal.fire({ icon: 'success', title: 'อัปเดตเรียบร้อย', timer: 1500, showConfirmButton: false }); fetchHistory(); }
+        try {
+            const { row } = await guardAttendanceRequest('edit', {
+                id, card: id_card, timeIn: formValues.in || null, timeOut: formValues.out || null
+            });
+            if (!row) throw new Error('ไม่พบรายการลงเวลาหรือรหัสบัตรไม่ตรง');
+            Swal.fire({ icon: 'success', title: 'อัปเดตเรียบร้อย', timer: 1500, showConfirmButton: false });
+            fetchHistory();
+        } catch (error) {
+            Swal.fire('แก้ไขไม่สำเร็จ', error.message, 'error');
+        }
     }
 }
 
@@ -853,9 +841,14 @@ async function userDelete(id, id_card) {
     if(!(await verifyUser(id_card))) return Swal.fire('ผิดพลาด', 'รหัสบัตรไม่ตรงกับรายการนี้', 'error');
     const res = await Swal.fire({ title: 'ยืนยันการลบ?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545', confirmButtonText: 'ลบทิ้ง' });
     if(res.isConfirmed) {
-        const { data, error } = await db.from('guard_attendance').delete().eq('id', id).select('id').maybeSingle();
-        if (error || !data) return Swal.fire('ลบไม่สำเร็จ', 'รายการอาจถูกลบไปแล้วหรือไม่มีสิทธิ์ลบ', 'error');
-        Swal.fire({ icon: 'success', title: 'ลบสำเร็จ', timer: 1500, showConfirmButton: false }); fetchHistory();
+        try {
+            const { row } = await guardAttendanceRequest('delete', { id, card: id_card });
+            if (!row) throw new Error('ไม่พบรายการลงเวลาหรือรหัสบัตรไม่ตรง');
+            Swal.fire({ icon: 'success', title: 'ลบสำเร็จ', timer: 1500, showConfirmButton: false });
+            fetchHistory();
+        } catch (error) {
+            Swal.fire('ลบไม่สำเร็จ', error.message, 'error');
+        }
     }
 }
 
@@ -917,16 +910,15 @@ document.getElementById('attendanceForm').addEventListener('submit', async event
 
         Swal.fire({ title: 'กำลังบันทึก…', allowOutsideClick: false, allowEscapeKey: false, didOpen: () => Swal.showLoading() });
         if (record) {
-            const { data, error } = await db.from('guard_attendance')
-                .update({ time_out: timeOut }).eq('id', record.id).is('time_out', null).select('id').maybeSingle();
-            if (error) throw error;
+            const { row: data } = await guardAttendanceRequest('checkout', {
+                id: record.id, card: payload.id_card, fullname: payload.fullname, timeOut
+            });
             if (!data) {
                 await checkActiveSession();
                 return Swal.fire('เวรนี้มีการเปลี่ยนแปลง', 'ตรวจสอบรายการล่าสุดก่อนลงเวลาอีกครั้ง', 'info');
             }
         } else {
-            const { error } = await db.from('guard_attendance').insert([payload]);
-            if (error) throw error;
+            await guardAttendanceRequest('insert', { values: payload });
         }
 
         localStorage.setItem('sec_last_card', payload.id_card);

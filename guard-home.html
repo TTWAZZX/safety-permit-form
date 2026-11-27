@@ -1022,37 +1022,24 @@
         return `${y}-${m}-${d}`;
     }
 
-    function getTodayBangkok() {
-        const today = getTodayDateBkk();
-        return { start: `${today}T00:00:00+07:00`, end: `${today}T23:59:59+07:00` };
-    }
-
-    async function fetchViolationCount() {
+    async function fetchGuardTotals() {
         if (!db) return;
         try {
-            const { start, end } = getTodayBangkok();
-            const { count, error } = await db
-                .from('violation_reports')
-                .select('id', { count: 'exact', head: true })
-                .gte('created_at', start)
-                .lte('created_at', end);
-
+            const { data, error } = await db.rpc('legacy_guard_home_totals').single();
             if (error) throw error;
-
+            const count = data.violations;
             const badge = document.getElementById('violationBadge');
-            const span  = document.getElementById('violationCount');
+            const span = document.getElementById('violationCount');
             const icon = document.getElementById('violationIcon');
-            if (count > 0) {
-                span.textContent = count + ' เคสวันนี้';
-                badge.className = 'violation-badge';
-                if (icon) icon.className = 'bi bi-exclamation-circle-fill';
-            } else {
-                span.textContent = 'ปกติ';
-                badge.className = 'violation-badge ok';
-                if (icon) icon.className = 'bi bi-check-circle-fill';
-            }
+            span.textContent = count > 0 ? count + ' เคสวันนี้' : 'ปกติ';
+            badge.className = count > 0 ? 'violation-badge' : 'violation-badge ok';
+            if (icon) icon.className = count > 0 ? 'bi bi-exclamation-circle-fill' : 'bi bi-check-circle-fill';
+            const mEl = document.getElementById('cntMorning');
+            const nEl = document.getElementById('cntNight');
+            if (mEl) mEl.textContent = data.morning + '/6 คน';
+            if (nEl) nEl.textContent = data.night + '/5 คน';
         } catch (err) {
-            console.warn('fetchViolationCount error:', err);
+            console.warn('fetchGuardTotals error:', err);
         }
     }
 
@@ -1096,29 +1083,6 @@
             console.warn('fetchWaterStatus error:', err);
             el.className = 'attend-status loading';
             textEl.textContent = '—';
-        }
-    }
-
-    async function fetchShiftCount() {
-        if (!db) return;
-        try {
-            const today = getTodayDateBkk();
-            const { data, error } = await db
-                .from('guard_attendance')
-                .select('shift')
-                .eq('work_date', today);
-
-            if (error) throw error;
-
-            const morning = (data || []).filter(d => d.shift && d.shift.includes('กะเช้า')).length;
-            const night   = (data || []).filter(d => d.shift && d.shift.includes('กะดึก')).length;
-
-            const mEl = document.getElementById('cntMorning');
-            const nEl = document.getElementById('cntNight');
-            if (mEl) mEl.textContent = morning + '/6 คน';
-            if (nEl) nEl.textContent = night   + '/5 คน';
-        } catch (err) {
-            console.warn('fetchShiftCount error:', err);
         }
     }
 
@@ -1295,9 +1259,8 @@
         // ดึงข้อมูล Supabase เสมอ แม้ LIFF จะ throw
         updateNet();
         renderShift();
-        fetchViolationCount();
+        fetchGuardTotals();
         fetchWaterStatus();
-        fetchShiftCount();
         fetchAnnouncements();
         stampSync();
     }
@@ -1323,9 +1286,8 @@
             document.getElementById('profileGreeting').textContent = getGreeting();
         }
 
-        fetchViolationCount();
+        fetchGuardTotals();
         fetchWaterStatus();
-        fetchShiftCount();
         fetchAnnouncements();
         stampSync();
         showApp();

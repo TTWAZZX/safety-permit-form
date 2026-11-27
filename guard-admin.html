@@ -14,7 +14,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
@@ -615,9 +614,7 @@
 <script>
 // ================= CONFIG =================
 const SUPABASE_URL = 'https://dqsfioiqwxuxpucwwhsv.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxc2Zpb2lxd3h1eHB1Y3d3aHN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1OTk1NjUsImV4cCI6MjA4NDE3NTU2NX0.L_u0Ff3uHofxiimEs6ySFB4TPNtOWiKeSu3KFoVcA1U';
 
-const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let guardAdminToken = '';
 let guardAdminPin = '';
 const penaltyDefaults = { chief_rate: 786.67, chief_times: 0, guard_rate: 739.17, guard_times: 0, late_rate: 100, late_hours: 0 };
@@ -817,7 +814,7 @@ function formatDateThai(dateStr) {
 
 // ================= ระบบดึงข้อมูล =================
 async function loadFilterNames() {
-    const { data } = await db.from('security_personnel_master').select('fullname').order('fullname');
+    const { people: data } = await guardAdminRequest('guard-admin-masters');
     const select = document.getElementById('filterName');
     select.innerHTML = '<option value="ALL">ทุกคน</option>';
     if(data) data.forEach(p => { select.innerHTML += `<option value="${p.fullname}">${p.fullname}</option>`; });
@@ -861,10 +858,8 @@ async function loadAttendance() {
     const pageSize = 500;
     try {
         for (let firstRow = 0; ; firstRow += pageSize) {
-            const { data, error } = await db.from('guard_attendance').select('*')
-                .gte('work_date', first).lte('work_date', last).order('id').range(firstRow, firstRow + pageSize - 1);
+            const { rows: data } = await guardAdminRequest('guard-admin-attendance', { from: first, to: last, offset: firstRow });
             if (request !== reportRequest) return;
-            if (error) throw error;
             records.push(...data);
             if (data.length < pageSize) break;
         }
@@ -1228,7 +1223,7 @@ async function openRecordModal(rowId = null) {
         .map(opt => `<option value="${escapeReportText(opt.value)}">${escapeReportText(opt.text)}</option>`).join('');
 
     // 🟢 ดึงรหัสบัตรจาก Master Data ในฐานข้อมูลมาใส่ Dropdown
-    const { data: cardData } = await db.from('security_card_master').select('card_number').order('card_number');
+    const { cards: cardData } = await guardAdminRequest('guard-admin-masters');
     const cardOptions = cardData ? cardData.map(c => `<option value="${escapeReportText(c.card_number)}" ${c.card_number === rowData.id_card ? 'selected' : ''}>${escapeReportText(c.card_number)}</option>`).join('') : '';
 
     // สร้าง HTML ฟอร์ม
@@ -1519,8 +1514,7 @@ function exportExcel() {
 
 // ================= จัดการ MASTER DATA =================
 async function loadMasterTables() {
-    const { data: cards } = await db.from('security_card_master').select('*').order('card_number');
-    const { data: persons } = await db.from('security_personnel_master').select('*').order('fullname');
+    const { cards, people: persons } = await guardAdminRequest('guard-admin-masters');
 
     const render = (id, records, type, field) => {
         const tbody = document.getElementById(id);
